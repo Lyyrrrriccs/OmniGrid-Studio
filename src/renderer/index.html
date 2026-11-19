@@ -516,6 +516,70 @@
           </div>
         </div>
 
+        <!-- PERIPHERAL SELECTION: DEDICATED 2ND KEYBOARD & MOUSE + GLOBAL HOTKEYS -->
+        <div class="sidebar-section peripherals-box">
+          <div class="card-header" style="margin-bottom: 6px;">
+            <h3 style="margin: 0;">⌨️ Peripherie-Auswahl (Zweitgeräte)</h3>
+            <button class="btn-sm" id="btnScanPeripherals" title="Angeschlossene USB-Tastaturen & Mäuse neu einlesen">🔍 Scannen</button>
+          </div>
+          <p class="section-hint">
+            Nutze eine <strong>separate Zweittastatur / ein Makro-Pad oder eine Zweitmaus</strong> exklusiv für OmniStream Chat – auch ohne Fokuswechsel beim Zocken!
+          </p>
+
+          <div class="setting-row">
+            <label>Separate Tastatur / Makro-Pad (WebHID)</label>
+            <div class="select-with-btn">
+              <select id="selPerifKeyboard">
+                <option value="">-- Tastatur auswählen --</option>
+              </select>
+              <button class="btn-sm" id="btnConnectHidKeyboard" title="Ausgewählte Zweittastatur per WebHID verbinden">🔌 Verbinden</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label>Zweittastatur-Modus</label>
+            <select id="selPerifKeyboardMode">
+              <option value="chat_and_macros">✍️ Chat tippen + F1–F4 Makros</option>
+              <option value="macros_only">🎛️ Nur Makros (1–4 / F1–F4)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <label>Separate Maus / Trackball (WebHID)</label>
+            <div class="select-with-btn">
+              <select id="selPerifMouse">
+                <option value="">-- Maus auswählen --</option>
+              </select>
+              <button class="btn-sm" id="btnConnectHidMouse" title="Ausgewählte Zweitmaus per WebHID verbinden (Scrollrad = Chat scrollen, Linksklick = Pin, Rechtsklick = Unpin)">🖱️ Verbinden</button>
+            </div>
+          </div>
+
+          <div class="cap-info" id="perifLiveStatus">
+            ℹ️ Bereit. Hinweis: Manche Betriebssysteme sperren die primäre Systemtastatur für WebHID – nutze dann einfach ein USB-Numpad, eine Zweittastatur oder die globalen Hotkeys darunter.
+          </div>
+
+          <div class="sub-divider-title">🌐 Globale Hotkeys (Für jede Tastatur / im Spiel)</div>
+          <div class="hotkeys-grid">
+            <div class="hk-row">
+              <span>📌 Pin Letzte:</span>
+              <input type="text" id="hkPinLast" value="CommandOrControl+Alt+P" />
+            </div>
+            <div class="hk-row">
+              <span>❌ Unpin:</span>
+              <input type="text" id="hkUnpin" value="CommandOrControl+Alt+U" />
+            </div>
+            <div class="hk-row">
+              <span>🗑️ Chat leeren:</span>
+              <input type="text" id="hkClearChat" value="CommandOrControl+Alt+C" />
+            </div>
+            <div class="hk-row">
+              <span>↕️ Kompakt:</span>
+              <input type="text" id="hkToggleCompact" value="CommandOrControl+Alt+K" />
+            </div>
+          </div>
+          <button class="btn-sm" id="btnSaveHotkeys" style="width: 100%; margin-top: 6px;">💾 Globale Hotkeys aktivieren</button>
+        </div>
+
         <!-- SECTION 8: APP SETTINGS, STABILITY & HIGH-FREQUENCY PERFORMANCE -->
         <div class="sidebar-section perf-settings-box">
           <h3>⚡ 8. Stabilität, Performance & Backup</h3>

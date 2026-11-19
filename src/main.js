@@ -1272,6 +1272,8 @@ app.whenReady().then(async () => {
     } catch (err) {
       return { ok: false, error: err.message };
     }
+  });
+
   // --- PERIPHERALS: WebHID Permissions, Device Discovery & Global Hotkeys ---
   const { session, globalShortcut } = require('electron');
   const { exec } = require('child_process');
