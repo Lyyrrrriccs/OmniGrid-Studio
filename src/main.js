@@ -141,6 +141,21 @@ function getDefaultConfig() {
       animateEmotes: true
     },
     mutedUsers: [],
+    peripherals: {
+      keyboardId: '',
+      keyboardName: '',
+      mouseId: '',
+      mouseName: '',
+      keyboardMode: 'chat_and_macros',
+      mouseScrollChat: true,
+      globalHotkeysEnabled: true,
+      hotkeys: {
+        pinLast: 'CommandOrControl+Alt+P',
+        unpin: 'CommandOrControl+Alt+U',
+        clearChat: 'CommandOrControl+Alt+C',
+        toggleCompact: 'CommandOrControl+Alt+K'
+      }
+    },
     twitchEnabled: true,
     twitchChannel: '',
     twitchUsername: '',
@@ -1257,7 +1272,171 @@ app.whenReady().then(async () => {
     } catch (err) {
       return { ok: false, error: err.message };
     }
+  // --- PERIPHERALS: WebHID Permissions, Device Discovery & Global Hotkeys ---
+  const { session, globalShortcut } = require('electron');
+  const { exec } = require('child_process');
+  let pendingHidTarget = null;
+
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    if (permission === 'hid') return true;
+    return false;
   });
+
+  session.defaultSession.setDevicePermissionHandler((details) => {
+    if (details.deviceType === 'hid') return true;
+    return false;
+  });
+
+  mainWindow.webContents.session.on('select-hid-device', (event, details, callback) => {
+    event.preventDefault();
+    const list = details.deviceList || [];
+    if (list.length === 0) {
+      callback('');
+      return;
+    }
+    let chosen = null;
+    if (pendingHidTarget) {
+      chosen = list.find(
+        (d) =>
+          (pendingHidTarget.vendorId && d.vendorId === Number(pendingHidTarget.vendorId)) &&
+          (pendingHidTarget.productId && d.productId === Number(pendingHidTarget.productId))
+      ) || list.find((d) => pendingHidTarget.name && d.name && d.name.toLowerCase().includes(pendingHidTarget.name.toLowerCase()));
+      pendingHidTarget = null;
+    }
+    callback((chosen || list[0]).deviceId);
+  });
+
+  function registerGlobalHotkeys(cfg) {
+    globalShortcut.unregisterAll();
+    const pCfg = cfg?.peripherals;
+    if (!pCfg || pCfg.globalHotkeysEnabled === false || !pCfg.hotkeys) return;
+
+    const mapActions = {
+      [pCfg.hotkeys.pinLast]: 'pin-last',
+      [pCfg.hotkeys.unpin]: 'unpin',
+      [pCfg.hotkeys.clearChat]: 'clear-chat',
+      [pCfg.hotkeys.toggleCompact]: 'toggle-compact'
+    };
+
+    for (const [accel, action] of Object.entries(mapActions)) {
+      if (!accel || !accel.trim()) continue;
+      try {
+        globalShortcut.register(accel.trim(), () => {
+          if (obsServer.onStreamDeckApi) {
+            obsServer.onStreamDeckApi(action, {}, {});
+          }
+        });
+      } catch (e) {}
+    }
+  }
+
+  registerGlobalHotkeys(loadConfig());
+
+  ipcMain.handle('set-hid-target', (_ev, target) => {
+    pendingHidTarget = target || null;
+    return { ok: true };
+  });
+
+  ipcMain.handle('update-global-hotkeys', (_ev, peripheralsCfg) => {
+    const cfg = loadConfig();
+    cfg.peripherals = { ...(cfg.peripherals || {}), ...(peripheralsCfg || {}) };
+    saveConfig(cfg);
+    registerGlobalHotkeys(cfg);
+    return { ok: true };
+  });
+
+  ipcMain.handle('trigger-peripheral-action', async (_ev, { action, text }) => {
+    if (obsServer.onStreamDeckApi) {
+      return await obsServer.onStreamDeckApi(action, { text }, { text });
+    }
+    return { ok: false };
+  });
+
+  ipcMain.handle('list-peripherals', () => {
+    return new Promise((resolve) => {
+      if (process.platform === 'darwin') {
+        exec('system_profiler SPUSBDataType -json', { timeout: 5000 }, (err, stdout) => {
+          const devices = [];
+          if (!err && stdout) {
+            try {
+              const parsed = JSON.parse(stdout);
+              const walk = (items) => {
+                if (!Array.isArray(items)) return;
+                for (const it of items) {
+                  if (it._name) {
+                    const nameLow = String(it._name).toLowerCase();
+                    const isInput =
+                      nameLow.includes('keyboard') ||
+                      nameLow.includes('tastatur') ||
+                      nameLow.includes('mouse') ||
+                      nameLow.includes('maus') ||
+                      nameLow.includes('hid') ||
+                      nameLow.includes('key') ||
+                      nameLow.includes('pad') ||
+                      nameLow.includes('logitech') ||
+                      nameLow.includes('razer') ||
+                      nameLow.includes('corsair') ||
+                      nameLow.includes('steelseries') ||
+                      nameLow.includes('wooting') ||
+                      nameLow.includes('elgato') ||
+                      nameLow.includes('cherry') ||
+                      nameLow.includes('keychron');
+                    if (isInput || it.vendor_id) {
+                      devices.push({
+                        name: it._name,
+                        manufacturer: it.manufacturer || '',
+                        vendorId: it.vendor_id ? parseInt(String(it.vendor_id).split(' ')[0], 16) : null,
+                        productId: it.product_id ? parseInt(String(it.product_id).split(' ')[0], 16) : null,
+                        kind: nameLow.includes('mouse') || nameLow.includes('maus') ? 'mouse' : 'keyboard'
+                      });
+                    }
+                  }
+                  if (it._items) walk(it._items);
+                }
+              };
+              walk(parsed.SPUSBDataType);
+            } catch (e) {}
+          }
+          resolve({ ok: true, devices });
+        });
+      } else if (process.platform === 'win32') {
+        exec(
+          'powershell -NoProfile -Command "Get-PnpDevice -Class Keyboard,Mouse -Status OK | Select-Object FriendlyName,InstanceId,Class | ConvertTo-Json"',
+          { timeout: 5000 },
+          (err, stdout) => {
+            const devices = [];
+            if (!err && stdout) {
+              try {
+                const raw = JSON.parse(stdout);
+                const arr = Array.isArray(raw) ? raw : [raw];
+                for (const d of arr) {
+                  if (!d?.FriendlyName) continue;
+                  const vidMatch = String(d.InstanceId || '').match(/VID_([0-9A-F]{4})/i);
+                  const pidMatch = String(d.InstanceId || '').match(/PID_([0-9A-F]{4})/i);
+                  devices.push({
+                    name: d.FriendlyName,
+                    manufacturer: '',
+                    vendorId: vidMatch ? parseInt(vidMatch[1], 16) : null,
+                    productId: pidMatch ? parseInt(pidMatch[1], 16) : null,
+                    kind: String(d.Class || '').toLowerCase() === 'mouse' ? 'mouse' : 'keyboard'
+                  });
+                }
+              } catch (e) {}
+            }
+            resolve({ ok: true, devices });
+          }
+        );
+      } else {
+        resolve({ ok: true, devices: [] });
+      }
+    });
+  });
+});
+
+app.on('will-quit', () => {
+  try {
+    require('electron').globalShortcut.unregisterAll();
+  } catch (e) {}
 });
 
 app.on('window-all-closed', () => {
