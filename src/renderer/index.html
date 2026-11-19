@@ -449,6 +449,38 @@
           </div>
         </div>
 
+        <!-- SPOTIFY DESKTOP BRIDGE & OBS NOW-PLAYING WIDGET -->
+        <div class="sidebar-section spotify-box">
+          <h3>🎵 Spotify Live &amp; !song Bot</h3>
+          <p class="section-hint">
+            Liest den aktuellen Song direkt aus deiner lokalen Spotify-App (ohne API-Key!).
+          </p>
+
+          <div class="sp-now-playing-card" id="spSidebarCard">
+            <div class="sp-np-info">
+              <strong id="spSidebarTitle">Spotify nicht aktiv</strong>
+              <span id="spSidebarArtist">Starte Spotify auf deinem PC/Mac</span>
+            </div>
+            <div class="sp-np-controls">
+              <button class="btn-sm btn-icon-sm" id="btnSpPrev" title="Vorheriger Song">⏮</button>
+              <button class="btn-sm btn-icon-sm" id="btnSpPlayPause" title="Play / Pause">⏯</button>
+              <button class="btn-sm btn-icon-sm" id="btnSpNext" title="Nächster Song">⏭</button>
+              <button class="btn-sm" id="btnSpAnnounce" title="Aktuellen Song in den Twitch-Chat posten">📢</button>
+            </div>
+          </div>
+
+          <label class="checkbox-row" style="margin-top: 6px;">
+            <input type="checkbox" id="chkSpotifyAutoCmd" checked />
+            <span>🤖 <code>!song</code> / <code>!music</code> im Twitch-Chat automatisch beantworten</span>
+          </label>
+
+          <label style="margin-top: 6px;">OBS Spotify-Widget (Browser-Quelle)</label>
+          <div class="obs-url-row">
+            <input type="text" id="inputSpotifyObsUrl" readonly value="http://127.0.0.1:4588/spotify" />
+            <button class="btn-sm" id="btnCopySpotifyObs">Widget-URL kopieren</button>
+          </div>
+        </div>
+
         <!-- STREAM DECK & BITFOCUS COMPANION INTEGRATION -->
         <div class="sidebar-section streamdeck-box">
           <h3>🎛️ Stream Deck Integration</h3>

@@ -91,3 +91,25 @@ Ein **Links- oder Rechtsklick** auf eine beliebige Nachricht öffnet das kompakt
 3. Kopiere in OmniStream Chat unter **„🎛️ Stream Deck Integration“** die gewünschte URL (z. B. `📌 Letzte Nachricht in OBS pinnen` oder deinen eigenen Quick-Chat-Text wie `!discord`).
 4. Füge die URL in der Stream Deck App ein und **aktiviere den Haken „Anfrage im Hintergrund senden“**.
 5. Mit **„▶ Test“** in OmniStream Chat kannst du jede Aktion sofort vorab prüfen.
+
+---
+
+## 8. Peripherie-Auswahl (Zweittastatur, Zweitmaus & Globale Hotkeys)
+
+Unter **„⌨️ Peripherie-Auswahl (Zweitgeräte)“** kannst du eine separate USB-Tastatur, ein Numpad/Makro-Pad oder eine Zweitmaus exklusiv für OmniStream Chat nutzen:
+1. Klicke auf **„🔍 Scannen“**, um alle angeschlossenen USB-Geräte einzulesen.
+2. **Zweittastatur (`🔌 Verbinden`):**
+   - **Modus `Chat tippen + F1–F4 Makros`:** Tippe direkt eine Chat-Nachricht auf der Zweittastatur und sende sie mit `Enter`, ohne dein Spiel zu verlassen. `F1`–`F4` steuern Pin, Unpin, Chat leeren und Kompakt-Modus.
+   - **Modus `Nur Makros`:** Tasten `1`–`4` / `F1`–`F4` lösen direkt die 4 Aktionen aus.
+3. **Zweitmaus (`🖱️ Verbinden`):** Scrollrad scrollt durch den Chatfeed, Linksklick pinnt die letzte Nachricht, Rechtsklick hebt den Pin auf.
+4. **🌐 Globale Hotkeys:** Falls dein Betriebssystem den direkten WebHID-Zugriff auf die primäre Tastatur blockiert, funktionieren die globalen Tastenkürzel (`Ctrl/Cmd+Alt+P/U/C/K`) systemweit auch während Vollbildspielen.
+
+---
+
+## 9. Spotify Live & `!song`-Chat-Bot
+
+Unter **„🎵 Spotify Live & !song Bot“** liest die App den aktuellen Song direkt aus deiner lokalen Spotify-Desktop-App aus (ohne API-Key!):
+- **Live-Steuerung:** **⏮ / ⏯ / ⏭** und **📢 Song in den Twitch-Chat posten**.
+- **Automatischer `!song` / `!music` Bot:** Schreibt ein Zuschauer auf Twitch `!song` oder `!music`, antwortet OmniStream Chat automatisch mit dem aktuellen Track *(15s Anti-Spam-Cooldown)*.
+- **OBS Spotify-Widget:** Füge `http://127.0.0.1:4588/spotify` als Browser-Quelle (z. B. `420 × 80`) in OBS ein, um den aktuellen Song samt Cover transparent im Stream anzuzeigen.
+

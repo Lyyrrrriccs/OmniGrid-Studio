@@ -27,7 +27,9 @@
 | **OBS Integration & Standalone Window** | Scene-independent **OBS Custom Browser Dock** (`http://127.0.0.1:4588/dock`), **OBS Stream Overlay** (`http://127.0.0.1:4588`), and a movable full-height **Standalone Chat Window** with persistent bounds. |
 | **Event Highlighting & Keyword Alerts** | Distinct styling (`bar`, `banner`, `outline`, color & intensity) for **Follows**, **Subs**, **Resubs**, **Gifted Subs**, **Bits/SuperChats/Gifts**, **Raids**, and **Highlighted Messages**, plus custom **Keyword Alerts** with sound ping. |
 | **Quick User & Message Menu** | Click or right-click any message for user overview (avatar, roles, Twitch account age), copy text/username, reply, open profile, delete, timeout (`10s`, `1m`, `10m`, `1h`), 2-step ban, and unban with strict platform permission checks. |
-| **Stream Deck & Companion** | Built-in local REST API (`http://127.0.0.1:4588/api/streamdeck/*`) with 1-click copy URLs, live test buttons, and custom quick-chat key generator. |
+| **Stream Deck & Companion** | Built-in local REST API (`http://127.0.0.1:4588/api/streamdeck/*`) with 1-click copy URLs, live test buttons, Spotify track controls, and custom quick-chat key generator. |
+| **Peripherals & Global Hotkeys** | Dedicated **2nd Keyboard / Macro Pad & 2nd Mouse** support via **WebHID** (type/send chat or scroll feed without alt-tabbing out of games) + system-wide **Global Hotkeys**. |
+| **Spotify Live & `!song` Bot** | Zero-config local Spotify Desktop bridge (no API key needed): live Now Playing controls, automatic Twitch `!song` / `!music` replies, and transparent **OBS Spotify Widget** (`http://127.0.0.1:4588/spotify`). |
 | **Performance & Diagnostics** | 60fps `requestAnimationFrame` batch rendering, configurable DOM/RAM limits, JSON backup export/import, collapsible **Live Statistics & Connection Logs** drawer, bot filter, and spam repeat collapsing (`×N`). |
 
 ---
@@ -64,6 +66,7 @@ npm run build:win   # Creates dist/OmniStreamChat-win32-x64/OmniStreamChat.exe
 |---|---|---|
 | **OBS Custom Browser Dock** | `http://127.0.0.1:4588/dock` | Interactive, scene-independent chat dock inside OBS (`View → Docks → Custom Browser Docks`) |
 | **OBS Stream Overlay** | `http://127.0.0.1:4588` | Transparent Browser Source for your stream viewers (with live pinned messages) |
+| **OBS Spotify Widget** | `http://127.0.0.1:4588/spotify` | Transparent Now-Playing card with album cover & live track updates |
 
 ---
 
@@ -81,6 +84,8 @@ In the **Elgato Stream Deck** app, add **System → Website**, paste one of the 
 | Toggle sound alerts | `http://127.0.0.1:4588/api/streamdeck/toggle-sound` |
 | Toggle Always-on-Top | `http://127.0.0.1:4588/api/streamdeck/toggle-always-on-top` |
 | Reconnect all platforms | `http://127.0.0.1:4588/api/streamdeck/reconnect?platform=all` |
+| Spotify: Next / Prev / Play-Pause | `.../spotify-next` • `.../spotify-prev` • `.../spotify-playpause` |
+| Spotify: Announce track in chat | `http://127.0.0.1:4588/api/streamdeck/spotify-announce` |
 
 ---
 

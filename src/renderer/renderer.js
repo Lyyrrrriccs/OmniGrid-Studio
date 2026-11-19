@@ -421,6 +421,7 @@ function getFormConfig() {
     autoConnectOnStart: chkAutoConnect.checked,
     soundAlerts: soundAlertsEnabled,
     compactChat: compactChatEnabled,
+    spotifyAutoCommand: document.getElementById('chkSpotifyAutoCmd')?.checked !== false,
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1545,6 +1546,8 @@ function applyConfigToForm(cfg) {
   chkAutoConnect.checked = cfg.autoConnectOnStart !== false;
   soundAlertsEnabled = cfg.soundAlerts !== false;
   btnSoundToggle.classList.toggle('active', soundAlertsEnabled);
+  const chkSpAuto = document.getElementById('chkSpotifyAutoCmd');
+  if (chkSpAuto) chkSpAuto.checked = cfg.spotifyAutoCommand !== false;
 
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
@@ -1965,11 +1968,57 @@ btnSaveHotkeys?.addEventListener('click', async () => {
   }, 1800);
 });
 
+// --- SPOTIFY LIVE & !SONG BOT HANDLERS ---
+const spSidebarTitle = document.getElementById('spSidebarTitle');
+const spSidebarArtist = document.getElementById('spSidebarArtist');
+const inputSpotifyObsUrl = document.getElementById('inputSpotifyObsUrl');
+const btnCopySpotifyObs = document.getElementById('btnCopySpotifyObs');
+const chkSpotifyAutoCmd = document.getElementById('chkSpotifyAutoCmd');
+
+function updateSpotifyUI(track) {
+  if (!spSidebarTitle || !spSidebarArtist) return;
+  if (!track || !track.running || !track.title) {
+    spSidebarTitle.textContent = 'Spotify nicht aktiv';
+    spSidebarArtist.textContent = 'Starte Spotify auf deinem PC/Mac';
+    return;
+  }
+  const icon = track.playing ? '▶️' : '⏸️';
+  spSidebarTitle.textContent = `${icon} ${track.title}`;
+  spSidebarArtist.textContent = track.artist || 'Spotify';
+}
+
+document.getElementById('btnSpPrev')?.addEventListener('click', () => window.omnichat.spotifyControl('previous'));
+document.getElementById('btnSpPlayPause')?.addEventListener('click', () => window.omnichat.spotifyControl('playpause'));
+document.getElementById('btnSpNext')?.addEventListener('click', () => window.omnichat.spotifyControl('next'));
+document.getElementById('btnSpAnnounce')?.addEventListener('click', async () => {
+  const res = await window.omnichat.spotifyControl('announce');
+  if (!res?.ok && res?.error) alert(res.error);
+});
+
+chkSpotifyAutoCmd?.addEventListener('change', () => {
+  window.omnichat.saveProfile(getFormConfig());
+});
+
+btnCopySpotifyObs?.addEventListener('click', () => {
+  if (!inputSpotifyObsUrl) return;
+  navigator.clipboard.writeText(inputSpotifyObsUrl.value);
+  btnCopySpotifyObs.textContent = '✅ Kopiert!';
+  setTimeout(() => {
+    btnCopySpotifyObs.textContent = 'Widget-URL kopieren';
+  }, 1500);
+});
+
 // IPC Listeners
 window.omnichat.onInitState((data) => {
   if (data.streamDeckUrl) {
     streamDeckBaseUrl = data.streamDeckUrl;
     updateSdCustomUrl();
+  }
+  if (data.spotifyObsUrl && inputSpotifyObsUrl) {
+    inputSpotifyObsUrl.value = data.spotifyObsUrl;
+  }
+  if (data.spotifyTrack) {
+    updateSpotifyUI(data.spotifyTrack);
   }
   if (data.config) {
     applyConfigToForm(data.config);
@@ -1994,6 +2043,10 @@ window.omnichat.onInitState((data) => {
   }
   btnDemo.classList.toggle('active', Boolean(data.demoActive));
   btnDemo.textContent = data.demoActive ? '⏹ Stop' : '▶ Demo';
+});
+
+window.omnichat.onSpotifyTrack?.((track) => {
+  updateSpotifyUI(track);
 });
 
 window.omnichat.onStreamDeckCommand?.((payload) => {

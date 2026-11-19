@@ -91,3 +91,25 @@ In the **"🎨 Kompaktes Chatdesign"** sidebar section, customize everything **w
 3. In OmniStream Chat under **"🎛️ Stream Deck Integration"**, click **📋 URL** next to your desired action (e.g., `Pin latest message to OBS` or your custom quick-chat generator).
 4. Paste the URL into Stream Deck and **enable "GET request in background"**.
 5. Use **▶ Test** inside OmniStream Chat to verify any action immediately.
+
+---
+
+## 8. Peripheral Selection (2nd Keyboard, 2nd Mouse & Global Hotkeys)
+
+Under **"⌨️ Peripherie-Auswahl (Zweitgeräte)"**, you can bind a dedicated secondary USB keyboard, numpad/macro pad, or mouse exclusively to OmniStream Chat:
+1. Click **"🔍 Scannen"** to list all connected USB keyboards and mice.
+2. **2nd Keyboard (`🔌 Verbinden`):**
+   - **Mode `Chat tippen + F1–F4 Makros`:** Type a chat message directly on your secondary keyboard and press `Enter` to send without alt-tabbing out of your game. `F1`–`F4` trigger Pin, Unpin, Clear Chat, and Compact Mode.
+   - **Mode `Nur Makros`:** Keys `1`–`4` / `F1`–`F4` trigger the 4 quick actions immediately.
+3. **2nd Mouse (`🖱️ Verbinden`):** Scroll wheel scrolls the chat feed, left-click pins the latest message to OBS, right-click unpins it.
+4. **🌐 Global Hotkeys:** If your OS restricts direct WebHID access to your primary keyboard, the configurable system-wide hotkeys (`Ctrl/Cmd+Alt+P/U/C/K`) work in every game and application.
+
+---
+
+## 9. Spotify Live & `!song` Chat Bot
+
+Under **"🎵 Spotify Live & !song Bot"**, OmniStream Chat reads the current track directly from your local Spotify desktop app (zero API key setup!):
+- **Live Controls:** **⏮ / ⏯ / ⏭** and **📢 Announce current track in Twitch chat**.
+- **Automatic `!song` / `!music` Bot:** When a viewer types `!song` or `!music` in Twitch chat, the app automatically replies with the current artist & track *(with a 15s anti-spam cooldown)*.
+- **OBS Spotify Widget:** Add `http://127.0.0.1:4588/spotify` as an OBS Browser Source (e.g., `420 × 80`) to display a transparent Now-Playing card with album art on stream.
+
