@@ -9,6 +9,9 @@ const btnPinWindow = document.getElementById('btnPinWindow');
 const btnClearChat = document.getElementById('btnClearChat');
 
 const inputStreamerName = document.getElementById('inputStreamerName');
+const inputKeywordAlerts = document.getElementById('inputKeywordAlerts');
+const chkKeywordSound = document.getElementById('chkKeywordSound');
+const clrKeywordHighlight = document.getElementById('clrKeywordHighlight');
 const chkAutoConnect = document.getElementById('chkAutoConnect');
 
 const chkEnableTwitch = document.getElementById('chkEnableTwitch');
@@ -412,6 +415,9 @@ function playAlertTone(kind = 'mention') {
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
+    keywordAlerts: inputKeywordAlerts ? inputKeywordAlerts.value.trim() : '',
+    keywordSound: chkKeywordSound ? chkKeywordSound.checked : true,
+    keywordColor: clrKeywordHighlight?.value || '#f97316',
     autoConnectOnStart: chkAutoConnect.checked,
     soundAlerts: soundAlertsEnabled,
     compactChat: compactChatEnabled,
@@ -546,6 +552,12 @@ chkAutoConnect.addEventListener('change', () => {
 });
 inputStreamerName.addEventListener('change', () => {
   window.omnichat.saveProfile(getFormConfig());
+});
+[inputKeywordAlerts, chkKeywordSound, clrKeywordHighlight].forEach((el) => {
+  el?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+    renderFeed();
+  });
 });
 
 // Per-Platform Enable / Disable Checkboxes
@@ -1296,6 +1308,8 @@ function createMessageElement(msg) {
   }
   if (msg.isMention) {
     classes.push('mention');
+  } else if (msg.isKeywordAlert) {
+    classes.push('keyword-alert');
   }
   div.className = classes.join(' ');
   div.dataset.id = msg.id;
@@ -1319,6 +1333,10 @@ function createMessageElement(msg) {
       div.style.background = hexToRgba(hexColor, intensity);
       div.style.borderLeft = `3.5px solid ${hexColor}`;
     }
+  } else if (msg.isKeywordAlert && !msg.isMention) {
+    const kwColor = clrKeywordHighlight?.value || '#f97316';
+    div.style.background = hexToRgba(kwColor, 14);
+    div.style.borderLeft = `3px solid ${kwColor}`;
   }
 
   const badgesHtml = (msg.badges || [])
@@ -1326,6 +1344,11 @@ function createMessageElement(msg) {
     .join('');
 
   const mentionTag = msg.isMention ? `<span class="mention-pill">@MICH</span>` : '';
+  const kwColorVal = clrKeywordHighlight?.value || '#f97316';
+  const keywordTag =
+    msg.isKeywordAlert && msg.matchedKeyword
+      ? `<span class="keyword-pill" style="background:${kwColorVal};" title="Keyword-Alarm: ${escapeHtml(msg.matchedKeyword)}">🔍 ${escapeHtml(msg.matchedKeyword.toUpperCase())}</span>`
+      : '';
   const displayAuthor = truncateUsername(msg.author);
   const authorColor = resolveAuthorColor(msg);
   const repeatCount = Number(msg.repeatCount || 1);
@@ -1334,7 +1357,7 @@ function createMessageElement(msg) {
       ? `<span class="msg-repeat-badge" title="Identische Nachricht ${repeatCount}× zusammengefasst">×${repeatCount}</span>`
       : '';
 
-  div.innerHTML = `<div class="msg-inline-flow"><span class="msg-time">${formatTime(msg.timestamp)}</span>${renderPlatformIndicatorHtml(msg.platform)}${mentionTag}${badgesHtml}<span class="msg-author clickable-user" style="color: ${authorColor}" title="${escapeHtml(msg.author)} — Klick oder Rechtsklick für Schnellmenü">${escapeHtml(displayAuthor)}:</span><span class="msg-text">${renderMessageContentHtml(msg)}</span>${repeatBadgeHtml}</div><div class="msg-actions"><button class="btn-pin-msg" title="In OBS einblenden">📌</button><button class="btn-quick-menu" title="Nutzer- & Nachrichten-Schnellmenü">⋮</button></div>`;
+  div.innerHTML = `<div class="msg-inline-flow"><span class="msg-time">${formatTime(msg.timestamp)}</span>${renderPlatformIndicatorHtml(msg.platform)}${mentionTag}${keywordTag}${badgesHtml}<span class="msg-author clickable-user" style="color: ${authorColor}" title="${escapeHtml(msg.author)} — Klick oder Rechtsklick für Schnellmenü">${escapeHtml(displayAuthor)}:</span><span class="msg-text">${renderMessageContentHtml(msg)}</span>${repeatBadgeHtml}</div><div class="msg-actions"><button class="btn-pin-msg" title="In OBS einblenden">📌</button><button class="btn-quick-menu" title="Nutzer- & Nachrichten-Schnellmenü">⋮</button></div>`;
 
   div.querySelector('.btn-pin-msg').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1501,6 +1524,9 @@ function updatePlatformStatusUI(states) {
 function applyConfigToForm(cfg) {
   if (!cfg) return;
   inputStreamerName.value = cfg.streamerName || '';
+  if (inputKeywordAlerts) inputKeywordAlerts.value = cfg.keywordAlerts || '';
+  if (chkKeywordSound) chkKeywordSound.checked = cfg.keywordSound !== false;
+  if (clrKeywordHighlight && cfg.keywordColor) clrKeywordHighlight.value = cfg.keywordColor;
   chkAutoConnect.checked = cfg.autoConnectOnStart !== false;
   soundAlertsEnabled = cfg.soundAlerts !== false;
   btnSoundToggle.classList.toggle('active', soundAlertsEnabled);
@@ -1631,8 +1657,61 @@ async function pollPerformanceStats() {
 setInterval(pollPerformanceStats, 2000);
 setTimeout(pollPerformanceStats, 600);
 
+let streamDeckBaseUrl = 'http://127.0.0.1:4588/api/streamdeck';
+const sdActionsList = document.getElementById('sdActionsList');
+const inputSdCustomText = document.getElementById('inputSdCustomText');
+const inputSdCustomUrl = document.getElementById('inputSdCustomUrl');
+const btnCopySdCustom = document.getElementById('btnCopySdCustom');
+
+function updateSdCustomUrl() {
+  if (!inputSdCustomUrl) return;
+  const txt = (inputSdCustomText?.value || '').trim() || 'GG!';
+  inputSdCustomUrl.value = `${streamDeckBaseUrl}/send?text=${encodeURIComponent(txt)}`;
+}
+
+inputSdCustomText?.addEventListener('input', updateSdCustomUrl);
+btnCopySdCustom?.addEventListener('click', () => {
+  if (!inputSdCustomUrl) return;
+  navigator.clipboard.writeText(inputSdCustomUrl.value);
+  btnCopySdCustom.textContent = '✅ Kopiert!';
+  setTimeout(() => {
+    btnCopySdCustom.textContent = 'Kopieren';
+  }, 1500);
+});
+
+sdActionsList?.querySelectorAll('.sd-row').forEach((row) => {
+  const pathPart = row.dataset.sdPath || '';
+  const copyBtn = row.querySelector('.sd-copy');
+  const testBtn = row.querySelector('.sd-test');
+
+  copyBtn?.addEventListener('click', () => {
+    navigator.clipboard.writeText(`${streamDeckBaseUrl}${pathPart}`);
+    copyBtn.textContent = '✅';
+    setTimeout(() => {
+      copyBtn.textContent = '📋 URL';
+    }, 1400);
+  });
+
+  testBtn?.addEventListener('click', async () => {
+    try {
+      const res = await fetch(`${streamDeckBaseUrl}${pathPart}`);
+      const json = await res.json();
+      testBtn.textContent = json.ok ? '✅' : '⚠️';
+    } catch (e) {
+      testBtn.textContent = '❌';
+    }
+    setTimeout(() => {
+      testBtn.textContent = '▶ Test';
+    }, 1400);
+  });
+});
+
 // IPC Listeners
 window.omnichat.onInitState((data) => {
+  if (data.streamDeckUrl) {
+    streamDeckBaseUrl = data.streamDeckUrl;
+    updateSdCustomUrl();
+  }
   if (data.config) {
     applyConfigToForm(data.config);
   }
@@ -1656,6 +1735,33 @@ window.omnichat.onInitState((data) => {
   }
   btnDemo.classList.toggle('active', Boolean(data.demoActive));
   btnDemo.textContent = data.demoActive ? '⏹ Stop' : '▶ Demo';
+});
+
+window.omnichat.onStreamDeckCommand?.((payload) => {
+  if (!payload) return;
+  if (payload.command === 'pin' && payload.msg) {
+    pinnedBody.innerHTML = `<strong>${escapeHtml(payload.msg.author)}:</strong> ${renderMessageContentHtml(payload.msg)}`;
+    pinnedBanner.classList.remove('hidden');
+  } else if (payload.command === 'unpin') {
+    pinnedBanner.classList.add('hidden');
+  } else if (payload.command === 'clear-chat') {
+    messages = [];
+    seenMessageIds.clear();
+    streamerEvents = [];
+    pinnedBanner.classList.add('hidden');
+    renderEventTicker();
+    renderFeed();
+  } else if (payload.command === 'set-compact') {
+    applyCompactMode(Boolean(payload.value));
+  } else if (payload.command === 'set-sound') {
+    soundAlertsEnabled = Boolean(payload.value);
+    btnSoundToggle.classList.toggle('active', soundAlertsEnabled);
+  } else if (payload.command === 'set-always-on-top') {
+    btnPinWindow.classList.toggle('active', Boolean(payload.value));
+  } else if (payload.command === 'sync-config' && payload.config) {
+    applyConfigToForm(payload.config);
+    renderFeed();
+  }
 });
 
 window.omnichat.onDiagLog?.((entry) => {
@@ -1833,6 +1939,8 @@ window.omnichat.onChatMessage((msg) => {
   }
 
   if (msg.isMention && !msg.isHighlight) {
+    playAlertTone('mention');
+  } else if (msg.isKeywordAlert && (!chkKeywordSound || chkKeywordSound.checked) && !msg.isHighlight) {
     playAlertTone('mention');
   }
 

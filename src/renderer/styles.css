@@ -1676,4 +1676,56 @@ body.hide-platicons .msg-plat-dot {
   cursor: not-allowed;
 }
 
+/* STREAM DECK INTEGRATION PANEL */
+.sd-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.sd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px 7px;
+}
+
+.sd-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sd-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.sd-btns .btn-sm {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.keyword-pill {
+  display: inline-block;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #0b0f19;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: baseline;
+}
+
+
+
 

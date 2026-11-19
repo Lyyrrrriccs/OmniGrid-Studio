@@ -63,6 +63,17 @@
             <label>Dein Streamer-Name (für @Mention-Alarm)</label>
             <input type="text" id="inputStreamerName" placeholder="z.B. Tobias" />
 
+            <label style="margin-top: 6px;">🔍 Eigene Keyword-Alarme (kommagetrennt)</label>
+            <div class="setting-row-inline" style="margin-top: 2px;">
+              <input type="text" id="inputKeywordAlerts" placeholder="z.B. frage, lobby, mikrofon, bug" style="flex: 1;" />
+              <input type="color" id="clrKeywordHighlight" value="#f97316" title="Highlight-Farbe für Keyword-Treffer" />
+            </div>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkKeywordSound" checked />
+              <span>🔔 Sound-Ping bei Keyword-Treffer</span>
+            </label>
+
             <label class="checkbox-row">
               <input type="checkbox" id="chkAutoConnect" checked />
               <span>Beim App-Start automatisch verbinden & auf Live-Start warten</span>
@@ -435,6 +446,73 @@
           <div class="obs-url-row">
             <input type="text" id="inputObsUrl" readonly value="http://127.0.0.1:4588" />
             <button class="btn-sm" id="btnCopyObs">Overlay-URL kopieren</button>
+          </div>
+        </div>
+
+        <!-- STREAM DECK & BITFOCUS COMPANION INTEGRATION -->
+        <div class="sidebar-section streamdeck-box">
+          <h3>🎛️ Stream Deck Integration</h3>
+          <p class="section-hint">
+            In der <strong>Elgato Stream Deck App</strong>: Aktion <em>System → Website</em> auf eine Taste ziehen, URL einfügen &amp; <strong>„Anfrage im Hintergrund senden“</strong> aktivieren (funktioniert auch mit Bitfocus Companion):
+          </p>
+
+          <div class="sd-actions-list" id="sdActionsList">
+            <div class="sd-row" data-sd-path="/pin-last">
+              <span class="sd-label">📌 Letzte Nachricht in OBS pinnen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/unpin">
+              <span class="sd-label">❌ OBS-Pin ausblenden</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/clear-chat">
+              <span class="sd-label">🗑️ Chat-Verlauf leeren</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-compact">
+              <span class="sd-label">↕️ Kompakt-Modus umschalten</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-sound">
+              <span class="sd-label">🔔 Sound-Alarm stumm/an</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-always-on-top">
+              <span class="sd-label">📌 Always-on-Top umschalten</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/reconnect?platform=all">
+              <span class="sd-label">↻ Alle Plattformen Reconnect</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-divider-title">💬 Eigene Quick-Chat-Taste generieren</div>
+          <input type="text" id="inputSdCustomText" placeholder="z.B. !discord oder Bin kurz AFK!" />
+          <div class="obs-url-row" style="margin-top: 5px;">
+            <input type="text" id="inputSdCustomUrl" readonly value="http://127.0.0.1:4588/api/streamdeck/send?text=GG!" />
+            <button class="btn-sm" id="btnCopySdCustom">Kopieren</button>
           </div>
         </div>
 

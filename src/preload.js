@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   onPlatformStatus: (cb) => ipcRenderer.on('platform-status', (_ev, status) => cb(status)),
   onDemoState: (cb) => ipcRenderer.on('demo-state', (_ev, active) => cb(active)),
   onDiagLog: (cb) => ipcRenderer.on('diag-log', (_ev, entry) => cb(entry)),
+  onStreamDeckCommand: (cb) => ipcRenderer.on('streamdeck-command', (_ev, payload) => cb(payload)),
 
   saveProfile: (config) => ipcRenderer.invoke('save-profile', config),
   openStandaloneChat: (snapLeftFullHeight) => ipcRenderer.invoke('open-standalone-chat', snapLeftFullHeight),
