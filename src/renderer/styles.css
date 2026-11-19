@@ -1726,6 +1726,36 @@ body.hide-platicons .msg-plat-dot {
   vertical-align: baseline;
 }
 
+/* PERIPHERAL SELECTION & GLOBAL HOTKEYS */
+.hotkeys-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.hk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.hk-row span {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.hk-row input {
+  width: 145px;
+  font-size: 10.5px;
+  padding: 3px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+
 
 
 

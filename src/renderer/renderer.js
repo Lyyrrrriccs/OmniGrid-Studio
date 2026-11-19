@@ -1527,6 +1527,21 @@ function applyConfigToForm(cfg) {
   if (inputKeywordAlerts) inputKeywordAlerts.value = cfg.keywordAlerts || '';
   if (chkKeywordSound) chkKeywordSound.checked = cfg.keywordSound !== false;
   if (clrKeywordHighlight && cfg.keywordColor) clrKeywordHighlight.value = cfg.keywordColor;
+
+  const pCfg = cfg.peripherals || {};
+  const selKbMode = document.getElementById('selPerifKeyboardMode');
+  if (selKbMode && pCfg.keyboardMode) selKbMode.value = pCfg.keyboardMode;
+  if (pCfg.hotkeys) {
+    const hkP = document.getElementById('hkPinLast');
+    const hkU = document.getElementById('hkUnpin');
+    const hkC = document.getElementById('hkClearChat');
+    const hkK = document.getElementById('hkToggleCompact');
+    if (hkP && pCfg.hotkeys.pinLast) hkP.value = pCfg.hotkeys.pinLast;
+    if (hkU && pCfg.hotkeys.unpin) hkU.value = pCfg.hotkeys.unpin;
+    if (hkC && pCfg.hotkeys.clearChat) hkC.value = pCfg.hotkeys.clearChat;
+    if (hkK && pCfg.hotkeys.toggleCompact) hkK.value = pCfg.hotkeys.toggleCompact;
+  }
+
   chkAutoConnect.checked = cfg.autoConnectOnStart !== false;
   soundAlertsEnabled = cfg.soundAlerts !== false;
   btnSoundToggle.classList.toggle('active', soundAlertsEnabled);
@@ -1704,6 +1719,250 @@ sdActionsList?.querySelectorAll('.sd-row').forEach((row) => {
       testBtn.textContent = '▶ Test';
     }, 1400);
   });
+});
+
+// --- PERIPHERAL SELECTION (SEPARATE 2ND KEYBOARD, MOUSE & GLOBAL HOTKEYS) ---
+const btnScanPeripherals = document.getElementById('btnScanPeripherals');
+const selPerifKeyboard = document.getElementById('selPerifKeyboard');
+const selPerifKeyboardMode = document.getElementById('selPerifKeyboardMode');
+const btnConnectHidKeyboard = document.getElementById('btnConnectHidKeyboard');
+const selPerifMouse = document.getElementById('selPerifMouse');
+const btnConnectHidMouse = document.getElementById('btnConnectHidMouse');
+const perifLiveStatus = document.getElementById('perifLiveStatus');
+const btnSaveHotkeys = document.getElementById('btnSaveHotkeys');
+
+let activeHidKeyboard = null;
+let activeHidMouse = null;
+let hidTypingBuffer = '';
+let prevHidKeys = new Set();
+let prevMouseButtons = 0;
+
+// Standard USB HID Keyboard Usage IDs (0x04..0x2C + F1..F4 + Numpad)
+const HID_KEY_CHARS = {
+  0x04: 'a', 0x05: 'b', 0x06: 'c', 0x07: 'd', 0x08: 'e', 0x09: 'f', 0x0a: 'g',
+  0x0b: 'h', 0x0c: 'i', 0x0d: 'j', 0x0e: 'k', 0x0f: 'l', 0x10: 'm', 0x11: 'n',
+  0x12: 'o', 0x13: 'p', 0x14: 'q', 0x15: 'r', 0x16: 's', 0x17: 't', 0x18: 'u',
+  0x19: 'v', 0x1a: 'w', 0x1b: 'x', 0x1c: 'y', 0x1d: 'z',
+  0x1e: '1', 0x1f: '2', 0x20: '3', 0x21: '4', 0x22: '5', 0x23: '6', 0x24: '7',
+  0x25: '8', 0x26: '9', 0x27: '0', 0x2c: ' ', 0x2d: '-', 0x36: ',', 0x37: '.',
+  0x59: '1', 0x5a: '2', 0x5b: '3', 0x5c: '4', 0x5d: '5', 0x5e: '6', 0x5f: '7',
+  0x60: '8', 0x61: '9', 0x62: '0'
+};
+
+function setPerifStatus(msg) {
+  if (perifLiveStatus) perifLiveStatus.textContent = msg;
+}
+
+async function scanPeripherals() {
+  if (!window.omnichat.listPeripherals) return;
+  if (btnScanPeripherals) btnScanPeripherals.textContent = '⏳';
+  const res = await window.omnichat.listPeripherals();
+  if (btnScanPeripherals) btnScanPeripherals.textContent = '🔍 Scannen';
+  if (!res?.ok || !Array.isArray(res.devices)) return;
+
+  const kbOpts = [`<option value="">-- Tastatur auswählen (${res.devices.length} Geräte) --</option>`];
+  const msOpts = [`<option value="">-- Maus auswählen (${res.devices.length} Geräte) --</option>`];
+
+  for (const d of res.devices) {
+    const val = JSON.stringify({ name: d.name, vendorId: d.vendorId, productId: d.productId });
+    const label = `${d.name}${d.vendorId ? ` (VID:${d.vendorId.toString(16).toUpperCase()})` : ''}`;
+    if (d.kind === 'mouse') {
+      msOpts.push(`<option value='${escapeHtml(val)}'>🖱️ ${escapeHtml(label)}</option>`);
+    } else {
+      kbOpts.push(`<option value='${escapeHtml(val)}'>⌨️ ${escapeHtml(label)}</option>`);
+    }
+  }
+
+  // Also allow picking any listed USB device in either dropdown
+  for (const d of res.devices) {
+    const val = JSON.stringify({ name: d.name, vendorId: d.vendorId, productId: d.productId });
+    const label = `${d.name}${d.vendorId ? ` (VID:${d.vendorId.toString(16).toUpperCase()})` : ''}`;
+    if (d.kind !== 'mouse') {
+      msOpts.push(`<option value='${escapeHtml(val)}'>🔌 ${escapeHtml(label)}</option>`);
+    } else {
+      kbOpts.push(`<option value='${escapeHtml(val)}'>🔌 ${escapeHtml(label)}</option>`);
+    }
+  }
+
+  if (selPerifKeyboard) selPerifKeyboard.innerHTML = kbOpts.join('');
+  if (selPerifMouse) selPerifMouse.innerHTML = msOpts.join('');
+}
+
+btnScanPeripherals?.addEventListener('click', scanPeripherals);
+setTimeout(scanPeripherals, 900);
+
+btnConnectHidKeyboard?.addEventListener('click', async () => {
+  if (activeHidKeyboard) {
+    try {
+      await activeHidKeyboard.close();
+    } catch (e) {}
+    activeHidKeyboard = null;
+    btnConnectHidKeyboard.textContent = '🔌 Verbinden';
+    btnConnectHidKeyboard.classList.remove('disconnect');
+    setPerifStatus('ℹ️ Zweittastatur getrennt.');
+    return;
+  }
+
+  if (!navigator.hid) {
+    setPerifStatus('❌ WebHID wird in dieser Umgebung nicht unterstützt.');
+    return;
+  }
+
+  let target = null;
+  try {
+    if (selPerifKeyboard?.value) target = JSON.parse(selPerifKeyboard.value);
+  } catch (e) {}
+  await window.omnichat.setHidTarget(target);
+
+  try {
+    const filters = target?.vendorId
+      ? [{ vendorId: target.vendorId, ...(target.productId ? { productId: target.productId } : {}) }]
+      : [{ usagePage: 0x01, usage: 0x06 }];
+    const devices = await navigator.hid.requestDevice({ filters });
+    if (!devices || devices.length === 0) {
+      setPerifStatus('⚠️ Keine Zweittastatur ausgewählt.');
+      return;
+    }
+    const dev = devices[0];
+    await dev.open();
+    activeHidKeyboard = dev;
+    prevHidKeys.clear();
+    hidTypingBuffer = '';
+    btnConnectHidKeyboard.textContent = '⏹ Trennen';
+    btnConnectHidKeyboard.classList.add('disconnect');
+    setPerifStatus(`✅ Zweittastatur aktiv: ${dev.productName || 'USB HID Keyboard'}`);
+
+    dev.addEventListener('inputreport', async (event) => {
+      const bytes = new Uint8Array(event.data.buffer);
+      const modifier = bytes[0] || 0;
+      const shift = (modifier & 0x22) !== 0;
+      const currentKeys = new Set();
+      for (let i = 2; i < Math.min(bytes.length, 8); i++) {
+        if (bytes[i] > 0) currentKeys.add(bytes[i]);
+      }
+
+      const mode = selPerifKeyboardMode?.value || 'chat_and_macros';
+
+      for (const code of currentKeys) {
+        if (prevHidKeys.has(code)) continue;
+        // F1..F4 or 1..4 in macros_only mode
+        if (code === 0x3a || (mode === 'macros_only' && code === 0x1e)) {
+          await window.omnichat.triggerPeripheralAction({ action: 'pin-last' });
+          setPerifStatus('📌 Zweittastatur: Letzte Nachricht in OBS gepinnt!');
+        } else if (code === 0x3b || (mode === 'macros_only' && code === 0x1f)) {
+          await window.omnichat.triggerPeripheralAction({ action: 'unpin' });
+          setPerifStatus('❌ Zweittastatur: OBS-Pin ausgeblendet.');
+        } else if (code === 0x3c || (mode === 'macros_only' && code === 0x20)) {
+          await window.omnichat.triggerPeripheralAction({ action: 'clear-chat' });
+          setPerifStatus('🗑️ Zweittastatur: Chat geleert.');
+        } else if (code === 0x3d || (mode === 'macros_only' && code === 0x21)) {
+          await window.omnichat.triggerPeripheralAction({ action: 'toggle-compact' });
+          setPerifStatus('↕️ Zweittastatur: Kompakt-Modus umgeschaltet.');
+        } else if (mode === 'chat_and_macros') {
+          if (code === 0x28 || code === 0x58) {
+            // Enter -> send buffered chat message!
+            const toSend = hidTypingBuffer.trim();
+            hidTypingBuffer = '';
+            if (toSend) {
+              await window.omnichat.triggerPeripheralAction({ action: 'send', text: toSend });
+              setPerifStatus(`✅ Von Zweittastatur gesendet: "${toSend}"`);
+            }
+          } else if (code === 0x2a) {
+            hidTypingBuffer = hidTypingBuffer.slice(0, -1);
+            setPerifStatus(`⌨️ Zweittastatur-Entwurf: "${hidTypingBuffer}"`);
+          } else if (HID_KEY_CHARS[code]) {
+            const ch = shift ? HID_KEY_CHARS[code].toUpperCase() : HID_KEY_CHARS[code];
+            hidTypingBuffer += ch;
+            setPerifStatus(`⌨️ Zweittastatur-Entwurf: "${hidTypingBuffer}" (Enter = Senden)`);
+          }
+        }
+      }
+      prevHidKeys = currentKeys;
+    });
+  } catch (err) {
+    setPerifStatus(`⚠️ OS-Schutz für direkte Tastatur (${err.message}). Tipp: Nutze ein USB-Numpad oder die Globalen Hotkeys darunter.`);
+  }
+});
+
+btnConnectHidMouse?.addEventListener('click', async () => {
+  if (activeHidMouse) {
+    try {
+      await activeHidMouse.close();
+    } catch (e) {}
+    activeHidMouse = null;
+    btnConnectHidMouse.textContent = '🖱️ Verbinden';
+    btnConnectHidMouse.classList.remove('disconnect');
+    setPerifStatus('ℹ️ Zweitmaus getrennt.');
+    return;
+  }
+
+  if (!navigator.hid) {
+    setPerifStatus('❌ WebHID wird in dieser Umgebung nicht unterstützt.');
+    return;
+  }
+
+  let target = null;
+  try {
+    if (selPerifMouse?.value) target = JSON.parse(selPerifMouse.value);
+  } catch (e) {}
+  await window.omnichat.setHidTarget(target);
+
+  try {
+    const filters = target?.vendorId
+      ? [{ vendorId: target.vendorId, ...(target.productId ? { productId: target.productId } : {}) }]
+      : [{ usagePage: 0x01, usage: 0x02 }];
+    const devices = await navigator.hid.requestDevice({ filters });
+    if (!devices || devices.length === 0) {
+      setPerifStatus('⚠️ Keine Zweitmaus ausgewählt.');
+      return;
+    }
+    const dev = devices[0];
+    await dev.open();
+    activeHidMouse = dev;
+    prevMouseButtons = 0;
+    btnConnectHidMouse.textContent = '⏹ Trennen';
+    btnConnectHidMouse.classList.add('disconnect');
+    setPerifStatus(`✅ Zweitmaus aktiv: ${dev.productName || 'USB HID Mouse'} (Scroll = Chat, Links = Pin, Rechts = Unpin)`);
+
+    dev.addEventListener('inputreport', async (event) => {
+      const view = new DataView(event.data.buffer);
+      const buttons = view.byteLength > 0 ? view.getUint8(0) : 0;
+      const wheel = view.byteLength >= 4 ? view.getInt8(3) : 0;
+
+      if (wheel !== 0 && chatFeed) {
+        chatFeed.scrollTop -= wheel * 42;
+      }
+      if ((buttons & 1) && !(prevMouseButtons & 1)) {
+        await window.omnichat.triggerPeripheralAction({ action: 'pin-last' });
+        setPerifStatus('📌 Zweitmaus-Klick: Letzte Nachricht in OBS gepinnt!');
+      } else if ((buttons & 2) && !(prevMouseButtons & 2)) {
+        await window.omnichat.triggerPeripheralAction({ action: 'unpin' });
+        setPerifStatus('❌ Zweitmaus-Rechtsklick: OBS-Pin ausgeblendet.');
+      }
+      prevMouseButtons = buttons;
+    });
+  } catch (err) {
+    setPerifStatus(`⚠️ Zweitmaus-Zugriff blockiert (${err.message}).`);
+  }
+});
+
+btnSaveHotkeys?.addEventListener('click', async () => {
+  const payload = {
+    keyboardMode: selPerifKeyboardMode?.value || 'chat_and_macros',
+    globalHotkeysEnabled: true,
+    hotkeys: {
+      pinLast: document.getElementById('hkPinLast')?.value.trim() || 'CommandOrControl+Alt+P',
+      unpin: document.getElementById('hkUnpin')?.value.trim() || 'CommandOrControl+Alt+U',
+      clearChat: document.getElementById('hkClearChat')?.value.trim() || 'CommandOrControl+Alt+C',
+      toggleCompact: document.getElementById('hkToggleCompact')?.value.trim() || 'CommandOrControl+Alt+K'
+    }
+  };
+  await window.omnichat.updateGlobalHotkeys(payload);
+  btnSaveHotkeys.textContent = '✅ Globale Hotkeys aktiv!';
+  setPerifStatus('✅ Globale Hotkeys registriert (funktionieren auch während Vollbildspielen).');
+  setTimeout(() => {
+    btnSaveHotkeys.textContent = '💾 Globale Hotkeys aktivieren';
+  }, 1800);
 });
 
 // IPC Listeners
