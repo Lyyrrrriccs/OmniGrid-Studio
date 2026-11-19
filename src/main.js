@@ -6,6 +6,7 @@ const { YouTubeConnector } = require('./connectors/youtube');
 const { TikTokConnector } = require('./connectors/tiktok');
 const { ObsServer } = require('./obs_server');
 const { EmoteManager } = require('./emote_manager');
+const { SpotifyBridge } = require('./spotify_bridge');
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -17,6 +18,8 @@ const youtube = new YouTubeConnector();
 const tiktok = new TikTokConnector();
 const obsServer = new ObsServer(4588);
 const emoteManager = new EmoteManager();
+const spotify = new SpotifyBridge();
+let lastSongReplyAt = 0;
 
 // Global deduplication ring buffer across all connectors & reconnects
 const globalSeenMsgKeys = new Set();
@@ -93,6 +96,8 @@ function getDefaultConfig() {
     autoConnectOnStart: true,
     soundAlerts: true,
     compactChat: false,
+    spotifyEnabled: true,
+    spotifyAutoCommand: true,
     hideBots: false,
     collapseSpam: true,
     platformIndicatorStyle: 'icon_badge',
@@ -403,6 +408,28 @@ function forwardChatMessage(msg) {
 
     obsServer.broadcastChat(enriched);
     broadcastToWindows('chat-message', enriched);
+
+    // Auto-reply to !song / !music in Twitch chat (15s anti-spam cooldown)
+    if (
+      cfg.spotifyEnabled !== false &&
+      cfg.spotifyAutoCommand !== false &&
+      !msg.isSelf &&
+      msg.platform === 'twitch' &&
+      /^!(song|music|musik)\b/i.test(String(msg.text || '').trim())
+    ) {
+      const now = Date.now();
+      if (now - lastSongReplyAt > 15000 && spotify.currentTrack?.running && spotify.currentTrack?.title) {
+        lastSongReplyAt = now;
+        const songText = spotify.currentTrack.artist
+          ? `🎵 Aktueller Song: ${spotify.currentTrack.artist} – ${spotify.currentTrack.title}`
+          : `🎵 Aktueller Song: ${spotify.currentTrack.title}`;
+        try {
+          if (twitch.connected && twitch.canWrite) {
+            twitch.sendMessage(songText, msg.id);
+          }
+        } catch (e) {}
+      }
+    }
   } catch (e) {}
 }
 
@@ -814,13 +841,57 @@ app.whenReady().then(async () => {
       return { ok: true, sent: text };
     }
 
+    if (act === 'spotify-next') {
+      return await spotify.control('next');
+    }
+    if (act === 'spotify-prev') {
+      return await spotify.control('previous');
+    }
+    if (act === 'spotify-playpause') {
+      return await spotify.control('playpause');
+    }
+    if (act === 'spotify-announce') {
+      if (!spotify.currentTrack?.running || !spotify.currentTrack?.title) {
+        return { ok: false, error: 'Aktuell läuft kein Spotify-Track.' };
+      }
+      const songText = spotify.currentTrack.artist
+        ? `🎵 Aktueller Song: ${spotify.currentTrack.artist} – ${spotify.currentTrack.title}`
+        : `🎵 Aktueller Song: ${spotify.currentTrack.title}`;
+      twitch.sendMessage(songText, null);
+      return { ok: true, sent: songText };
+    }
+
     return { ok: false, error: `Unbekannte Stream-Deck-Aktion: ${act}` };
   };
+
+  spotify.on('track', (track) => {
+    obsServer.broadcastSpotify(track);
+    broadcastToWindows('spotify-track', track);
+  });
+
+  ipcMain.handle('spotify-control', async (_ev, action) => {
+    if (action === 'announce') {
+      if (!spotify.currentTrack?.running || !spotify.currentTrack?.title) {
+        return { ok: false, error: 'Aktuell läuft kein Spotify-Track.' };
+      }
+      const songText = spotify.currentTrack.artist
+        ? `🎵 Aktueller Song: ${spotify.currentTrack.artist} – ${spotify.currentTrack.title}`
+        : `🎵 Aktueller Song: ${spotify.currentTrack.title}`;
+      try {
+        twitch.sendMessage(songText, null);
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    }
+    return await spotify.control(action);
+  });
 
   createMainWindow();
 
   mainWindow.webContents.on('did-finish-load', () => {
     const saved = loadConfig();
+    spotify.start(saved.spotifyEnabled !== false);
     if (saved.emoteSettings) {
       emoteManager.updateSettings(saved.emoteSettings);
     }
@@ -840,6 +911,8 @@ app.whenReady().then(async () => {
       config: saved,
       obsUrl: `http://127.0.0.1:${obsPort}`,
       obsDockUrl: `http://127.0.0.1:${obsPort}/dock`,
+      spotifyObsUrl: `http://127.0.0.1:${obsPort}/spotify`,
+      spotifyTrack: spotify.currentTrack,
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
       platformStatus,
       isAlwaysOnTop,

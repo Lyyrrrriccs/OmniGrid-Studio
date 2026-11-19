@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   onDemoState: (cb) => ipcRenderer.on('demo-state', (_ev, active) => cb(active)),
   onDiagLog: (cb) => ipcRenderer.on('diag-log', (_ev, entry) => cb(entry)),
   onStreamDeckCommand: (cb) => ipcRenderer.on('streamdeck-command', (_ev, payload) => cb(payload)),
+  onSpotifyTrack: (cb) => ipcRenderer.on('spotify-track', (_ev, track) => cb(track)),
 
   saveProfile: (config) => ipcRenderer.invoke('save-profile', config),
   openStandaloneChat: (snapLeftFullHeight) => ipcRenderer.invoke('open-standalone-chat', snapLeftFullHeight),
@@ -38,5 +39,6 @@ contextBridge.exposeInMainWorld('omnichat', {
   listPeripherals: () => ipcRenderer.invoke('list-peripherals'),
   setHidTarget: (target) => ipcRenderer.invoke('set-hid-target', target),
   updateGlobalHotkeys: (cfg) => ipcRenderer.invoke('update-global-hotkeys', cfg),
-  triggerPeripheralAction: (payload) => ipcRenderer.invoke('trigger-peripheral-action', payload)
+  triggerPeripheralAction: (payload) => ipcRenderer.invoke('trigger-peripheral-action', payload),
+  spotifyControl: (action) => ipcRenderer.invoke('spotify-control', action)
 });

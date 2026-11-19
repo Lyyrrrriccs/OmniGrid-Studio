@@ -714,15 +714,125 @@ const OBS_CUSTOM_DOCK_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_SPOTIFY_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniStream Spotify Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #fff;
+      padding: 8px;
+      overflow: hidden;
+    }
+    .sp-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(29, 185, 84, 0.5);
+      border-left: 4px solid #1db954;
+      border-radius: 10px;
+      padding: 8px 14px 8px 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      max-width: 420px;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .sp-card.paused { opacity: 0.45; }
+    .sp-card.hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
+    .sp-cover {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #1db954;
+      flex-shrink: 0;
+    }
+    .sp-cover-fallback {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      background: rgba(29, 185, 84, 0.2);
+      border: 1px solid rgba(29, 185, 84, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .sp-meta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .sp-tag { font-size: 9.5px; font-weight: 800; color: #1db954; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sp-title { font-size: 14px; font-weight: 800; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sp-artist { font-size: 12px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div class="sp-card hidden" id="spCard">
+    <img class="sp-cover" id="spCover" style="display:none;" alt="" />
+    <div class="sp-cover-fallback" id="spFallback">🎵</div>
+    <div class="sp-meta">
+      <span class="sp-tag" id="spTag">SPOTIFY • LIVE</span>
+      <strong class="sp-title" id="spTitle">-</strong>
+      <span class="sp-artist" id="spArtist">-</span>
+    </div>
+  </div>
+  <script>
+    const card = document.getElementById('spCard');
+    const cover = document.getElementById('spCover');
+    const fallback = document.getElementById('spFallback');
+    const tag = document.getElementById('spTag');
+    const title = document.getElementById('spTitle');
+    const artist = document.getElementById('spArtist');
+
+    function renderTrack(t) {
+      if (!t || !t.running || !t.title) {
+        card.classList.add('hidden');
+        return;
+      }
+      card.classList.remove('hidden');
+      card.classList.toggle('paused', !t.playing);
+      tag.textContent = t.playing ? 'SPOTIFY • NOW PLAYING' : 'SPOTIFY • PAUSIERT';
+      title.textContent = t.title;
+      artist.textContent = t.artist || 'Spotify';
+      if (t.artworkUrl) {
+        cover.src = t.artworkUrl;
+        cover.style.display = 'block';
+        fallback.style.display = 'none';
+      } else {
+        cover.style.display = 'none';
+        fallback.style.display = 'flex';
+      }
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'spotify') renderTrack(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
+
     this.server = null;
     this.wss = null;
     this.recentMessages = [];
     this.pinnedMessage = null;
     this.currentAppearance = null;
     this.currentStatus = null;
+    this.currentSpotify = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
   }
@@ -775,6 +885,8 @@ class ObsServer {
         });
         if (urlPath === '/dock') {
           res.end(OBS_CUSTOM_DOCK_HTML);
+        } else if (urlPath === '/spotify') {
+          res.end(OBS_SPOTIFY_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -788,6 +900,9 @@ class ObsServer {
         }
         if (this.currentStatus) {
           ws.send(JSON.stringify({ type: 'status', data: this.currentStatus }));
+        }
+        if (this.currentSpotify) {
+          ws.send(JSON.stringify({ type: 'spotify', data: this.currentSpotify }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -815,6 +930,11 @@ class ObsServer {
         resolve(this.port);
       });
     });
+  }
+
+  broadcastSpotify(track) {
+    this.currentSpotify = track;
+    this._broadcast({ type: 'spotify', data: track });
   }
 
   broadcastAppearance(appearance) {

@@ -1755,6 +1755,51 @@ body.hide-platicons .msg-plat-dot {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+/* SPOTIFY NOW PLAYING SIDEBAR CARD */
+.sp-now-playing-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(29, 185, 84, 0.12);
+  border: 1px solid rgba(29, 185, 84, 0.35);
+  border-left: 3.5px solid #1db954;
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-top: 4px;
+}
+
+.sp-np-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sp-np-info strong {
+  font-size: 11.5px;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-np-info span {
+  font-size: 10px;
+  color: #86efac;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-np-controls {
+  display: flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+
 
 
 
