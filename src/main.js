@@ -87,6 +87,9 @@ function appendDiagLog(platform, level, message) {
 function getDefaultConfig() {
   return {
     streamerName: '',
+    keywordAlerts: '',
+    keywordSound: true,
+    keywordColor: '#f97316',
     autoConnectOnStart: true,
     soundAlerts: true,
     compactChat: false,
@@ -333,6 +336,22 @@ function isMentionForStreamer(text, cfg) {
   return false;
 }
 
+function matchKeywordAlert(text, cfg) {
+  if (!text || !cfg?.keywordAlerts) return null;
+  const lower = text.toLowerCase();
+  const terms = String(cfg.keywordAlerts)
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s.length >= 2);
+
+  for (const kw of terms) {
+    if (lower.includes(kw)) {
+      return kw;
+    }
+  }
+  return null;
+}
+
 function forwardChatMessage(msg) {
   try {
     const cfg = loadConfig();
@@ -356,11 +375,15 @@ function forwardChatMessage(msg) {
       tiktokEmotes: msg.tiktokEmotes || null
     });
 
+    const matchedKeyword = matchKeywordAlert(msg.text, cfg);
+
     const enriched = {
       ...msg,
       timestamp: Number(msg.timestamp || Date.now()),
       tokens,
-      isMention: Boolean(msg.isMention || isMentionForStreamer(msg.text, cfg))
+      isMention: Boolean(msg.isMention || isMentionForStreamer(msg.text, cfg)),
+      isKeywordAlert: Boolean(matchedKeyword),
+      matchedKeyword: matchedKeyword || ''
     };
 
     obsServer.broadcastChat(enriched);

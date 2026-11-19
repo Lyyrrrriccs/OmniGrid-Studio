@@ -63,6 +63,17 @@
             <label>Dein Streamer-Name (für @Mention-Alarm)</label>
             <input type="text" id="inputStreamerName" placeholder="z.B. Tobias" />
 
+            <label style="margin-top: 6px;">🔍 Eigene Keyword-Alarme (kommagetrennt)</label>
+            <div class="setting-row-inline" style="margin-top: 2px;">
+              <input type="text" id="inputKeywordAlerts" placeholder="z.B. frage, lobby, mikrofon, bug" style="flex: 1;" />
+              <input type="color" id="clrKeywordHighlight" value="#f97316" title="Highlight-Farbe für Keyword-Treffer" />
+            </div>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkKeywordSound" checked />
+              <span>🔔 Sound-Ping bei Keyword-Treffer</span>
+            </label>
+
             <label class="checkbox-row">
               <input type="checkbox" id="chkAutoConnect" checked />
               <span>Beim App-Start automatisch verbinden & auf Live-Start warten</span>

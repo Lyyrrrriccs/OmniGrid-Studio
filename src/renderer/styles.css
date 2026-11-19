@@ -1715,5 +1715,17 @@ body.hide-platicons .msg-plat-dot {
   font-size: 10px;
 }
 
+.keyword-pill {
+  display: inline-block;
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #0b0f19;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: baseline;
+}
+
+
 
 
