@@ -647,6 +647,138 @@ app.whenReady().then(async () => {
     }
   };
 
+  // Handle Elgato Stream Deck & Bitfocus Companion REST API requests (/api/streamdeck/*)
+  obsServer.onStreamDeckApi = async (action, params = {}, body = {}) => {
+    const act = String(action || 'status').toLowerCase();
+    appendDiagLog('system', 'info', `Stream Deck Aktion ausgeführt: /${act}`);
+
+    if (act === 'status') {
+      const cfg = loadConfig();
+      return {
+        ok: true,
+        platforms: platformStatus,
+        demoActive,
+        isAlwaysOnTop,
+        compactChat: Boolean(cfg.compactChat),
+        soundAlerts: cfg.soundAlerts !== false,
+        pinnedMessage: obsServer.pinnedMessage || null
+      };
+    }
+
+    if (act === 'pin-last') {
+      const lastMsg = obsServer.recentMessages[obsServer.recentMessages.length - 1] || null;
+      if (!lastMsg) {
+        return { ok: false, error: 'Keine aktuelle Chatnachricht zum Anpinnen vorhanden.' };
+      }
+      obsServer.broadcastPin(lastMsg);
+      broadcastToWindows('streamdeck-command', { command: 'pin', msg: lastMsg });
+      return { ok: true, pinned: lastMsg.author };
+    }
+
+    if (act === 'unpin') {
+      obsServer.broadcastPin(null);
+      broadcastToWindows('streamdeck-command', { command: 'unpin' });
+      return { ok: true };
+    }
+
+    if (act === 'clear-chat') {
+      globalSeenMsgKeys.clear();
+      obsServer.clearChat();
+      broadcastToWindows('streamdeck-command', { command: 'clear-chat' });
+      return { ok: true };
+    }
+
+    if (act === 'toggle-compact') {
+      const cfg = loadConfig();
+      cfg.compactChat = !cfg.compactChat;
+      saveConfig(cfg);
+      broadcastToWindows('streamdeck-command', { command: 'set-compact', value: cfg.compactChat });
+      return { ok: true, compactChat: cfg.compactChat };
+    }
+
+    if (act === 'toggle-sound') {
+      const cfg = loadConfig();
+      cfg.soundAlerts = cfg.soundAlerts === false ? true : false;
+      saveConfig(cfg);
+      broadcastToWindows('streamdeck-command', { command: 'set-sound', value: cfg.soundAlerts });
+      return { ok: true, soundAlerts: cfg.soundAlerts };
+    }
+
+    if (act === 'toggle-always-on-top') {
+      const targetWin = chatDockWindow && !chatDockWindow.isDestroyed() ? chatDockWindow : mainWindow;
+      if (targetWin && !targetWin.isDestroyed()) {
+        const nextState = !targetWin.isAlwaysOnTop();
+        targetWin.setAlwaysOnTop(nextState, 'floating');
+        if (targetWin === mainWindow) isAlwaysOnTop = nextState;
+        broadcastToWindows('streamdeck-command', { command: 'set-always-on-top', value: nextState });
+        return { ok: true, isAlwaysOnTop: nextState };
+      }
+      return { ok: false, error: 'Kein aktives Fenster gefunden.' };
+    }
+
+    if (act === 'toggle-demo') {
+      if (demoActive) stopDemoSimulation();
+      else startDemoSimulation();
+      return { ok: true, demoActive };
+    }
+
+    if (act === 'reconnect') {
+      const plat = String(params.platform || body.platform || 'all').toLowerCase();
+      stopDemoSimulation();
+      if (plat === 'twitch' || plat === 'all') twitch.reconnect();
+      if (plat === 'youtube' || plat === 'all') await youtube.reconnect();
+      if (plat === 'tiktok' || plat === 'all') await tiktok.reconnect();
+      return { ok: true, reconnected: plat };
+    }
+
+    if (act === 'toggle-platform') {
+      const plat = String(params.platform || body.platform || '').toLowerCase();
+      if (!['twitch', 'youtube', 'tiktok'].includes(plat)) {
+        return { ok: false, error: 'Ungültige Plattform (erwartet: twitch, youtube oder tiktok).' };
+      }
+      const cfg = loadConfig();
+      const next = cfg[`${plat}Enabled`] === false;
+      cfg[`${plat}Enabled`] = next;
+      saveConfig(cfg);
+      platformStatus[plat].enabled = next;
+      if (!next) {
+        if (plat === 'twitch') twitch.disconnect();
+        else if (plat === 'youtube') youtube.disconnect();
+        else if (plat === 'tiktok') tiktok.disconnect();
+      } else if (!demoActive) {
+        connectSinglePlatform(plat, cfg);
+      }
+      obsServer.broadcastStatus(platformStatus);
+      broadcastToWindows('platform-status', platformStatus);
+      broadcastToWindows('streamdeck-command', { command: 'sync-config', config: cfg });
+      return { ok: true, platform: plat, enabled: next };
+    }
+
+    if (act === 'send') {
+      const text = String(params.text || body.text || '').trim();
+      if (!text) return { ok: false, error: 'Parameter "text" fehlt.' };
+      const cfg = loadConfig();
+      if (demoActive) {
+        forwardChatMessage({
+          id: `sd_demo_${Date.now()}`,
+          platform: 'twitch',
+          channel: cfg.twitchChannel || 'demo-live',
+          author: cfg.streamerName || cfg.twitchUsername || 'Streamer (Du)',
+          color: '#34d399',
+          badges: ['STREAMER'],
+          text,
+          isSelf: true,
+          timestamp: Date.now()
+        });
+        return { ok: true, sent: text, demo: true };
+      }
+      twitch.sendMessage(text, null);
+      return { ok: true, sent: text };
+    }
+
+    return { ok: false, error: `Unbekannte Stream-Deck-Aktion: ${act}` };
+  };
+
   createMainWindow();
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -664,12 +796,13 @@ app.whenReady().then(async () => {
     platformStatus.youtube.enabled = saved.youtubeEnabled !== false;
     platformStatus.tiktok.enabled = saved.tiktokEnabled !== false;
 
-    appendDiagLog('system', 'info', `OmniStream Chat gestartet — OBS Server aktiv auf Port ${obsPort}`);
+    appendDiagLog('system', 'info', `OmniStream Chat gestartet — OBS & Stream Deck Server aktiv auf Port ${obsPort}`);
 
     mainWindow.webContents.send('init-state', {
       config: saved,
       obsUrl: `http://127.0.0.1:${obsPort}`,
       obsDockUrl: `http://127.0.0.1:${obsPort}/dock`,
+      streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
       platformStatus,
       isAlwaysOnTop,
       demoActive,

@@ -724,12 +724,51 @@ class ObsServer {
     this.currentAppearance = null;
     this.currentStatus = null;
     this.onClientAction = null;
+    this.onStreamDeckApi = null;
   }
 
   start() {
     return new Promise((resolve) => {
       this.server = http.createServer((req, res) => {
-        const urlPath = (req.url || '/').split('?')[0];
+        const parsedUrl = new URL(req.url || '/', `http://127.0.0.1:${this.port}`);
+        const urlPath = parsedUrl.pathname;
+
+        if (urlPath.startsWith('/api/streamdeck')) {
+          const action = urlPath.replace(/^\/api\/streamdeck\/?/, '').replace(/\/+$/, '') || 'status';
+          const params = Object.fromEntries(parsedUrl.searchParams.entries());
+          let rawBody = '';
+          req.on('data', (chunk) => {
+            rawBody += chunk;
+            if (rawBody.length > 65536) rawBody = rawBody.slice(0, 65536);
+          });
+          req.on('end', async () => {
+            let body = {};
+            if (rawBody) {
+              try {
+                body = JSON.parse(rawBody);
+              } catch (e) {}
+            }
+            try {
+              const result = this.onStreamDeckApi
+                ? await this.onStreamDeckApi(action, params, body)
+                : { ok: false, error: 'Stream Deck API handler not registered.' };
+              res.writeHead(result?.ok === false ? 400 : 200, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
+              });
+              res.end(JSON.stringify(result || { ok: true }));
+            } catch (err) {
+              res.writeHead(500, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Access-Control-Allow-Origin': '*'
+              });
+              res.end(JSON.stringify({ ok: false, error: err.message }));
+            }
+          });
+          return;
+        }
+
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'no-cache'
