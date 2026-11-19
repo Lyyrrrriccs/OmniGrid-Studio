@@ -1265,11 +1265,35 @@ function renderDiagnosticLogs() {
     .join('');
 }
 
+let eventsExpanded = false;
+const eventTickerBar = document.getElementById('eventTickerBar');
+const btnToggleEvents = document.getElementById('btnToggleEvents');
+const btnToggleEventsTitle = document.getElementById('btnToggleEventsTitle');
+
+function toggleEventsDrawer() {
+  eventsExpanded = !eventsExpanded;
+  eventTickerBar?.classList.toggle('expanded', eventsExpanded);
+  renderEventTicker();
+}
+
+btnToggleEvents?.addEventListener('click', toggleEventsDrawer);
+btnToggleEventsTitle?.addEventListener('click', toggleEventsDrawer);
+
 function renderEventTicker() {
   if (!eventTickerRow) return;
   if (streamerEvents.length === 0) {
     eventTickerRow.innerHTML = `<span class="ticker-empty">Subs, TikTok Gifts, Follows & SuperChats erscheinen hier</span>`;
+    btnToggleEvents?.classList.add('hidden');
     return;
+  }
+
+  if (btnToggleEvents) {
+    if (streamerEvents.length > 3) {
+      btnToggleEvents.classList.remove('hidden');
+      btnToggleEvents.textContent = eventsExpanded ? '▴ Einklappen' : `▾ Alle (${streamerEvents.length})`;
+    } else {
+      btnToggleEvents.classList.add('hidden');
+    }
   }
 
   const icons = {
@@ -1282,8 +1306,9 @@ function renderEventTicker() {
     highlighted_msg: '✨'
   };
 
+  const visibleCount = eventsExpanded ? 25 : 3;
   eventTickerRow.innerHTML = streamerEvents
-    .slice(-8)
+    .slice(-visibleCount)
     .reverse()
     .map((ev) => {
       const t = String(ev.type || '').toLowerCase();

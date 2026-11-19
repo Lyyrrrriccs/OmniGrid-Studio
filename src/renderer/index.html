@@ -658,12 +658,13 @@
 
     <!-- MAIN STREAMER DASHBOARD & UNIFIED CHAT -->
     <main class="chat-panel" id="chatPanel">
-      <!-- LIVE STREAMER EVENT TICKER (Follows, Subs, TikTok Gifts, SuperChats, Raids) -->
-      <div class="event-ticker-bar">
-        <span class="ticker-title">🎉 EVENTS</span>
+      <!-- LIVE STREAMER EVENT TICKER (Collapsible: shows last 3 events by default, expands on click) -->
+      <div class="event-ticker-bar" id="eventTickerBar">
+        <button class="ticker-title" id="btnToggleEventsTitle" title="Alle Events ausklappen / einklappen">🎉 EVENTS</button>
         <div class="event-pills-row" id="eventTickerRow">
           <span class="ticker-empty">Subs, TikTok Gifts, Follows & SuperChats erscheinen hier</span>
         </div>
+        <button class="btn-ticker-toggle hidden" id="btnToggleEvents" title="Alle Events ausklappen / einklappen">▾ Alle (0)</button>
       </div>
 
       <!-- Filter & Search Bar (Section 9: Filter by Platform, Event, Role, Bot Filter, Spam Collapse, Search) -->
