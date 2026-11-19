@@ -1,0 +1,676 @@
+const WebSocket = require('ws');
+const https = require('https');
+const { EventEmitter } = require('events');
+
+/**
+ * Connects to Twitch Chat via official IRC WebSocket (wss://irc-ws.chat.twitch.tv:443).
+ * Parses all 7 required event types distinctly:
+ * - sub (Neues Sub)
+ * - resub (Resub mit Monats-Laufzeit)
+ * - subgift (Gifted Subs mit Anzahl & Schenkendem + MysteryGift-Deduplizierung)
+ * - bits (Bits / Cheers mit Bit-Anzahl)
+ * - raid (Raid mit Kanalname & Zuschauerzahl)
+ * - highlighted_msg (Durch Kanalpunkte hervorgehobene Chatnachricht)
+ */
+class TwitchConnector extends EventEmitter {
+  constructor() {
+    super();
+    this.ws = null;
+    this.channel = null;
+    this.oauthToken = null;
+    this.authWarning = '';
+    this.canWrite = false;
+    this.username = null;
+    this.connected = false;
+    this.reconnectTimer = null;
+    this.shouldReconnect = false;
+    this.reconnectAttempts = 0;
+    this.pingInterval = null;
+    this.statsInterval = null;
+    this.viewers = 0;
+    this.seenIds = new Set();
+    // Tracks recent mass subgift senders (giver -> timestamp) to prevent duplicate single subgift lines
+    this.recentMassGiftSenders = new Map();
+  }
+
+  static normalizeChannelName(input) {
+    let raw = String(input || '').trim();
+    if (!raw) return '';
+    // Extract username if user pasted a full URL like https://www.twitch.tv/lyrrrrics or twitch.tv/lyrrrrics/chat
+    const urlMatch = raw.match(/twitch\.tv\/(?:popout\/)?([a-zA-Z0-9_]+)/i);
+    if (urlMatch && urlMatch[1]) {
+      raw = urlMatch[1];
+    }
+    return raw.replace(/^#/, '').replace(/^@/, '').split(/[/?&#\s]/)[0].toLowerCase();
+  }
+
+  async connect({ channel, oauthToken = '', username = '' }) {
+    this.disconnect(false);
+    const cleanChannel = TwitchConnector.normalizeChannelName(channel);
+    if (!cleanChannel) return;
+
+    this.channel = cleanChannel;
+    const rawToken = oauthToken ? oauthToken.trim() : '';
+    const cleanUser = TwitchConnector.normalizeChannelName(username) || cleanChannel;
+    this.username = cleanUser;
+    this.authWarning = '';
+    this.shouldReconnect = true;
+    this.reconnectAttempts = 0;
+
+    // Check if the user accidentally entered an OBS Stream Key ("live_12345_xxxx") instead of a Chat OAuth Token
+    if (/^live_\d+_/i.test(rawToken)) {
+      this.oauthToken = '';
+      this.canWrite = false;
+      this.authWarning =
+        'Hinweis: Du hast deinen OBS-Stream-Key ("live_...") statt eines Chat-OAuth-Tokens eingegeben! Chat-Empfang läuft jetzt aktiv im Lese-Modus.';
+    } else if (rawToken) {
+      const check = await this._validateToken(rawToken);
+      if (!this.shouldReconnect) return;
+      if (!check.ok) {
+        this.oauthToken = '';
+        this.canWrite = false;
+        this.authWarning = check.reason;
+      } else {
+        this.oauthToken = rawToken;
+        if (check.login) {
+          this.username = check.login.toLowerCase();
+        }
+        this.canWrite = true;
+      }
+    } else {
+      this.oauthToken = '';
+      this.canWrite = false;
+    }
+
+    this._openSocket();
+  }
+
+  _validateToken(rawToken) {
+    return new Promise((resolve) => {
+      const cleanTok = rawToken.replace(/^oauth:/i, '').trim();
+      if (!cleanTok) return resolve({ ok: false, reason: 'Leerer Token.' });
+
+      const req = https.get(
+        'https://id.twitch.tv/oauth2/validate',
+        {
+          headers: { Authorization: `OAuth ${cleanTok}` },
+          timeout: 4500
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (c) => (body += c));
+          res.on('end', () => {
+            if (res.statusCode === 401) {
+              return resolve({
+                ok: false,
+                reason:
+                  'Twitch Chat-Token ist abgelaufen oder ungültig! Lese-Modus aktiv — bitte neuen Token mit "chat:read" & "chat:edit" holen.'
+              });
+            }
+            try {
+              const info = JSON.parse(body);
+              const scopes = Array.isArray(info.scopes) ? info.scopes : [];
+              const hasRead = scopes.includes('chat:read');
+              const hasEdit = scopes.includes('chat:edit');
+              if (!hasRead || !hasEdit) {
+                return resolve({
+                  ok: false,
+                  reason:
+                    'Dein Twitch-Token hat keine Chat-Rechte (scopes: chat:read / chat:edit fehlen)! Chat läuft im Lese-Modus — bitte auf twitchtokengenerator.com "Bot Chat Token" wählen.'
+                });
+              }
+              return resolve({ ok: true, login: info.login || '' });
+            } catch (e) {
+              return resolve({ ok: true, login: '' });
+            }
+          });
+        }
+      );
+      req.on('error', () => resolve({ ok: true, login: '' }));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ ok: true, login: '' });
+      });
+    });
+  }
+
+  reconnect() {
+    if (!this.channel) return;
+    this.connect({
+      channel: this.channel,
+      oauthToken: this.oauthToken,
+      username: this.username
+    });
+  }
+
+  _rememberId(id) {
+    if (!id) return false;
+    if (this.seenIds.has(id)) return true;
+    this.seenIds.add(id);
+    if (this.seenIds.size > 1200) {
+      const oldest = this.seenIds.values().next().value;
+      this.seenIds.delete(oldest);
+    }
+    return false;
+  }
+
+  _openSocket() {
+    clearTimeout(this.reconnectTimer);
+    this.emit('status', {
+      platform: 'twitch',
+      status: this.reconnectAttempts > 0 ? 'reconnecting' : 'connecting',
+      channel: this.channel,
+      viewers: this.viewers,
+      error: this.authWarning || '',
+      attempt: this.reconnectAttempts
+    });
+
+    try {
+      this.ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    } catch (err) {
+      this._scheduleReconnect(err.message);
+      return;
+    }
+
+    this.ws.on('open', () => {
+      this.reconnectAttempts = 0;
+      this.ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
+
+      if (this.oauthToken) {
+        const cleanTok = this.oauthToken.replace(/^oauth:/i, '').trim();
+        const pass = `oauth:${cleanTok}`;
+        const nick = this.username || this.channel || 'streamer';
+        this.ws.send(`PASS ${pass}`);
+        this.ws.send(`NICK ${nick}`);
+      } else {
+        const anonNick = `justinfan${Math.floor(10000 + Math.random() * 89999)}`;
+        this.ws.send('PASS SCHMOOPIIE');
+        this.ws.send(`NICK ${anonNick}`);
+      }
+
+      this.ws.send(`JOIN #${this.channel}`);
+    });
+
+    this.ws.on('message', (data) => {
+      const raw = data.toString();
+      const lines = raw.split('\r\n');
+      for (const line of lines) {
+        if (!line) continue;
+        if (line.startsWith('PING')) {
+          this.ws.send('PONG :tmi.twitch.tv');
+          continue;
+        }
+        // Detect ANY Twitch IRC auth rejection and immediately fall back to anonymous read-only mode!
+        if (
+          line.includes('Login authentication failed') ||
+          line.includes('Login unsuccessful') ||
+          line.includes('Improperly formatted auth')
+        ) {
+          this.oauthToken = '';
+          this.canWrite = false;
+          this.authWarning =
+            'Twitch OAuth-Token wurde abgelehnt (Rechte/Ablauf) — Automatisch im Lese-Modus verbunden (Chat lesen aktiv; zum Schreiben "Bot Chat Token" neu generieren).';
+          try {
+            this.ws.removeAllListeners();
+            this.ws.close();
+          } catch (e) {}
+          this._openSocket();
+          return;
+        }
+
+        // Confirm real IRC login on 001 Welcome before marking connected
+        if (!this.connected && line.includes(' 001 ')) {
+          this.connected = true;
+          this.canWrite = Boolean(this.oauthToken);
+          this.emit('status', {
+            platform: 'twitch',
+            status: 'connected',
+            channel: this.channel,
+            canWrite: this.canWrite,
+            error: this.authWarning || '',
+            viewers: this.viewers
+          });
+
+          this._pollViewerCount();
+          clearInterval(this.statsInterval);
+          this.statsInterval = setInterval(() => this._pollViewerCount(), 30000);
+
+          clearInterval(this.pingInterval);
+          this.pingInterval = setInterval(() => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+              this.ws.send('PING :tmi.twitch.tv');
+            }
+          }, 45000);
+          continue;
+        }
+
+        try {
+          this._parseIrcLine(line);
+        } catch (e) {}
+      }
+    });
+
+    this.ws.on('close', () => {
+      this.connected = false;
+      clearInterval(this.pingInterval);
+      clearInterval(this.statsInterval);
+
+      if (this.shouldReconnect) {
+        this._scheduleReconnect('Verbindung getrennt – verbinde automatisch neu...');
+      } else {
+        this.emit('status', {
+          platform: 'twitch',
+          status: 'disconnected',
+          channel: this.channel,
+          viewers: 0
+        });
+      }
+    });
+
+    this.ws.on('error', (err) => {
+      this.emit('status', {
+        platform: 'twitch',
+        status: this.shouldReconnect ? 'reconnecting' : 'error',
+        channel: this.channel,
+        error: err.message,
+        viewers: this.viewers
+      });
+    });
+  }
+
+  _scheduleReconnect(reason = '') {
+    if (!this.shouldReconnect) return;
+    this.reconnectAttempts += 1;
+    const delayMs = Math.min(15000, 2000 * Math.pow(1.4, Math.min(5, this.reconnectAttempts - 1)));
+
+    this.emit('status', {
+      platform: 'twitch',
+      status: 'reconnecting',
+      channel: this.channel,
+      error: `${reason} (Versuch #${this.reconnectAttempts})`,
+      viewers: this.viewers
+    });
+
+    clearTimeout(this.reconnectTimer);
+    this.reconnectTimer = setTimeout(() => {
+      if (this.shouldReconnect) this._openSocket();
+    }, delayMs);
+  }
+
+  _pollViewerCount() {
+    if (!this.channel || !this.connected) return;
+    const body = JSON.stringify({
+      query: `query { user(login: "${this.channel}") { stream { viewersCount } } }`
+    });
+
+    const req = https.request(
+      'https://gql.twitch.tv/gql',
+      {
+        method: 'POST',
+        headers: {
+          'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body)
+        },
+        timeout: 4500
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => (data += c));
+        res.on('end', () => {
+          try {
+            const j = JSON.parse(data);
+            const stream = j?.data?.user?.stream;
+            this.viewers = stream ? Number(stream.viewersCount || 0) : 0;
+            this.emit('stats', {
+              platform: 'twitch',
+              viewers: this.viewers,
+              isLive: Boolean(stream)
+            });
+          } catch (e) {}
+        });
+      }
+    );
+    req.on('error', () => {});
+    req.write(body);
+    req.end();
+  }
+
+  _parseTags(line) {
+    let tags = {};
+    let rest = line;
+    if (line.startsWith('@')) {
+      const spaceIdx = line.indexOf(' ');
+      const tagStr = line.slice(1, spaceIdx);
+      rest = line.slice(spaceIdx + 1);
+      for (const pair of tagStr.split(';')) {
+        const eqIdx = pair.indexOf('=');
+        if (eqIdx !== -1) {
+          const k = pair.slice(0, eqIdx);
+          const v = pair.slice(eqIdx + 1).replace(/\\s/g, ' ');
+          tags[k] = v;
+        }
+      }
+    }
+    return { tags, rest };
+  }
+
+  _parseIrcLine(line) {
+    if (line.includes('ROOMSTATE')) {
+      const { tags } = this._parseTags(line);
+      if (tags['room-id']) {
+        this.emit('room-id', tags['room-id']);
+      }
+      return;
+    }
+
+    if (line.includes('CLEARMSG')) {
+      const { tags } = this._parseTags(line);
+      if (tags['target-msg-id']) {
+        this.emit('delete-message', tags['target-msg-id']);
+      }
+      return;
+    }
+
+    // Handle USERNOTICE: sub, resub, subgift, submysterygift, raid
+    if (line.includes('USERNOTICE')) {
+      const { tags, rest } = this._parseTags(line);
+      const msgId = tags['msg-id'] || '';
+      const serverTs = tags['tmi-sent-ts'] ? parseInt(tags['tmi-sent-ts'], 10) : Date.now();
+      const uniqueId = tags.id || `tw_un_${serverTs}_${tags.login || ''}_${msgId}`;
+      if (this._rememberId(uniqueId)) return;
+
+      const login = tags['display-name'] || tags.login || 'TwitchUser';
+      let userText = '';
+      const colonIdx = rest.indexOf(' :');
+      if (colonIdx !== -1) {
+        userText = rest.slice(colonIdx + 2);
+      }
+
+      // 1. Neues Sub
+      if (msgId === 'sub') {
+        const plan = tags['msg-param-sub-plan'] === 'Prime' ? 'Prime' : 'Tier 1';
+        const summary = `Neues Abo (${plan})!`;
+        this._emitUnifiedEventAndChat({
+          id: uniqueId,
+          eventType: 'sub',
+          badgeLabel: `⭐ NEUES SUB (${plan})`,
+          author: login,
+          summary,
+          text: userText ? `${summary} — "${userText}"` : summary,
+          twitchEmotes: tags.emotes || '',
+          timestamp: serverTs
+        });
+        return;
+      }
+
+      // 2. Resub (mit Monats-Laufzeit!)
+      if (msgId === 'resub') {
+        const months = tags['msg-param-cumulative-months'] || tags['msg-param-months'] || '1';
+        const plan = tags['msg-param-sub-plan'] === 'Prime' ? 'Prime' : 'Sub';
+        const summary = `Resub im ${months}. Monat (${plan})!`;
+        this._emitUnifiedEventAndChat({
+          id: uniqueId,
+          eventType: 'resub',
+          badgeLabel: `🌟 RESUB (${months} MONATE)`,
+          author: login,
+          summary,
+          text: userText ? `${summary} — "${userText}"` : summary,
+          twitchEmotes: tags.emotes || '',
+          timestamp: serverTs
+        });
+        return;
+      }
+
+      // 3. Gifted Subs (Mass Subgift Bomb OR Single Subgift, deduplicated!)
+      if (msgId === 'submysterygift') {
+        const massCount = parseInt(tags['msg-param-mass-gift-count'] || '1', 10);
+        this.recentMassGiftSenders.set(login.toLowerCase(), Date.now());
+        const summary = `verschenkt ${massCount}x Subs an die Community!`;
+        this._emitUnifiedEventAndChat({
+          id: uniqueId,
+          eventType: 'subgift',
+          badgeLabel: `🎁 ${massCount}x GIFTED SUBS`,
+          author: login,
+          summary,
+          text: summary,
+          twitchEmotes: '',
+          timestamp: serverTs
+        });
+        return;
+      }
+
+      if (msgId === 'subgift') {
+        const lastMass = this.recentMassGiftSenders.get(login.toLowerCase()) || 0;
+        // If part of a submysterygift bomb within the last 4 seconds, skip individual spam lines!
+        if (Date.now() - lastMass < 4000) return;
+
+        const recipient = tags['msg-param-recipient-display-name'] || tags['msg-param-recipient-user-name'] || 'Zuschauer';
+        const summary = `hat 1 Sub an ${recipient} verschenkt!`;
+        this._emitUnifiedEventAndChat({
+          id: uniqueId,
+          eventType: 'subgift',
+          badgeLabel: `🎁 GIFTED SUB`,
+          author: login,
+          summary,
+          text: summary,
+          twitchEmotes: '',
+          timestamp: serverTs
+        });
+        return;
+      }
+
+      // 4. Raid (mit raidendem Kanal und Zuschauerzahl!)
+      if (msgId === 'raid') {
+        const raider = tags['msg-param-displayName'] || login;
+        const viewerCount = tags['msg-param-viewerCount'] || '1';
+        const summary = `raidet den Kanal mit ${viewerCount} Zuschauern!`;
+        this._emitUnifiedEventAndChat({
+          id: uniqueId,
+          eventType: 'raid',
+          badgeLabel: `🚨 RAID (${viewerCount} ZUSCHAUER)`,
+          author: raider,
+          summary,
+          text: summary,
+          twitchEmotes: '',
+          timestamp: serverTs
+        });
+        return;
+      }
+      return;
+    }
+
+    if (!line.includes('PRIVMSG')) return;
+
+    const { tags, rest } = this._parseTags(line);
+    if (tags['room-id']) {
+      this.emit('room-id', tags['room-id']);
+    }
+
+    const privIdx = rest.indexOf('PRIVMSG');
+    if (privIdx === -1) return;
+
+    const afterPriv = rest.slice(privIdx + 8);
+    const colonIdx = afterPriv.indexOf(' :');
+    if (colonIdx === -1) return;
+
+    const text = afterPriv.slice(colonIdx + 2);
+    const prefixMatch = rest.match(/^:([^!]+)!/);
+    const fallbackUser = prefixMatch ? prefixMatch[1] : 'TwitchUser';
+    const author = tags['display-name'] || fallbackUser;
+    const serverTs = tags['tmi-sent-ts'] ? parseInt(tags['tmi-sent-ts'], 10) : Date.now();
+    const msgId = tags.id || `tw_${serverTs}_${author}_${text.slice(0, 16)}`;
+
+    if (this._rememberId(msgId)) return;
+
+    const badges = [];
+    if (tags.badges) {
+      if (tags.badges.includes('broadcaster')) badges.push('STREAMER');
+      if (tags.badges.includes('moderator')) badges.push('MOD');
+      if (tags.badges.includes('vip')) badges.push('VIP');
+      if (tags.badges.includes('subscriber')) badges.push('SUB');
+    }
+
+    // Determine if this PRIVMSG is an actual Bits Cheer OR a Highlighted Message event.
+    // Normal messages from subscribers/followers are NEVER automatically highlighted!
+    let eventType = null;
+    if (tags.bits) {
+      eventType = 'bits';
+      badges.unshift(`💎 ${tags.bits} BITS`);
+      this.emit('event', {
+        id: `ev_${msgId}`,
+        platform: 'twitch',
+        type: 'bits',
+        author,
+        summary: `hat ${tags.bits} Bits gecheert!`,
+        timestamp: serverTs
+      });
+    } else if (tags['msg-id'] === 'highlighted-message' || tags['custom-reward-id']) {
+      eventType = 'highlighted_msg';
+      badges.unshift('✨ HERVORGEHOBEN');
+    }
+
+    this.emit('chat', {
+      id: msgId,
+      platform: 'twitch',
+      channel: this.channel,
+      author,
+      color: tags.color || '#a970ff',
+      badges,
+      text,
+      twitchEmotes: tags.emotes || '',
+      timestamp: serverTs,
+      eventType,
+      isHighlight: Boolean(eventType)
+    });
+  }
+
+  _emitUnifiedEventAndChat({ id, eventType, badgeLabel, author, summary, text, twitchEmotes, timestamp }) {
+    this.emit('event', {
+      id: `ev_${id}`,
+      platform: 'twitch',
+      type: eventType,
+      author,
+      summary,
+      timestamp
+    });
+
+    this.emit('chat', {
+      id,
+      platform: 'twitch',
+      channel: this.channel,
+      author,
+      color: '#f8fafc',
+      badges: [badgeLabel],
+      text,
+      twitchEmotes: twitchEmotes || '',
+      timestamp,
+      eventType,
+      isHighlight: true
+    });
+  }
+
+  /**
+   * Fetches Twitch user profile avatar, account creation date (Account-Alter), and bio via public Twitch GQL
+   */
+  getUserInfo(loginName) {
+    return new Promise((resolve) => {
+      if (!loginName) return resolve(null);
+      const clean = loginName.trim().toLowerCase();
+      const body = JSON.stringify({
+        query: `query { user(login: "${clean}") { id login displayName profileImageURL(width: 70) createdAt description } }`
+      });
+
+      const req = https.request(
+        'https://gql.twitch.tv/gql',
+        {
+          method: 'POST',
+          headers: {
+            'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+          },
+          timeout: 4000
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (c) => (data += c));
+          res.on('end', () => {
+            try {
+              const j = JSON.parse(data);
+              const u = j?.data?.user;
+              if (!u) return resolve(null);
+              resolve({
+                id: u.id,
+                login: u.login,
+                displayName: u.displayName,
+                avatar: u.profileImageURL || '',
+                createdAt: u.createdAt || null,
+                description: u.description || ''
+              });
+            } catch (e) {
+              resolve(null);
+            }
+          });
+        }
+      );
+      req.on('error', () => resolve(null));
+      req.write(body);
+      req.end();
+    });
+  }
+
+  sendMessage(text, replyParentId = null) {
+    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('Twitch nicht verbunden.');
+    }
+    if (!this.oauthToken || !this.canWrite) {
+      throw new Error(
+        this.authWarning ||
+          'Kein gültiger Twitch Chat-OAuth-Token hinterlegt. Klicke links unter Twitch auf "Chat-Token holen / Mit Twitch einloggen".'
+      );
+    }
+    if (replyParentId && !String(replyParentId).startsWith('demo_') && !String(replyParentId).startsWith('tw_')) {
+      this.ws.send(`@reply-parent-msg-id=${replyParentId} PRIVMSG #${this.channel} :${text}`);
+    } else {
+      this.ws.send(`PRIVMSG #${this.channel} :${text}`);
+    }
+
+    this.emit('chat', {
+      id: `tw_self_${Date.now()}`,
+      platform: 'twitch',
+      channel: this.channel,
+      author: this.username || this.channel || 'Du (Streamer)',
+      color: '#34d399',
+      badges: ['STREAMER'],
+      text,
+      timestamp: Date.now(),
+      isSelf: true
+    });
+  }
+
+  disconnect(clearDedupe = false) {
+    this.shouldReconnect = false;
+    clearTimeout(this.reconnectTimer);
+    clearInterval(this.pingInterval);
+    clearInterval(this.statsInterval);
+    if (clearDedupe) {
+      this.seenIds.clear();
+      this.recentMassGiftSenders.clear();
+    }
+    if (this.ws) {
+      try {
+        this.ws.removeAllListeners();
+        this.ws.close();
+      } catch (e) {}
+      this.ws = null;
+    }
+    this.connected = false;
+    this.viewers = 0;
+    if (this.channel) {
+      this.emit('status', { platform: 'twitch', status: 'disconnected', channel: this.channel, viewers: 0 });
+    }
+  }
+}
+
+module.exports = { TwitchConnector };

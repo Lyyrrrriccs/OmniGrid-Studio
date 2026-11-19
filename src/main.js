@@ -1,0 +1,1110 @@
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const { TwitchConnector } = require('./connectors/twitch');
+const { YouTubeConnector } = require('./connectors/youtube');
+const { TikTokConnector } = require('./connectors/tiktok');
+const { ObsServer } = require('./obs_server');
+const { EmoteManager } = require('./emote_manager');
+
+let mainWindow = null;
+let isAlwaysOnTop = false;
+let demoInterval = null;
+let demoActive = process.env.DEMO_MODE === 'true';
+
+const twitch = new TwitchConnector();
+const youtube = new YouTubeConnector();
+const tiktok = new TikTokConnector();
+const obsServer = new ObsServer(4588);
+const emoteManager = new EmoteManager();
+
+// Global deduplication ring buffer across all connectors & reconnects
+const globalSeenMsgKeys = new Set();
+
+function isDuplicateMessage(msg) {
+  if (!msg) return true;
+  const idKey = `${msg.platform}:${msg.id}`;
+  // Secondary fingerprint (same platform + author + text within 4-second bucket)
+  const timeBucket = Math.floor((msg.timestamp || Date.now()) / 4000);
+  const contentKey = `${msg.platform}:${(msg.author || '').toLowerCase()}:${msg.text}:${timeBucket}`;
+
+  if (globalSeenMsgKeys.has(idKey) || (!msg.isSelf && globalSeenMsgKeys.has(contentKey))) {
+    return true;
+  }
+
+  globalSeenMsgKeys.add(idKey);
+  globalSeenMsgKeys.add(contentKey);
+
+  if (globalSeenMsgKeys.size > 3000) {
+    const iter = globalSeenMsgKeys.values();
+    for (let i = 0; i < 500; i++) {
+      globalSeenMsgKeys.delete(iter.next().value);
+    }
+  }
+  return false;
+}
+
+const platformStatus = {
+  twitch: { status: 'disconnected', channel: '', viewers: 0, enabled: true },
+  youtube: { status: 'disconnected', channel: '', viewers: 0, enabled: true, availableStreams: [] },
+  tiktok: { status: 'disconnected', channel: '', viewers: 0, likes: 0, enabled: true }
+};
+
+let chatDockWindow = null;
+let boundsSaveTimer = null;
+
+function broadcastToWindows(channel, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, payload);
+  }
+  if (chatDockWindow && !chatDockWindow.isDestroyed()) {
+    chatDockWindow.webContents.send(channel, payload);
+  }
+}
+
+function getConfigPath() {
+  return path.join(app.getPath('userData'), 'omnichat-config.json');
+}
+
+let cachedConfig = null;
+const diagnosticLogs = [];
+
+function appendDiagLog(platform, level, message) {
+  const entry = {
+    id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    timestamp: Date.now(),
+    platform: platform || 'system',
+    level: level || 'info',
+    message: String(message || '')
+  };
+  diagnosticLogs.push(entry);
+  if (diagnosticLogs.length > 200) {
+    diagnosticLogs.shift();
+  }
+  broadcastToWindows('diag-log', entry);
+}
+
+function getDefaultConfig() {
+  return {
+    streamerName: '',
+    autoConnectOnStart: true,
+    soundAlerts: true,
+    compactChat: false,
+    hideBots: false,
+    collapseSpam: true,
+    platformIndicatorStyle: 'icon_badge',
+    mainWindowBounds: null,
+    chatDockBounds: null,
+    chatDockOpen: false,
+    chatDockAlwaysOnTop: true,
+    appearance: {
+      layoutMode: 'inline',
+      nameFontSize: 13,
+      msgFontSize: 13.5,
+      maxNameLength: 16,
+      showPlatformIcons: true,
+      showTimestamps: true,
+      msgPadding: 5,
+      maxDomMessages: 150,
+      showSeparator: true,
+      sepColor: '#ffffff',
+      sepOpacity: 8,
+      sepSpacing: 0,
+      bgColor: '#0b0f19',
+      bgOpacity: 100,
+      obsBgOpacity: 60,
+      usernameColorMode: 'user',
+      eventHighlights: {
+        style: 'bar', // 'bar' (Kompakt-Balken + Hintergrund) | 'banner' (Voll-Banner) | 'outline' (Dezenter Rahmen)
+        intensity: 18, // 5..60% background tint opacity
+        types: {
+          follow: { enabled: true, color: '#10b981' },
+          sub: { enabled: true, color: '#f59e0b' },
+          resub: { enabled: true, color: '#a855f7' },
+          subgift: { enabled: true, color: '#ec4899' },
+          bits: { enabled: true, color: '#06b6d4' },
+          raid: { enabled: true, color: '#ef4444' },
+          highlighted_msg: { enabled: true, color: '#3b82f6' }
+        }
+      }
+    },
+    emoteSettings: {
+      enable7tv: true,
+      enableBttv: true,
+      enableFfz: true,
+      enableTwitchNative: true,
+      enableYoutubeNative: true,
+      enableTiktokNative: true,
+      animateEmotes: true
+    },
+    mutedUsers: [],
+    twitchEnabled: true,
+    twitchChannel: '',
+    twitchUsername: '',
+    twitchToken: '',
+    youtubeEnabled: true,
+    youtubeChannel: '',
+    youtubeVideoId: '',
+    tiktokEnabled: true,
+    tiktokChannel: '',
+    tiktokRoomId: ''
+  };
+}
+
+function loadConfig(forceReload = false) {
+  if (cachedConfig && !forceReload) {
+    return cachedConfig;
+  }
+  const defaults = getDefaultConfig();
+  try {
+    const p = getConfigPath();
+    if (fs.existsSync(p)) {
+      const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+      const mergedAppearance = { ...defaults.appearance, ...(parsed.appearance || {}) };
+      if (parsed.appearance?.eventHighlights) {
+        mergedAppearance.eventHighlights = {
+          ...defaults.appearance.eventHighlights,
+          ...parsed.appearance.eventHighlights,
+          types: {
+            ...defaults.appearance.eventHighlights.types,
+            ...(parsed.appearance.eventHighlights.types || {})
+          }
+        };
+      }
+      cachedConfig = {
+        ...defaults,
+        ...parsed,
+        appearance: mergedAppearance,
+        emoteSettings: { ...defaults.emoteSettings, ...(parsed.emoteSettings || {}) }
+      };
+      return cachedConfig;
+    }
+  } catch (e) {}
+  cachedConfig = defaults;
+  return cachedConfig;
+}
+
+function saveConfig(cfg) {
+  cachedConfig = cfg;
+  try {
+    fs.writeFileSync(getConfigPath(), JSON.stringify(cfg, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+function persistWindowBounds(key, win) {
+  if (!win || win.isDestroyed()) return;
+  clearTimeout(boundsSaveTimer);
+  boundsSaveTimer = setTimeout(() => {
+    if (!win || win.isDestroyed()) return;
+    const cfg = loadConfig();
+    cfg[key] = win.getBounds();
+    saveConfig(cfg);
+  }, 400);
+}
+
+function createMainWindow() {
+  const saved = loadConfig();
+  const b = saved.mainWindowBounds;
+
+  mainWindow = new BrowserWindow({
+    x: b?.x,
+    y: b?.y,
+    width: b?.width || 1180,
+    height: b?.height || 820,
+    minWidth: 220,
+    minHeight: 360,
+    backgroundColor: '#0b0f19',
+    title: 'OmniStream Chat — Dein Streamer Cockpit (Twitch • YouTube • TikTok)',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+  mainWindow.on('resize', () => persistWindowBounds('mainWindowBounds', mainWindow));
+  mainWindow.on('move', () => persistWindowBounds('mainWindowBounds', mainWindow));
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+/**
+ * Opens or focuses the standalone, freely movable & resizable Chat-Dock Window
+ * Ideal for placing full-height on the left side of OBS while keeping normal OBS docks intact!
+ */
+function openStandaloneChatWindow(snapLeftFullHeight = false) {
+  const { screen } = require('electron');
+  const workArea = screen.getPrimaryDisplay().workArea;
+  const saved = loadConfig();
+
+  const defaultBounds = {
+    x: workArea.x,
+    y: workArea.y,
+    width: 320,
+    height: workArea.height
+  };
+  const b = snapLeftFullHeight ? defaultBounds : saved.chatDockBounds || defaultBounds;
+
+  if (chatDockWindow && !chatDockWindow.isDestroyed()) {
+    if (snapLeftFullHeight) {
+      chatDockWindow.setBounds(defaultBounds);
+      persistWindowBounds('chatDockBounds', chatDockWindow);
+    }
+    chatDockWindow.focus();
+    return;
+  }
+
+  chatDockWindow = new BrowserWindow({
+    x: b.x,
+    y: b.y,
+    width: Math.max(220, b.width || 320),
+    height: Math.max(360, b.height || workArea.height),
+    minWidth: 220,
+    minHeight: 320,
+    backgroundColor: '#0b0f19',
+    title: 'OmniStream Chat — Standalone Chat-Fenster (Links neben OBS)',
+    alwaysOnTop: saved.chatDockAlwaysOnTop !== false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  if (saved.chatDockAlwaysOnTop !== false) {
+    chatDockWindow.setAlwaysOnTop(true, 'floating');
+  }
+
+  chatDockWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'), {
+    query: { standalone: '1' }
+  });
+
+  chatDockWindow.webContents.on('did-finish-load', () => {
+    const cfg = loadConfig();
+    chatDockWindow.webContents.send('init-state', {
+      config: cfg,
+      obsUrl: `http://127.0.0.1:${obsServer.port}`,
+      obsDockUrl: `http://127.0.0.1:${obsServer.port}/dock`,
+      platformStatus,
+      isAlwaysOnTop: cfg.chatDockAlwaysOnTop !== false,
+      demoActive,
+      isStandaloneWindow: true
+    });
+  });
+
+  chatDockWindow.on('resize', () => persistWindowBounds('chatDockBounds', chatDockWindow));
+  chatDockWindow.on('move', () => persistWindowBounds('chatDockBounds', chatDockWindow));
+
+  chatDockWindow.on('closed', () => {
+    chatDockWindow = null;
+    const cfg = loadConfig();
+    cfg.chatDockOpen = false;
+    saveConfig(cfg);
+  });
+
+  saved.chatDockOpen = true;
+  if (snapLeftFullHeight) {
+    saved.chatDockBounds = defaultBounds;
+  }
+  saveConfig(saved);
+}
+
+function isMentionForStreamer(text, cfg) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  const candidates = [
+    cfg.streamerName,
+    cfg.twitchChannel,
+    cfg.youtubeChannel?.replace(/^@/, ''),
+    cfg.tiktokChannel?.replace(/^@/, '')
+  ]
+    .filter(Boolean)
+    .map((s) => s.trim().toLowerCase());
+
+  for (const name of candidates) {
+    if (name.length >= 2 && (lower.includes(`@${name}`) || lower.includes(name))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function forwardChatMessage(msg) {
+  try {
+    const cfg = loadConfig();
+
+    if (!demoActive) {
+      if (msg.platform === 'twitch' && cfg.twitchEnabled === false) return;
+      if (msg.platform === 'youtube' && cfg.youtubeEnabled === false) return;
+      if (msg.platform === 'tiktok' && cfg.tiktokEnabled === false) return;
+    }
+
+    if (isDuplicateMessage(msg)) return;
+
+    const authorLow = (msg.author || '').toLowerCase();
+    if (Array.isArray(cfg.mutedUsers) && cfg.mutedUsers.includes(authorLow)) {
+      return;
+    }
+
+    const tokens = emoteManager.tokenizeMessage(msg.text, {
+      twitchEmotesTag: msg.twitchEmotes || '',
+      youtubeRuns: msg.youtubeRuns || null,
+      tiktokEmotes: msg.tiktokEmotes || null
+    });
+
+    const enriched = {
+      ...msg,
+      timestamp: Number(msg.timestamp || Date.now()),
+      tokens,
+      isMention: Boolean(msg.isMention || isMentionForStreamer(msg.text, cfg))
+    };
+
+    obsServer.broadcastChat(enriched);
+    broadcastToWindows('chat-message', enriched);
+  } catch (e) {}
+}
+
+function forwardStreamerEvent(ev) {
+  appendDiagLog(ev.platform, 'event', `${(ev.type || 'EVENT').toUpperCase()}: ${ev.author} — ${ev.summary}`);
+  broadcastToWindows('streamer-event', ev);
+}
+
+function forwardStatus(update) {
+  const cfg = loadConfig();
+  const prev = platformStatus[update.platform] || {};
+  const enabledKey = `${update.platform}Enabled`;
+  platformStatus[update.platform] = {
+    ...prev,
+    ...update,
+    enabled: cfg[enabledKey] !== false,
+    viewers: typeof update.viewers === 'number' ? update.viewers : prev.viewers || 0
+  };
+  const level = update.status === 'error' ? 'error' : update.status === 'reconnecting' ? 'warn' : 'info';
+  const detail = update.error || update.streamTitle || update.channel || update.status;
+  appendDiagLog(update.platform, level, `Status → ${String(update.status || '').toUpperCase()} (${detail || ''})`);
+  obsServer.broadcastStatus(platformStatus);
+  broadcastToWindows('platform-status', platformStatus);
+}
+
+function forwardStats(stats) {
+  const prev = platformStatus[stats.platform] || {};
+  platformStatus[stats.platform] = {
+    ...prev,
+    viewers: typeof stats.viewers === 'number' ? stats.viewers : prev.viewers || 0,
+    likes: typeof stats.likes === 'number' ? stats.likes : prev.likes || 0
+  };
+  obsServer.broadcastStatus(platformStatus);
+  broadcastToWindows('platform-status', platformStatus);
+}
+
+twitch.on('room-id', (roomId) => {
+  appendDiagLog('twitch', 'info', `Twitch Room-ID erkannt (${roomId}) — Lade 7TV/BTTV/FFZ Kanal-Emotes...`);
+  emoteManager.loadTwitchChannelEmotes(roomId);
+});
+
+twitch.on('delete-message', (msgId) => {
+  obsServer.deleteMessage(msgId);
+  broadcastToWindows('message-deleted', { id: msgId });
+});
+
+[twitch, youtube, tiktok].forEach((conn) => {
+  conn.on('chat', (msg) => forwardChatMessage(msg));
+  conn.on('event', (ev) => forwardStreamerEvent(ev));
+  conn.on('status', (st) => forwardStatus(st));
+  conn.on('stats', (st) => forwardStats(st));
+});
+
+function connectSinglePlatform(platform, cfg) {
+  if (platform === 'twitch') {
+    if (cfg.twitchEnabled === false) {
+      twitch.disconnect();
+      return;
+    }
+    if (cfg.twitchChannel) {
+      // Pre-fetch 7TV/BTTV/FFZ channel emotes immediately by channel login
+      emoteManager.loadTwitchChannelEmotesByLogin(cfg.twitchChannel);
+      twitch.connect({
+        channel: cfg.twitchChannel,
+        username: cfg.twitchUsername || cfg.twitchChannel,
+        oauthToken: cfg.twitchToken
+      });
+    }
+  } else if (platform === 'youtube') {
+    if (cfg.youtubeEnabled === false) {
+      youtube.disconnect();
+      return;
+    }
+    if (cfg.youtubeChannel || cfg.youtubeVideoId) {
+      youtube.connect({
+        channelOrUrl: cfg.youtubeChannel,
+        preferredVideoId: cfg.youtubeVideoId
+      });
+    }
+  } else if (platform === 'tiktok') {
+    if (cfg.tiktokEnabled === false) {
+      tiktok.disconnect();
+      return;
+    }
+    if (cfg.tiktokChannel || cfg.tiktokRoomId) {
+      tiktok.connect({
+        uniqueId: cfg.tiktokChannel,
+        roomId: cfg.tiktokRoomId
+      });
+    }
+  }
+}
+
+function connectAllSavedChannels(cfg) {
+  connectSinglePlatform('twitch', cfg);
+  connectSinglePlatform('youtube', cfg);
+  connectSinglePlatform('tiktok', cfg);
+}
+
+const DEMO_SAMPLES = [
+  {
+    platform: 'twitch',
+    author: 'CarryPotter99',
+    color: '#9146ff',
+    badges: ['SUB', 'VIP'],
+    text: '@Streamer Normale Nachricht eines Abonnenten (nicht als Event hervorgehoben) catJAM GIGACHAD',
+    isMention: true,
+    eventType: null,
+    isHighlight: false
+  },
+  {
+    platform: 'tiktok',
+    author: 'lena.clips',
+    color: '#10b981',
+    badges: ['❤️ NEUER FOLLOW'],
+    text: 'folgt jetzt dem Kanal!',
+    eventType: 'follow',
+    isHighlight: true,
+    event: { type: 'follow', summary: 'Neuer Follow auf TikTok!' }
+  },
+  {
+    platform: 'twitch',
+    author: 'PixelQueen',
+    color: '#f59e0b',
+    badges: ['⭐ NEUES SUB (Prime)'],
+    text: 'Neues Abo (Prime)! — "Endlich dabei peepoLove"',
+    eventType: 'sub',
+    isHighlight: true,
+    event: { type: 'sub', summary: 'Neues Abo (Prime)!' }
+  },
+  {
+    platform: 'twitch',
+    author: 'ShadowWalker',
+    color: '#a855f7',
+    badges: ['🌟 RESUB (14 MONATE)'],
+    text: 'Resub im 14. Monat (Tier 1)! — "Bester Streamer auf Twitch PogU"',
+    eventType: 'resub',
+    isHighlight: true,
+    event: { type: 'resub', summary: 'Resub im 14. Monat!' }
+  },
+  {
+    platform: 'twitch',
+    author: 'GigaGifter_DE',
+    color: '#ec4899',
+    badges: ['🎁 5x GIFTED SUBS'],
+    text: 'verschenkt 5x Subs an die Community! Clap',
+    eventType: 'subgift',
+    isHighlight: true,
+    event: { type: 'subgift', summary: '5x Gifted Subs!' }
+  },
+  {
+    platform: 'twitch',
+    author: 'CheerMaster',
+    color: '#06b6d4',
+    badges: ['💎 500 BITS'],
+    text: 'Cheer500 Für das starke Comeback gerade! KEKW',
+    eventType: 'bits',
+    isHighlight: true,
+    event: { type: 'bits', summary: '500 Bits gecheert!' }
+  },
+  {
+    platform: 'twitch',
+    author: 'xX_RaiderBoss_Xx',
+    color: '#ef4444',
+    badges: ['🚨 RAID (184 ZUSCHAUER)'],
+    text: 'raidet den Kanal mit 184 Zuschauern! ratJAM',
+    eventType: 'raid',
+    isHighlight: true,
+    event: { type: 'raid', summary: 'Raid mit 184 Zuschauern!' }
+  },
+  {
+    platform: 'twitch',
+    author: 'CuriousViewer',
+    color: '#3b82f6',
+    badges: ['✨ HERVORGEHOBEN'],
+    text: 'Welches Mikrofon und Audio-Interface nutzt du eigentlich für deinen Stream? Clueless',
+    eventType: 'highlighted_msg',
+    isHighlight: true
+  },
+  {
+    platform: 'youtube',
+    author: 'TechNick_DE',
+    color: '#ff4e45',
+    badges: ['MEMBER'],
+    text: 'Normale Nachricht eines YouTube-Kanalmitglieds in 1440p EZ',
+    eventType: null,
+    isHighlight: false
+  }
+];
+
+let demoIdx = 0;
+function startDemoSimulation() {
+  stopDemoSimulation();
+  demoActive = true;
+
+  platformStatus.twitch = { status: 'connected', channel: 'DeinKanal', viewers: 142, enabled: true };
+  platformStatus.youtube = {
+    status: 'connected',
+    channel: '@DeinKanal',
+    videoId: 'dQw4w9WgXcQ',
+    streamTitle: 'LIVE: Ranked Grind & Viewer Games!',
+    availableStreams: [
+      { videoId: 'dQw4w9WgXcQ', title: '🔴 LIVE: Ranked Grind & Viewer Games!', isLive: true },
+      { videoId: 'jfKfPfyJRdk', title: '📅 Geplant: Community Turnier Sonntag 18 Uhr', isLive: false }
+    ],
+    viewers: 86,
+    enabled: true
+  };
+  platformStatus.tiktok = { status: 'connected', channel: 'dein_tiktok', roomId: '739182739182', viewers: 318, likes: 14200, enabled: true };
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('demo-state', true);
+    mainWindow.webContents.send('platform-status', platformStatus);
+  }
+
+  for (let i = 0; i < 4; i++) {
+    emitNextDemoStep();
+  }
+
+  demoInterval = setInterval(() => {
+    emitNextDemoStep();
+  }, 2600);
+}
+
+function emitNextDemoStep() {
+  const sample = DEMO_SAMPLES[demoIdx % DEMO_SAMPLES.length];
+  demoIdx++;
+
+  platformStatus.twitch.viewers = Math.max(10, (platformStatus.twitch.viewers || 140) + Math.floor(Math.random() * 7) - 3);
+  platformStatus.youtube.viewers = Math.max(10, (platformStatus.youtube.viewers || 85) + Math.floor(Math.random() * 5) - 2);
+  platformStatus.tiktok.viewers = Math.max(20, (platformStatus.tiktok.viewers || 310) + Math.floor(Math.random() * 13) - 5);
+  platformStatus.tiktok.likes = (platformStatus.tiktok.likes || 14200) + Math.floor(Math.random() * 45);
+
+  obsServer.broadcastStatus(platformStatus);
+  broadcastToWindows('platform-status', platformStatus);
+
+  if (sample.event) {
+    forwardStreamerEvent({
+      id: `demo_ev_${Date.now()}_${demoIdx}`,
+      platform: sample.platform,
+      type: sample.event.type,
+      author: sample.author,
+      summary: sample.event.summary,
+      timestamp: Date.now()
+    });
+  }
+
+  forwardChatMessage({
+    ...sample,
+    id: `demo_${Date.now()}_${demoIdx}`,
+    channel: 'demo-live',
+    timestamp: Date.now()
+  });
+}
+
+function stopDemoSimulation() {
+  demoActive = false;
+  if (demoInterval) {
+    clearInterval(demoInterval);
+    demoInterval = null;
+  }
+  broadcastToWindows('demo-state', false);
+}
+
+app.whenReady().then(async () => {
+  const obsPort = await obsServer.start();
+
+  // Handle interactive actions sent from inside the OBS Custom Browser Dock (/dock)
+  obsServer.onClientAction = (payload) => {
+    if (!payload) return;
+    if (payload.action === 'pin') {
+      obsServer.broadcastPin(payload.data || null);
+    } else if (payload.action === 'delete-msg' && payload.id) {
+      obsServer.deleteMessage(payload.id);
+      broadcastToWindows('message-deleted', { id: payload.id });
+    } else if (payload.action === 'send-chat' && payload.text) {
+      try {
+        twitch.sendMessage(payload.text);
+      } catch (e) {}
+    }
+  };
+
+  createMainWindow();
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    const saved = loadConfig();
+    if (saved.emoteSettings) {
+      emoteManager.updateSettings(saved.emoteSettings);
+    }
+    if (saved.appearance) {
+      obsServer.broadcastAppearance({
+        ...saved.appearance,
+        platformIndicatorStyle: saved.platformIndicatorStyle || 'icon_badge'
+      });
+    }
+    platformStatus.twitch.enabled = saved.twitchEnabled !== false;
+    platformStatus.youtube.enabled = saved.youtubeEnabled !== false;
+    platformStatus.tiktok.enabled = saved.tiktokEnabled !== false;
+
+    appendDiagLog('system', 'info', `OmniStream Chat gestartet — OBS Server aktiv auf Port ${obsPort}`);
+
+    mainWindow.webContents.send('init-state', {
+      config: saved,
+      obsUrl: `http://127.0.0.1:${obsPort}`,
+      obsDockUrl: `http://127.0.0.1:${obsPort}/dock`,
+      platformStatus,
+      isAlwaysOnTop,
+      demoActive,
+      diagnosticLogs
+    });
+
+    if (saved.chatDockOpen) {
+      openStandaloneChatWindow(false);
+    }
+
+    if (demoActive) {
+      startDemoSimulation();
+    } else if (saved.autoConnectOnStart && (saved.twitchChannel || saved.youtubeChannel || saved.tiktokChannel)) {
+      connectAllSavedChannels(saved);
+    }
+  });
+
+  ipcMain.handle('save-profile', (_ev, config) => {
+    const currentCfg = { ...loadConfig(), ...config };
+    if (currentCfg.emoteSettings) {
+      emoteManager.updateSettings(currentCfg.emoteSettings);
+    }
+    if (currentCfg.appearance) {
+      obsServer.broadcastAppearance({
+        ...currentCfg.appearance,
+        platformIndicatorStyle: currentCfg.platformIndicatorStyle || 'icon_badge'
+      });
+    }
+    saveConfig(currentCfg);
+    return { ok: true, config: currentCfg };
+  });
+
+  ipcMain.handle('open-standalone-chat', (_ev, snapLeftFullHeight) => {
+    openStandaloneChatWindow(Boolean(snapLeftFullHeight));
+    return { ok: true };
+  });
+
+  ipcMain.handle('toggle-slim-dock', (_ev, makeSlim) => {
+    const targetWin = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    if (!targetWin) return false;
+    const { screen } = require('electron');
+    const workArea = screen.getPrimaryDisplay().workArea;
+    if (makeSlim) {
+      targetWin.setBounds({
+        x: workArea.x,
+        y: workArea.y,
+        width: 320,
+        height: workArea.height
+      });
+    } else {
+      targetWin.setSize(1180, 820);
+      targetWin.center();
+    }
+    return makeSlim;
+  });
+
+  ipcMain.handle('connect-platform', async (_ev, { platform, config }) => {
+    stopDemoSimulation();
+    const currentCfg = { ...loadConfig(), ...config };
+    saveConfig(currentCfg);
+    appendDiagLog(platform, 'info', `Verbinde ${platform.toUpperCase()}...`);
+    connectSinglePlatform(platform, currentCfg);
+    return { ok: true };
+  });
+
+  ipcMain.handle('reconnect-platform', async (_ev, { platform, config }) => {
+    stopDemoSimulation();
+    const currentCfg = { ...loadConfig(), ...config };
+    saveConfig(currentCfg);
+    appendDiagLog(platform, 'warn', `Manueller Reconnect für ${platform.toUpperCase()} ausgelöst...`);
+    if (platform === 'twitch') twitch.reconnect();
+    else if (platform === 'youtube') await youtube.reconnect();
+    else if (platform === 'tiktok') await tiktok.reconnect();
+    return { ok: true };
+  });
+
+  ipcMain.handle('toggle-platform-enabled', async (_ev, { platform, enabled, config }) => {
+    const currentCfg = { ...loadConfig(), ...config };
+    currentCfg[`${platform}Enabled`] = Boolean(enabled);
+    saveConfig(currentCfg);
+    platformStatus[platform].enabled = Boolean(enabled);
+    appendDiagLog(platform, 'info', `Plattform ${platform.toUpperCase()} ${enabled ? 'aktiviert' : 'deaktiviert'}`);
+
+    if (!enabled) {
+      if (platform === 'twitch') twitch.disconnect();
+      else if (platform === 'youtube') youtube.disconnect();
+      else if (platform === 'tiktok') tiktok.disconnect();
+    } else if (!demoActive) {
+      connectSinglePlatform(platform, currentCfg);
+    }
+
+    obsServer.broadcastStatus(platformStatus);
+    broadcastToWindows('platform-status', platformStatus);
+    return { ok: true };
+  });
+
+  ipcMain.handle('discover-youtube-streams', async (_ev, channelOrUrl) => {
+    appendDiagLog('youtube', 'info', `Scanne YouTube-Kanal (${channelOrUrl}) nach aktiven Livestreams...`);
+    const streams = await youtube.discoverStreams(channelOrUrl);
+    appendDiagLog('youtube', 'info', `${streams.length} YouTube-Stream(s) gefunden.`);
+    platformStatus.youtube.availableStreams = streams;
+    broadcastToWindows('platform-status', platformStatus);
+    return { ok: true, streams };
+  });
+
+  ipcMain.handle('disconnect-platform', (_ev, platform) => {
+    appendDiagLog(platform, 'info', `Verbindung zu ${platform.toUpperCase()} getrennt.`);
+    if (platform === 'twitch') twitch.disconnect();
+    else if (platform === 'youtube') youtube.disconnect();
+    else if (platform === 'tiktok') tiktok.disconnect();
+    return { ok: true };
+  });
+
+  ipcMain.handle('connect-all', async (_ev, config) => {
+    stopDemoSimulation();
+    const currentCfg = { ...loadConfig(), ...config };
+    saveConfig(currentCfg);
+    appendDiagLog('system', 'info', 'Verbinde alle aktiven Plattformen...');
+    connectAllSavedChannels(currentCfg);
+    return { ok: true };
+  });
+
+  ipcMain.handle('send-chat-message', (_ev, payload) => {
+    const text = typeof payload === 'string' ? payload : payload?.text || '';
+    const replyParentId = typeof payload === 'object' ? payload?.replyParentId || null : null;
+    const targets = typeof payload === 'object' && Array.isArray(payload?.targets) ? payload.targets : ['twitch'];
+    const cfg = loadConfig();
+
+    const results = [];
+    const errors = [];
+
+    if (targets.includes('twitch')) {
+      if (demoActive) {
+        forwardChatMessage({
+          id: `self_tw_${Date.now()}`,
+          platform: 'twitch',
+          channel: cfg.twitchChannel || 'demo-live',
+          author: cfg.streamerName || cfg.twitchUsername || 'Streamer (Du)',
+          color: '#10b981',
+          badges: ['BROADCASTER'],
+          text,
+          isSelf: true,
+          timestamp: Date.now()
+        });
+        results.push('twitch');
+        appendDiagLog('twitch', 'info', `Nachricht gesendet (Demo): "${text}"`);
+      } else {
+        try {
+          twitch.sendMessage(text, replyParentId);
+          results.push('twitch');
+          appendDiagLog('twitch', 'info', `Nachricht an Twitch IRC gesendet: "${text}"`);
+        } catch (err) {
+          errors.push(`Twitch: ${err.message}`);
+          appendDiagLog('twitch', 'error', `Senden fehlgeschlagen: ${err.message}`);
+        }
+      }
+    }
+
+    if (targets.includes('youtube')) {
+      if (demoActive) {
+        forwardChatMessage({
+          id: `self_yt_${Date.now()}`,
+          platform: 'youtube',
+          channel: cfg.youtubeChannel || '@DeinKanal',
+          author: cfg.streamerName || 'Streamer (Du)',
+          color: '#ff4e45',
+          badges: ['OWNER'],
+          text,
+          isSelf: true,
+          timestamp: Date.now()
+        });
+        results.push('youtube');
+      } else {
+        errors.push('YouTube: Nur-Lesen-Verbindung (Senden erfordert YouTube Data API v3 OAuth2).');
+      }
+    }
+
+    if (targets.includes('tiktok')) {
+      errors.push('TikTok: Offizielle Webcast-Schnittstelle unterstützt kein Senden über Drittanbieter-Tools.');
+    }
+
+    if (results.length > 0) {
+      return { ok: true, sentTo: results, warnings: errors };
+    }
+    return { ok: false, error: errors.join('\n') || 'Keine unterstützte Zielplattform ausgewählt.' };
+  });
+
+  ipcMain.handle('get-user-details', async (_ev, { platform, author, avatar }) => {
+    if (platform === 'twitch') {
+      const info = await twitch.getUserInfo(author);
+      if (info) {
+        return {
+          ok: true,
+          avatar: info.avatar || avatar || '',
+          createdAt: info.createdAt || null,
+          description: info.description || ''
+        };
+      }
+    }
+    return {
+      ok: true,
+      avatar: avatar || '',
+      createdAt: null
+    };
+  });
+
+  ipcMain.handle('open-user-profile', (_ev, { platform, author }) => {
+    const { shell } = require('electron');
+    if (platform === 'twitch-token-generator') {
+      const url = 'https://twitchtokengenerator.com/';
+      shell.openExternal(url);
+      return { ok: true, url };
+    }
+    const clean = String(author || '').trim().replace(/^@/, '');
+    if (!clean) return { ok: false };
+    let url = `https://www.twitch.tv/${encodeURIComponent(clean.toLowerCase())}`;
+    if (platform === 'youtube') {
+      url = `https://www.youtube.com/@${encodeURIComponent(clean)}`;
+    } else if (platform === 'tiktok') {
+      url = `https://www.tiktok.com/@${encodeURIComponent(clean)}`;
+    }
+    shell.openExternal(url);
+    return { ok: true, url };
+  });
+
+  ipcMain.handle('moderate-action', (_ev, { action, msg, durationSec }) => {
+    if (!msg) return { ok: false };
+    const cfg = loadConfig();
+    const authorLow = (msg.author || '').toLowerCase();
+    const canServerModTwitch = msg.platform === 'twitch' && twitch.connected && Boolean(twitch.oauthToken);
+
+    if (action === 'delete-msg') {
+      obsServer.deleteMessage(msg.id);
+      broadcastToWindows('message-deleted', { id: msg.id });
+      if (canServerModTwitch) {
+        try {
+          twitch.sendMessage(`/delete ${msg.id}`);
+        } catch (e) {}
+      }
+      return { ok: true, serverExecuted: canServerModTwitch };
+    }
+
+    if (action === 'mute-user') {
+      const muted = new Set(cfg.mutedUsers || []);
+      muted.add(authorLow);
+      cfg.mutedUsers = Array.from(muted);
+      saveConfig(cfg);
+      obsServer.deleteUserMessages(authorLow);
+      broadcastToWindows('user-muted', { author: authorLow, mutedUsers: cfg.mutedUsers });
+      return { ok: true };
+    }
+
+    if (action === 'unmute-user') {
+      cfg.mutedUsers = (cfg.mutedUsers || []).filter((u) => u !== authorLow);
+      saveConfig(cfg);
+      broadcastToWindows('user-muted', { author: null, mutedUsers: cfg.mutedUsers });
+      return { ok: true };
+    }
+
+    // Platform-specific server moderation (only executed if supported & authenticated!)
+    if (action === 'timeout') {
+      if (!canServerModTwitch) {
+        return {
+          ok: false,
+          error:
+            msg.platform === 'twitch'
+              ? 'Nicht ausgeführt: Kein Twitch OAuth-Token mit Mod-Rechten hinterlegt.'
+              : `Nicht unterstützt: ${msg.platform.toUpperCase()} erlaubt kein Server-Timeout ohne OAuth-Mod-API.`
+        };
+      }
+      const sec = Number(durationSec) || 600;
+      obsServer.deleteUserMessages(authorLow);
+      broadcastToWindows('user-muted', { author: authorLow, mutedUsers: cfg.mutedUsers || [] });
+      try {
+        twitch.sendMessage(`/timeout ${msg.author} ${sec}`);
+      } catch (e) {}
+      return { ok: true, serverExecuted: true };
+    }
+
+    if (action === 'ban-user') {
+      if (!canServerModTwitch) {
+        return {
+          ok: false,
+          error:
+            msg.platform === 'twitch'
+              ? 'Nicht ausgeführt: Kein Twitch OAuth-Token mit Mod-Rechten hinterlegt.'
+              : `Nicht unterstützt: ${msg.platform.toUpperCase()} erlaubt keinen Server-Ban über diese Verbindung.`
+        };
+      }
+      obsServer.deleteUserMessages(authorLow);
+      broadcastToWindows('user-muted', { author: authorLow, mutedUsers: cfg.mutedUsers || [] });
+      try {
+        twitch.sendMessage(`/ban ${msg.author}`);
+      } catch (e) {}
+      return { ok: true, serverExecuted: true };
+    }
+
+    if (action === 'unban-user') {
+      // Also remove from local mutedUsers list if present
+      cfg.mutedUsers = (cfg.mutedUsers || []).filter((u) => u !== authorLow);
+      saveConfig(cfg);
+      broadcastToWindows('user-muted', { author: null, mutedUsers: cfg.mutedUsers });
+
+      if (!canServerModTwitch) {
+        return {
+          ok: true,
+          serverExecuted: false,
+          note: 'Lokale Stummschaltung aufgehoben (Server-Unban erfordert Twitch OAuth-Token).'
+        };
+      }
+      try {
+        twitch.sendMessage(`/unban ${msg.author}`);
+      } catch (e) {}
+      return { ok: true, serverExecuted: true };
+    }
+
+    return { ok: false };
+  });
+
+  ipcMain.on('pin-message', (_ev, msgOrNull) => {
+    obsServer.broadcastPin(msgOrNull);
+  });
+
+  ipcMain.on('clear-chat', () => {
+    globalSeenMsgKeys.clear();
+    obsServer.clearChat();
+  });
+
+  ipcMain.handle('toggle-always-on-top', (_ev) => {
+    const targetWin = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    if (!targetWin) return false;
+    const nextState = !targetWin.isAlwaysOnTop();
+    targetWin.setAlwaysOnTop(nextState, 'floating');
+    if (targetWin === chatDockWindow) {
+      const cfg = loadConfig();
+      cfg.chatDockAlwaysOnTop = nextState;
+      saveConfig(cfg);
+    } else {
+      isAlwaysOnTop = nextState;
+    }
+    return nextState;
+  });
+
+  ipcMain.handle('toggle-demo', () => {
+    if (demoActive) {
+      stopDemoSimulation();
+    } else {
+      startDemoSimulation();
+    }
+    return demoActive;
+  });
+
+  ipcMain.handle('get-perf-stats', () => {
+    const mem = process.memoryUsage();
+    const ramMb = Math.round((mem.rss || 0) / (1024 * 1024));
+    const emoteStats = emoteManager.getStats ? emoteManager.getStats() : { total: emoteManager.emoteMap?.size || 0 };
+    return {
+      ok: true,
+      ramMb,
+      heapMb: Math.round((mem.heapUsed || 0) / (1024 * 1024)),
+      cachedEmotes: emoteStats.total || 0
+    };
+  });
+
+  ipcMain.handle('reset-defaults', () => {
+    const current = loadConfig();
+    const fresh = getDefaultConfig();
+    // Preserve account credentials & window positions while resetting design/emote/event settings
+    fresh.streamerName = current.streamerName;
+    fresh.twitchChannel = current.twitchChannel;
+    fresh.twitchUsername = current.twitchUsername;
+    fresh.twitchToken = current.twitchToken;
+    fresh.youtubeChannel = current.youtubeChannel;
+    fresh.youtubeVideoId = current.youtubeVideoId;
+    fresh.tiktokChannel = current.tiktokChannel;
+    fresh.tiktokRoomId = current.tiktokRoomId;
+    fresh.mainWindowBounds = current.mainWindowBounds;
+    fresh.chatDockBounds = current.chatDockBounds;
+
+    saveConfig(fresh);
+    emoteManager.updateSettings(fresh.emoteSettings);
+    obsServer.broadcastAppearance({
+      ...fresh.appearance,
+      platformIndicatorStyle: fresh.platformIndicatorStyle
+    });
+    return { ok: true, config: fresh };
+  });
+
+  ipcMain.handle('export-config', async (_ev) => {
+    const { dialog } = require('electron');
+    const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    const res = await dialog.showSaveDialog(win, {
+      title: 'OmniStream Chat Einstellungen exportieren',
+      defaultPath: 'omnichat-backup.json',
+      filters: [{ name: 'JSON Konfiguration', extensions: ['json'] }]
+    });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    const cfg = { ...loadConfig() };
+    fs.writeFileSync(res.filePath, JSON.stringify(cfg, null, 2), 'utf8');
+    return { ok: true, filePath: res.filePath };
+  });
+
+  ipcMain.handle('import-config', async (_ev) => {
+    const { dialog } = require('electron');
+    const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    const res = await dialog.showOpenDialog(win, {
+      title: 'OmniStream Chat Einstellungen importieren',
+      properties: ['openFile'],
+      filters: [{ name: 'JSON Konfiguration', extensions: ['json'] }]
+    });
+    if (res.canceled || !res.filePaths?.[0]) return { ok: false, canceled: true };
+    try {
+      const raw = fs.readFileSync(res.filePaths[0], 'utf8');
+      const parsed = JSON.parse(raw);
+      const defaults = getDefaultConfig();
+      const merged = {
+        ...defaults,
+        ...parsed,
+        appearance: { ...defaults.appearance, ...(parsed.appearance || {}) },
+        emoteSettings: { ...defaults.emoteSettings, ...(parsed.emoteSettings || {}) }
+      };
+      saveConfig(merged);
+      emoteManager.updateSettings(merged.emoteSettings);
+      obsServer.broadcastAppearance({
+        ...merged.appearance,
+        platformIndicatorStyle: merged.platformIndicatorStyle
+      });
+      return { ok: true, config: merged };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  obsServer.stop();
+  app.quit();
+});

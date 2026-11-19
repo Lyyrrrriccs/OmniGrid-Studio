@@ -1,0 +1,37 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('omnichat', {
+  onInitState: (cb) => ipcRenderer.on('init-state', (_ev, data) => cb(data)),
+  onChatMessage: (cb) => ipcRenderer.on('chat-message', (_ev, msg) => cb(msg)),
+  onMessageDeleted: (cb) => ipcRenderer.on('message-deleted', (_ev, data) => cb(data)),
+  onUserMuted: (cb) => ipcRenderer.on('user-muted', (_ev, data) => cb(data)),
+  onStreamerEvent: (cb) => ipcRenderer.on('streamer-event', (_ev, ev) => cb(ev)),
+  onPlatformStatus: (cb) => ipcRenderer.on('platform-status', (_ev, status) => cb(status)),
+  onDemoState: (cb) => ipcRenderer.on('demo-state', (_ev, active) => cb(active)),
+  onDiagLog: (cb) => ipcRenderer.on('diag-log', (_ev, entry) => cb(entry)),
+
+  saveProfile: (config) => ipcRenderer.invoke('save-profile', config),
+  openStandaloneChat: (snapLeftFullHeight) => ipcRenderer.invoke('open-standalone-chat', snapLeftFullHeight),
+  toggleSlimDock: (makeSlim) => ipcRenderer.invoke('toggle-slim-dock', makeSlim),
+  connectPlatform: (platform, config) => ipcRenderer.invoke('connect-platform', { platform, config }),
+  reconnectPlatform: (platform, config) => ipcRenderer.invoke('reconnect-platform', { platform, config }),
+  togglePlatformEnabled: (platform, enabled, config) =>
+    ipcRenderer.invoke('toggle-platform-enabled', { platform, enabled, config }),
+  discoverYoutubeStreams: (channelOrUrl) => ipcRenderer.invoke('discover-youtube-streams', channelOrUrl),
+  disconnectPlatform: (platform) => ipcRenderer.invoke('disconnect-platform', platform),
+  connectAll: (config) => ipcRenderer.invoke('connect-all', config),
+  sendChatMessage: (payload) => ipcRenderer.invoke('send-chat-message', payload),
+  getUserDetails: (payload) => ipcRenderer.invoke('get-user-details', payload),
+  openUserProfile: (payload) => ipcRenderer.invoke('open-user-profile', payload),
+  moderateAction: (action, msg, durationSec) =>
+    ipcRenderer.invoke('moderate-action', { action, msg, durationSec }),
+
+  pinMessage: (msgOrNull) => ipcRenderer.send('pin-message', msgOrNull),
+  clearChat: () => ipcRenderer.send('clear-chat'),
+  toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
+  toggleDemo: () => ipcRenderer.invoke('toggle-demo'),
+  getPerfStats: () => ipcRenderer.invoke('get-perf-stats'),
+  resetDefaults: () => ipcRenderer.invoke('reset-defaults'),
+  exportConfig: () => ipcRenderer.invoke('export-config'),
+  importConfig: () => ipcRenderer.invoke('import-config')
+});

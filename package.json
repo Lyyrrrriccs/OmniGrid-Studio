@@ -1,0 +1,19 @@
+{
+  "name": "omni-stream-chat",
+  "version": "1.0.0",
+  "description": "Cross-Platform Multistream Chat Aggregator (Twitch, YouTube Live, TikTok Live) for Windows & macOS with OBS Browser Source Server & Always-On-Top Mode",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "demo": "DEMO_MODE=true electron .",
+    "build:mac": "node scripts/build_mac.js",
+    "build:win": "node scripts/build_win.js"
+  },
+  "dependencies": {
+    "tiktok-live-connector": "latest",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
