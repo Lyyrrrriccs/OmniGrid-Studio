@@ -126,6 +126,30 @@ Unter **„🎵 Spotify Live & !song Bot“** liest die App den aktuellen Song d
 ## 10. Tablet & iPad Companion (`/tablet`)
 
 Unter **„📱 Tablet & iPad Companion“** findest du einen QR-Code und eine lokale WLAN-URL (`http://<LAN-IP>:4588/tablet`):
-- Scanne den QR-Code mit deinem **iPad** oder **Android-Tablet** im selben WLAN (keine App-Installation nötig).
+- Scanne den QR-Code mit deinem **iPad**, **Android-Tablet** oder **Handy** im selben WLAN (keine App-Installation nötig).
 - Du erhältst ein Touch-Dashboard mit Live-Chat, Quick-Reply-Eingabe und Stream-Deck-Tasten (Pinnen, Unpin, Demo, Spotify-Steuerung).
+
+### 🔒 Wenn „Seite nicht erreichbar“ kommt — Die 5-Minuten-Lösung mit Tailscale (für Einsteiger)
+Manche WLANs (z. B. Gäste-WLAN, Wohnheim, Hotel, Router mit „Geräte dürfen nicht miteinander kommunizieren“) blockieren die normale WLAN-Verbindung. Oder du willst dein Handy über **5G/LTE** nutzen. Dafür hilft das kostenlose Tool **Tailscale** — ganz ohne Router-Einstellungen oder Portfreigaben:
+
+1. **Auf dem PC oder Mac installieren:**
+   - Lade **Tailscale** kostenlos unter [tailscale.com/download](https://tailscale.com/download) herunter und installiere es.
+   - Öffne Tailscale, melde dich einmalig an (z. B. mit Google, Apple oder GitHub) und schalte es ein (**Verbunden / Connected**).
+2. **Auf dem Handy oder Tablet installieren:**
+   - Lade die App **Tailscale** aus dem Apple App Store oder Google Play Store herunter.
+   - Melde dich dort mit **genau demselben Konto** an und schalte den VPN-Schalter in der Tailscale-App auf **Ein / Verbunden**.
+3. **OmniStream Chat kurz neu starten:**
+   - Beende OmniStream Chat auf dem PC/Mac und öffne es neu, damit es deine neue Tailscale-Adresse erkennt.
+4. **In der App auf Tailscale umschalten:**
+   - Scrolle in OmniStream Chat links zu **„📱 Tablet & iPad Companion“**.
+   - Klicke über dem Link auf das kleine Auswahlfeld und wähle **„Tailscale / VPN (100.x.x.x)“** aus.
+   - Der QR-Code und der Link aktualisieren sich sofort.
+5. **QR-Code scannen & loslegen:**
+   - Scanne den neuen QR-Code mit deiner Handy-/Tablet-Kamera (oder tippe die `http://100....:4588/tablet`-Adresse im Browser ab).
+
+**Falls es dann immer noch nicht lädt (Schnell-Check):**
+- ✅ Achte darauf, dass im Handy-Browser **`http://`** am Anfang steht (manche Browser machen automatisch `https://` daraus — das funktioniert nicht, es muss **`http://`** sein!).
+- ✅ **macOS:** Öffne *Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk* und prüfe, ob **OmniStreamChat** eingeschaltet ist.
+- ✅ **Windows:** Falls beim Start ein Windows-Firewall-Fenster aufgeht, klicke auf **Zugriff zulassen**.
+- ✅ Prüfe in der Tailscale-App auf beiden Geräten, ob **beide** als *Connected / Verbunden* angezeigt werden.
 

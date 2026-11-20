@@ -593,9 +593,10 @@
           </div>
           <input type="text" id="inputPollQuestion" placeholder="Frage (z. B. Nächstes Spiel?)" style="margin-top: 6px;" />
           <input type="text" id="inputPollOptions" placeholder="Optionen kommagetrennt (z. B. Valorant, Minecraft)" style="margin-top: 4px;" />
-          <div style="display: flex; gap: 6px; margin-top: 6px;">
+          <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
             <button class="btn-sm" id="btnPollStart" style="flex: 1;">▶ Start</button>
             <button class="btn-sm" id="btnPollStop">⏹ Stopp</button>
+            <button class="btn-sm" id="btnPollToggleVis">👁️ Ausblenden</button>
             <button class="btn-sm" id="btnPollReset">🔄 Reset</button>
           </div>
           <div id="pollPreviewStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Keine aktive Umfrage</div>
@@ -641,6 +642,7 @@
           <div class="tablet-qr-row">
             <img id="imgTabletQr" class="tablet-qr-img hidden" src="" alt="Tablet QR-Code" />
             <div class="tablet-qr-meta">
+              <select id="selTabletNet" class="hidden" style="width: 100%; margin-bottom: 5px;"></select>
               <input type="text" id="inputTabletUrl" readonly value="http://127.0.0.1:4588/tablet" />
               <button class="btn-sm" id="btnCopyTabletUrl" style="margin-top: 5px; width: 100%;">📋 Tablet-Link kopieren</button>
             </div>
@@ -664,6 +666,13 @@
             </div>
             <div class="sd-row" data-sd-path="/unpin">
               <span class="sd-label">❌ OBS-Pin ausblenden</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-poll">
+              <span class="sd-label">🗳️ Poll ein-/ausblenden</span>
               <div class="sd-btns">
                 <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
                 <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>

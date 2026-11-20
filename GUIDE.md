@@ -126,6 +126,30 @@ Under **"🎵 Spotify Live & !song Bot"**, OmniStream Chat reads the current tra
 ## 10. Tablet & iPad Companion (`/tablet`)
 
 Under **"📱 Tablet & iPad Companion"**, you will find a QR code and local Wi-Fi URL (`http://<LAN-IP>:4588/tablet`):
-- Scan the QR code with your **iPad** or **Android tablet** on the same Wi-Fi network (no app install needed).
+- Scan the QR code with your **iPad**, **Android tablet**, or **phone** on the same Wi-Fi network (no app install needed).
 - Gives you a touch-friendly dashboard with live chat, quick-reply input, and Stream Deck buttons (pin, unpin, demo, Spotify controls).
+
+### 🔒 If you see "Site cannot be reached" — 5-Minute Fix with Tailscale (Beginner Guide)
+Some Wi-Fi networks (guest Wi-Fi, dorms, hotels, or routers with "AP/Client Isolation") block devices from talking to each other directly, or you may want to use your phone over **5G/LTE**. The free app **Tailscale** creates a private direct tunnel between your computer and your phone/tablet — no router settings required:
+
+1. **Install on your PC or Mac:**
+   - Download **Tailscale** for free at [tailscale.com/download](https://tailscale.com/download) and install it.
+   - Open Tailscale, sign in once (e.g. with Google, Apple, or GitHub), and make sure it says **Connected**.
+2. **Install on your Phone or Tablet:**
+   - Download the **Tailscale** app from the Apple App Store or Google Play Store.
+   - Sign in with the **exact same account** and turn the toggle **On / Connected**.
+3. **Restart OmniStream Chat:**
+   - Quit and reopen OmniStream Chat on your PC/Mac so it detects your new Tailscale address.
+4. **Switch to Tailscale in OmniStream Chat:**
+   - Scroll to **"📱 Tablet & iPad Companion"** in the left sidebar.
+   - Use the small dropdown above the link and select **"Tailscale / VPN (100.x.x.x)"**.
+   - The QR code and URL update automatically.
+5. **Scan & Connect:**
+   - Scan the new QR code with your phone/tablet camera (or type `http://100....:4588/tablet` in your browser).
+
+**Quick Checklist if it still won't load:**
+- ✅ Make sure the address bar starts with **`http://`** (not `https://`!).
+- ✅ **macOS:** Go to *System Settings → Privacy & Security → Local Network* and make sure **OmniStreamChat** is enabled.
+- ✅ **Windows:** Allow **OmniStreamChat** through Windows Defender Firewall when prompted.
+- ✅ Verify in the Tailscale app that **both** devices show as *Connected* under the same account.
 

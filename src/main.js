@@ -547,6 +547,7 @@ function broadcastEventToObsAlert(ev, bypassFilter = false) {
 
 let activePoll = {
   active: false,
+  visible: true,
   visibleWhenStopped: false,
   question: '',
   options: [],
@@ -557,6 +558,7 @@ let activePoll = {
 function getSanitizedPoll() {
   return {
     active: activePoll.active,
+    visible: activePoll.visible !== false,
     visibleWhenStopped: activePoll.visibleWhenStopped,
     question: activePoll.question,
     options: activePoll.options.map((o) => ({ label: o.label, votes: o.votes })),
@@ -930,6 +932,20 @@ app.whenReady().then(async () => {
       return { ok: true };
     }
 
+    if (act === 'toggle-poll') {
+      if (params.visible === 'true' || params.visible === '1' || body.visible === true) {
+        activePoll.visible = true;
+      } else if (params.visible === 'false' || params.visible === '0' || body.visible === false) {
+        activePoll.visible = false;
+      } else {
+        activePoll.visible = !activePoll.visible;
+      }
+      const snap = getSanitizedPoll();
+      obsServer.broadcastPoll(snap);
+      broadcastToWindows('poll-updated', snap);
+      return { ok: true, visible: snap.visible, poll: snap };
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1098,24 +1114,49 @@ app.whenReady().then(async () => {
   mainWindow.webContents.on('did-finish-load', async () => {
     const os = require('os');
     const QRCode = require('qrcode');
-    const getLocalLanIp = () => {
+    const getTabletTargets = async () => {
       const nets = os.networkInterfaces();
+      const raw = [];
       for (const name of Object.keys(nets)) {
+        if (/^(docker|veth|vmnet|vbox|bridge|lo)/i.test(name)) continue;
         for (const net of nets[name] || []) {
           if (net.family === 'IPv4' && !net.internal) {
-            return net.address;
+            const isCgnat = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(net.address);
+            const isVpnIf = /^(utun|tun|tap|tailscale|wg)/i.test(name) || isCgnat;
+            const score = !isVpnIf && net.address.startsWith('192.168.')
+              ? 4
+              : !isVpnIf && net.address.startsWith('10.')
+                ? 3
+                : !isVpnIf
+                  ? 2
+                  : 1;
+            const label = isVpnIf
+              ? `Tailscale / VPN (${net.address})`
+              : `WLAN / LAN (${net.address})`;
+            const url = `http://${net.address}:${obsPort}/tablet`;
+            let qrDataUrl = '';
+            try {
+              qrDataUrl = await QRCode.toDataURL(url, { width: 140, margin: 1 });
+            } catch (e) {}
+            raw.push({ label, url, qrDataUrl, score });
           }
         }
       }
-      return '127.0.0.1';
+      raw.sort((a, b) => b.score - a.score);
+      if (raw.length === 0) {
+        const url = `http://127.0.0.1:${obsPort}/tablet`;
+        let qrDataUrl = '';
+        try {
+          qrDataUrl = await QRCode.toDataURL(url, { width: 140, margin: 1 });
+        } catch (e) {}
+        raw.push({ label: 'Lokal (127.0.0.1)', url, qrDataUrl, score: 0 });
+      }
+      return raw;
     };
 
-    const lanIp = getLocalLanIp();
-    const tabletUrl = `http://${lanIp}:${obsPort}/tablet`;
-    let tabletQrDataUrl = '';
-    try {
-      tabletQrDataUrl = await QRCode.toDataURL(tabletUrl, { width: 140, margin: 1 });
-    } catch (e) {}
+    const tabletTargets = await getTabletTargets();
+    const tabletUrl = tabletTargets[0].url;
+    const tabletQrDataUrl = tabletTargets[0].qrDataUrl;
 
     const saved = loadConfig();
     spotify.start(saved.spotifyEnabled !== false);
@@ -1149,6 +1190,7 @@ app.whenReady().then(async () => {
       spotifyObsUrl: `http://127.0.0.1:${obsPort}/spotify`,
       tabletUrl,
       tabletQrDataUrl,
+      tabletTargets,
       spotifyTrack: spotify.currentTrack,
       activePoll: getSanitizedPoll(),
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
@@ -1206,6 +1248,7 @@ app.whenReady().then(async () => {
       }
       activePoll = {
         active: true,
+        visible: true,
         visibleWhenStopped: true,
         question,
         options,
@@ -1215,9 +1258,12 @@ app.whenReady().then(async () => {
     } else if (act === 'stop') {
       activePoll.active = false;
       activePoll.visibleWhenStopped = true;
+    } else if (act === 'toggle-visibility') {
+      activePoll.visible = !activePoll.visible;
     } else if (act === 'reset') {
       activePoll = {
         active: false,
+        visible: false,
         visibleWhenStopped: false,
         question: '',
         options: [],
