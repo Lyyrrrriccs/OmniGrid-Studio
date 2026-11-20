@@ -2033,11 +2033,31 @@ btnCopySpotifyObs?.addEventListener('click', () => {
   }, 1500);
 });
 
+const imgTabletQr = document.getElementById('imgTabletQr');
+const inputTabletUrl = document.getElementById('inputTabletUrl');
+const btnCopyTabletUrl = document.getElementById('btnCopyTabletUrl');
+
+btnCopyTabletUrl?.addEventListener('click', () => {
+  if (!inputTabletUrl) return;
+  navigator.clipboard.writeText(inputTabletUrl.value);
+  btnCopyTabletUrl.textContent = '✅ Kopiert!';
+  setTimeout(() => {
+    btnCopyTabletUrl.textContent = '📋 Tablet-Link kopieren';
+  }, 1500);
+});
+
 // IPC Listeners
 window.omnichat.onInitState((data) => {
   if (data.streamDeckUrl) {
     streamDeckBaseUrl = data.streamDeckUrl;
     updateSdCustomUrl();
+  }
+  if (data.tabletUrl && inputTabletUrl) {
+    inputTabletUrl.value = data.tabletUrl;
+  }
+  if (data.tabletQrDataUrl && imgTabletQr) {
+    imgTabletQr.src = data.tabletQrDataUrl;
+    imgTabletQr.classList.remove('hidden');
   }
   if (data.spotifyObsUrl && inputSpotifyObsUrl) {
     inputSpotifyObsUrl.value = data.spotifyObsUrl;

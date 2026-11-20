@@ -822,6 +822,359 @@ const OBS_SPOTIFY_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_TABLET_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>OmniStream Tablet Companion</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: #0b0f19;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .tb-header {
+      background: #111827;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tb-brand { font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .tb-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .tb-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700; padding: 4px 8px;
+      border-radius: 99px; background: rgba(255,255,255,0.06); color: #cbd5e1;
+    }
+    .tb-dot { width: 7px; height: 7px; border-radius: 50%; background: #64748b; }
+    .tb-pill.connected .tb-dot { background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .tb-sp-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(29, 185, 84, 0.16); border: 1px solid rgba(29, 185, 84, 0.45);
+      color: #86efac; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
+      max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .tb-main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: row;
+    }
+    @media (max-width: 760px) {
+      .tb-main { flex-direction: column; }
+      .tb-deck { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.1); max-height: 210px; overflow-y: auto; }
+    }
+    .tb-deck {
+      width: 270px;
+      flex-shrink: 0;
+      background: #0f172a;
+      border-right: 1px solid rgba(255,255,255,0.1);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      align-content: start;
+      overflow-y: auto;
+    }
+    .deck-btn {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #f8fafc;
+      padding: 12px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      text-align: center;
+      min-height: 62px;
+      transition: transform 0.08s ease, background 0.12s ease;
+    }
+    .deck-btn:active { transform: scale(0.95); background: rgba(56, 189, 248, 0.25); }
+    .deck-btn.sp { border-color: rgba(29, 185, 84, 0.45); background: rgba(29, 185, 84, 0.14); }
+    .deck-btn.warn { border-color: rgba(245, 158, 11, 0.45); color: #fde68a; }
+    .deck-btn .ic { font-size: 19px; }
+
+    .tb-chat-wrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .tb-pinned {
+      background: rgba(245, 158, 11, 0.16);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 8px 12px;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .tb-pinned.active { display: flex; }
+    .tb-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tb-msg {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.03);
+      border-left: 3.5px solid #9146ff;
+      font-size: 15px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .tb-msg.youtube { border-left-color: #ff0033; }
+    .tb-msg.tiktok { border-left-color: #00f2fe; }
+    .tb-msg.highlight { background: rgba(245, 158, 11, 0.16); border-left-color: #f59e0b; }
+    .tb-msg img.emote { height: 1.45em; vertical-align: middle; margin: 0 2px; }
+    .tb-author { font-weight: 800; margin-right: 6px; }
+    .tb-reply-bar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #111827;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .tb-reply-bar input {
+      flex: 1;
+      min-width: 0;
+      background: #0b0f19;
+      border: 1px solid rgba(255,255,255,0.16);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .tb-send {
+      background: #9146ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .tb-sheet {
+      position: fixed;
+      bottom: 66px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.98);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 10px;
+      display: none;
+      gap: 8px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.8);
+      z-index: 99;
+      flex-wrap: wrap;
+      max-width: 92vw;
+    }
+    .tb-sheet.open { display: flex; }
+    .sheet-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .sheet-btn.warn { background: rgba(239, 68, 68, 0.28); color: #fecaca; }
+  </style>
+</head>
+<body>
+  <header class="tb-header">
+    <div class="tb-brand">⚡ OmniStream Tablet</div>
+    <div class="tb-pills">
+      <span class="tb-sp-pill" id="tbSpotify">🎵 Spotify: Warte...</span>
+      <span class="tb-pill" id="tbTw"><span class="tb-dot"></span>TW <strong id="tbTwV">0</strong></span>
+      <span class="tb-pill" id="tbYt"><span class="tb-dot"></span>YT <strong id="tbYtV">0</strong></span>
+      <span class="tb-pill" id="tbTt"><span class="tb-dot"></span>TT <strong id="tbTtV">0</strong></span>
+    </div>
+  </header>
+
+  <div class="tb-main">
+    <aside class="tb-deck">
+      <button class="deck-btn" onclick="sdApi('/pin-last')"><span class="ic">📌</span>Letzte pinnen</button>
+      <button class="deck-btn warn" onclick="sdApi('/unpin')"><span class="ic">❌</span>OBS-Pin aus</button>
+      <button class="deck-btn warn" onclick="sdApi('/clear-chat')"><span class="ic">🗑️</span>Chat leeren</button>
+      <button class="deck-btn" onclick="sdApi('/toggle-compact')"><span class="ic">↕️</span>Kompakt</button>
+      <button class="deck-btn sp" onclick="sdApi('/spotify-playpause')"><span class="ic">⏯</span>Play / Pause</button>
+      <button class="deck-btn sp" onclick="sdApi('/spotify-next')"><span class="ic">⏭</span>Nächster Song</button>
+      <button class="deck-btn sp" onclick="sdApi('/spotify-announce')"><span class="ic">📢</span>Song in Chat</button>
+      <button class="deck-btn" onclick="sdApi('/send?text=GG!')"><span class="ic">💬</span>Sende GG!</button>
+      <button class="deck-btn" onclick="sdApi('/send?text=!discord')"><span class="ic">🎮</span>!discord</button>
+      <button class="deck-btn" onclick="sdApi('/reconnect?platform=all')"><span class="ic">↻</span>Reconnect</button>
+    </aside>
+
+    <main class="tb-chat-wrap">
+      <div class="tb-pinned" id="tbPinned">
+        <span id="tbPinnedText"></span>
+        <button class="sheet-btn" onclick="sdApi('/unpin')">✕</button>
+      </div>
+      <div class="tb-feed" id="tbFeed"></div>
+      <footer class="tb-reply-bar">
+        <input type="text" id="tbInput" placeholder="Als Streamer schreiben..." />
+        <button class="tb-send" id="tbSend">Senden</button>
+      </footer>
+    </main>
+  </div>
+
+  <div class="tb-sheet" id="tbSheet">
+    <button class="sheet-btn" id="shPin">📌 In OBS pinnen</button>
+    <button class="sheet-btn" id="shReply">💬 Antworten</button>
+    <button class="sheet-btn warn" id="shDel">🗑️ Lokal löschen</button>
+    <button class="sheet-btn" onclick="closeSheet()">✕</button>
+  </div>
+
+  <script>
+    const feed = document.getElementById('tbFeed');
+    const tbInput = document.getElementById('tbInput');
+    const tbPinned = document.getElementById('tbPinned');
+    const tbPinnedText = document.getElementById('tbPinnedText');
+    const tbSheet = document.getElementById('tbSheet');
+    const tbSpotify = document.getElementById('tbSpotify');
+    let selectedMsg = null;
+    let ws = null;
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function sdApi(path) {
+      try { await fetch('/api/streamdeck' + path); } catch (e) {}
+    }
+
+    function renderTokens(m) {
+      if (Array.isArray(m.tokens) && m.tokens.length > 0) {
+        return m.tokens.map(t => t.type === 'emote'
+          ? '<img class="emote" src="' + t.url + '" alt="' + esc(t.name) + '" />'
+          : esc(t.text)
+        ).join('');
+      }
+      return esc(m.text);
+    }
+
+    function addMsg(m) {
+      const div = document.createElement('div');
+      div.className = 'tb-msg ' + m.platform + (m.isHighlight ? ' highlight' : '');
+      div.dataset.id = m.id;
+      const ic = m.platform === 'twitch' ? '🟣' : m.platform === 'youtube' ? '🔴' : '🎵';
+      div.innerHTML = ic + ' <span class="tb-author" style="color:' + (m.color || '#38bdf8') + '">' + esc(m.author) + ':</span>' + renderTokens(m);
+      div.onclick = () => {
+        selectedMsg = m;
+        tbSheet.classList.add('open');
+      };
+      feed.appendChild(div);
+      while (feed.children.length > 100) feed.removeChild(feed.firstChild);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function closeSheet() {
+      tbSheet.classList.remove('open');
+      selectedMsg = null;
+    }
+
+    document.getElementById('shPin').onclick = () => {
+      if (selectedMsg && ws) ws.send(JSON.stringify({ action: 'pin', data: selectedMsg }));
+      closeSheet();
+    };
+    document.getElementById('shReply').onclick = () => {
+      if (selectedMsg) {
+        tbInput.value = '@' + selectedMsg.author + ' ';
+        tbInput.focus();
+      }
+      closeSheet();
+    };
+    document.getElementById('shDel').onclick = () => {
+      if (selectedMsg && ws) ws.send(JSON.stringify({ action: 'delete-msg', id: selectedMsg.id }));
+      closeSheet();
+    };
+
+    function sendChat() {
+      const txt = tbInput.value.trim();
+      if (!txt) return;
+      sdApi('/send?text=' + encodeURIComponent(txt));
+      tbInput.value = '';
+    }
+    document.getElementById('tbSend').onclick = sendChat;
+    tbInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+
+    function updateStatus(st) {
+      if (!st) return;
+      const map = [['twitch','tbTw','tbTwV'],['youtube','tbYt','tbYtV'],['tiktok','tbTt','tbTtV']];
+      map.forEach(([k, pId, vId]) => {
+        const s = st[k] || {};
+        document.getElementById(pId).classList.toggle('connected', s.status === 'connected');
+        document.getElementById(vId).textContent = s.viewers || 0;
+      });
+    }
+
+    function updateSpotify(t) {
+      if (!t || !t.running || !t.title) {
+        tbSpotify.textContent = '🎵 Spotify: Pausiert/Aus';
+        return;
+      }
+      tbSpotify.textContent = (t.playing ? '▶️ ' : '⏸️ ') + t.title + (t.artist ? ' – ' + t.artist : '');
+    }
+
+    function connect() {
+      ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'chat') addMsg(p.data);
+          else if (p.type === 'status') updateStatus(p.data);
+          else if (p.type === 'spotify') updateSpotify(p.data);
+          else if (p.type === 'pin') {
+            if (p.data) {
+              tbPinnedText.innerHTML = '📌 <strong>' + esc(p.data.author) + ':</strong> ' + renderTokens(p.data);
+              tbPinned.classList.add('active');
+            } else {
+              tbPinned.classList.remove('active');
+            }
+          } else if (p.type === 'delete-msg') {
+            const el = feed.querySelector('[data-id="' + p.id + '"]');
+            if (el) el.remove();
+          } else if (p.type === 'clear') {
+            feed.innerHTML = '';
+            tbPinned.classList.remove('active');
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connect, 2000);
+    }
+    connect();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -837,7 +1190,7 @@ class ObsServer {
     this.onStreamDeckApi = null;
   }
 
-  start() {
+  start(listenHost = '0.0.0.0') {
     return new Promise((resolve) => {
       this.server = http.createServer((req, res) => {
         const parsedUrl = new URL(req.url || '/', `http://127.0.0.1:${this.port}`);
@@ -887,6 +1240,8 @@ class ObsServer {
           res.end(OBS_CUSTOM_DOCK_HTML);
         } else if (urlPath === '/spotify') {
           res.end(OBS_SPOTIFY_HTML);
+        } else if (urlPath === '/tablet') {
+          res.end(OBS_TABLET_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -923,10 +1278,10 @@ class ObsServer {
 
       this.server.on('error', () => {
         this.port += 1;
-        this.server.listen(this.port, '127.0.0.1', () => resolve(this.port));
+        this.server.listen(this.port, listenHost, () => resolve(this.port));
       });
 
-      this.server.listen(this.port, '127.0.0.1', () => {
+      this.server.listen(this.port, listenHost, () => {
         resolve(this.port);
       });
     });

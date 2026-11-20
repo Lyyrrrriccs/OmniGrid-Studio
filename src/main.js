@@ -913,7 +913,28 @@ app.whenReady().then(async () => {
 
   createMainWindow();
 
-  mainWindow.webContents.on('did-finish-load', () => {
+  mainWindow.webContents.on('did-finish-load', async () => {
+    const os = require('os');
+    const QRCode = require('qrcode');
+    const getLocalLanIp = () => {
+      const nets = os.networkInterfaces();
+      for (const name of Object.keys(nets)) {
+        for (const net of nets[name] || []) {
+          if (net.family === 'IPv4' && !net.internal) {
+            return net.address;
+          }
+        }
+      }
+      return '127.0.0.1';
+    };
+
+    const lanIp = getLocalLanIp();
+    const tabletUrl = `http://${lanIp}:${obsPort}/tablet`;
+    let tabletQrDataUrl = '';
+    try {
+      tabletQrDataUrl = await QRCode.toDataURL(tabletUrl, { width: 140, margin: 1 });
+    } catch (e) {}
+
     const saved = loadConfig();
     spotify.start(saved.spotifyEnabled !== false);
     if (saved.emoteSettings) {
@@ -929,13 +950,15 @@ app.whenReady().then(async () => {
     platformStatus.youtube.enabled = saved.youtubeEnabled !== false;
     platformStatus.tiktok.enabled = saved.tiktokEnabled !== false;
 
-    appendDiagLog('system', 'info', `OmniStream Chat gestartet — OBS & Stream Deck Server aktiv auf Port ${obsPort}`);
+    appendDiagLog('system', 'info', `OmniStream Chat gestartet — Tablet Companion unter ${tabletUrl}`);
 
     mainWindow.webContents.send('init-state', {
       config: saved,
       obsUrl: `http://127.0.0.1:${obsPort}`,
       obsDockUrl: `http://127.0.0.1:${obsPort}/dock`,
       spotifyObsUrl: `http://127.0.0.1:${obsPort}/spotify`,
+      tabletUrl,
+      tabletQrDataUrl,
       spotifyTrack: spotify.currentTrack,
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
       platformStatus,
