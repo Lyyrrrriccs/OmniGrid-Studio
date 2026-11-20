@@ -43,11 +43,15 @@ class SpotifyBridge extends EventEmitter {
         'tell application "System Events" to set isRunning to (name of processes) contains "Spotify"',
         'if not isRunning then return "OFF||"',
         'tell application "Spotify"',
-        'set st to player state as string',
-        'set tr to name of current track',
-        'set ar to artist of current track',
-        'set aw to artwork url of current track',
-        'return st & "||" & ar & "||" & tr & "||" & aw',
+        '  try',
+        '    set pState to (player state as text)',
+        '    set tName to (name of current track)',
+        '    set tArtist to (artist of current track)',
+        '    set tArtwork to (artwork url of current track)',
+        '    return pState & "||" & tArtist & "||" & tName & "||" & tArtwork',
+        '  on error',
+        '    return "paused||||||"',
+        '  end try',
         'end tell'
       ].join('\n');
       exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 2500 }, (err, stdout) => {
