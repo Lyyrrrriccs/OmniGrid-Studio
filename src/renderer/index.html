@@ -481,6 +481,55 @@
           </div>
         </div>
 
+        <!-- OBS ALERT-BOX OVERLAY -->
+        <div class="sidebar-section obs-alerts-box">
+          <h3>🚨 OBS Alert-Box Overlay</h3>
+          <p class="section-hint">
+            Zeige Follows, Subs, Bits &amp; Raids als animierte Alerts im Stream. Füge die URL in OBS als <strong>Browser-Quelle</strong> hinzu.
+          </p>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkObsAlertsEnabled" checked />
+            <span>Alert-Overlay aktivieren</span>
+          </label>
+          <div class="obs-url-row" style="margin-top: 6px;">
+            <input type="text" id="inputObsAlertsUrl" readonly value="http://127.0.0.1:4588/alerts" />
+            <button class="btn-sm" id="btnCopyObsAlerts">Alert-URL kopieren</button>
+          </div>
+
+          <label style="margin-top: 8px; display: block; font-weight: 600;">Welche Events im Stream anzeigen?</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 4px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_follow" checked /><span>💙 Follow</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_sub" checked /><span>⭐ Sub / Member</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_resub" checked /><span>💜 Resub</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_subgift" checked /><span>🎁 Sub-Gift</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_bits" checked /><span>💎 Bits / SuperChat</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_raid" checked /><span>🚀 Raid</span></label>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+            <div style="flex: 1;">
+              <label for="selObsAlertAnim" style="font-size: 11px;">Animation</label>
+              <select id="selObsAlertAnim" style="width: 100%; margin-top: 2px;">
+                <option value="pop">Pop-In</option>
+                <option value="slide">Slide-Up</option>
+                <option value="glow">Neon-Glow</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label for="rngObsAlertDuration" style="font-size: 11px;">Dauer: <strong id="valObsAlertDuration">5s</strong></label>
+              <input type="range" id="rngObsAlertDuration" min="2" max="12" step="1" value="5" style="width: 100%; margin-top: 4px;" />
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px;">
+            <label class="checkbox-row" style="margin: 0;">
+              <input type="checkbox" id="chkObsAlertSound" checked />
+              <span>🔊 Alert-Sound im OBS</span>
+            </label>
+            <button class="btn-sm" id="btnTestObsAlert">▶ Test-Alert</button>
+          </div>
+        </div>
+
         <!-- TABLET & IPAD COMPANION MODE -->
         <div class="sidebar-section tablet-box">
           <h3>📱 Tablet &amp; iPad Companion</h3>

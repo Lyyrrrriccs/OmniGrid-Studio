@@ -412,6 +412,23 @@ function playAlertTone(kind = 'mention') {
   } catch (e) {}
 }
 
+const OBS_ALERT_TYPES = ['follow', 'sub', 'resub', 'subgift', 'bits', 'raid'];
+
+function getObsAlertSettings() {
+  const types = {};
+  for (const t of OBS_ALERT_TYPES) {
+    const el = document.getElementById(`chkAlert_${t}`);
+    types[t] = el ? el.checked : true;
+  }
+  return {
+    enabled: document.getElementById('chkObsAlertsEnabled')?.checked !== false,
+    durationSec: parseInt(document.getElementById('rngObsAlertDuration')?.value || '5', 10),
+    soundEnabled: document.getElementById('chkObsAlertSound')?.checked !== false,
+    animation: document.getElementById('selObsAlertAnim')?.value || 'pop',
+    types
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -422,6 +439,7 @@ function getFormConfig() {
     soundAlerts: soundAlertsEnabled,
     compactChat: compactChatEnabled,
     spotifyAutoCommand: document.getElementById('chkSpotifyAutoCmd')?.checked !== false,
+    obsAlerts: getObsAlertSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1574,6 +1592,25 @@ function applyConfigToForm(cfg) {
   const chkSpAuto = document.getElementById('chkSpotifyAutoCmd');
   if (chkSpAuto) chkSpAuto.checked = cfg.spotifyAutoCommand !== false;
 
+  const oa = cfg.obsAlerts || {};
+  const chkOaEnabled = document.getElementById('chkObsAlertsEnabled');
+  if (chkOaEnabled) chkOaEnabled.checked = oa.enabled !== false;
+  const selOaAnim = document.getElementById('selObsAlertAnim');
+  if (selOaAnim) selOaAnim.value = oa.animation || 'pop';
+  const rngOaDur = document.getElementById('rngObsAlertDuration');
+  const valOaDur = document.getElementById('valObsAlertDuration');
+  if (rngOaDur) {
+    const dur = oa.durationSec ?? 5;
+    rngOaDur.value = dur;
+    if (valOaDur) valOaDur.textContent = `${dur}s`;
+  }
+  const chkOaSound = document.getElementById('chkObsAlertSound');
+  if (chkOaSound) chkOaSound.checked = oa.soundEnabled !== false;
+  for (const t of OBS_ALERT_TYPES) {
+    const el = document.getElementById(`chkAlert_${t}`);
+    if (el) el.checked = oa.types ? oa.types[t] !== false : true;
+  }
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -2046,6 +2083,49 @@ btnCopyTabletUrl?.addEventListener('click', () => {
   }, 1500);
 });
 
+// --- OBS ALERT-BOX OVERLAY HANDLERS ---
+const inputObsAlertsUrl = document.getElementById('inputObsAlertsUrl');
+const btnCopyObsAlerts = document.getElementById('btnCopyObsAlerts');
+const btnTestObsAlert = document.getElementById('btnTestObsAlert');
+
+btnCopyObsAlerts?.addEventListener('click', () => {
+  if (!inputObsAlertsUrl) return;
+  navigator.clipboard.writeText(inputObsAlertsUrl.value);
+  btnCopyObsAlerts.textContent = '✅ Kopiert!';
+  setTimeout(() => {
+    btnCopyObsAlerts.textContent = 'Alert-URL kopieren';
+  }, 1500);
+});
+
+btnTestObsAlert?.addEventListener('click', async () => {
+  const activeType = OBS_ALERT_TYPES.find((t) => document.getElementById(`chkAlert_${t}`)?.checked) || 'sub';
+  await window.omnichat.testObsAlert(activeType);
+  btnTestObsAlert.textContent = '✅ Gesendet!';
+  setTimeout(() => {
+    btnTestObsAlert.textContent = '▶ Test-Alert';
+  }, 1400);
+});
+
+const rngObsAlertDuration = document.getElementById('rngObsAlertDuration');
+const valObsAlertDuration = document.getElementById('valObsAlertDuration');
+rngObsAlertDuration?.addEventListener('input', () => {
+  if (valObsAlertDuration) valObsAlertDuration.textContent = `${rngObsAlertDuration.value}s`;
+});
+rngObsAlertDuration?.addEventListener('change', () => {
+  window.omnichat.saveProfile(getFormConfig());
+});
+
+[
+  'chkObsAlertsEnabled',
+  'selObsAlertAnim',
+  'chkObsAlertSound',
+  ...OBS_ALERT_TYPES.map((t) => `chkAlert_${t}`)
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
 // IPC Listeners
 window.omnichat.onInitState((data) => {
   if (data.streamDeckUrl) {
@@ -2058,6 +2138,9 @@ window.omnichat.onInitState((data) => {
   if (data.tabletQrDataUrl && imgTabletQr) {
     imgTabletQr.src = data.tabletQrDataUrl;
     imgTabletQr.classList.remove('hidden');
+  }
+  if (data.obsAlertsUrl && inputObsAlertsUrl) {
+    inputObsAlertsUrl.value = data.obsAlertsUrl;
   }
   if (data.spotifyObsUrl && inputSpotifyObsUrl) {
     inputSpotifyObsUrl.value = data.spotifyObsUrl;

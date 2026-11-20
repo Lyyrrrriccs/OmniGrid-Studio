@@ -98,6 +98,20 @@ function getDefaultConfig() {
     compactChat: false,
     spotifyEnabled: true,
     spotifyAutoCommand: true,
+    obsAlerts: {
+      enabled: true,
+      durationSec: 5,
+      soundEnabled: true,
+      animation: 'pop',
+      types: {
+        follow: true,
+        sub: true,
+        resub: true,
+        subgift: true,
+        bits: true,
+        raid: true
+      }
+    },
     hideBots: false,
     collapseSpam: true,
     platformIndicatorStyle: 'icon_badge',
@@ -457,9 +471,51 @@ function forwardChatMessage(msg) {
   } catch (e) {}
 }
 
+const OBS_ALERT_TYPE_MAP = {
+  follow: 'follow',
+  sub: 'sub',
+  member: 'sub',
+  resub: 'resub',
+  subgift: 'subgift',
+  bits: 'bits',
+  gift: 'bits',
+  superchat: 'bits',
+  raid: 'raid'
+};
+
+const OBS_ALERT_COLOR_MAP = {
+  follow: '#3b82f6',
+  sub: '#9146ff',
+  resub: '#a855f7',
+  subgift: '#ec4899',
+  bits: '#f59e0b',
+  raid: '#10b981'
+};
+
+function normalizeObsAlertType(rawType) {
+  const key = String(rawType || '').toLowerCase().trim();
+  return OBS_ALERT_TYPE_MAP[key] || 'follow';
+}
+
+function broadcastEventToObsAlert(ev, bypassFilter = false) {
+  const cfg = loadConfig();
+  const alertCfg = cfg.obsAlerts || getDefaultConfig().obsAlerts;
+  const normType = normalizeObsAlertType(ev.type);
+  if (!bypassFilter) {
+    if (alertCfg.enabled === false) return;
+    if (alertCfg.types && alertCfg.types[normType] === false) return;
+  }
+  obsServer.broadcastAlert({
+    ...ev,
+    normType,
+    color: OBS_ALERT_COLOR_MAP[normType] || '#9146ff'
+  });
+}
+
 function forwardStreamerEvent(ev) {
   appendDiagLog(ev.platform, 'event', `${(ev.type || 'EVENT').toUpperCase()}: ${ev.author} — ${ev.summary}`);
   broadcastToWindows('streamer-event', ev);
+  broadcastEventToObsAlert(ev, false);
 }
 
 function forwardStatus(update) {
@@ -811,6 +867,28 @@ app.whenReady().then(async () => {
       return { ok: true, demoActive };
     }
 
+    if (act === 'test-alert') {
+      const alertType = normalizeObsAlertType(params.type || body.type || 'sub');
+      const sampleMap = {
+        follow: { author: 'NeuerFollower', summary: 'Folgt jetzt dem Kanal!' },
+        sub: { author: 'StreamFan99', summary: 'Neues Tier-1 Abo!' },
+        resub: { author: 'TreuerZuschauer', summary: '6 Monate Resub! Danke!' },
+        subgift: { author: 'GrosszuegigerMod', summary: 'Hat 5 Subs verschenkt!' },
+        bits: { author: 'CheerKing', summary: '500 Bits gecheert!' },
+        raid: { author: 'PartnerStreamer', summary: 'Raid mit 42 Zuschauern!' }
+      };
+      const sample = sampleMap[alertType] || sampleMap.sub;
+      broadcastEventToObsAlert({
+        id: `test_alert_${Date.now()}`,
+        platform: String(params.platform || body.platform || 'twitch'),
+        type: alertType,
+        author: String(params.author || body.author || sample.author),
+        summary: String(params.summary || body.summary || sample.summary),
+        timestamp: Date.now()
+      }, true);
+      return { ok: true, type: alertType };
+    }
+
     if (act === 'reconnect') {
       const plat = String(params.platform || body.platform || 'all').toLowerCase();
       stopDemoSimulation();
@@ -946,6 +1024,7 @@ app.whenReady().then(async () => {
         platformIndicatorStyle: saved.platformIndicatorStyle || 'icon_badge'
       });
     }
+    obsServer.broadcastAlertConfig(saved.obsAlerts || getDefaultConfig().obsAlerts);
     platformStatus.twitch.enabled = saved.twitchEnabled !== false;
     platformStatus.youtube.enabled = saved.youtubeEnabled !== false;
     platformStatus.tiktok.enabled = saved.tiktokEnabled !== false;
@@ -956,6 +1035,7 @@ app.whenReady().then(async () => {
       config: saved,
       obsUrl: `http://127.0.0.1:${obsPort}`,
       obsDockUrl: `http://127.0.0.1:${obsPort}/dock`,
+      obsAlertsUrl: `http://127.0.0.1:${obsPort}/alerts`,
       spotifyObsUrl: `http://127.0.0.1:${obsPort}/spotify`,
       tabletUrl,
       tabletQrDataUrl,
@@ -989,8 +1069,33 @@ app.whenReady().then(async () => {
         platformIndicatorStyle: currentCfg.platformIndicatorStyle || 'icon_badge'
       });
     }
+    if (currentCfg.obsAlerts) {
+      obsServer.broadcastAlertConfig(currentCfg.obsAlerts);
+    }
     saveConfig(currentCfg);
     return { ok: true, config: currentCfg };
+  });
+
+  ipcMain.handle('test-obs-alert', (_ev, type) => {
+    const alertType = normalizeObsAlertType(type || 'sub');
+    const sampleMap = {
+      follow: { author: 'NeuerFollower', summary: 'Folgt jetzt dem Kanal!' },
+      sub: { author: 'StreamFan99', summary: 'Neues Tier-1 Abo!' },
+      resub: { author: 'TreuerZuschauer', summary: '6 Monate Resub! Danke!' },
+      subgift: { author: 'GrosszuegigerMod', summary: 'Hat 5 Subs verschenkt!' },
+      bits: { author: 'CheerKing', summary: '500 Bits gecheert!' },
+      raid: { author: 'PartnerStreamer', summary: 'Raid mit 42 Zuschauern!' }
+    };
+    const sample = sampleMap[alertType] || sampleMap.sub;
+    broadcastEventToObsAlert({
+      id: `test_alert_${Date.now()}`,
+      platform: 'twitch',
+      type: alertType,
+      author: sample.author,
+      summary: sample.summary,
+      timestamp: Date.now()
+    }, true);
+    return { ok: true, type: alertType };
   });
 
   ipcMain.handle('open-standalone-chat', (_ev, snapLeftFullHeight) => {

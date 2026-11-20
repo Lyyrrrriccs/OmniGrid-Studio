@@ -40,5 +40,6 @@ contextBridge.exposeInMainWorld('omnichat', {
   setHidTarget: (target) => ipcRenderer.invoke('set-hid-target', target),
   updateGlobalHotkeys: (cfg) => ipcRenderer.invoke('update-global-hotkeys', cfg),
   triggerPeripheralAction: (payload) => ipcRenderer.invoke('trigger-peripheral-action', payload),
-  spotifyControl: (action) => ipcRenderer.invoke('spotify-control', action)
+  spotifyControl: (action) => ipcRenderer.invoke('spotify-control', action),
+  testObsAlert: (type) => ipcRenderer.invoke('test-obs-alert', type)
 });

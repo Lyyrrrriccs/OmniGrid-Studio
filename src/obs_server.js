@@ -1175,6 +1175,187 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_ALERTS_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniStream OBS Alert Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 16px;
+    }
+    .alert-card {
+      width: 440px;
+      max-width: 94vw;
+      background: rgba(15, 23, 42, 0.94);
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 18px 22px;
+      text-align: center;
+      box-shadow: 0 18px 46px rgba(0,0,0,0.65), 0 0 28px rgba(245, 158, 11, 0.35);
+      opacity: 0;
+      transform: scale(0.82) translateY(16px);
+      pointer-events: none;
+      transition: opacity 0.32s ease, transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .alert-card.anim-slide {
+      transform: translateY(-48px);
+    }
+    .alert-card.visible {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    .alert-card.anim-glow.visible {
+      animation: alertPulse 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes alertPulse {
+      from { box-shadow: 0 18px 46px rgba(0,0,0,0.65), 0 0 18px var(--ac-glow, rgba(245,158,11,0.4)); }
+      to { box-shadow: 0 18px 46px rgba(0,0,0,0.65), 0 0 42px var(--ac-glow, rgba(245,158,11,0.85)); }
+    }
+    .al-top {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      background: rgba(255,255,255,0.1);
+      margin-bottom: 10px;
+    }
+    .al-author {
+      font-size: 26px;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+      margin-bottom: 6px;
+      word-break: break-word;
+    }
+    .al-summary {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e2e8f0;
+      line-height: 1.35;
+    }
+  </style>
+</head>
+<body>
+  <div class="alert-card" id="alertCard">
+    <div class="al-top" id="alTop">⭐ NEUES EVENT</div>
+    <div class="al-author" id="alAuthor">Streamer</div>
+    <div class="al-summary" id="alSummary">Vielen Dank!</div>
+  </div>
+  <script>
+    const card = document.getElementById('alertCard');
+    const alTop = document.getElementById('alTop');
+    const alAuthor = document.getElementById('alAuthor');
+    const alSummary = document.getElementById('alSummary');
+
+    let alertConfig = {
+      enabled: true,
+      durationSec: 5,
+      soundEnabled: true,
+      animation: 'pop',
+      types: { follow: true, sub: true, resub: true, subgift: true, bits: true, raid: true }
+    };
+    const queue = [];
+    let isShowing = false;
+    let audioCtx = null;
+
+    const LABELS = {
+      follow: ['❤️', 'Neuer Follow'],
+      sub: ['⭐', 'Neues Sub / Member'],
+      resub: ['🌟', 'Resub'],
+      subgift: ['🎁', 'Gifted Subs'],
+      bits: ['💎', 'Bits / Gift / SuperChat'],
+      raid: ['🚨', 'Raid']
+    };
+    const PLAT_ICONS = { twitch: '🟣', youtube: '🔴', tiktok: '🎵' };
+
+    function playChime() {
+      if (!alertConfig.soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.1);
+        osc.frequency.setValueAtTime(783.99, now + 0.2);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc.start(now);
+        osc.stop(now + 0.55);
+      } catch (e) {}
+    }
+
+    function processQueue() {
+      if (isShowing || queue.length === 0) return;
+      isShowing = true;
+      const ev = queue.shift();
+      const t = ev.normType || ev.type || 'sub';
+      const [evIcon, evLabel] = LABELS[t] || ['✨', 'Stream Event'];
+      const pIcon = PLAT_ICONS[ev.platform] || '⚡';
+      const color = ev.color || '#f59e0b';
+
+      card.style.borderColor = color;
+      card.style.setProperty('--ac-glow', color);
+      alTop.style.background = color;
+      alTop.style.color = '#0b0f19';
+      alTop.textContent = pIcon + ' ' + evIcon + ' ' + evLabel;
+      alAuthor.textContent = ev.author || 'Zuschauer';
+      alSummary.textContent = ev.summary || '';
+
+      card.className = 'alert-card anim-' + (alertConfig.animation || 'pop');
+      void card.offsetWidth;
+      card.classList.add('visible');
+      playChime();
+
+      const ms = Math.max(2000, Math.min(15000, Number(alertConfig.durationSec || 5) * 1000));
+      setTimeout(() => {
+        card.classList.remove('visible');
+        setTimeout(() => {
+          isShowing = false;
+          processQueue();
+        }, 420);
+      }, ms);
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'alert-config' && p.data) {
+            alertConfig = { ...alertConfig, ...p.data };
+          } else if (p.type === 'obs-alert' && p.data) {
+            queue.push(p.data);
+            processQueue();
+          }
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -1186,6 +1367,7 @@ class ObsServer {
     this.currentAppearance = null;
     this.currentStatus = null;
     this.currentSpotify = null;
+    this.currentAlertConfig = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
   }
@@ -1242,6 +1424,8 @@ class ObsServer {
           res.end(OBS_SPOTIFY_HTML);
         } else if (urlPath === '/tablet') {
           res.end(OBS_TABLET_HTML);
+        } else if (urlPath === '/alerts') {
+          res.end(OBS_ALERTS_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -1258,6 +1442,9 @@ class ObsServer {
         }
         if (this.currentSpotify) {
           ws.send(JSON.stringify({ type: 'spotify', data: this.currentSpotify }));
+        }
+        if (this.currentAlertConfig) {
+          ws.send(JSON.stringify({ type: 'alert-config', data: this.currentAlertConfig }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -1285,6 +1472,15 @@ class ObsServer {
         resolve(this.port);
       });
     });
+  }
+
+  broadcastAlertConfig(cfg) {
+    this.currentAlertConfig = cfg;
+    this._broadcast({ type: 'alert-config', data: cfg });
+  }
+
+  broadcastAlert(alertPayload) {
+    this._broadcast({ type: 'obs-alert', data: alertPayload });
   }
 
   broadcastSpotify(track) {
