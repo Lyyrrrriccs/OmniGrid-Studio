@@ -429,6 +429,31 @@ function getObsAlertSettings() {
   };
 }
 
+let savedYoutubeOAuth = {
+  clientId: '',
+  clientSecret: '',
+  accessToken: '',
+  refreshToken: '',
+  expiresAt: 0,
+  accountName: ''
+};
+
+function updateYoutubeOAuthUI(oauth = savedYoutubeOAuth) {
+  savedYoutubeOAuth = { ...savedYoutubeOAuth, ...(oauth || {}) };
+  const statusEl = document.getElementById('ytOAuthStatus');
+  const btnLogout = document.getElementById('btnYtOAuthLogout');
+  const btnLogin = document.getElementById('btnYtOAuthLogin');
+  const hasWrite = Boolean(savedYoutubeOAuth.accessToken || (savedYoutubeOAuth.refreshToken && savedYoutubeOAuth.clientId));
+  if (statusEl) {
+    statusEl.textContent = hasWrite
+      ? `✅ Schreibrecht (${savedYoutubeOAuth.accountName || 'Aktiv'})`
+      : 'Nur-Lesen';
+    statusEl.style.color = hasWrite ? '#4ade80' : '#94a3b8';
+  }
+  if (btnLogout) btnLogout.classList.toggle('hidden', !hasWrite);
+  if (btnLogin) btnLogin.textContent = hasWrite ? '🔄 Neu anmelden' : '🔐 Mit Google anmelden';
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -478,6 +503,11 @@ function getFormConfig() {
     youtubeEnabled: chkEnableYoutube.checked,
     youtubeChannel: inputYoutubeChannel.value.trim(),
     youtubeVideoId: inputYoutubeVideoId.value.trim() || selectYoutubeStream.value,
+    youtubeOAuth: {
+      ...savedYoutubeOAuth,
+      clientId: document.getElementById('inputYtClientId')?.value.trim() || '',
+      clientSecret: document.getElementById('inputYtClientSecret')?.value.trim() || ''
+    },
     tiktokEnabled: chkEnableTiktok.checked,
     tiktokChannel: inputTiktokChannel.value.trim(),
     tiktokRoomId: inputTiktokRoomId.value.trim()
@@ -609,6 +639,42 @@ selectYoutubeStream.addEventListener('change', () => {
   if (selectYoutubeStream.value) {
     window.omnichat.connectPlatform('youtube', getFormConfig());
   }
+});
+
+document.getElementById('btnYtOAuthLogin')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btnYtOAuthLogin');
+  const clientId = document.getElementById('inputYtClientId')?.value.trim() || '';
+  const clientSecret = document.getElementById('inputYtClientSecret')?.value.trim() || '';
+  if (!clientId) {
+    alert('Bitte zuerst eine Google OAuth2 Client-ID (Desktop-App) eintragen.');
+    return;
+  }
+  await window.omnichat.saveProfile(getFormConfig());
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Browser geöffnet...';
+  }
+  const res = await window.omnichat.youtubeOAuthLogin({ clientId, clientSecret });
+  if (btn) btn.disabled = false;
+  if (res?.ok && res.oauth) {
+    updateYoutubeOAuthUI(res.oauth);
+  } else {
+    updateYoutubeOAuthUI(savedYoutubeOAuth);
+    if (res?.error) alert(res.error);
+  }
+});
+
+document.getElementById('btnYtOAuthLogout')?.addEventListener('click', async () => {
+  const res = await window.omnichat.youtubeOAuthLogout();
+  if (res?.ok) {
+    updateYoutubeOAuthUI(res.oauth || {});
+  }
+});
+
+['inputYtClientId', 'inputYtClientSecret'].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
 });
 
 // Toggle Always-on-Top
@@ -1517,7 +1583,9 @@ function updatePlatformStatusUI(states) {
         if (st.error) {
           errEl.textContent = st.error;
         } else if (plat === 'youtube' && st.streamTitle) {
-          errEl.textContent = `Verbunden: ${st.streamTitle}`;
+          errEl.textContent = st.canWrite
+            ? `✅ Verbunden (${st.streamTitle}) — Chat lesen & schreiben aktiv`
+            : `✅ Verbunden (${st.streamTitle}) — Nur-Lesen (OAuth2 für Schreiben optional)`;
         } else if (plat === 'tiktok' && st.roomId) {
           errEl.textContent = `Room-ID: ${st.roomId}`;
         } else if (plat === 'twitch') {
@@ -1670,6 +1738,12 @@ function applyConfigToForm(cfg) {
   inputTwitchToken.value = cfg.twitchToken || '';
   inputYoutubeChannel.value = cfg.youtubeChannel || '';
   inputYoutubeVideoId.value = cfg.youtubeVideoId || '';
+  const ytOAuth = cfg.youtubeOAuth || {};
+  const elYtCid = document.getElementById('inputYtClientId');
+  const elYtCsec = document.getElementById('inputYtClientSecret');
+  if (elYtCid) elYtCid.value = ytOAuth.clientId || '';
+  if (elYtCsec) elYtCsec.value = ytOAuth.clientSecret || '';
+  updateYoutubeOAuthUI(ytOAuth);
   inputTiktokChannel.value = cfg.tiktokChannel || '';
   inputTiktokRoomId.value = cfg.tiktokRoomId || '';
 

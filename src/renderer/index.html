@@ -134,7 +134,20 @@
               </div>
               <input type="text" id="inputYoutubeVideoId" placeholder="Oder manuelle Video-ID / URL (optional)" style="margin-top: 4px;" />
             </div>
-            <div class="cap-info">ℹ️ Ohne API-Key: Live-Chat, Custom-Emotes, SuperChats & Members lesen • Moderation: Lokal im Feed & OBS</div>
+            <div class="cap-info">ℹ️ Ohne API-Key: Live-Chat, Custom-Emotes, SuperChats &amp; Members lesen • Zum Schreiben: Google OAuth2</div>
+            <details class="yt-oauth-details" style="margin-top: 6px; font-size: 11px;">
+              <summary style="cursor: pointer; user-select: none; color: #cbd5e1; font-weight: 600;">
+                🔑 YouTube Schreiben (OAuth2) — <span id="ytOAuthStatus">Nur-Lesen</span>
+              </summary>
+              <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;">
+                <input type="text" id="inputYtClientId" placeholder="Google OAuth2 Client-ID (Desktop-App)" />
+                <input type="password" id="inputYtClientSecret" placeholder="Client-Secret (optional)" />
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-sm" id="btnYtOAuthLogin" style="flex: 1;">🔐 Mit Google anmelden</button>
+                  <button class="btn-sm hidden" id="btnYtOAuthLogout">Abmelden</button>
+                </div>
+              </div>
+            </details>
             <small class="error-hint" id="err_youtube"></small>
           </div>
 
