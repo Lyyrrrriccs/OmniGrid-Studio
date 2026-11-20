@@ -10,6 +10,7 @@
     "build:win": "node scripts/build_win.js"
   },
   "dependencies": {
+    "qrcode": "^1.5.4",
     "tiktok-live-connector": "latest",
     "ws": "^8.18.0"
   },
