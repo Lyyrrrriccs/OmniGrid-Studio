@@ -43,5 +43,8 @@ contextBridge.exposeInMainWorld('omnichat', {
   spotifyControl: (action) => ipcRenderer.invoke('spotify-control', action),
   testObsAlert: (type) => ipcRenderer.invoke('test-obs-alert', type),
   youtubeOAuthLogin: (creds) => ipcRenderer.invoke('youtube-oauth-login', creds),
-  youtubeOAuthLogout: () => ipcRenderer.invoke('youtube-oauth-logout')
+  youtubeOAuthLogout: () => ipcRenderer.invoke('youtube-oauth-logout'),
+  pollAction: (payload) => ipcRenderer.invoke('poll-action', payload),
+  onPollUpdated: (cb) => ipcRenderer.on('poll-updated', (_ev, data) => cb(data)),
+  onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data))
 });

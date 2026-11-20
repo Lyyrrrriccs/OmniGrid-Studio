@@ -541,6 +541,95 @@
             </label>
             <button class="btn-sm" id="btnTestObsAlert">▶ Test-Alert</button>
           </div>
+
+          <details style="margin-top: 8px; font-size: 11px;">
+            <summary style="cursor: pointer; user-select: none; color: #cbd5e1; font-weight: 600;">🖼️ Eigene Alert-Medien (GIF / Audio-URL)</summary>
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;">
+              <select id="selAlertMediaType">
+                <option value="follow">💙 Follow</option>
+                <option value="sub">⭐ Sub / Member</option>
+                <option value="resub">💜 Resub</option>
+                <option value="subgift">🎁 Sub-Gift</option>
+                <option value="bits">💎 Bits / SuperChat</option>
+                <option value="raid">🚀 Raid</option>
+              </select>
+              <input type="text" id="inputAlertMediaImage" placeholder="Bild / GIF-URL (optional)" />
+              <input type="text" id="inputAlertMediaAudio" placeholder="Audio-URL (.mp3/.wav/.ogg, optional)" />
+            </div>
+          </details>
+        </div>
+
+        <!-- OBS GOAL-BAR & MULTISTREAM POLL -->
+        <div class="sidebar-section obs-goals-poll-box">
+          <h3>📊 OBS Goal-Bar &amp; Live-Poll</h3>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkObsGoalEnabled" checked />
+            <span>Goal-Bar Overlay aktivieren</span>
+          </label>
+          <div class="obs-url-row" style="margin-top: 4px;">
+            <input type="text" id="inputObsGoalsUrl" readonly value="http://127.0.0.1:4588/goals" />
+            <button class="btn-sm" id="btnCopyObsGoals">Goal-URL</button>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <input type="text" id="inputGoalTitle" placeholder="Titel (z. B. Sub-Goal)" value="Sub-Goal" style="flex: 2;" />
+            <input type="color" id="clrGoalBar" value="#9146ff" title="Balkenfarbe" style="width: 34px; height: 28px; padding: 1px;" />
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 5px;">
+            <input type="number" id="inputGoalCurrent" min="0" value="0" title="Aktuell" style="flex: 1;" />
+            <span style="align-self: center; font-size: 12px;">/</span>
+            <input type="number" id="inputGoalTarget" min="1" value="50" title="Ziel" style="flex: 1;" />
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkGoalAutoFollow" /><span>Auto +1 Follow</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoalAutoSub" checked /><span>Auto +1 Sub</span></label>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;" />
+
+          <label style="font-weight: 600;">🗳️ Multistream-Poll (Chat: <code>!vote 1..N</code>)</label>
+          <div class="obs-url-row" style="margin-top: 4px;">
+            <input type="text" id="inputObsPollUrl" readonly value="http://127.0.0.1:4588/poll" />
+            <button class="btn-sm" id="btnCopyObsPoll">Poll-URL</button>
+          </div>
+          <input type="text" id="inputPollQuestion" placeholder="Frage (z. B. Nächstes Spiel?)" style="margin-top: 6px;" />
+          <input type="text" id="inputPollOptions" placeholder="Optionen kommagetrennt (z. B. Valorant, Minecraft)" style="margin-top: 4px;" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnPollStart" style="flex: 1;">▶ Start</button>
+            <button class="btn-sm" id="btnPollStop">⏹ Stopp</button>
+            <button class="btn-sm" id="btnPollReset">🔄 Reset</button>
+          </div>
+          <div id="pollPreviewStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Keine aktive Umfrage</div>
+        </div>
+
+        <!-- TEXT-TO-SPEECH (TTS) -->
+        <div class="sidebar-section tts-box">
+          <h3>🗣️ Text-to-Speech (TTS)</h3>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkTtsEnabled" />
+            <span>TTS-Vorlesen aktivieren</span>
+          </label>
+          <div style="display: flex; gap: 10px; margin-top: 4px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkTtsAlerts" checked /><span>Events / Alerts</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkTtsChatCmd" checked /><span><code>!tts</code> im Chat</span></label>
+          </div>
+          <select id="selTtsVoice" style="width: 100%; margin-top: 6px;">
+            <option value="">System-Standardstimme</option>
+          </select>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <div style="flex: 1;">
+              <label style="font-size: 11px;">Tempo: <strong id="valTtsRate">1.0x</strong></label>
+              <input type="range" id="rngTtsRate" min="0.6" max="1.6" step="0.1" value="1.0" style="width: 100%;" />
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px;">Lautstärke: <strong id="valTtsVol">90%</strong></label>
+              <input type="range" id="rngTtsVol" min="0.1" max="1.0" step="0.1" value="0.9" style="width: 100%;" />
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnTtsTest" style="flex: 1;">▶ Test</button>
+            <button class="btn-sm" id="btnTtsSkip">⏭ Skip</button>
+            <button class="btn-sm" id="btnTtsClear">🗑 Leeren</button>
+          </div>
         </div>
 
         <!-- TABLET & IPAD COMPANION MODE -->

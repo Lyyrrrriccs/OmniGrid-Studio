@@ -1252,12 +1252,14 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <div class="alert-card" id="alertCard">
+    <img id="alMedia" style="display:none;max-width:160px;max-height:110px;border-radius:10px;margin:0 auto 10px;object-fit:contain;" alt="" />
     <div class="al-top" id="alTop">⭐ NEUES EVENT</div>
     <div class="al-author" id="alAuthor">Streamer</div>
     <div class="al-summary" id="alSummary">Vielen Dank!</div>
   </div>
   <script>
     const card = document.getElementById('alertCard');
+    const alMedia = document.getElementById('alMedia');
     const alTop = document.getElementById('alTop');
     const alAuthor = document.getElementById('alAuthor');
     const alSummary = document.getElementById('alSummary');
@@ -1267,7 +1269,8 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
       durationSec: 5,
       soundEnabled: true,
       animation: 'pop',
-      types: { follow: true, sub: true, resub: true, subgift: true, bits: true, raid: true }
+      types: { follow: true, sub: true, resub: true, subgift: true, bits: true, raid: true },
+      customMedia: {}
     };
     const queue = [];
     let isShowing = false;
@@ -1304,6 +1307,19 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
       } catch (e) {}
     }
 
+    function playAlertAudio(customAudioUrl) {
+      if (!alertConfig.soundEnabled) return;
+      if (customAudioUrl) {
+        try {
+          const audio = new Audio(customAudioUrl);
+          audio.volume = 0.85;
+          audio.play().catch(() => playChime());
+          return;
+        } catch (e) {}
+      }
+      playChime();
+    }
+
     function processQueue() {
       if (isShowing || queue.length === 0) return;
       isShowing = true;
@@ -1312,6 +1328,15 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
       const [evIcon, evLabel] = LABELS[t] || ['✨', 'Stream Event'];
       const pIcon = PLAT_ICONS[ev.platform] || '⚡';
       const color = ev.color || '#f59e0b';
+      const media = (alertConfig.customMedia && alertConfig.customMedia[t]) || {};
+
+      if (media.imageUrl) {
+        alMedia.src = media.imageUrl;
+        alMedia.style.display = 'block';
+      } else {
+        alMedia.style.display = 'none';
+        alMedia.removeAttribute('src');
+      }
 
       card.style.borderColor = color;
       card.style.setProperty('--ac-glow', color);
@@ -1324,7 +1349,7 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
       card.className = 'alert-card anim-' + (alertConfig.animation || 'pop');
       void card.offsetWidth;
       card.classList.add('visible');
-      playChime();
+      playAlertAudio(media.audioUrl || '');
 
       const ms = Math.max(2000, Math.min(15000, Number(alertConfig.durationSec || 5) * 1000));
       setTimeout(() => {
@@ -1356,6 +1381,207 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_GOALS_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniStream Chat — OBS Goal-Bar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent !important; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+    .goal-wrap {
+      width: 100%;
+      max-width: 520px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+      color: #f8fafc;
+    }
+    .goal-wrap.hidden { display: none; }
+    .goal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+    .goal-title { font-size: 14px; font-weight: 800; letter-spacing: 0.2px; }
+    .goal-nums { font-size: 13px; font-weight: 800; color: #e2e8f0; }
+    .goal-track {
+      position: relative;
+      height: 18px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.1);
+      overflow: hidden;
+    }
+    .goal-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--bar-color, #9146ff), #38bdf8);
+      transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .goal-pct {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    }
+  </style>
+</head>
+<body>
+  <div class="goal-wrap" id="goalWrap">
+    <div class="goal-head">
+      <div class="goal-title" id="goalTitle">Sub-Goal</div>
+      <div class="goal-nums" id="goalNums">0 / 50</div>
+    </div>
+    <div class="goal-track">
+      <div class="goal-fill" id="goalFill"></div>
+      <div class="goal-pct" id="goalPct">0%</div>
+    </div>
+  </div>
+  <script>
+    const wrap = document.getElementById('goalWrap');
+    const titleEl = document.getElementById('goalTitle');
+    const numsEl = document.getElementById('goalNums');
+    const fillEl = document.getElementById('goalFill');
+    const pctEl = document.getElementById('goalPct');
+
+    function renderGoal(g) {
+      if (!g || g.enabled === false) {
+        wrap.classList.add('hidden');
+        return;
+      }
+      wrap.classList.remove('hidden');
+      const cur = Math.max(0, Number(g.current || 0));
+      const tgt = Math.max(1, Number(g.target || 50));
+      const pct = Math.min(100, Math.round((cur / tgt) * 100));
+      titleEl.textContent = g.title || 'Stream-Goal';
+      numsEl.textContent = cur + ' / ' + tgt;
+      fillEl.style.width = pct + '%';
+      fillEl.style.setProperty('--bar-color', g.barColor || '#9146ff');
+      pctEl.textContent = pct + '%';
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'goals') renderGoal(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
+const OBS_POLL_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniStream Chat — OBS Multistream Poll</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent !important; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+    .poll-card {
+      width: 100%;
+      max-width: 460px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      color: #f8fafc;
+    }
+    .poll-card.hidden { display: none; }
+    .poll-q { font-size: 15px; font-weight: 800; margin-bottom: 10px; line-height: 1.3; }
+    .poll-opts { display: flex; flex-direction: column; gap: 7px; }
+    .poll-opt {
+      position: relative;
+      border-radius: 9px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+      padding: 7px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .poll-bar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      background: linear-gradient(90deg, rgba(145, 70, 255, 0.55), rgba(56, 189, 248, 0.55));
+      transition: width 0.3s ease;
+      z-index: 0;
+    }
+    .poll-lbl, .poll-val { position: relative; z-index: 1; }
+    .poll-foot { margin-top: 9px; font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <div class="poll-card hidden" id="pollCard">
+    <div class="poll-q" id="pollQ"></div>
+    <div class="poll-opts" id="pollOpts"></div>
+    <div class="poll-foot">
+      <span id="pollHint">Abstimmen im Chat: !vote 1</span>
+      <span id="pollTotal">0 Stimmen</span>
+    </div>
+  </div>
+  <script>
+    const card = document.getElementById('pollCard');
+    const qEl = document.getElementById('pollQ');
+    const optsEl = document.getElementById('pollOpts');
+    const totalEl = document.getElementById('pollTotal');
+    const hintEl = document.getElementById('pollHint');
+
+    function renderPoll(poll) {
+      if (!poll || (!poll.active && !poll.visibleWhenStopped)) {
+        card.classList.add('hidden');
+        return;
+      }
+      card.classList.remove('hidden');
+      qEl.textContent = poll.question || 'Umfrage';
+      const total = Math.max(0, Number(poll.totalVotes || 0));
+      totalEl.textContent = total + (total === 1 ? ' Stimme' : ' Stimmen');
+      hintEl.textContent = poll.active ? 'Abstimmen im Chat: !vote 1..' + (poll.options || []).length : 'Abstimmung beendet';
+      optsEl.innerHTML = '';
+      (poll.options || []).forEach((opt, idx) => {
+        const pct = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
+        const row = document.createElement('div');
+        row.className = 'poll-opt';
+        row.innerHTML =
+          '<div class="poll-bar" style="width:' + pct + '%"></div>' +
+          '<span class="poll-lbl">' + (idx + 1) + '. ' + String(opt.label || '').replace(/</g, '&lt;') + '</span>' +
+          '<span class="poll-val">' + pct + '% (' + (opt.votes || 0) + ')</span>';
+        optsEl.appendChild(row);
+      });
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'poll') renderPoll(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -1368,6 +1594,8 @@ class ObsServer {
     this.currentStatus = null;
     this.currentSpotify = null;
     this.currentAlertConfig = null;
+    this.currentGoals = null;
+    this.currentPoll = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
   }
@@ -1426,6 +1654,10 @@ class ObsServer {
           res.end(OBS_TABLET_HTML);
         } else if (urlPath === '/alerts') {
           res.end(OBS_ALERTS_HTML);
+        } else if (urlPath === '/goals') {
+          res.end(OBS_GOALS_HTML);
+        } else if (urlPath === '/poll') {
+          res.end(OBS_POLL_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -1445,6 +1677,12 @@ class ObsServer {
         }
         if (this.currentAlertConfig) {
           ws.send(JSON.stringify({ type: 'alert-config', data: this.currentAlertConfig }));
+        }
+        if (this.currentGoals) {
+          ws.send(JSON.stringify({ type: 'goals', data: this.currentGoals }));
+        }
+        if (this.currentPoll) {
+          ws.send(JSON.stringify({ type: 'poll', data: this.currentPoll }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -1544,6 +1782,16 @@ class ObsServer {
         client.send(raw);
       }
     }
+  }
+
+  broadcastGoals(goals) {
+    this.currentGoals = goals;
+    this._broadcast({ type: 'goals', data: goals });
+  }
+
+  broadcastPoll(poll) {
+    this.currentPoll = poll;
+    this._broadcast({ type: 'poll', data: poll });
   }
 
   stop() {
