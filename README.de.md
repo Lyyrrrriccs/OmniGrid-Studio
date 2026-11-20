@@ -21,15 +21,15 @@
 
 | Bereich | Highlights |
 |---|---|
-| **Multi-Plattform-Chat** | Gleichzeitige Verbindung zu **Twitch** (IRC WebSocket), **YouTube Live** (ohne API-Key, automatische & manuelle Stream-Erkennung) und **TikTok Live** (Webcast). Chronologische Zusammenführung, einzelne Plattform-Toggles, Auto-Reconnect, Fehlerisolation & 3-Stufen-Duplikatschutz. |
+| **Multi-Plattform-Chat** | Gleichzeitige Verbindung zu **Twitch** (IRC WebSocket), **YouTube Live** (Lesen ohne API-Key, automatische & manuelle Stream-Erkennung + optionales Google OAuth2 PKCE zum Schreiben) und **TikTok Live** (Webcast). Chronologische Zusammenführung, einzelne Plattform-Toggles, Auto-Reconnect, Fehlerisolation & 3-Stufen-Duplikatschutz. |
 | **Animierte Emotes** | **7TV** (Global & Kanal), **BTTV** und **FFZ** (Global & Kanal) sowie native **Twitch-**, **YouTube-** und **TikTok-Emotes** — animierte WebP/GIF-Wiedergabe, einzelne Anbieter-Toggles und kompakte Skalierung ohne Zeilenhöhen-Aufblähung. |
 | **Kompaktes Streamer-Design** | Echtes Inline-Layout für ein schmales, hohes Fenster (`minWidth: 220px`) links neben OBS, anpassbare Schriftgrößen, Namenskürzung, ein-/ausblendbare Icons & Zeitstempel, konfigurierbare Trennlinien und Live-Sync zu OBS. |
-| **OBS-Integration & Desktopfenster** | Szenenunabhängiges **OBS Custom Browser Dock** (`http://127.0.0.1:4588/dock`), **OBS Stream-Overlay** (`http://127.0.0.1:4588`) und ein frei verschiebbares **separates Vollhöhen-Chatfenster** mit dauerhafter Positionsspeicherung. |
+| **OBS-Integration & Alert-Box** | Szenenunabhängiges **OBS Custom Browser Dock** (`/dock`), **OBS Stream-Overlay** (`/`), konfigurierbares **OBS Alert-Box Overlay** (`/alerts` mit Event-Filter, Animation & Sound), **OBS Spotify-Widget** (`/spotify`) und ein **separates Vollhöhen-Chatfenster**. |
 | **Event-Hervorhebung & Keyword-Alarme** | Eigene Farben, Stile (`Balken`, `Banner`, `Rahmen`) & Intensität für **Follows**, **Subs**, **Resubs**, **Gifted Subs**, **Bits/SuperChats/Gifts**, **Raids** und **Hervorgehobene Nachrichten** + eigene **Keyword-Alarme** mit Sound-Ping. |
 | **Nutzer- & Nachrichten-Schnellmenü** | Linksklick oder Rechtsklick auf jede Nachricht: Nutzerübersicht (Avatar, Rollen, Twitch-Account-Alter), Text/Name kopieren, Antworten, Profil öffnen, Löschen, Timeout (`10s`, `1m`, `10m`, `1h`), 2-Stufen-Ban & Unban mit Berechtigungsprüfung. |
-| **Stream Deck & Companion** | Eingebaute lokale REST-API (`http://127.0.0.1:4588/api/streamdeck/*`) mit 1-Klick-Kopierbuttons, Test-Buttons, Spotify-Steuerung und eigenem Quick-Chat-Generator direkt in der App. |
+| **Stream Deck & Tablet Companion** | Eingebaute lokale REST-API (`http://127.0.0.1:4588/api/streamdeck/*`) + **Tablet & iPad Companion** (`http://<LAN-IP>:4588/tablet` per QR-Code) für Touch-Chat, Quick-Reply & Stream-Steuerung ohne App-Installation. |
 | **Peripherie & Globale Hotkeys** | Unterstützung für eine **separate Zweittastatur / ein Makro-Pad & eine Zweitmaus** per **WebHID** (Chat tippen/scrollen ohne aus dem Spiel zu tabben) + systemweite **Globale Hotkeys**. |
-| **Spotify Live & `!song` Bot** | Lokale Spotify-Desktop-Anbindung ohne API-Key: Live Now-Playing-Steuerung, automatische Twitch-Antwort auf `!song` / `!music` und transparentes **OBS Spotify-Widget** (`http://127.0.0.1:4588/spotify`). |
+| **Spotify Live & `!song` Bot** | Lokale Spotify-Desktop-Anbindung ohne API-Key: Live Now-Playing-Steuerung, automatische Twitch-/YouTube-Antwort auf `!song` / `!music` und transparentes **OBS Spotify-Widget** (`http://127.0.0.1:4588/spotify`). |
 | **Performance & Diagnose** | 60fps `requestAnimationFrame` Batch-Rendering, einstellbares DOM-/RAM-Limit, JSON-Export/Import, ausklappbarer **Statistik- & Diagnose-Log-Tab**, Bot-Filter & Spam-Zusammenfassung (`×N`). |
 
 ---
@@ -60,13 +60,15 @@ npm run build:win   # Erstellt dist/OmniStreamChat-win32-x64/OmniStreamChat.exe
 
 ---
 
-## 🎥 OBS-Integration
+## 🎥 OBS- & Companion-Integration
 
 | Ziel | URL | Zweck |
 |---|---|---|
 | **OBS Custom Browser Dock** | `http://127.0.0.1:4588/dock` | Interaktives, szenenunabhängiges Chat-Dock direkt in OBS (*Ansicht → Docks → Benutzerdefinierte Browser-Docks*) |
 | **OBS Stream-Overlay** | `http://127.0.0.1:4588` | Transparente Browser-Quelle für deine Zuschauer (inkl. live angepinnter Nachrichten) |
+| **OBS Alert-Box Overlay** | `http://127.0.0.1:4588/alerts` | Transparente Alert-Queue (Follow, Sub, Resub, Sub-Gift, Bits/SuperChat, Raid) mit Event-Filter & Sound |
 | **OBS Spotify-Widget** | `http://127.0.0.1:4588/spotify` | Transparente Now-Playing-Karte mit Album-Cover & Live-Track-Updates |
+| **Tablet & iPad Companion** | `http://<LAN-IP>:4588/tablet` | Touch-optimiertes Chat-, Quick-Reply- & Stream-Deck-Dashboard für jedes Tablet (QR-Code in der App) |
 
 ---
 
@@ -79,6 +81,7 @@ In der **Elgato Stream Deck App** die Aktion **System → Website** auf eine Tas
 | Letzte Nachricht in OBS pinnen | `http://127.0.0.1:4588/api/streamdeck/pin-last` |
 | Angepinnte Nachricht ausblenden | `http://127.0.0.1:4588/api/streamdeck/unpin` |
 | Chat-Verlauf leeren | `http://127.0.0.1:4588/api/streamdeck/clear-chat` |
+| OBS Test-Alert auslösen | `http://127.0.0.1:4588/api/streamdeck/test-alert?type=sub` |
 | Quick-Chat-Nachricht senden | `http://127.0.0.1:4588/api/streamdeck/send?text=GG!` |
 | Kompakt-Modus umschalten | `http://127.0.0.1:4588/api/streamdeck/toggle-compact` |
 | Sound-Alerts stumm/an | `http://127.0.0.1:4588/api/streamdeck/toggle-sound` |

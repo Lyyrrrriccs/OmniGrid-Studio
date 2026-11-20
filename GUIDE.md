@@ -28,7 +28,11 @@
 1. Enter your **YouTube @handle** (e.g., `@YourChannel`) or a channel/stream URL.
 2. Keep **"Auto-detect active livestream"** selected (recommended) or click **🔍** to scan and pick a specific stream manually.
 3. Click **"Start / Standby"**. As soon as your stream goes live, chat connects automatically.
-   > *Note: Reading live chat, SuperChats, Members, and custom YouTube emotes works without an API key. Sending messages to YouTube requires official YouTube Data API v3 OAuth2.*
+   > *Note: **Reading** live chat, SuperChats, Members, and custom YouTube emotes requires **no API key**.*
+4. **Optional — Writing to YouTube Chat (Google OAuth2):**
+   - Expand **"🔑 YouTube Schreiben (OAuth2)"** inside the YouTube card.
+   - In your [Google Cloud Console](https://console.cloud.google.com/), enable **YouTube Data API v3** and create a **Desktop app** OAuth2 Client ID *(each streamer creates their own Client ID so they get their own free 10,000 units/day quota and avoid Google's restricted-scope app verification audit for `youtube.force-ssl`)*.
+   - Paste your **Client ID** (and optional **Client Secret**) and click **"🔐 Mit Google anmelden"**. You can then send messages and `!song` replies directly to YouTube Live Chat.
 
 ### 🎵 TikTok Live
 1. Enter your **TikTok @username**.
@@ -63,6 +67,10 @@ In the **"🎨 Kompaktes Chatdesign"** sidebar section, customize everything **w
 ### Option C — OBS Stream Overlay (For Viewers)
 - Add a **Browser Source** in OBS pointing to `http://127.0.0.1:4588`.
 - Clicking the **📌 Pin** icon on any message displays it live in the stream overlay.
+
+### Option D — OBS Alert-Box Overlay (Follows, Subs, Bits & Raids)
+- Add a **Browser Source** in OBS pointing to `http://127.0.0.1:4588/alerts` (e.g., `600 × 220`).
+- Under **"🚨 OBS Alert-Box Overlay"** in the sidebar, toggle which event types appear on stream (`Follow`, `Sub / Member`, `Resub`, `Sub-Gift`, `Bits / SuperChat`, `Raid`), choose animation (`Pop-In`, `Slide-Up`, `Neon-Glow`), duration (`2s`–`12s`), audio chime, and click **▶ Test-Alert**.
 
 ---
 
@@ -112,4 +120,12 @@ Under **"🎵 Spotify Live & !song Bot"**, OmniStream Chat reads the current tra
 - **Live Controls:** **⏮ / ⏯ / ⏭** and **📢 Announce current track in Twitch chat**.
 - **Automatic `!song` / `!music` Bot:** When a viewer types `!song` or `!music` in Twitch chat, the app automatically replies with the current artist & track *(with a 15s anti-spam cooldown)*.
 - **OBS Spotify Widget:** Add `http://127.0.0.1:4588/spotify` as an OBS Browser Source (e.g., `420 × 80`) to display a transparent Now-Playing card with album art on stream.
+
+---
+
+## 10. Tablet & iPad Companion (`/tablet`)
+
+Under **"📱 Tablet & iPad Companion"**, you will find a QR code and local Wi-Fi URL (`http://<LAN-IP>:4588/tablet`):
+- Scan the QR code with your **iPad** or **Android tablet** on the same Wi-Fi network (no app install needed).
+- Gives you a touch-friendly dashboard with live chat, quick-reply input, and Stream Deck buttons (pin, unpin, demo, Spotify controls).
 
