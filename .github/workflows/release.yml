@@ -1,0 +1,46 @@
+name: Build & Release OmniStream Chat
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build:win
+      - name: Package Windows ZIP
+        shell: pwsh
+        run: Compress-Archive -Path dist/OmniStreamChat-win32-x64/* -DestinationPath OmniStreamChat-Windows.zip
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: OmniStreamChat-Windows.zip
+          tag_name: ${{ github.ref_name == 'main' || github.ref_name == 'streamdeck' ? 'latest-build' : github.ref_name }}
+          name: OmniStream Chat (${{ github.ref_name }})
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build:mac
+      - name: Package macOS ZIP
+        run: ditto -c -k --sequesterRsrc --keepParent dist/OmniStreamChat.app OmniStreamChat-macOS.zip
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: OmniStreamChat-macOS.zip
+          tag_name: ${{ github.ref_name == 'main' || github.ref_name == 'streamdeck' ? 'latest-build' : github.ref_name }}
+          name: OmniStream Chat (${{ github.ref_name }})
