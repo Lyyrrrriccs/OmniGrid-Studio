@@ -1098,36 +1098,49 @@ app.whenReady().then(async () => {
   mainWindow.webContents.on('did-finish-load', async () => {
     const os = require('os');
     const QRCode = require('qrcode');
-    const getLocalLanIp = () => {
+    const getTabletTargets = async () => {
       const nets = os.networkInterfaces();
-      const candidates = [];
+      const raw = [];
       for (const name of Object.keys(nets)) {
-        if (/^(utun|tun|tap|tailscale|wg|docker|veth|vmnet|vbox|bridge|lo)/i.test(name)) continue;
+        if (/^(docker|veth|vmnet|vbox|bridge|lo)/i.test(name)) continue;
         for (const net of nets[name] || []) {
           if (net.family === 'IPv4' && !net.internal) {
-            // Skip CGNAT 100.64.0.0/10 (Tailscale / VPN) unless nothing else exists
             const isCgnat = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(net.address);
-            const score = net.address.startsWith('192.168.')
-              ? 3
-              : net.address.startsWith('10.')
-                ? 2
-                : isCgnat
-                  ? 0
+            const isVpnIf = /^(utun|tun|tap|tailscale|wg)/i.test(name) || isCgnat;
+            const score = !isVpnIf && net.address.startsWith('192.168.')
+              ? 4
+              : !isVpnIf && net.address.startsWith('10.')
+                ? 3
+                : !isVpnIf
+                  ? 2
                   : 1;
-            candidates.push({ address: net.address, score });
+            const label = isVpnIf
+              ? `Tailscale / VPN (${net.address})`
+              : `WLAN / LAN (${net.address})`;
+            const url = `http://${net.address}:${obsPort}/tablet`;
+            let qrDataUrl = '';
+            try {
+              qrDataUrl = await QRCode.toDataURL(url, { width: 140, margin: 1 });
+            } catch (e) {}
+            raw.push({ label, url, qrDataUrl, score });
           }
         }
       }
-      candidates.sort((a, b) => b.score - a.score);
-      return candidates[0]?.address || '127.0.0.1';
+      raw.sort((a, b) => b.score - a.score);
+      if (raw.length === 0) {
+        const url = `http://127.0.0.1:${obsPort}/tablet`;
+        let qrDataUrl = '';
+        try {
+          qrDataUrl = await QRCode.toDataURL(url, { width: 140, margin: 1 });
+        } catch (e) {}
+        raw.push({ label: 'Lokal (127.0.0.1)', url, qrDataUrl, score: 0 });
+      }
+      return raw;
     };
 
-    const lanIp = getLocalLanIp();
-    const tabletUrl = `http://${lanIp}:${obsPort}/tablet`;
-    let tabletQrDataUrl = '';
-    try {
-      tabletQrDataUrl = await QRCode.toDataURL(tabletUrl, { width: 140, margin: 1 });
-    } catch (e) {}
+    const tabletTargets = await getTabletTargets();
+    const tabletUrl = tabletTargets[0].url;
+    const tabletQrDataUrl = tabletTargets[0].qrDataUrl;
 
     const saved = loadConfig();
     spotify.start(saved.spotifyEnabled !== false);
@@ -1161,6 +1174,7 @@ app.whenReady().then(async () => {
       spotifyObsUrl: `http://127.0.0.1:${obsPort}/spotify`,
       tabletUrl,
       tabletQrDataUrl,
+      tabletTargets,
       spotifyTrack: spotify.currentTrack,
       activePoll: getSanitizedPoll(),
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,

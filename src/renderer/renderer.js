@@ -2466,6 +2466,29 @@ window.omnichat.onInitState((data) => {
     streamDeckBaseUrl = data.streamDeckUrl;
     updateSdCustomUrl();
   }
+  if (Array.isArray(data.tabletTargets) && data.tabletTargets.length > 0) {
+    const selNet = document.getElementById('selTabletNet');
+    if (selNet) {
+      selNet.innerHTML = '';
+      data.tabletTargets.forEach((t, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = t.label;
+        selNet.appendChild(opt);
+      });
+      selNet.classList.toggle('hidden', data.tabletTargets.length <= 1);
+      selNet.onchange = () => {
+        const chosen = data.tabletTargets[parseInt(selNet.value, 10)] || data.tabletTargets[0];
+        if (chosen) {
+          if (inputTabletUrl) inputTabletUrl.value = chosen.url;
+          if (imgTabletQr && chosen.qrDataUrl) {
+            imgTabletQr.src = chosen.qrDataUrl;
+            imgTabletQr.classList.remove('hidden');
+          }
+        }
+      };
+    }
+  }
   if (data.tabletUrl && inputTabletUrl) {
     inputTabletUrl.value = data.tabletUrl;
   }
