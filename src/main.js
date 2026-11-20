@@ -1100,14 +1100,26 @@ app.whenReady().then(async () => {
     const QRCode = require('qrcode');
     const getLocalLanIp = () => {
       const nets = os.networkInterfaces();
+      const candidates = [];
       for (const name of Object.keys(nets)) {
+        if (/^(utun|tun|tap|tailscale|wg|docker|veth|vmnet|vbox|bridge|lo)/i.test(name)) continue;
         for (const net of nets[name] || []) {
           if (net.family === 'IPv4' && !net.internal) {
-            return net.address;
+            // Skip CGNAT 100.64.0.0/10 (Tailscale / VPN) unless nothing else exists
+            const isCgnat = /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(net.address);
+            const score = net.address.startsWith('192.168.')
+              ? 3
+              : net.address.startsWith('10.')
+                ? 2
+                : isCgnat
+                  ? 0
+                  : 1;
+            candidates.push({ address: net.address, score });
           }
         }
       }
-      return '127.0.0.1';
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0]?.address || '127.0.0.1';
     };
 
     const lanIp = getLocalLanIp();
