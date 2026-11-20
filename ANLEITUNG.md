@@ -28,7 +28,11 @@
 1. Gib dein **YouTube-@Handle** (z. B. `@DeinKanal`) oder eine **Kanal-/Stream-URL** ein.
 2. Wähle im Dropdown **„✨ Aktiven Livestream automatisch erkennen“** (empfohlen) oder klicke auf **🔍**, um geplante/laufende Streams manuell auszuwählen.
 3. Klicke auf **„Start / Standby“**. Sobald dein Stream live geht, verbindet sich der Chat automatisch.
-   > *Hinweis: YouTube-Chat, SuperChats, Members & Custom-Emotes funktionieren ohne API-Key. Das Senden aus Dritt-Tools ist durch YouTube auf die YouTube Data API v3 (OAuth2) beschränkt.*
+   > *Hinweis: Zum **Lesen** von YouTube-Chat, SuperChats, Members & Custom-Emotes ist **kein API-Key** nötig.*
+4. **Optional — In den YouTube-Chat schreiben (Google OAuth2):**
+   - Öffne in der YouTube-Karte **„🔑 YouTube Schreiben (OAuth2)“**.
+   - Aktiviere einmalig in deiner [Google Cloud Console](https://console.cloud.google.com/) die **YouTube Data API v3** und erstelle unter *Anmeldedaten* eine **OAuth-Client-ID** vom Typ **Desktop-App** *(warum individuell? Google verlangt für zentrale Apps mit `youtube.force-ssl`-Schreibrechten ein strenges App-Audit, und mit einer eigenen Client-ID nutzt jeder Streamer sein eigenes kostenloses 10.000-Units/Tag-Quota)*.
+   - Trage die **Client-ID** (und optional das **Client-Secret**) ein und klicke auf **„🔐 Mit Google anmelden“**. Danach kannst du direkt aus OmniStream Chat und per `!song`-Bot in den YouTube-Livechat schreiben.
 
 ### 🎵 TikTok Live
 1. Gib deinen **TikTok-@Benutzernamen** ein.
@@ -63,6 +67,10 @@ Links unter **„🎨 Kompaktes Chatdesign & Darstellung“** stellst du alles *
 ### Option C — OBS Stream-Overlay (für Zuschauer)
 - Füge in OBS eine **Browser-Quelle** mit `http://127.0.0.1:4588` hinzu.
 - Klickst du im Chat auf das **📌 Pin-Symbol** einer Nachricht, wird diese sofort live im Stream-Overlay eingeblendet.
+
+### Option D — OBS Alert-Box Overlay (Follows, Subs, Bits & Raids)
+- Füge in OBS eine **Browser-Quelle** mit `http://127.0.0.1:4588/alerts` hinzu (z. B. `600 × 220`).
+- In der Sidebar unter **„🚨 OBS Alert-Box Overlay“** legst du per Checkbox fest, welche Events im Stream angezeigt werden (`Follow`, `Sub / Member`, `Resub`, `Sub-Gift`, `Bits / SuperChat`, `Raid`), plus Animation (`Pop-In`, `Slide-Up`, `Neon-Glow`), Dauer (`2s`–`12s`), Sound-Chime und **▶ Test-Alert**.
 
 ---
 
@@ -112,4 +120,12 @@ Unter **„🎵 Spotify Live & !song Bot“** liest die App den aktuellen Song d
 - **Live-Steuerung:** **⏮ / ⏯ / ⏭** und **📢 Song in den Twitch-Chat posten**.
 - **Automatischer `!song` / `!music` Bot:** Schreibt ein Zuschauer auf Twitch `!song` oder `!music`, antwortet OmniStream Chat automatisch mit dem aktuellen Track *(15s Anti-Spam-Cooldown)*.
 - **OBS Spotify-Widget:** Füge `http://127.0.0.1:4588/spotify` als Browser-Quelle (z. B. `420 × 80`) in OBS ein, um den aktuellen Song samt Cover transparent im Stream anzuzeigen.
+
+---
+
+## 10. Tablet & iPad Companion (`/tablet`)
+
+Unter **„📱 Tablet & iPad Companion“** findest du einen QR-Code und eine lokale WLAN-URL (`http://<LAN-IP>:4588/tablet`):
+- Scanne den QR-Code mit deinem **iPad** oder **Android-Tablet** im selben WLAN (keine App-Installation nötig).
+- Du erhältst ein Touch-Dashboard mit Live-Chat, Quick-Reply-Eingabe und Stream-Deck-Tasten (Pinnen, Unpin, Demo, Spotify-Steuerung).
 

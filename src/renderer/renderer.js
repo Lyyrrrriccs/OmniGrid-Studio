@@ -414,6 +414,8 @@ function playAlertTone(kind = 'mention') {
 
 const OBS_ALERT_TYPES = ['follow', 'sub', 'resub', 'subgift', 'bits', 'raid'];
 
+let savedAlertCustomMedia = {};
+
 function getObsAlertSettings() {
   const types = {};
   for (const t of OBS_ALERT_TYPES) {
@@ -425,8 +427,59 @@ function getObsAlertSettings() {
     durationSec: parseInt(document.getElementById('rngObsAlertDuration')?.value || '5', 10),
     soundEnabled: document.getElementById('chkObsAlertSound')?.checked !== false,
     animation: document.getElementById('selObsAlertAnim')?.value || 'pop',
-    types
+    types,
+    customMedia: savedAlertCustomMedia
   };
+}
+
+function getObsGoalSettings() {
+  return {
+    enabled: document.getElementById('chkObsGoalEnabled')?.checked !== false,
+    title: document.getElementById('inputGoalTitle')?.value.trim() || 'Sub-Goal',
+    current: Math.max(0, parseInt(document.getElementById('inputGoalCurrent')?.value || '0', 10) || 0),
+    target: Math.max(1, parseInt(document.getElementById('inputGoalTarget')?.value || '50', 10) || 50),
+    autoFollow: Boolean(document.getElementById('chkGoalAutoFollow')?.checked),
+    autoSub: document.getElementById('chkGoalAutoSub')?.checked !== false,
+    barColor: document.getElementById('clrGoalBar')?.value || '#9146ff'
+  };
+}
+
+function getTtsSettings() {
+  return {
+    enabled: Boolean(document.getElementById('chkTtsEnabled')?.checked),
+    readAlerts: document.getElementById('chkTtsAlerts')?.checked !== false,
+    readChatCommand: document.getElementById('chkTtsChatCmd')?.checked !== false,
+    commandPrefix: '!tts',
+    maxLength: 180,
+    rate: parseFloat(document.getElementById('rngTtsRate')?.value || '1.0'),
+    volume: parseFloat(document.getElementById('rngTtsVol')?.value || '0.9'),
+    voiceURI: document.getElementById('selTtsVoice')?.value || ''
+  };
+}
+
+let savedYoutubeOAuth = {
+  clientId: '',
+  clientSecret: '',
+  accessToken: '',
+  refreshToken: '',
+  expiresAt: 0,
+  accountName: ''
+};
+
+function updateYoutubeOAuthUI(oauth = savedYoutubeOAuth) {
+  savedYoutubeOAuth = { ...savedYoutubeOAuth, ...(oauth || {}) };
+  const statusEl = document.getElementById('ytOAuthStatus');
+  const btnLogout = document.getElementById('btnYtOAuthLogout');
+  const btnLogin = document.getElementById('btnYtOAuthLogin');
+  const hasWrite = Boolean(savedYoutubeOAuth.accessToken || (savedYoutubeOAuth.refreshToken && savedYoutubeOAuth.clientId));
+  if (statusEl) {
+    statusEl.textContent = hasWrite
+      ? `✅ Schreibrecht (${savedYoutubeOAuth.accountName || 'Aktiv'})`
+      : 'Nur-Lesen';
+    statusEl.style.color = hasWrite ? '#4ade80' : '#94a3b8';
+  }
+  if (btnLogout) btnLogout.classList.toggle('hidden', !hasWrite);
+  if (btnLogin) btnLogin.textContent = hasWrite ? '🔄 Neu anmelden' : '🔐 Mit Google anmelden';
 }
 
 function getFormConfig() {
@@ -440,6 +493,8 @@ function getFormConfig() {
     compactChat: compactChatEnabled,
     spotifyAutoCommand: document.getElementById('chkSpotifyAutoCmd')?.checked !== false,
     obsAlerts: getObsAlertSettings(),
+    obsGoals: getObsGoalSettings(),
+    tts: getTtsSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -478,6 +533,11 @@ function getFormConfig() {
     youtubeEnabled: chkEnableYoutube.checked,
     youtubeChannel: inputYoutubeChannel.value.trim(),
     youtubeVideoId: inputYoutubeVideoId.value.trim() || selectYoutubeStream.value,
+    youtubeOAuth: {
+      ...savedYoutubeOAuth,
+      clientId: document.getElementById('inputYtClientId')?.value.trim() || '',
+      clientSecret: document.getElementById('inputYtClientSecret')?.value.trim() || ''
+    },
     tiktokEnabled: chkEnableTiktok.checked,
     tiktokChannel: inputTiktokChannel.value.trim(),
     tiktokRoomId: inputTiktokRoomId.value.trim()
@@ -609,6 +669,42 @@ selectYoutubeStream.addEventListener('change', () => {
   if (selectYoutubeStream.value) {
     window.omnichat.connectPlatform('youtube', getFormConfig());
   }
+});
+
+document.getElementById('btnYtOAuthLogin')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btnYtOAuthLogin');
+  const clientId = document.getElementById('inputYtClientId')?.value.trim() || '';
+  const clientSecret = document.getElementById('inputYtClientSecret')?.value.trim() || '';
+  if (!clientId) {
+    alert('Bitte zuerst eine Google OAuth2 Client-ID (Desktop-App) eintragen.');
+    return;
+  }
+  await window.omnichat.saveProfile(getFormConfig());
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Browser geöffnet...';
+  }
+  const res = await window.omnichat.youtubeOAuthLogin({ clientId, clientSecret });
+  if (btn) btn.disabled = false;
+  if (res?.ok && res.oauth) {
+    updateYoutubeOAuthUI(res.oauth);
+  } else {
+    updateYoutubeOAuthUI(savedYoutubeOAuth);
+    if (res?.error) alert(res.error);
+  }
+});
+
+document.getElementById('btnYtOAuthLogout')?.addEventListener('click', async () => {
+  const res = await window.omnichat.youtubeOAuthLogout();
+  if (res?.ok) {
+    updateYoutubeOAuthUI(res.oauth || {});
+  }
+});
+
+['inputYtClientId', 'inputYtClientSecret'].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
 });
 
 // Toggle Always-on-Top
@@ -1517,7 +1613,9 @@ function updatePlatformStatusUI(states) {
         if (st.error) {
           errEl.textContent = st.error;
         } else if (plat === 'youtube' && st.streamTitle) {
-          errEl.textContent = `Verbunden: ${st.streamTitle}`;
+          errEl.textContent = st.canWrite
+            ? `✅ Verbunden (${st.streamTitle}) — Chat lesen & schreiben aktiv`
+            : `✅ Verbunden (${st.streamTitle}) — Nur-Lesen (OAuth2 für Schreiben optional)`;
         } else if (plat === 'tiktok' && st.roomId) {
           errEl.textContent = `Room-ID: ${st.roomId}`;
         } else if (plat === 'twitch') {
@@ -1610,6 +1708,53 @@ function applyConfigToForm(cfg) {
     const el = document.getElementById(`chkAlert_${t}`);
     if (el) el.checked = oa.types ? oa.types[t] !== false : true;
   }
+  savedAlertCustomMedia = oa.customMedia || {};
+  const selAmt = document.getElementById('selAlertMediaType');
+  const curMedia = savedAlertCustomMedia[selAmt?.value || 'follow'] || {};
+  const elAmi = document.getElementById('inputAlertMediaImage');
+  const elAma = document.getElementById('inputAlertMediaAudio');
+  if (elAmi) elAmi.value = curMedia.imageUrl || '';
+  if (elAma) elAma.value = curMedia.audioUrl || '';
+
+  const og = cfg.obsGoals || {};
+  const elOgEn = document.getElementById('chkObsGoalEnabled');
+  if (elOgEn) elOgEn.checked = og.enabled !== false;
+  const elOgT = document.getElementById('inputGoalTitle');
+  if (elOgT) elOgT.value = og.title || 'Sub-Goal';
+  const elOgC = document.getElementById('inputGoalCurrent');
+  if (elOgC) elOgC.value = og.current ?? 0;
+  const elOgG = document.getElementById('inputGoalTarget');
+  if (elOgG) elOgG.value = og.target ?? 50;
+  const elOgB = document.getElementById('clrGoalBar');
+  if (elOgB && og.barColor) elOgB.value = og.barColor;
+  const elOgAf = document.getElementById('chkGoalAutoFollow');
+  if (elOgAf) elOgAf.checked = Boolean(og.autoFollow);
+  const elOgAs = document.getElementById('chkGoalAutoSub');
+  if (elOgAs) elOgAs.checked = og.autoSub !== false;
+
+  const tts = cfg.tts || {};
+  const elTtsEn = document.getElementById('chkTtsEnabled');
+  if (elTtsEn) elTtsEn.checked = Boolean(tts.enabled);
+  const elTtsAl = document.getElementById('chkTtsAlerts');
+  if (elTtsAl) elTtsAl.checked = tts.readAlerts !== false;
+  const elTtsCh = document.getElementById('chkTtsChatCmd');
+  if (elTtsCh) elTtsCh.checked = tts.readChatCommand !== false;
+  const elTtsV = document.getElementById('selTtsVoice');
+  if (elTtsV && tts.voiceURI) elTtsV.value = tts.voiceURI;
+  const elTtsR = document.getElementById('rngTtsRate');
+  const elTtsRv = document.getElementById('valTtsRate');
+  if (elTtsR) {
+    const r = tts.rate ?? 1.0;
+    elTtsR.value = r;
+    if (elTtsRv) elTtsRv.textContent = `${Number(r).toFixed(1)}x`;
+  }
+  const elTtsVol = document.getElementById('rngTtsVol');
+  const elTtsVolV = document.getElementById('valTtsVol');
+  if (elTtsVol) {
+    const v = tts.volume ?? 0.9;
+    elTtsVol.value = v;
+    if (elTtsVolV) elTtsVolV.textContent = `${Math.round(Number(v) * 100)}%`;
+  }
 
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
@@ -1670,6 +1815,12 @@ function applyConfigToForm(cfg) {
   inputTwitchToken.value = cfg.twitchToken || '';
   inputYoutubeChannel.value = cfg.youtubeChannel || '';
   inputYoutubeVideoId.value = cfg.youtubeVideoId || '';
+  const ytOAuth = cfg.youtubeOAuth || {};
+  const elYtCid = document.getElementById('inputYtClientId');
+  const elYtCsec = document.getElementById('inputYtClientSecret');
+  if (elYtCid) elYtCid.value = ytOAuth.clientId || '';
+  if (elYtCsec) elYtCsec.value = ytOAuth.clientSecret || '';
+  updateYoutubeOAuthUI(ytOAuth);
   inputTiktokChannel.value = cfg.tiktokChannel || '';
   inputTiktokRoomId.value = cfg.tiktokRoomId || '';
 
@@ -2126,7 +2277,190 @@ rngObsAlertDuration?.addEventListener('change', () => {
   });
 });
 
+// --- CUSTOM ALERT MEDIA HANDLERS ---
+const selAlertMediaType = document.getElementById('selAlertMediaType');
+const inputAlertMediaImage = document.getElementById('inputAlertMediaImage');
+const inputAlertMediaAudio = document.getElementById('inputAlertMediaAudio');
+
+selAlertMediaType?.addEventListener('change', () => {
+  const m = savedAlertCustomMedia[selAlertMediaType.value] || {};
+  if (inputAlertMediaImage) inputAlertMediaImage.value = m.imageUrl || '';
+  if (inputAlertMediaAudio) inputAlertMediaAudio.value = m.audioUrl || '';
+});
+
+[inputAlertMediaImage, inputAlertMediaAudio].forEach((el) => {
+  el?.addEventListener('change', () => {
+    const t = selAlertMediaType?.value || 'follow';
+    savedAlertCustomMedia[t] = {
+      imageUrl: inputAlertMediaImage?.value.trim() || '',
+      audioUrl: inputAlertMediaAudio?.value.trim() || ''
+    };
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
+// --- OBS GOAL-BAR & MULTISTREAM POLL HANDLERS ---
+const inputObsGoalsUrl = document.getElementById('inputObsGoalsUrl');
+const btnCopyObsGoals = document.getElementById('btnCopyObsGoals');
+const inputObsPollUrl = document.getElementById('inputObsPollUrl');
+const btnCopyObsPoll = document.getElementById('btnCopyObsPoll');
+const pollPreviewStatus = document.getElementById('pollPreviewStatus');
+
+function bindCopyBtn(btn, inputEl, defaultLabel) {
+  btn?.addEventListener('click', () => {
+    if (!inputEl) return;
+    navigator.clipboard.writeText(inputEl.value);
+    btn.textContent = '✅';
+    setTimeout(() => {
+      btn.textContent = defaultLabel;
+    }, 1400);
+  });
+}
+bindCopyBtn(btnCopyObsGoals, inputObsGoalsUrl, 'Goal-URL');
+bindCopyBtn(btnCopyObsPoll, inputObsPollUrl, 'Poll-URL');
+
+[
+  'chkObsGoalEnabled',
+  'inputGoalTitle',
+  'clrGoalBar',
+  'inputGoalCurrent',
+  'inputGoalTarget',
+  'chkGoalAutoFollow',
+  'chkGoalAutoSub'
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
+function updatePollPreviewUI(poll) {
+  if (!pollPreviewStatus) return;
+  if (!poll || (!poll.active && !poll.visibleWhenStopped)) {
+    pollPreviewStatus.textContent = 'Keine aktive Umfrage';
+    return;
+  }
+  const summary = (poll.options || []).map((o, i) => `${i + 1}. ${o.label}: ${o.votes}`).join(' • ');
+  pollPreviewStatus.textContent = `${poll.active ? '🟢 Aktiv' : '⏹ Beendet'} (${poll.totalVotes} Stimmen) — ${summary}`;
+}
+
+document.getElementById('btnPollStart')?.addEventListener('click', async () => {
+  const question = document.getElementById('inputPollQuestion')?.value.trim() || 'Was sollen wir spielen?';
+  const options = document.getElementById('inputPollOptions')?.value.trim() || 'Option A, Option B';
+  const res = await window.omnichat.pollAction({ action: 'start', question, options });
+  if (!res?.ok && res?.error) alert(res.error);
+});
+
+document.getElementById('btnPollStop')?.addEventListener('click', () => {
+  window.omnichat.pollAction({ action: 'stop' });
+});
+
+document.getElementById('btnPollReset')?.addEventListener('click', () => {
+  window.omnichat.pollAction({ action: 'reset' });
+});
+
+// --- TEXT-TO-SPEECH (TTS) ENGINE ---
+const ttsQueue = [];
+let ttsSpeaking = false;
+
+function populateTtsVoices() {
+  const sel = document.getElementById('selTtsVoice');
+  if (!sel || typeof speechSynthesis === 'undefined') return;
+  const currentVal = sel.value;
+  const voices = speechSynthesis.getVoices() || [];
+  sel.innerHTML = '<option value="">System-Standardstimme</option>';
+  voices.forEach((v) => {
+    const opt = document.createElement('option');
+    opt.value = v.voiceURI;
+    opt.textContent = `${v.name} (${v.lang})`;
+    sel.appendChild(opt);
+  });
+  if (currentVal) sel.value = currentVal;
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+  populateTtsVoices();
+  speechSynthesis.onvoiceschanged = populateTtsVoices;
+}
+
+function processTtsQueue() {
+  if (ttsSpeaking || ttsQueue.length === 0 || typeof speechSynthesis === 'undefined') return;
+  const cfg = getTtsSettings();
+  if (!cfg.enabled && !ttsQueue[0]._forceTest) {
+    ttsQueue.length = 0;
+    return;
+  }
+  const item = ttsQueue.shift();
+  ttsSpeaking = true;
+  const utter = new SpeechSynthesisUtterance(String(item.text || '').slice(0, cfg.maxLength || 180));
+  utter.rate = cfg.rate || 1.0;
+  utter.volume = cfg.volume ?? 0.9;
+  if (cfg.voiceURI) {
+    const match = (speechSynthesis.getVoices() || []).find((v) => v.voiceURI === cfg.voiceURI);
+    if (match) utter.voice = match;
+  }
+  const done = () => {
+    ttsSpeaking = false;
+    processTtsQueue();
+  };
+  utter.onend = done;
+  utter.onerror = done;
+  speechSynthesis.speak(utter);
+}
+
+function enqueueTts(text, forceTest = false) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!clean || typeof speechSynthesis === 'undefined') return;
+  if (ttsQueue.length > 20) ttsQueue.shift();
+  ttsQueue.push({ text: clean, _forceTest: forceTest });
+  processTtsQueue();
+}
+
+function skipTts() {
+  if (typeof speechSynthesis === 'undefined') return;
+  speechSynthesis.cancel();
+  ttsSpeaking = false;
+  processTtsQueue();
+}
+
+function clearTtsQueue() {
+  ttsQueue.length = 0;
+  if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.cancel();
+  }
+  ttsSpeaking = false;
+}
+
+const rngTtsRate = document.getElementById('rngTtsRate');
+const valTtsRate = document.getElementById('valTtsRate');
+const rngTtsVol = document.getElementById('rngTtsVol');
+const valTtsVol = document.getElementById('valTtsVol');
+
+rngTtsRate?.addEventListener('input', () => {
+  if (valTtsRate) valTtsRate.textContent = `${Number(rngTtsRate.value).toFixed(1)}x`;
+});
+rngTtsVol?.addEventListener('input', () => {
+  if (valTtsVol) valTtsVol.textContent = `${Math.round(Number(rngTtsVol.value) * 100)}%`;
+});
+
+['chkTtsEnabled', 'chkTtsAlerts', 'chkTtsChatCmd', 'selTtsVoice', 'rngTtsRate', 'rngTtsVol'].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
+document.getElementById('btnTtsTest')?.addEventListener('click', () => {
+  enqueueTts('Hallo Stream! Text-to-Speech ist aktiv und funktioniert.', true);
+});
+document.getElementById('btnTtsSkip')?.addEventListener('click', skipTts);
+document.getElementById('btnTtsClear')?.addEventListener('click', clearTtsQueue);
+
 // IPC Listeners
+window.omnichat.onPollUpdated?.((poll) => updatePollPreviewUI(poll));
+window.omnichat.onGoalsUpdated?.((goals) => {
+  const elOgC = document.getElementById('inputGoalCurrent');
+  if (elOgC && goals) elOgC.value = goals.current ?? 0;
+});
+
 window.omnichat.onInitState((data) => {
   if (data.streamDeckUrl) {
     streamDeckBaseUrl = data.streamDeckUrl;
@@ -2141,6 +2475,15 @@ window.omnichat.onInitState((data) => {
   }
   if (data.obsAlertsUrl && inputObsAlertsUrl) {
     inputObsAlertsUrl.value = data.obsAlertsUrl;
+  }
+  if (data.obsGoalsUrl && inputObsGoalsUrl) {
+    inputObsGoalsUrl.value = data.obsGoalsUrl;
+  }
+  if (data.obsPollUrl && inputObsPollUrl) {
+    inputObsPollUrl.value = data.obsPollUrl;
+  }
+  if (data.activePoll) {
+    updatePollPreviewUI(data.activePoll);
   }
   if (data.spotifyObsUrl && inputSpotifyObsUrl) {
     inputSpotifyObsUrl.value = data.spotifyObsUrl;
@@ -2225,6 +2568,10 @@ window.omnichat.onStreamerEvent((ev) => {
   if (streamerEvents.length > 50) streamerEvents.shift();
   renderEventTicker();
   playAlertTone('event');
+  const ttsCfg = getTtsSettings();
+  if (ttsCfg.enabled && ttsCfg.readAlerts) {
+    enqueueTts(`${ev.author || 'Jemand'}: ${ev.summary || ev.type || 'Neues Event'}`);
+  }
 });
 
 window.omnichat.onMessageDeleted(({ id }) => {
@@ -2331,6 +2678,14 @@ window.omnichat.onChatMessage((msg) => {
   const msgTs = msg.timestamp || Date.now();
   recentMsgTimestamps.push(Date.now());
   recordMessageInSessionStats(msg);
+
+  const ttsCfg = getTtsSettings();
+  if (ttsCfg.enabled && ttsCfg.readChatCommand) {
+    const ttsMatch = String(msg.text || '').trim().match(/^!tts\s+(.+)/i);
+    if (ttsMatch && ttsMatch[1]) {
+      enqueueTts(`${msg.author || 'Zuschauer'} sagt: ${ttsMatch[1]}`);
+    }
+  }
 
   // Section 9: Optional collapsing of repeated/identical messages (Spam ×2, ×3...)
   if (collapseSpamEnabled && !msg.eventType && messages.length > 0) {

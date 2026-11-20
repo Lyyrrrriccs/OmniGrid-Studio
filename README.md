@@ -21,15 +21,15 @@
 
 | Category | Highlights |
 |---|---|
-| **Multi-Platform Chat** | Simultaneous **Twitch** (IRC WebSocket), **YouTube Live** (no API key required, auto stream discovery & manual selection), and **TikTok Live** (Webcast) feeds merged chronologically with per-platform enable/disable, auto-reconnect, error isolation, and 3-layer deduplication. |
+| **Multi-Platform Chat** | Simultaneous **Twitch** (IRC WebSocket), **YouTube Live** (no API key for reading, auto stream discovery, plus optional Google OAuth2 PKCE for sending chat), and **TikTok Live** (Webcast) feeds merged chronologically with per-platform enable/disable, auto-reconnect, error isolation, and 3-layer deduplication. |
 | **Animated Emotes** | **7TV** (global & channel), **BTTV**, and **FFZ** (global & channel) plus native **Twitch**, **YouTube**, and **TikTok** emotes — animated WebP/GIF support, individual provider toggles, and zero line-height inflation. |
 | **Compact Streamer Layout** | True inline flow optimized for a tall, slim window (`minWidth: 220px`) next to OBS, customizable font sizes, username truncation, toggleable platform icons/timestamps, divider lines, and live color/opacity sync to OBS. |
-| **OBS Integration & Standalone Window** | Scene-independent **OBS Custom Browser Dock** (`http://127.0.0.1:4588/dock`), **OBS Stream Overlay** (`http://127.0.0.1:4588`), and a movable full-height **Standalone Chat Window** with persistent bounds. |
+| **OBS Integration & Alert-Box** | Scene-independent **OBS Custom Browser Dock** (`/dock`), **OBS Stream Overlay** (`/`), configurable **OBS Alert-Box Overlay** (`/alerts` with per-event toggles, animations & sound), **OBS Spotify Widget** (`/spotify`), and a movable full-height **Standalone Chat Window**. |
 | **Event Highlighting & Keyword Alerts** | Distinct styling (`bar`, `banner`, `outline`, color & intensity) for **Follows**, **Subs**, **Resubs**, **Gifted Subs**, **Bits/SuperChats/Gifts**, **Raids**, and **Highlighted Messages**, plus custom **Keyword Alerts** with sound ping. |
 | **Quick User & Message Menu** | Click or right-click any message for user overview (avatar, roles, Twitch account age), copy text/username, reply, open profile, delete, timeout (`10s`, `1m`, `10m`, `1h`), 2-step ban, and unban with strict platform permission checks. |
-| **Stream Deck & Companion** | Built-in local REST API (`http://127.0.0.1:4588/api/streamdeck/*`) with 1-click copy URLs, live test buttons, Spotify track controls, and custom quick-chat key generator. |
+| **Stream Deck & Tablet Companion** | Built-in local REST API (`http://127.0.0.1:4588/api/streamdeck/*`) + **Tablet & iPad Companion** (`http://<LAN-IP>:4588/tablet` via QR code) for touch chat, quick-reply, and stream controls without installing an app. |
 | **Peripherals & Global Hotkeys** | Dedicated **2nd Keyboard / Macro Pad & 2nd Mouse** support via **WebHID** (type/send chat or scroll feed without alt-tabbing out of games) + system-wide **Global Hotkeys**. |
-| **Spotify Live & `!song` Bot** | Zero-config local Spotify Desktop bridge (no API key needed): live Now Playing controls, automatic Twitch `!song` / `!music` replies, and transparent **OBS Spotify Widget** (`http://127.0.0.1:4588/spotify`). |
+| **Spotify Live & `!song` Bot** | Zero-config local Spotify Desktop bridge (no API key needed): live Now Playing controls, automatic Twitch/YouTube `!song` / `!music` replies, and transparent **OBS Spotify Widget** (`http://127.0.0.1:4588/spotify`). |
 | **Performance & Diagnostics** | 60fps `requestAnimationFrame` batch rendering, configurable DOM/RAM limits, JSON backup export/import, collapsible **Live Statistics & Connection Logs** drawer, bot filter, and spam repeat collapsing (`×N`). |
 
 ---
@@ -60,13 +60,15 @@ npm run build:win   # Creates dist/OmniStreamChat-win32-x64/OmniStreamChat.exe
 
 ---
 
-## 🎥 OBS Integration
+## 🎥 OBS & Companion Integration
 
 | Target | URL | Purpose |
 |---|---|---|
 | **OBS Custom Browser Dock** | `http://127.0.0.1:4588/dock` | Interactive, scene-independent chat dock inside OBS (`View → Docks → Custom Browser Docks`) |
 | **OBS Stream Overlay** | `http://127.0.0.1:4588` | Transparent Browser Source for your stream viewers (with live pinned messages) |
+| **OBS Alert-Box Overlay** | `http://127.0.0.1:4588/alerts` | Transparent queued alert box (Follow, Sub, Resub, Sub-Gift, Bits/SuperChat, Raid) with per-event toggles & audio chime |
 | **OBS Spotify Widget** | `http://127.0.0.1:4588/spotify` | Transparent Now-Playing card with album cover & live track updates |
+| **Tablet & iPad Companion** | `http://<LAN-IP>:4588/tablet` | Touch-optimized chat, quick-reply & stream control dashboard on any tablet (QR code in app) |
 
 ---
 
@@ -79,6 +81,7 @@ In the **Elgato Stream Deck** app, add **System → Website**, paste one of the 
 | Pin latest message to OBS | `http://127.0.0.1:4588/api/streamdeck/pin-last` |
 | Unpin message from OBS | `http://127.0.0.1:4588/api/streamdeck/unpin` |
 | Clear chat feed & OBS | `http://127.0.0.1:4588/api/streamdeck/clear-chat` |
+| Trigger OBS test alert | `http://127.0.0.1:4588/api/streamdeck/test-alert?type=sub` |
 | Send quick chat message | `http://127.0.0.1:4588/api/streamdeck/send?text=GG!` |
 | Toggle compact mode | `http://127.0.0.1:4588/api/streamdeck/toggle-compact` |
 | Toggle sound alerts | `http://127.0.0.1:4588/api/streamdeck/toggle-sound` |

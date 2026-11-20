@@ -110,7 +110,27 @@ function getDefaultConfig() {
         subgift: true,
         bits: true,
         raid: true
-      }
+      },
+      customMedia: {}
+    },
+    obsGoals: {
+      enabled: true,
+      title: 'Sub-Goal',
+      current: 0,
+      target: 50,
+      autoFollow: false,
+      autoSub: true,
+      barColor: '#9146ff'
+    },
+    tts: {
+      enabled: false,
+      readAlerts: true,
+      readChatCommand: true,
+      commandPrefix: '!tts',
+      maxLength: 180,
+      rate: 1.0,
+      volume: 0.9,
+      voiceURI: ''
     },
     hideBots: false,
     collapseSpam: true,
@@ -182,6 +202,14 @@ function getDefaultConfig() {
     youtubeEnabled: true,
     youtubeChannel: '',
     youtubeVideoId: '',
+    youtubeOAuth: {
+      clientId: '',
+      clientSecret: '',
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: 0,
+      accountName: ''
+    },
     tiktokEnabled: true,
     tiktokChannel: '',
     tiktokRoomId: ''
@@ -422,6 +450,7 @@ function forwardChatMessage(msg) {
 
     obsServer.broadcastChat(enriched);
     broadcastToWindows('chat-message', enriched);
+    handlePollVote(enriched);
 
     // Auto-reply to !song / !music in Twitch chat (5s anti-spam cooldown)
     const cleanCmdText = String(msg.text || '').trim();
@@ -459,6 +488,10 @@ function forwardChatMessage(msg) {
               }, 200);
             } else if (msg.platform === 'twitch' && twitch.connected && twitch.canWrite) {
               twitch.sendMessage(songText, msg.isSelf ? null : msg.id);
+            } else if (msg.platform === 'youtube' && youtube.connected && youtube.canWrite) {
+              youtube.sendMessage(songText).catch((err) => {
+                appendDiagLog('youtube', 'error', `!song Antwort fehlgeschlagen: ${err.message}`);
+              });
             }
           } catch (e) {
             appendDiagLog('twitch', 'error', `!song Antwort fehlgeschlagen: ${e.message}`);
@@ -512,10 +545,71 @@ function broadcastEventToObsAlert(ev, bypassFilter = false) {
   });
 }
 
+let activePoll = {
+  active: false,
+  visibleWhenStopped: false,
+  question: '',
+  options: [],
+  voters: {},
+  totalVotes: 0
+};
+
+function getSanitizedPoll() {
+  return {
+    active: activePoll.active,
+    visibleWhenStopped: activePoll.visibleWhenStopped,
+    question: activePoll.question,
+    options: activePoll.options.map((o) => ({ label: o.label, votes: o.votes })),
+    totalVotes: activePoll.totalVotes
+  };
+}
+
+function handlePollVote(msg) {
+  if (!activePoll.active || !activePoll.options.length) return;
+  const txt = String(msg.text || '').trim();
+  const match = txt.match(/^!(?:vote|poll)\s+(\d+)/i);
+  if (!match) return;
+  const idx = parseInt(match[1], 10) - 1;
+  if (idx < 0 || idx >= activePoll.options.length) return;
+
+  const voterKey = `${msg.platform || 'chat'}:${String(msg.author || '').toLowerCase()}`;
+  const prevIdx = activePoll.voters[voterKey];
+  if (prevIdx === idx) return;
+  if (typeof prevIdx === 'number' && activePoll.options[prevIdx]) {
+    activePoll.options[prevIdx].votes = Math.max(0, activePoll.options[prevIdx].votes - 1);
+    activePoll.totalVotes = Math.max(0, activePoll.totalVotes - 1);
+  }
+  activePoll.voters[voterKey] = idx;
+  activePoll.options[idx].votes += 1;
+  activePoll.totalVotes += 1;
+
+  const snap = getSanitizedPoll();
+  obsServer.broadcastPoll(snap);
+  broadcastToWindows('poll-updated', snap);
+}
+
+function incrementGoalForEvent(ev) {
+  const cfg = loadConfig();
+  const goals = cfg.obsGoals || getDefaultConfig().obsGoals;
+  if (!goals || goals.enabled === false) return;
+  const normType = normalizeObsAlertType(ev.type);
+  const shouldInc =
+    (goals.autoFollow && normType === 'follow') ||
+    (goals.autoSub && ['sub', 'resub', 'subgift'].includes(normType));
+  if (!shouldInc) return;
+
+  const nextGoals = { ...goals, current: Math.max(0, Number(goals.current || 0) + 1) };
+  cfg.obsGoals = nextGoals;
+  saveConfig(cfg);
+  obsServer.broadcastGoals(nextGoals);
+  broadcastToWindows('goals-updated', nextGoals);
+}
+
 function forwardStreamerEvent(ev) {
   appendDiagLog(ev.platform, 'event', `${(ev.type || 'EVENT').toUpperCase()}: ${ev.author} — ${ev.summary}`);
   broadcastToWindows('streamer-event', ev);
   broadcastEventToObsAlert(ev, false);
+  incrementGoalForEvent(ev);
 }
 
 function forwardStatus(update) {
@@ -563,6 +657,15 @@ twitch.on('delete-message', (msgId) => {
   conn.on('stats', (st) => forwardStats(st));
 });
 
+youtube.on('oauth-updated', (oauth) => {
+  const cfg = loadConfig();
+  cfg.youtubeOAuth = { ...(cfg.youtubeOAuth || {}), ...oauth };
+  saveConfig(cfg);
+  platformStatus.youtube.canWrite = youtube.canWrite;
+  obsServer.broadcastStatus(platformStatus);
+  broadcastToWindows('platform-status', platformStatus);
+});
+
 function connectSinglePlatform(platform, cfg) {
   if (platform === 'twitch') {
     if (cfg.twitchEnabled === false) {
@@ -579,6 +682,7 @@ function connectSinglePlatform(platform, cfg) {
       });
     }
   } else if (platform === 'youtube') {
+    youtube.setOAuthConfig(cfg.youtubeOAuth || {});
     if (cfg.youtubeEnabled === false) {
       youtube.disconnect();
       return;
@@ -1025,8 +1129,12 @@ app.whenReady().then(async () => {
       });
     }
     obsServer.broadcastAlertConfig(saved.obsAlerts || getDefaultConfig().obsAlerts);
+    obsServer.broadcastGoals(saved.obsGoals || getDefaultConfig().obsGoals);
+    obsServer.broadcastPoll(getSanitizedPoll());
+    youtube.setOAuthConfig(saved.youtubeOAuth || {});
     platformStatus.twitch.enabled = saved.twitchEnabled !== false;
     platformStatus.youtube.enabled = saved.youtubeEnabled !== false;
+    platformStatus.youtube.canWrite = youtube.canWrite;
     platformStatus.tiktok.enabled = saved.tiktokEnabled !== false;
 
     appendDiagLog('system', 'info', `OmniStream Chat gestartet — Tablet Companion unter ${tabletUrl}`);
@@ -1036,10 +1144,13 @@ app.whenReady().then(async () => {
       obsUrl: `http://127.0.0.1:${obsPort}`,
       obsDockUrl: `http://127.0.0.1:${obsPort}/dock`,
       obsAlertsUrl: `http://127.0.0.1:${obsPort}/alerts`,
+      obsGoalsUrl: `http://127.0.0.1:${obsPort}/goals`,
+      obsPollUrl: `http://127.0.0.1:${obsPort}/poll`,
       spotifyObsUrl: `http://127.0.0.1:${obsPort}/spotify`,
       tabletUrl,
       tabletQrDataUrl,
       spotifyTrack: spotify.currentTrack,
+      activePoll: getSanitizedPoll(),
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
       platformStatus,
       isAlwaysOnTop,
@@ -1072,8 +1183,52 @@ app.whenReady().then(async () => {
     if (currentCfg.obsAlerts) {
       obsServer.broadcastAlertConfig(currentCfg.obsAlerts);
     }
+    if (currentCfg.obsGoals) {
+      obsServer.broadcastGoals(currentCfg.obsGoals);
+    }
     saveConfig(currentCfg);
     return { ok: true, config: currentCfg };
+  });
+
+  ipcMain.handle('poll-action', (_ev, payload) => {
+    const act = payload?.action || 'start';
+    if (act === 'start') {
+      const question = String(payload?.question || 'Was sollen wir spielen?').trim();
+      const rawOpts = Array.isArray(payload?.options)
+        ? payload.options
+        : String(payload?.options || 'Option A, Option B')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+      const options = rawOpts.slice(0, 6).map((label) => ({ label, votes: 0 }));
+      if (options.length < 2) {
+        return { ok: false, error: 'Mindestens 2 Optionen erforderlich (kommagetrennt).' };
+      }
+      activePoll = {
+        active: true,
+        visibleWhenStopped: true,
+        question,
+        options,
+        voters: {},
+        totalVotes: 0
+      };
+    } else if (act === 'stop') {
+      activePoll.active = false;
+      activePoll.visibleWhenStopped = true;
+    } else if (act === 'reset') {
+      activePoll = {
+        active: false,
+        visibleWhenStopped: false,
+        question: '',
+        options: [],
+        voters: {},
+        totalVotes: 0
+      };
+    }
+    const snap = getSanitizedPoll();
+    obsServer.broadcastPoll(snap);
+    broadcastToWindows('poll-updated', snap);
+    return { ok: true, poll: snap };
   });
 
   ipcMain.handle('test-obs-alert', (_ev, type) => {
@@ -1171,6 +1326,48 @@ app.whenReady().then(async () => {
     return { ok: true, streams };
   });
 
+  ipcMain.handle('youtube-oauth-login', async (_ev, creds) => {
+    try {
+      const { shell } = require('electron');
+      const res = await youtube.startOAuthLogin({
+        clientId: creds?.clientId,
+        clientSecret: creds?.clientSecret,
+        openUrl: (url) => shell.openExternal(url)
+      });
+      const cfg = loadConfig();
+      cfg.youtubeOAuth = res.oauth;
+      saveConfig(cfg);
+      platformStatus.youtube.canWrite = youtube.canWrite;
+      obsServer.broadcastStatus(platformStatus);
+      broadcastToWindows('platform-status', platformStatus);
+      appendDiagLog('youtube', 'info', `YouTube OAuth2 verbunden (${res.oauth.accountName || 'Schreibrechte aktiv'}).`);
+      return { ok: true, oauth: res.oauth };
+    } catch (err) {
+      appendDiagLog('youtube', 'error', `YouTube OAuth2 fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('youtube-oauth-logout', () => {
+    const cfg = loadConfig();
+    const nextOAuth = {
+      clientId: cfg.youtubeOAuth?.clientId || '',
+      clientSecret: cfg.youtubeOAuth?.clientSecret || '',
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: 0,
+      accountName: ''
+    };
+    cfg.youtubeOAuth = nextOAuth;
+    saveConfig(cfg);
+    youtube.setOAuthConfig(nextOAuth);
+    platformStatus.youtube.canWrite = false;
+    obsServer.broadcastStatus(platformStatus);
+    broadcastToWindows('platform-status', platformStatus);
+    appendDiagLog('youtube', 'info', 'YouTube OAuth2 abgemeldet (Nur-Lesen-Modus).');
+    return { ok: true, oauth: nextOAuth };
+  });
+
   ipcMain.handle('disconnect-platform', (_ev, platform) => {
     appendDiagLog(platform, 'info', `Verbindung zu ${platform.toUpperCase()} getrennt.`);
     if (platform === 'twitch') twitch.disconnect();
@@ -1188,7 +1385,7 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
-  ipcMain.handle('send-chat-message', (_ev, payload) => {
+  ipcMain.handle('send-chat-message', async (_ev, payload) => {
     const text = typeof payload === 'string' ? payload : payload?.text || '';
     const replyParentId = typeof payload === 'object' ? payload?.replyParentId || null : null;
     const targets = typeof payload === 'object' && Array.isArray(payload?.targets) ? payload.targets : ['twitch'];
@@ -1239,7 +1436,14 @@ app.whenReady().then(async () => {
         });
         results.push('youtube');
       } else {
-        errors.push('YouTube: Nur-Lesen-Verbindung (Senden erfordert YouTube Data API v3 OAuth2).');
+        try {
+          await youtube.sendMessage(text);
+          results.push('youtube');
+          appendDiagLog('youtube', 'info', `Nachricht an YouTube Live Chat gesendet: "${text}"`);
+        } catch (err) {
+          errors.push(`YouTube: ${err.message}`);
+          appendDiagLog('youtube', 'error', `Senden fehlgeschlagen: ${err.message}`);
+        }
       }
     }
 

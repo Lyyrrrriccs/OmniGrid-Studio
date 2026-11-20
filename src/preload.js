@@ -41,5 +41,10 @@ contextBridge.exposeInMainWorld('omnichat', {
   updateGlobalHotkeys: (cfg) => ipcRenderer.invoke('update-global-hotkeys', cfg),
   triggerPeripheralAction: (payload) => ipcRenderer.invoke('trigger-peripheral-action', payload),
   spotifyControl: (action) => ipcRenderer.invoke('spotify-control', action),
-  testObsAlert: (type) => ipcRenderer.invoke('test-obs-alert', type)
+  testObsAlert: (type) => ipcRenderer.invoke('test-obs-alert', type),
+  youtubeOAuthLogin: (creds) => ipcRenderer.invoke('youtube-oauth-login', creds),
+  youtubeOAuthLogout: () => ipcRenderer.invoke('youtube-oauth-logout'),
+  pollAction: (payload) => ipcRenderer.invoke('poll-action', payload),
+  onPollUpdated: (cb) => ipcRenderer.on('poll-updated', (_ev, data) => cb(data)),
+  onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data))
 });

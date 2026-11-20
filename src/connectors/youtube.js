@@ -1,4 +1,6 @@
 const https = require('https');
+const http = require('http');
+const crypto = require('crypto');
 const { EventEmitter } = require('events');
 
 /**
@@ -8,6 +10,7 @@ const { EventEmitter } = require('events');
  * - Allows automatic selection OR manual stream selection by videoId
  * - Auto-reconnects on session drops / network hiccups without losing deduplication state (`seenIds`)
  * - Parses exact YouTube server timestamps (`timestampUsec`) for chronological sorting
+ * - Optional YouTube Data API v3 OAuth2 PKCE flow for sending chat messages (`sendMessage`)
  */
 class YouTubeConnector extends EventEmitter {
   constructor() {
@@ -27,6 +30,18 @@ class YouTubeConnector extends EventEmitter {
     this.statsTimer = null;
     this.seenIds = new Set();
     this.viewers = 0;
+    this.oauth = {
+      clientId: '',
+      clientSecret: '',
+      accessToken: '',
+      refreshToken: '',
+      expiresAt: 0,
+      accountName: ''
+    };
+    this.canWrite = false;
+    this.liveChatId = null;
+    this.liveChatIdForVideo = null;
+    this._oauthServer = null;
   }
 
   async connect({ channelOrUrl, preferredVideoId = '' }) {
@@ -193,7 +208,8 @@ class YouTubeConnector extends EventEmitter {
         videoId: this.videoId,
         streamTitle: this.streamTitle,
         availableStreams: this.availableStreams,
-        viewers: this.viewers
+        viewers: this.viewers,
+        canWrite: this.canWrite
       });
 
       this.emit('stats', {
@@ -214,7 +230,8 @@ class YouTubeConnector extends EventEmitter {
         videoId: this.videoId,
         availableStreams: this.availableStreams,
         error: err.message,
-        viewers: 0
+        viewers: 0,
+        canWrite: this.canWrite
       });
 
       if (this.shouldWatch) {
@@ -508,10 +525,340 @@ class YouTubeConnector extends EventEmitter {
     });
   }
 
+  setOAuthConfig(oauthCfg = {}) {
+    this.oauth = {
+      clientId: String(oauthCfg.clientId || '').trim(),
+      clientSecret: String(oauthCfg.clientSecret || '').trim(),
+      accessToken: String(oauthCfg.accessToken || '').trim(),
+      refreshToken: String(oauthCfg.refreshToken || '').trim(),
+      expiresAt: Number(oauthCfg.expiresAt || 0),
+      accountName: String(oauthCfg.accountName || '').trim()
+    };
+    this.canWrite = Boolean(
+      this.oauth.accessToken || (this.oauth.refreshToken && this.oauth.clientId)
+    );
+    if (this.connected && this.target) {
+      this.emit('status', {
+        platform: 'youtube',
+        status: 'connected',
+        channel: this.target,
+        videoId: this.videoId,
+        streamTitle: this.streamTitle,
+        availableStreams: this.availableStreams,
+        viewers: this.viewers,
+        canWrite: this.canWrite
+      });
+    }
+  }
+
+  _httpsRequest(url, { method = 'GET', headers = {}, body = null } = {}) {
+    return new Promise((resolve, reject) => {
+      const req = https.request(url, { method, headers, timeout: 10000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          let parsed = null;
+          try {
+            parsed = JSON.parse(data);
+          } catch (e) {}
+          resolve({ statusCode: res.statusCode, data, json: parsed });
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('YouTube API Zeitüberschreitung'));
+      });
+      if (body) req.write(body);
+      req.end();
+    });
+  }
+
+  async startOAuthLogin({ clientId, clientSecret = '', openUrl }) {
+    const cleanClientId = String(clientId || this.oauth.clientId || '').trim();
+    const cleanSecret = String(clientSecret || this.oauth.clientSecret || '').trim();
+    if (!cleanClientId) {
+      throw new Error('Bitte zuerst eine Google OAuth2 Client-ID eingeben.');
+    }
+    if (typeof openUrl !== 'function') {
+      throw new Error('Kein Browser-Opener für OAuth2 verfügbar.');
+    }
+
+    if (this._oauthServer) {
+      try {
+        this._oauthServer.close();
+      } catch (e) {}
+      this._oauthServer = null;
+    }
+
+    const codeVerifier = crypto.randomBytes(32).toString('base64url');
+    const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+    const state = crypto.randomBytes(16).toString('hex');
+
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (err, result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutTimer);
+        if (this._oauthServer) {
+          try {
+            this._oauthServer.close();
+          } catch (e) {}
+          this._oauthServer = null;
+        }
+        if (err) reject(err);
+        else resolve(result);
+      };
+
+      const server = http.createServer(async (req, res) => {
+        try {
+          const reqUrl = new URL(req.url || '/', 'http://127.0.0.1');
+          if (reqUrl.pathname !== '/oauth2callback') {
+            res.writeHead(404);
+            res.end('Not found');
+            return;
+          }
+
+          const errParam = reqUrl.searchParams.get('error');
+          const code = reqUrl.searchParams.get('code');
+          const returnedState = reqUrl.searchParams.get('state');
+
+          if (errParam) {
+            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(`<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Anmeldung abgebrochen</h2><p>${errParam}</p></body></html>`);
+            return finish(new Error(`Google OAuth Fehler: ${errParam}`));
+          }
+          if (!code || returnedState !== state) {
+            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end('<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Ungültige OAuth-Antwort</h2></body></html>');
+            return finish(new Error('Ungültige OAuth2-Antwort (State/Code fehlt).'));
+          }
+
+          const addr = server.address();
+          const redirectUri = `http://127.0.0.1:${addr.port}/oauth2callback`;
+          const tokenParams = new URLSearchParams({
+            code,
+            client_id: cleanClientId,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code',
+            code_verifier: codeVerifier
+          });
+          if (cleanSecret) {
+            tokenParams.set('client_secret', cleanSecret);
+          }
+
+          const tokenResp = await this._httpsRequest('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: tokenParams.toString()
+          });
+
+          if (tokenResp.statusCode >= 400 || !tokenResp.json?.access_token) {
+            const msg = tokenResp.json?.error_description || tokenResp.json?.error || `HTTP ${tokenResp.statusCode}`;
+            res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(`<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Token-Austausch fehlgeschlagen</h2><p>${msg}</p></body></html>`);
+            return finish(new Error(`Token-Austausch fehlgeschlagen: ${msg}`));
+          }
+
+          const tok = tokenResp.json;
+          let accountName = '';
+          try {
+            const chResp = await this._httpsRequest(
+              'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+              { headers: { Authorization: `Bearer ${tok.access_token}` } }
+            );
+            accountName = chResp.json?.items?.[0]?.snippet?.title || '';
+          } catch (e) {}
+
+          const nextOAuth = {
+            clientId: cleanClientId,
+            clientSecret: cleanSecret,
+            accessToken: tok.access_token,
+            refreshToken: tok.refresh_token || this.oauth.refreshToken || '',
+            expiresAt: Date.now() + (Number(tok.expires_in || 3600) * 1000),
+            accountName
+          };
+          this.setOAuthConfig(nextOAuth);
+          this.emit('oauth-updated', nextOAuth);
+
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(
+            `<html><body style="font-family:sans-serif;background:#0f172a;color:#fff;padding:36px;text-align:center;">` +
+            `<h2>✅ YouTube-Konto verbunden!</h2>` +
+            `<p>${accountName ? `Angemeldet als <strong>${accountName}</strong>.` : 'Schreibrechte für YouTube Live Chat sind aktiv.'} Du kannst dieses Tab jetzt schließen.</p>` +
+            `</body></html>`
+          );
+          finish(null, { ok: true, oauth: nextOAuth });
+        } catch (err) {
+          finish(err);
+        }
+      });
+
+      this._oauthServer = server;
+      const timeoutTimer = setTimeout(() => {
+        finish(new Error('YouTube OAuth2 Anmeldung abgelaufen (Timeout nach 3 Minuten).'));
+      }, 180000);
+
+      server.on('error', (err) => finish(err));
+      server.listen(0, '127.0.0.1', () => {
+        const addr = server.address();
+        const redirectUri = `http://127.0.0.1:${addr.port}/oauth2callback`;
+        const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+        authUrl.searchParams.set('client_id', cleanClientId);
+        authUrl.searchParams.set('redirect_uri', redirectUri);
+        authUrl.searchParams.set('response_type', 'code');
+        authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/youtube.force-ssl');
+        authUrl.searchParams.set('access_type', 'offline');
+        authUrl.searchParams.set('prompt', 'consent');
+        authUrl.searchParams.set('code_challenge', codeChallenge);
+        authUrl.searchParams.set('code_challenge_method', 'S256');
+        authUrl.searchParams.set('state', state);
+        openUrl(authUrl.toString());
+      });
+    });
+  }
+
+  async refreshAccessToken() {
+    if (!this.oauth.refreshToken || !this.oauth.clientId) {
+      throw new Error('Kein YouTube Refresh-Token vorhanden — bitte erneut mit Google anmelden.');
+    }
+    const params = new URLSearchParams({
+      client_id: this.oauth.clientId,
+      refresh_token: this.oauth.refreshToken,
+      grant_type: 'refresh_token'
+    });
+    if (this.oauth.clientSecret) {
+      params.set('client_secret', this.oauth.clientSecret);
+    }
+
+    const resp = await this._httpsRequest('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+    if (resp.statusCode >= 400 || !resp.json?.access_token) {
+      const msg = resp.json?.error_description || resp.json?.error || `HTTP ${resp.statusCode}`;
+      throw new Error(`YouTube Token-Refresh fehlgeschlagen: ${msg}`);
+    }
+
+    const nextOAuth = {
+      ...this.oauth,
+      accessToken: resp.json.access_token,
+      expiresAt: Date.now() + (Number(resp.json.expires_in || 3600) * 1000)
+    };
+    this.setOAuthConfig(nextOAuth);
+    this.emit('oauth-updated', nextOAuth);
+    return nextOAuth.accessToken;
+  }
+
+  async _ensureValidAccessToken() {
+    if (!this.oauth.accessToken && !this.oauth.refreshToken) {
+      throw new Error('YouTube OAuth2 nicht angemeldet.');
+    }
+    const needsRefresh = !this.oauth.accessToken || (this.oauth.expiresAt && Date.now() >= this.oauth.expiresAt - 60000);
+    if (needsRefresh && this.oauth.refreshToken && this.oauth.clientId) {
+      return await this.refreshAccessToken();
+    }
+    return this.oauth.accessToken;
+  }
+
+  async _resolveActiveLiveChatId(accessToken) {
+    if (!this.videoId) {
+      throw new Error('Kein aktiver YouTube-Livestream verbunden.');
+    }
+    if (this.liveChatId && this.liveChatIdForVideo === this.videoId) {
+      return this.liveChatId;
+    }
+
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${encodeURIComponent(this.videoId)}`;
+    const resp = await this._httpsRequest(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (resp.statusCode === 401) {
+      const err = new Error('UNAUTHORIZED');
+      err.statusCode = 401;
+      throw err;
+    }
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.error?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`YouTube liveChatId Abruf fehlgeschlagen: ${msg}`);
+    }
+
+    const chatId = resp.json?.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+    if (!chatId) {
+      throw new Error('Für diesen YouTube-Stream ist kein aktiver Live-Chat über die API verfügbar.');
+    }
+    this.liveChatId = chatId;
+    this.liveChatIdForVideo = this.videoId;
+    return chatId;
+  }
+
+  async sendMessage(text) {
+    const cleanText = String(text || '').trim().slice(0, 200);
+    if (!cleanText) {
+      throw new Error('Leere Nachricht kann nicht gesendet werden.');
+    }
+    if (!this.connected || !this.videoId) {
+      throw new Error('YouTube ist aktuell nicht mit einem aktiven Livestream verbunden.');
+    }
+    if (!this.canWrite) {
+      throw new Error('YouTube ist im Nur-Lesen-Modus. Bitte zuerst unter YouTube mit Google OAuth2 anmelden.');
+    }
+
+    const attemptSend = async (accessToken) => {
+      const liveChatId = await this._resolveActiveLiveChatId(accessToken);
+      const payload = JSON.stringify({
+        snippet: {
+          liveChatId,
+          type: 'textMessageEvent',
+          textMessageDetails: { messageText: cleanText }
+        }
+      });
+      return await this._httpsRequest(
+        'https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload)
+          },
+          body: payload
+        }
+      );
+    };
+
+    let token = await this._ensureValidAccessToken();
+    let resp;
+    try {
+      resp = await attemptSend(token);
+      if (resp.statusCode === 401 && this.oauth.refreshToken && this.oauth.clientId) {
+        token = await this.refreshAccessToken();
+        resp = await attemptSend(token);
+      }
+    } catch (err) {
+      if (err.statusCode === 401 && this.oauth.refreshToken && this.oauth.clientId) {
+        token = await this.refreshAccessToken();
+        resp = await attemptSend(token);
+      } else {
+        throw err;
+      }
+    }
+
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.error?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`YouTube Senden fehlgeschlagen: ${msg}`);
+    }
+    return { ok: true, id: resp.json?.id || null };
+  }
+
   disconnect(clearDedupe = false) {
     this.shouldWatch = false;
     this.connected = false;
     this.viewers = 0;
+    this.liveChatId = null;
+    this.liveChatIdForVideo = null;
     clearTimeout(this.pollTimer);
     clearTimeout(this.retryTimer);
     clearInterval(this.statsTimer);
@@ -524,7 +871,8 @@ class YouTubeConnector extends EventEmitter {
         status: 'disconnected',
         channel: this.target,
         availableStreams: this.availableStreams,
-        viewers: 0
+        viewers: 0,
+        canWrite: this.canWrite
       });
     }
   }
