@@ -1030,6 +1030,7 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
       <button class="deck-btn sp" onclick="sdApi('/spotify-announce')"><span class="ic">📢</span>Song in Chat</button>
       <button class="deck-btn" onclick="sdApi('/send?text=GG!')"><span class="ic">💬</span>Sende GG!</button>
       <button class="deck-btn" onclick="sdApi('/send?text=!discord')"><span class="ic">🎮</span>!discord</button>
+      <button class="deck-btn" onclick="sdApi('/toggle-poll')"><span class="ic">🗳️</span>Poll Ein/Aus</button>
       <button class="deck-btn" onclick="sdApi('/reconnect?platform=all')"><span class="ic">↻</span>Reconnect</button>
     </aside>
 
@@ -1545,7 +1546,7 @@ const OBS_POLL_HTML = `<!DOCTYPE html>
     const hintEl = document.getElementById('pollHint');
 
     function renderPoll(poll) {
-      if (!poll || (!poll.active && !poll.visibleWhenStopped)) {
+      if (!poll || poll.visible === false || (!poll.active && !poll.visibleWhenStopped)) {
         card.classList.add('hidden');
         return;
       }

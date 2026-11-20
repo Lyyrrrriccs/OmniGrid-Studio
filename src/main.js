@@ -547,6 +547,7 @@ function broadcastEventToObsAlert(ev, bypassFilter = false) {
 
 let activePoll = {
   active: false,
+  visible: true,
   visibleWhenStopped: false,
   question: '',
   options: [],
@@ -557,6 +558,7 @@ let activePoll = {
 function getSanitizedPoll() {
   return {
     active: activePoll.active,
+    visible: activePoll.visible !== false,
     visibleWhenStopped: activePoll.visibleWhenStopped,
     question: activePoll.question,
     options: activePoll.options.map((o) => ({ label: o.label, votes: o.votes })),
@@ -930,6 +932,20 @@ app.whenReady().then(async () => {
       return { ok: true };
     }
 
+    if (act === 'toggle-poll') {
+      if (params.visible === 'true' || params.visible === '1' || body.visible === true) {
+        activePoll.visible = true;
+      } else if (params.visible === 'false' || params.visible === '0' || body.visible === false) {
+        activePoll.visible = false;
+      } else {
+        activePoll.visible = !activePoll.visible;
+      }
+      const snap = getSanitizedPoll();
+      obsServer.broadcastPoll(snap);
+      broadcastToWindows('poll-updated', snap);
+      return { ok: true, visible: snap.visible, poll: snap };
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1232,6 +1248,7 @@ app.whenReady().then(async () => {
       }
       activePoll = {
         active: true,
+        visible: true,
         visibleWhenStopped: true,
         question,
         options,
@@ -1241,9 +1258,12 @@ app.whenReady().then(async () => {
     } else if (act === 'stop') {
       activePoll.active = false;
       activePoll.visibleWhenStopped = true;
+    } else if (act === 'toggle-visibility') {
+      activePoll.visible = !activePoll.visible;
     } else if (act === 'reset') {
       activePoll = {
         active: false,
+        visible: false,
         visibleWhenStopped: false,
         question: '',
         options: [],

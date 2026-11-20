@@ -2334,13 +2334,18 @@ bindCopyBtn(btnCopyObsPoll, inputObsPollUrl, 'Poll-URL');
 });
 
 function updatePollPreviewUI(poll) {
+  const btnVis = document.getElementById('btnPollToggleVis');
+  if (btnVis) {
+    btnVis.textContent = poll && poll.visible === false ? '👁️ Einblenden' : '👁️ Ausblenden';
+  }
   if (!pollPreviewStatus) return;
   if (!poll || (!poll.active && !poll.visibleWhenStopped)) {
     pollPreviewStatus.textContent = 'Keine aktive Umfrage';
     return;
   }
+  const visNote = poll.visible === false ? ' • 🙈 Ausgeblendet' : '';
   const summary = (poll.options || []).map((o, i) => `${i + 1}. ${o.label}: ${o.votes}`).join(' • ');
-  pollPreviewStatus.textContent = `${poll.active ? '🟢 Aktiv' : '⏹ Beendet'} (${poll.totalVotes} Stimmen) — ${summary}`;
+  pollPreviewStatus.textContent = `${poll.active ? '🟢 Aktiv' : '⏹ Beendet'}${visNote} (${poll.totalVotes} Stimmen) — ${summary}`;
 }
 
 document.getElementById('btnPollStart')?.addEventListener('click', async () => {
@@ -2352,6 +2357,10 @@ document.getElementById('btnPollStart')?.addEventListener('click', async () => {
 
 document.getElementById('btnPollStop')?.addEventListener('click', () => {
   window.omnichat.pollAction({ action: 'stop' });
+});
+
+document.getElementById('btnPollToggleVis')?.addEventListener('click', () => {
+  window.omnichat.pollAction({ action: 'toggle-visibility' });
 });
 
 document.getElementById('btnPollReset')?.addEventListener('click', () => {
