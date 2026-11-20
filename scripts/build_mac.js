@@ -40,6 +40,8 @@ try {
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName OmniStreamChat" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.tobias.omnistreamchat" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "${plistPath}"`);
+  execSync(`/usr/libexec/PlistBuddy -c "Delete :NSAppleEventsUsageDescription" "${plistPath}" 2>/dev/null || true`);
+  execSync(`/usr/libexec/PlistBuddy -c "Add :NSAppleEventsUsageDescription string 'OmniStreamChat liest den aktuellen Spotify-Track fuer das OBS-Widget und !song.'" "${plistPath}"`);
 } catch (err) {
   console.warn('Plist notice:', err.message);
 }

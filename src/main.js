@@ -409,25 +409,49 @@ function forwardChatMessage(msg) {
     obsServer.broadcastChat(enriched);
     broadcastToWindows('chat-message', enriched);
 
-    // Auto-reply to !song / !music in Twitch chat (15s anti-spam cooldown)
+    // Auto-reply to !song / !music in Twitch chat (5s anti-spam cooldown)
+    const cleanCmdText = String(msg.text || '').trim();
     if (
       cfg.spotifyEnabled !== false &&
       cfg.spotifyAutoCommand !== false &&
-      !msg.isSelf &&
-      msg.platform === 'twitch' &&
-      /^!(song|music|musik)\b/i.test(String(msg.text || '').trim())
+      !cleanCmdText.startsWith('🎵') &&
+      /^!(song|music|musik)\b/i.test(cleanCmdText)
     ) {
       const now = Date.now();
-      if (now - lastSongReplyAt > 15000 && spotify.currentTrack?.running && spotify.currentTrack?.title) {
-        lastSongReplyAt = now;
-        const songText = spotify.currentTrack.artist
-          ? `🎵 Aktueller Song: ${spotify.currentTrack.artist} – ${spotify.currentTrack.title}`
-          : `🎵 Aktueller Song: ${spotify.currentTrack.title}`;
-        try {
-          if (twitch.connected && twitch.canWrite) {
-            twitch.sendMessage(songText, msg.id);
+      if (now - lastSongReplyAt > 5000) {
+        if (!spotify.currentTrack?.running || !spotify.currentTrack?.title) {
+          spotify.pollNow();
+        }
+        if (spotify.currentTrack?.running && spotify.currentTrack?.title) {
+          lastSongReplyAt = now;
+          const songText = spotify.currentTrack.artist
+            ? `🎵 Aktueller Song: ${spotify.currentTrack.artist} – ${spotify.currentTrack.title}`
+            : `🎵 Aktueller Song: ${spotify.currentTrack.title}`;
+          appendDiagLog('system', 'info', `!song erkannt (${msg.author}) → ${songText}`);
+          try {
+            if (demoActive) {
+              setTimeout(() => {
+                forwardChatMessage({
+                  id: `sp_bot_${Date.now()}`,
+                  platform: msg.platform || 'twitch',
+                  channel: msg.channel || 'demo-live',
+                  author: cfg.streamerName || cfg.twitchUsername || 'OmniStream Bot',
+                  color: '#1db954',
+                  badges: ['BOT'],
+                  text: songText,
+                  isSelf: true,
+                  timestamp: Date.now()
+                });
+              }, 200);
+            } else if (msg.platform === 'twitch' && twitch.connected && twitch.canWrite) {
+              twitch.sendMessage(songText, msg.isSelf ? null : msg.id);
+            }
+          } catch (e) {
+            appendDiagLog('twitch', 'error', `!song Antwort fehlgeschlagen: ${e.message}`);
           }
-        } catch (e) {}
+        } else {
+          appendDiagLog('system', 'warn', '!song erkannt, aber Spotify spielt aktuell keinen Track.');
+        }
       }
     }
   } catch (e) {}
