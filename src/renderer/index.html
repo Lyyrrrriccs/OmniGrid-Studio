@@ -961,8 +961,9 @@
           </button>
 
           <div class="search-wrap">
-            <input type="text" id="inputSearch" placeholder="🔍 Suchen..." />
+            <input type="text" id="inputSearch" placeholder="🔍 Suchen (⌘/Ctrl+F)..." />
           </div>
+          <button class="btn-toolbar-toggle" id="btnExportChatLog" title="Aktuellen Chat-Verlauf als .txt oder .json speichern">💾 Export</button>
         </div>
       </div>
 
@@ -1211,6 +1212,21 @@
                 <option value="600">10m Timeout</option>
               </select>
             </div>
+          </div>
+
+          <div class="sidebar-section custom-commands-box">
+            <h3>💬 Custom Chat-Commands</h3>
+            <p class="section-hint">Antwortet automatisch auf Zuschauer-Befehle (Twitch &amp; YouTube). <code>!commands</code> listet alle Befehle auf. Platzhalter: <code>{user}</code>, <code>{platform}</code>.</p>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkCustomCmdsEnabled" />
+              <span>Custom Commands aktivieren</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <label for="numCustomCmdCooldown" style="font-size: 12px;">Cooldown (Sekunden):</label>
+              <input type="number" id="numCustomCmdCooldown" min="2" max="300" value="10" style="width: 72px;" />
+            </div>
+            <label style="margin-top: 8px; display: block;">Befehle (Format: <code>!befehl | Antworttext</code>)</label>
+            <textarea id="txtCustomCmdRules" rows="5" style="width: 100%; margin-top: 4px; resize: vertical; background: rgba(15,23,42,0.85); color: #f8fafc; border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 6px;" placeholder="!discord | Komm gerne auf unseren Discord!&#10;!lurk | Danke für den Lurk, @{user}!"></textarea>
           </div>
         </div>
         <div class="config-tab-panel" id="cfgTab_companion"></div>
