@@ -463,6 +463,25 @@
           </div>
         </div>
 
+        <!-- OBS WEBSOCKET V5 CONFIG -->
+        <div class="sidebar-section obs-ws-config-box">
+          <h3>🎛️ OBS WebSocket v5 Verbindung</h3>
+          <p class="section-hint">
+            Aktiviere in OBS Studio unter <strong>Werkzeuge → WebSocket-Servereinstellungen</strong> den WebSocket-Server (Standard-Port <code>4455</code>).
+          </p>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="inputObsWsHost" placeholder="Host (127.0.0.1)" value="127.0.0.1" style="flex: 2;" />
+            <input type="number" id="inputObsWsPort" placeholder="4455" value="4455" style="flex: 1;" />
+          </div>
+          <input type="password" id="inputObsWsPass" placeholder="OBS WebSocket-Passwort (falls gesetzt)" style="margin-top: 5px;" />
+          <input type="text" id="inputObsWsMic" placeholder="Mikrofon-Quellname (optional, z. B. Mic/Aux)" style="margin-top: 5px;" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnObsWsConnect" style="flex: 1;">🔌 Mit OBS verbinden</button>
+            <button class="btn-sm hidden" id="btnObsWsDisconnect">Trennen</button>
+          </div>
+          <div id="obsWsConfigStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Nicht verbunden</div>
+        </div>
+
         <!-- SPOTIFY DESKTOP BRIDGE & OBS NOW-PLAYING WIDGET -->
         <div class="sidebar-section spotify-box">
           <h3>🎵 Spotify Live &amp; !song Bot</h3>
@@ -700,6 +719,27 @@
                 <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
               </div>
             </div>
+            <div class="sd-row" data-sd-path="/obs-replay">
+              <span class="sd-label">💾 OBS Replay speichern</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-mic">
+              <span class="sd-label">🎙️ OBS Mikrofon Mute</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-record">
+              <span class="sd-label">🔴 OBS Aufnahme Toggle</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
             <div class="sd-row" data-sd-path="/clear-chat">
               <span class="sd-label">🗑️ Chat-Verlauf leeren</span>
               <div class="sd-btns">
@@ -859,6 +899,19 @@
             <button class="btn-sm" id="btnCreateMarker" style="flex: 1;">🚩 Marker setzen</button>
           </div>
           <div id="clipMarkerResult" style="margin-top: 6px; font-size: 11px; color: #94a3b8; word-break: break-all;"></div>
+        </div>
+
+        <div class="sidebar-section obs-ws-live-box">
+          <h3>🎥 OBS Live-Steuerung <span id="obsWsLiveBadge" style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Aus)</span></h3>
+          <select id="selObsScene" disabled style="width: 100%;">
+            <option value="">— OBS in Config verbinden —</option>
+          </select>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnObsReplay" disabled>💾 Replay</button>
+            <button class="btn-sm" id="btnObsMic" disabled>🎙️ Mic</button>
+            <button class="btn-sm" id="btnObsRec" disabled>🔴 Rec</button>
+            <button class="btn-sm" id="btnObsStream" disabled>📡 Stream</button>
+          </div>
         </div>
 
         <div class="sidebar-section config-launcher-box">

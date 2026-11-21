@@ -7,6 +7,7 @@ const { TikTokConnector } = require('./connectors/tiktok');
 const { ObsServer } = require('./obs_server');
 const { EmoteManager } = require('./emote_manager');
 const { SpotifyBridge } = require('./spotify_bridge');
+const { ObsWsClient } = require('./obs_ws_client');
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -17,6 +18,7 @@ const twitch = new TwitchConnector();
 const youtube = new YouTubeConnector();
 const tiktok = new TikTokConnector();
 const obsServer = new ObsServer(4588);
+const obsWs = new ObsWsClient();
 const emoteManager = new EmoteManager();
 const spotify = new SpotifyBridge();
 let lastSongReplyAt = 0;
@@ -131,6 +133,13 @@ function getDefaultConfig() {
       rate: 1.0,
       volume: 0.9,
       voiceURI: ''
+    },
+    obsWs: {
+      enabled: false,
+      host: '127.0.0.1',
+      port: 4455,
+      password: '',
+      micName: ''
     },
     hideBots: false,
     collapseSpam: true,
@@ -659,6 +668,11 @@ twitch.on('delete-message', (msgId) => {
   conn.on('stats', (st) => forwardStats(st));
 });
 
+obsWs.on('state', (st) => {
+  broadcastToWindows('obs-ws-state', st);
+  obsServer.broadcastObsWsState(st);
+});
+
 youtube.on('oauth-updated', (oauth) => {
   const cfg = loadConfig();
   cfg.youtubeOAuth = { ...(cfg.youtubeOAuth || {}), ...oauth };
@@ -997,6 +1011,28 @@ app.whenReady().then(async () => {
       return { ok: true, clip, marker };
     }
 
+    if (act === 'obs-scene') {
+      const name = String(params.name || params.scene || body.sceneName || '').trim();
+      if (!name) return { ok: false, error: 'Parameter "name" (Szenenname) fehlt.' };
+      return await obsWs.setScene(name);
+    }
+
+    if (act === 'obs-replay') {
+      return await obsWs.saveReplayBuffer();
+    }
+
+    if (act === 'obs-stream') {
+      return await obsWs.toggleStream();
+    }
+
+    if (act === 'obs-record') {
+      return await obsWs.toggleRecord();
+    }
+
+    if (act === 'obs-mic') {
+      return await obsWs.toggleMicMute(params.input || body.inputName || '');
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1244,12 +1280,19 @@ app.whenReady().then(async () => {
       tabletTargets,
       spotifyTrack: spotify.currentTrack,
       activePoll: getSanitizedPoll(),
+      obsWsState: obsWs.getState(),
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
       platformStatus,
       isAlwaysOnTop,
       demoActive,
       diagnosticLogs
     });
+
+    if (saved.obsWs?.enabled) {
+      obsWs.connect(saved.obsWs).catch((err) => {
+        appendDiagLog('system', 'warn', `OBS WebSocket Auto-Connect fehlgeschlagen: ${err.message}`);
+      });
+    }
 
     if (saved.chatDockOpen) {
       openStandaloneChatWindow(false);
@@ -1356,6 +1399,52 @@ app.whenReady().then(async () => {
       return res;
     } catch (err) {
       appendDiagLog('twitch', 'error', `Marker fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('obs-ws-connect', async (_ev, opts) => {
+    const cfg = loadConfig();
+    const nextObsWs = {
+      enabled: true,
+      host: String(opts?.host || cfg.obsWs?.host || '127.0.0.1').trim(),
+      port: parseInt(opts?.port || cfg.obsWs?.port || '4455', 10) || 4455,
+      password: opts?.password !== undefined ? String(opts.password) : (cfg.obsWs?.password || ''),
+      micName: opts?.micName !== undefined ? String(opts.micName).trim() : (cfg.obsWs?.micName || '')
+    };
+    cfg.obsWs = nextObsWs;
+    saveConfig(cfg);
+    try {
+      const res = await obsWs.connect(nextObsWs);
+      appendDiagLog('system', 'info', `OBS WebSocket v5 verbunden (${nextObsWs.host}:${nextObsWs.port}).`);
+      return res;
+    } catch (err) {
+      appendDiagLog('system', 'error', `OBS WebSocket Fehler: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('obs-ws-disconnect', () => {
+    const cfg = loadConfig();
+    if (cfg.obsWs) {
+      cfg.obsWs.enabled = false;
+      saveConfig(cfg);
+    }
+    obsWs.disconnect(true);
+    appendDiagLog('system', 'info', 'OBS WebSocket v5 getrennt.');
+    return { ok: true };
+  });
+
+  ipcMain.handle('obs-ws-action', async (_ev, payload) => {
+    try {
+      const act = payload?.action;
+      if (act === 'scene') return await obsWs.setScene(payload.sceneName);
+      if (act === 'toggle-stream') return await obsWs.toggleStream();
+      if (act === 'toggle-record') return await obsWs.toggleRecord();
+      if (act === 'save-replay') return await obsWs.saveReplayBuffer();
+      if (act === 'toggle-mic') return await obsWs.toggleMicMute(payload.inputName || '');
+      return { ok: false, error: 'Unbekannte OBS-Aktion.' };
+    } catch (err) {
       return { ok: false, error: err.message };
     }
   });

@@ -1756,6 +1756,16 @@ function applyConfigToForm(cfg) {
     if (elTtsVolV) elTtsVolV.textContent = `${Math.round(Number(v) * 100)}%`;
   }
 
+  const ow = cfg.obsWs || {};
+  const elOwHost = document.getElementById('inputObsWsHost');
+  const elOwPort = document.getElementById('inputObsWsPort');
+  const elOwPass = document.getElementById('inputObsWsPass');
+  const elOwMic = document.getElementById('inputObsWsMic');
+  if (elOwHost) elOwHost.value = ow.host || '127.0.0.1';
+  if (elOwPort) elOwPort.value = ow.port || 4455;
+  if (elOwPass) elOwPass.value = ow.password || '';
+  if (elOwMic) elOwMic.value = ow.micName || '';
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -2517,6 +2527,9 @@ window.omnichat.onInitState((data) => {
   if (data.activePoll) {
     updatePollPreviewUI(data.activePoll);
   }
+  if (data.obsWsState) {
+    updateObsWsUI(data.obsWsState);
+  }
   if (data.spotifyObsUrl && inputSpotifyObsUrl) {
     inputSpotifyObsUrl.value = data.spotifyObsUrl;
   }
@@ -2807,6 +2820,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.design-settings-box', 'cfgTab_design'],
     ['.emote-settings-box', 'cfgTab_design'],
     ['.obs-box', 'cfgTab_obs'],
+    ['.obs-ws-config-box', 'cfgTab_obs'],
     ['.obs-alerts-box', 'cfgTab_obs'],
     ['.tablet-box', 'cfgTab_companion'],
     ['.streamdeck-box', 'cfgTab_companion'],
@@ -2888,4 +2902,112 @@ btnCreateMarker?.addEventListener('click', async () => {
       clipMarkerResult.textContent = `❌ ${res?.error || 'Marker fehlgeschlagen.'}`;
     }
   }
+});
+
+// --- OBS WEBSOCKET V5 CONTROLS ---
+function updateObsWsUI(st) {
+  if (!st) return;
+  const badge = document.getElementById('obsWsLiveBadge');
+  const cfgStatus = document.getElementById('obsWsConfigStatus');
+  const btnConn = document.getElementById('btnObsWsConnect');
+  const btnDisc = document.getElementById('btnObsWsDisconnect');
+  const selScene = document.getElementById('selObsScene');
+  const btnReplay = document.getElementById('btnObsReplay');
+  const btnMic = document.getElementById('btnObsMic');
+  const btnRec = document.getElementById('btnObsRec');
+  const btnStream = document.getElementById('btnObsStream');
+
+  const isConn = Boolean(st.connected);
+  if (badge) {
+    badge.textContent = isConn ? '(Verbunden)' : st.connecting ? '(...)' : '(Aus)';
+    badge.style.color = isConn ? '#4ade80' : '#94a3b8';
+  }
+  if (cfgStatus) {
+    if (isConn) {
+      cfgStatus.style.color = '#4ade80';
+      cfgStatus.textContent = `✅ Verbunden — Szene: ${st.currentScene || 'Unbekannt'}`;
+    } else if (st.error) {
+      cfgStatus.style.color = '#f87171';
+      cfgStatus.textContent = `❌ ${st.error}`;
+    } else {
+      cfgStatus.style.color = '#94a3b8';
+      cfgStatus.textContent = st.connecting ? '⏳ Verbinde...' : 'Nicht verbunden';
+    }
+  }
+  if (btnConn) btnConn.textContent = isConn ? '🔄 Neu verbinden' : '🔌 Mit OBS verbinden';
+  if (btnDisc) btnDisc.classList.toggle('hidden', !isConn);
+
+  [selScene, btnReplay, btnMic, btnRec, btnStream].forEach((el) => {
+    if (el) el.disabled = !isConn;
+  });
+
+  if (selScene) {
+    if (!isConn) {
+      selScene.innerHTML = '<option value="">— OBS in Config verbinden —</option>';
+    } else {
+      selScene.innerHTML = '';
+      (st.scenes || []).forEach((s) => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === st.currentScene) opt.selected = true;
+        selScene.appendChild(opt);
+      });
+    }
+  }
+
+  if (btnMic) {
+    btnMic.textContent = st.micMuted ? '🔇 Mic (Aus)' : '🎙️ Mic (An)';
+    btnMic.classList.toggle('warn', Boolean(st.micMuted));
+  }
+  if (btnRec) {
+    btnRec.textContent = st.recordActive ? '⏹️ Rec läuft' : '🔴 Rec';
+    btnRec.classList.toggle('active', Boolean(st.recordActive));
+  }
+  if (btnStream) {
+    btnStream.textContent = st.streamActive ? '⏹️ Live' : '📡 Stream';
+    btnStream.classList.toggle('active', Boolean(st.streamActive));
+  }
+}
+
+window.omnichat.onObsWsState?.((st) => updateObsWsUI(st));
+
+document.getElementById('btnObsWsConnect')?.addEventListener('click', async () => {
+  const host = document.getElementById('inputObsWsHost')?.value.trim() || '127.0.0.1';
+  const port = parseInt(document.getElementById('inputObsWsPort')?.value || '4455', 10) || 4455;
+  const password = document.getElementById('inputObsWsPass')?.value || '';
+  const micName = document.getElementById('inputObsWsMic')?.value.trim() || '';
+  const res = await window.omnichat.obsWsConnect({ host, port, password, micName });
+  if (res?.state) updateObsWsUI(res.state);
+});
+
+document.getElementById('btnObsWsDisconnect')?.addEventListener('click', () => {
+  window.omnichat.obsWsDisconnect();
+});
+
+document.getElementById('selObsScene')?.addEventListener('change', (e) => {
+  if (e.target.value) {
+    window.omnichat.obsWsAction({ action: 'scene', sceneName: e.target.value });
+  }
+});
+
+document.getElementById('btnObsReplay')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btnObsReplay');
+  const res = await window.omnichat.obsWsAction({ action: 'save-replay' });
+  if (btn) {
+    btn.textContent = res?.ok ? '✅ Gespeichert!' : '❌ Replay aus?';
+    setTimeout(() => { btn.textContent = '💾 Replay'; }, 1500);
+  }
+});
+
+document.getElementById('btnObsMic')?.addEventListener('click', () => {
+  window.omnichat.obsWsAction({ action: 'toggle-mic' });
+});
+
+document.getElementById('btnObsRec')?.addEventListener('click', () => {
+  window.omnichat.obsWsAction({ action: 'toggle-record' });
+});
+
+document.getElementById('btnObsStream')?.addEventListener('click', () => {
+  window.omnichat.obsWsAction({ action: 'toggle-stream' });
 });

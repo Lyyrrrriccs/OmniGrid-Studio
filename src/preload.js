@@ -48,5 +48,9 @@ contextBridge.exposeInMainWorld('omnichat', {
   onPollUpdated: (cb) => ipcRenderer.on('poll-updated', (_ev, data) => cb(data)),
   onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data)),
   createTwitchClip: () => ipcRenderer.invoke('twitch-create-clip'),
-  createTwitchMarker: (description) => ipcRenderer.invoke('twitch-create-marker', description)
+  createTwitchMarker: (description) => ipcRenderer.invoke('twitch-create-marker', description),
+  obsWsConnect: (opts) => ipcRenderer.invoke('obs-ws-connect', opts),
+  obsWsDisconnect: () => ipcRenderer.invoke('obs-ws-disconnect'),
+  obsWsAction: (payload) => ipcRenderer.invoke('obs-ws-action', payload),
+  onObsWsState: (cb) => ipcRenderer.on('obs-ws-state', (_ev, st) => cb(st))
 });
