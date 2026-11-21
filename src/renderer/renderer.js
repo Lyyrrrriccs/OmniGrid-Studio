@@ -504,6 +504,15 @@ function getAutoModSettings() {
   };
 }
 
+function getCustomCommandsSettings() {
+  const raw = document.getElementById('txtCustomCmdRules')?.value || '';
+  return {
+    enabled: Boolean(document.getElementById('chkCustomCmdsEnabled')?.checked),
+    cooldownSec: Math.max(2, parseInt(document.getElementById('numCustomCmdCooldown')?.value || '10', 10) || 10),
+    rules: raw.split('\n').map((s) => s.trim()).filter(Boolean)
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -519,6 +528,7 @@ function getFormConfig() {
     tts: getTtsSettings(),
     chatTimers: getChatTimerSettings(),
     autoMod: getAutoModSettings(),
+    customCommands: getCustomCommandsSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1814,6 +1824,14 @@ function applyConfigToForm(cfg) {
   if (elAmB) elAmB.value = am.blacklist || '';
   if (elAmT) elAmT.value = String(am.timeoutSec ?? 60);
 
+  const cc = cfg.customCommands || {};
+  const elCcEn = document.getElementById('chkCustomCmdsEnabled');
+  const elCcCd = document.getElementById('numCustomCmdCooldown');
+  const elCcRules = document.getElementById('txtCustomCmdRules');
+  if (elCcEn) elCcEn.checked = Boolean(cc.enabled);
+  if (elCcCd) elCcCd.value = cc.cooldownSec ?? 10;
+  if (elCcRules) elCcRules.value = Array.isArray(cc.rules) ? cc.rules.join('\n') : '';
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -3096,4 +3114,36 @@ document.getElementById('btnTimerSendNow')?.addEventListener('click', async () =
 
 document.getElementById('btnOpenHelp')?.addEventListener('click', () => {
   window.omnichat.openHelpWindow();
+});
+
+['chkCustomCmdsEnabled', 'numCustomCmdCooldown', 'txtCustomCmdRules'].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
+document.getElementById('btnExportChatLog')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btnExportChatLog');
+  const exportData = messages.map((m) => ({
+    timestamp: m.timestamp,
+    platform: m.platform,
+    author: m.author,
+    text: m.text
+  }));
+  const res = await window.omnichat.exportChatLog(exportData);
+  if (res?.ok && btn) {
+    btn.textContent = '✅ Gespeichert';
+    setTimeout(() => { btn.textContent = '💾 Export'; }, 1600);
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+    const searchInput = document.getElementById('inputSearch');
+    if (searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  }
 });

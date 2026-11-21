@@ -156,6 +156,14 @@ function getDefaultConfig() {
       timeoutSec: 60,
       exemptMods: true
     },
+    customCommands: {
+      enabled: false,
+      cooldownSec: 10,
+      rules: [
+        '!discord | Komm gerne auf unseren Discord!',
+        '!lurk | Danke für den Lurk, @{user}!'
+      ]
+    },
     hideBots: false,
     collapseSpam: true,
     platformIndicatorStyle: 'icon_badge',
@@ -569,6 +577,65 @@ function syncChatTimer(cfg) {
   }, ms);
 }
 
+const customCommandCooldowns = new Map();
+
+function handleCustomChatCommand(msg, cfg) {
+  const cc = cfg.customCommands;
+  if (!cc || !cc.enabled || msg.isSelf || msg.eventType) return;
+  const txt = String(msg.text || '').trim();
+  if (!txt.startsWith('!')) return;
+
+  const trigger = txt.split(/\s+/)[0].toLowerCase();
+  if (/^!(song|music|musik|tts|vote|poll)$/.test(trigger)) return;
+
+  const parsed = [];
+  for (const line of Array.isArray(cc.rules) ? cc.rules : []) {
+    const sepIdx = String(line || '').indexOf('|');
+    if (sepIdx === -1) continue;
+    const cmd = line.slice(0, sepIdx).trim().toLowerCase();
+    const reply = line.slice(sepIdx + 1).trim();
+    if (cmd && reply) parsed.push({ cmd: cmd.startsWith('!') ? cmd : `!${cmd}`, reply });
+  }
+
+  let matched = parsed.find((r) => r.cmd === trigger);
+  if (!matched && trigger === '!commands' && parsed.length > 0) {
+    matched = { cmd: '!commands', reply: `Befehle: ${parsed.map((r) => r.cmd).join(', ')}` };
+  }
+  if (!matched) return;
+
+  const cooldownMs = Math.max(2, Number(cc.cooldownSec || 10)) * 1000;
+  const lastAt = customCommandCooldowns.get(matched.cmd) || 0;
+  if (Date.now() - lastAt < cooldownMs) return;
+  customCommandCooldowns.set(matched.cmd, Date.now());
+
+  const replyText = matched.reply
+    .replace(/\{user\}/gi, msg.author || 'Zuschauer')
+    .replace(/\{platform\}/gi, (msg.platform || '').toUpperCase());
+
+  if (demoActive) {
+    setTimeout(() => {
+      forwardChatMessage({
+        id: `cmd_demo_${Date.now()}`,
+        platform: msg.platform,
+        channel: msg.channel || 'demo-live',
+        author: cfg.streamerName || 'Bot',
+        color: '#38bdf8',
+        badges: ['BROADCASTER'],
+        text: replyText,
+        isSelf: true,
+        timestamp: Date.now()
+      });
+    }, 180);
+  } else if (msg.platform === 'twitch' && twitch.connected && twitch.canWrite) {
+    try {
+      twitch.sendMessage(replyText, msg.id || null);
+    } catch (e) {}
+  } else if (msg.platform === 'youtube' && youtube.connected && youtube.canWrite) {
+    youtube.sendMessage(replyText).catch(() => {});
+  }
+  appendDiagLog(msg.platform, 'info', `🤖 Command ${matched.cmd} → "${replyText}"`);
+}
+
 function forwardChatMessage(msg) {
   try {
     const cfg = loadConfig();
@@ -610,6 +677,7 @@ function forwardChatMessage(msg) {
     obsServer.broadcastChat(enriched);
     broadcastToWindows('chat-message', enriched);
     handlePollVote(enriched);
+    handleCustomChatCommand(enriched, cfg);
 
     // Auto-reply to !song / !music in Twitch chat (5s anti-spam cooldown)
     const cleanCmdText = String(msg.text || '').trim();
@@ -1525,6 +1593,36 @@ app.whenReady().then(async () => {
       return { ok: true, content, docName: safeName };
     } catch (err) {
       return { ok: false, error: `Datei ${safeName} nicht gefunden: ${err.message}` };
+    }
+  });
+
+  ipcMain.handle('export-chat-log', async (_ev, messagesList) => {
+    const { dialog } = require('electron');
+    const items = Array.isArray(messagesList) ? messagesList : [];
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const res = await dialog.showSaveDialog(mainWindow, {
+      title: 'Chat-Verlauf exportieren',
+      defaultPath: `omnichat-log-${stamp}.txt`,
+      filters: [
+        { name: 'Text-Log (*.txt)', extensions: ['txt'] },
+        { name: 'JSON (*.json)', extensions: ['json'] }
+      ]
+    });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    try {
+      if (res.filePath.toLowerCase().endsWith('.json')) {
+        fs.writeFileSync(res.filePath, JSON.stringify(items, null, 2), 'utf8');
+      } else {
+        const lines = items.map((m) => {
+          const t = new Date(m.timestamp || Date.now()).toLocaleTimeString('de-DE');
+          const p = String(m.platform || 'chat').toUpperCase();
+          return `[${t}] [${p}] ${m.author || 'Unbekannt'}: ${m.text || ''}`;
+        });
+        fs.writeFileSync(res.filePath, lines.join('\n'), 'utf8');
+      }
+      return { ok: true, filePath: res.filePath, count: items.length };
+    } catch (err) {
+      return { ok: false, error: err.message };
     }
   });
 
