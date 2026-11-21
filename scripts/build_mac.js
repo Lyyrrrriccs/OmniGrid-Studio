@@ -19,6 +19,12 @@ const resourcesAppDir = path.join(targetApp, 'Contents', 'Resources', 'app');
 fs.mkdirSync(resourcesAppDir, { recursive: true });
 
 fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(resourcesAppDir, 'package.json'));
+for (const docFile of ['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md']) {
+  const srcDoc = path.join(rootDir, docFile);
+  if (fs.existsSync(srcDoc)) {
+    fs.copyFileSync(srcDoc, path.join(resourcesAppDir, docFile));
+  }
+}
 execSync(`cp -R "${path.join(rootDir, 'src')}" "${path.join(resourcesAppDir, 'src')}"`);
 
 // Copy production node_modules (ws, tiktok-live-connector) into bundle

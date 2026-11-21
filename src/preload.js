@@ -46,5 +46,14 @@ contextBridge.exposeInMainWorld('omnichat', {
   youtubeOAuthLogout: () => ipcRenderer.invoke('youtube-oauth-logout'),
   pollAction: (payload) => ipcRenderer.invoke('poll-action', payload),
   onPollUpdated: (cb) => ipcRenderer.on('poll-updated', (_ev, data) => cb(data)),
-  onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data))
+  onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data)),
+  createTwitchClip: () => ipcRenderer.invoke('twitch-create-clip'),
+  createTwitchMarker: (description) => ipcRenderer.invoke('twitch-create-marker', description),
+  obsWsConnect: (opts) => ipcRenderer.invoke('obs-ws-connect', opts),
+  obsWsDisconnect: () => ipcRenderer.invoke('obs-ws-disconnect'),
+  obsWsAction: (payload) => ipcRenderer.invoke('obs-ws-action', payload),
+  onObsWsState: (cb) => ipcRenderer.on('obs-ws-state', (_ev, st) => cb(st)),
+  runChatTimerNow: () => ipcRenderer.invoke('run-chat-timer-now'),
+  openHelpWindow: () => ipcRenderer.invoke('open-help-window'),
+  getHelpDoc: (docName) => ipcRenderer.invoke('get-help-doc', docName)
 });

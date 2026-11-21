@@ -40,6 +40,8 @@
     </div>
 
     <div class="topbar-actions">
+      <button class="btn-chip" id="btnOpenConfig" title="Zentrale Konfiguration öffnen (Design, OBS, Alerts, TTS, Stream Deck, System)">⚙️ Config</button>
+      <button class="btn-chip" id="btnOpenHelp" title="Anleitung & Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
       <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken & Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik & Logs</button>
       <button class="btn-chip" id="btnPopoutChat" title="Eigenständiges, vollhohes Chatfenster links neben OBS öffnen">🪟 Separates Chatfenster</button>
       <button class="btn-chip" id="btnSlimDock" title="Dieses Fenster als schmale Spalte (320px, volle Höhe) links neben OBS andocken">📐 Links neben OBS</button>
@@ -56,7 +58,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-scroll">
         <div class="sidebar-section">
-          <h3>👑 Mein Streamer-Profil</h3>
+          <h3>📡 Plattformen verbinden</h3>
           <p class="section-hint">Jede Plattform läuft isoliert mit Auto-Reconnect & Duplikat-Schutz und lässt sich einzeln aktivieren oder neu verbinden.</p>
 
           <div class="profile-meta-box">
@@ -462,6 +464,25 @@
           </div>
         </div>
 
+        <!-- OBS WEBSOCKET V5 CONFIG -->
+        <div class="sidebar-section obs-ws-config-box">
+          <h3>🎛️ OBS WebSocket v5 Verbindung</h3>
+          <p class="section-hint">
+            Aktiviere in OBS Studio unter <strong>Werkzeuge → WebSocket-Servereinstellungen</strong> den WebSocket-Server (Standard-Port <code>4455</code>).
+          </p>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="inputObsWsHost" placeholder="Host (127.0.0.1)" value="127.0.0.1" style="flex: 2;" />
+            <input type="number" id="inputObsWsPort" placeholder="4455" value="4455" style="flex: 1;" />
+          </div>
+          <input type="password" id="inputObsWsPass" placeholder="OBS WebSocket-Passwort (falls gesetzt)" style="margin-top: 5px;" />
+          <input type="text" id="inputObsWsMic" placeholder="Mikrofon-Quellname (optional, z. B. Mic/Aux)" style="margin-top: 5px;" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnObsWsConnect" style="flex: 1;">🔌 Mit OBS verbinden</button>
+            <button class="btn-sm hidden" id="btnObsWsDisconnect">Trennen</button>
+          </div>
+          <div id="obsWsConfigStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Nicht verbunden</div>
+        </div>
+
         <!-- SPOTIFY DESKTOP BRIDGE & OBS NOW-PLAYING WIDGET -->
         <div class="sidebar-section spotify-box">
           <h3>🎵 Spotify Live &amp; !song Bot</h3>
@@ -678,6 +699,48 @@
                 <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
               </div>
             </div>
+            <div class="sd-row" data-sd-path="/clip">
+              <span class="sd-label">🎬 Twitch Clip erstellen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/marker?description=Highlight">
+              <span class="sd-label">🚩 Stream-Marker setzen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/clip-and-marker?description=Highlight">
+              <span class="sd-label">🎬🚩 Clip + Marker (Kombi)</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-replay">
+              <span class="sd-label">💾 OBS Replay speichern</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-mic">
+              <span class="sd-label">🎙️ OBS Mikrofon Mute</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-record">
+              <span class="sd-label">🔴 OBS Aufnahme Toggle</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
             <div class="sd-row" data-sd-path="/clear-chat">
               <span class="sd-label">🗑️ Chat-Verlauf leeren</span>
               <div class="sd-btns">
@@ -827,6 +890,35 @@
             <button class="btn-sm" id="btnImportConfig" title="Gesicherte Einstellungen wiederherstellen">📥 Importieren</button>
             <button class="btn-sm warn" id="btnResetDefaults" title="Design-, Emote- & Event-Einstellungen auf Standardwerte zurücksetzen">↺ Standard</button>
           </div>
+        </div>
+
+        <div class="sidebar-section twitch-clip-box">
+          <h3>🎬 Twitch Clip &amp; Marker</h3>
+          <input type="text" id="inputMarkerDesc" placeholder="Marker-Notiz (optional, z. B. Bosskill)" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnCreateClip" style="flex: 1;">🎬 Clip erstellen</button>
+            <button class="btn-sm" id="btnCreateMarker" style="flex: 1;">🚩 Marker setzen</button>
+          </div>
+          <div id="clipMarkerResult" style="margin-top: 6px; font-size: 11px; color: #94a3b8; word-break: break-all;"></div>
+        </div>
+
+        <div class="sidebar-section obs-ws-live-box">
+          <h3>🎥 OBS Live-Steuerung <span id="obsWsLiveBadge" style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Aus)</span></h3>
+          <select id="selObsScene" disabled style="width: 100%;">
+            <option value="">— OBS in Config verbinden —</option>
+          </select>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnObsReplay" disabled>💾 Replay</button>
+            <button class="btn-sm" id="btnObsMic" disabled>🎙️ Mic</button>
+            <button class="btn-sm" id="btnObsRec" disabled>🔴 Rec</button>
+            <button class="btn-sm" id="btnObsStream" disabled>📡 Stream</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section config-launcher-box">
+          <h3>⚙️ Konfiguration</h3>
+          <p class="section-hint">Plattformen (Twitch, YouTube, TikTok), Design, Emotes, OBS-Overlays, Alerts, Tablet, Stream Deck &amp; System-Einstellungen befinden sich zentral auf der Config-Seite.</p>
+          <button class="btn-sm" id="btnOpenConfigSidebar" style="width: 100%; padding: 8px; font-weight: 700;">⚙️ Zentrale Konfiguration öffnen</button>
         </div>
       </div>
     </aside>
@@ -1038,6 +1130,92 @@
     <div class="qm-split-row">
       <button class="qm-item-half danger" id="qmBanUser">🚫 Dauerhaft bannen</button>
       <button class="qm-item-half" id="qmUnbanUser">🔓 Ban/Timeout aufheben</button>
+    </div>
+  </div>
+
+  <!-- CENTRAL CONFIG PAGE MODAL -->
+  <div class="config-modal-backdrop hidden" id="configPageModal">
+    <div class="config-modal-shell" role="dialog" aria-modal="true" aria-label="Zentrale Konfiguration">
+      <div class="config-modal-header">
+        <div>
+          <h2>⚙️ Zentrale Konfiguration</h2>
+          <p class="config-modal-sub">Alle Einstellungen werden automatisch gespeichert.</p>
+        </div>
+        <button class="btn-chip" id="btnCloseConfig">✕ Zurück zum Chat</button>
+      </div>
+      <div class="config-tabs-bar" id="configTabsBar">
+        <button class="config-tab-btn active" data-cfg-tab="platforms">📡 Plattformen</button>
+        <button class="config-tab-btn" data-cfg-tab="profile">👤 Profil &amp; Events</button>
+        <button class="config-tab-btn" data-cfg-tab="design">🎨 Design &amp; Emotes</button>
+        <button class="config-tab-btn" data-cfg-tab="obs">🎥 OBS &amp; Alerts</button>
+        <button class="config-tab-btn" data-cfg-tab="bot">🤖 Bot &amp; Auto-Mod</button>
+        <button class="config-tab-btn" data-cfg-tab="companion">📱 Tablet &amp; Stream Deck</button>
+        <button class="config-tab-btn" data-cfg-tab="system">⌨️ Peripherie &amp; System</button>
+      </div>
+      <div class="config-modal-body">
+        <div class="config-tab-panel active" id="cfgTab_platforms"></div>
+        <div class="config-tab-panel" id="cfgTab_profile"></div>
+        <div class="config-tab-panel" id="cfgTab_design"></div>
+        <div class="config-tab-panel" id="cfgTab_obs"></div>
+        <div class="config-tab-panel" id="cfgTab_bot">
+          <div class="sidebar-section chat-timer-box">
+            <h3>⏱️ Chat-Timer (Auto-Nachrichten)</h3>
+            <p class="section-hint">Postet automatisch alle X Minuten abwechselnd deine Info-Nachrichten in aktive Schreib-Chats (Twitch / YouTube).</p>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkTimerEnabled" />
+              <span>Chat-Timer aktivieren</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <label for="numTimerInterval" style="font-size: 12px;">Intervall (Minuten):</label>
+              <input type="number" id="numTimerInterval" min="1" max="180" value="15" style="width: 72px;" />
+            </div>
+            <label style="margin-top: 8px; display: block;">Nachrichten (eine pro Zeile — rotiert automatisch)</label>
+            <textarea id="txtTimerMessages" rows="4" style="width: 100%; margin-top: 4px; resize: vertical; background: rgba(15,23,42,0.85); color: #f8fafc; border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 6px;" placeholder="Schaut gerne auf unserem Discord vorbei!&#10;Folgt rein für tägliche Streams!"></textarea>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <button class="btn-sm" id="btnTimerSendNow">▶ Jetzt senden</button>
+              <span id="timerSendStatus" style="font-size: 11px; color: #94a3b8;"></span>
+            </div>
+          </div>
+
+          <div class="sidebar-section automod-box">
+            <h3>🛡️ Auto-Mod-Regeln</h3>
+            <p class="section-hint">Filtert Spam &amp; unerwünschte Inhalte automatisch aus Feed &amp; OBS (auf Twitch mit optionalem Server-Timeout/Löschen).</p>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModEnabled" />
+              <span>Auto-Mod aktivieren</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModLinks" checked />
+              <span>🔗 Links automatisch blockieren / löschen</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModCaps" />
+              <span>🔠 Caps-Spam filtern (≥75% Großbuchstaben)</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModSymbols" />
+              <span>🔣 Symbol-Spam filtern</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModExemptMods" checked />
+              <span>🛡️ Streamer, Mods &amp; VIPs ausnehmen</span>
+            </label>
+            <label style="margin-top: 6px; display: block;">Wort-Blacklist (kommagetrennt)</label>
+            <input type="text" id="inputAutoModBlacklist" placeholder="z. B. scamword, werbung, beleidigung" style="margin-top: 3px;" />
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+              <label for="selAutoModTimeout" style="font-size: 12px;">Aktion auf Twitch:</label>
+              <select id="selAutoModTimeout" style="flex: 1;">
+                <option value="0">Nur Nachricht löschen</option>
+                <option value="10">10s Timeout</option>
+                <option value="60" selected>1m Timeout</option>
+                <option value="600">10m Timeout</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="config-tab-panel" id="cfgTab_companion"></div>
+        <div class="config-tab-panel" id="cfgTab_system"></div>
+      </div>
     </div>
   </div>
 

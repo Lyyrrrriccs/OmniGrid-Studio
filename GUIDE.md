@@ -153,3 +153,38 @@ Some Wi-Fi networks (guest Wi-Fi, dorms, hotels, or routers with "AP/Client Isol
 - ✅ **Windows:** Allow **OmniStreamChat** through Windows Defender Firewall when prompted.
 - ✅ Verify in the Tailscale app that **both** devices show as *Connected* under the same account.
 
+---
+
+## 11. Central Config Page (`⚙️ Config`)
+
+All setup options you don't need to touch mid-stream live cleanly inside **⚙️ Config** (top bar or bottom-left button):
+- **📡 Plattformen:** Twitch, YouTube (+ OAuth2 login) & TikTok settings.
+- **👤 Profil & Events:** Streamer name, keyword alerts & event highlight styles.
+- **🎨 Design & Emotes:** Fonts, dividers, opacity & emote providers.
+- **🎥 OBS & Alerts:** OBS URLs, OBS WebSocket v5 & Alert-Box (`/alerts` incl. custom GIF/audio URLs).
+- **🤖 Bot & Auto-Mod:** Chat-Timer & Auto-Mod rules.
+- **📱 Tablet & Stream Deck:** QR code (Wi-Fi/Tailscale) & all Stream Deck endpoints.
+- **⌨️ Peripherie & System:** 2nd mouse, 2nd keyboard, global hotkeys, RAM limits & JSON backup.
+
+---
+
+## 12. OBS Goal-Bar (`/goals`), Live-Poll (`/poll`) & TTS
+
+- **OBS Goal-Bar:** Add `http://127.0.0.1:4588/goals` as an OBS Browser Source. Configure title, target, color, and auto-increment on Follows/Subs in the live sidebar.
+- **Multistream Poll:** Add `http://127.0.0.1:4588/poll` in OBS. Viewers across Twitch, YouTube, and TikTok vote with `!vote 1`, `!vote 2`, etc. Use **👁️ Ausblenden / Einblenden** (or `/api/streamdeck/toggle-poll`) to hide/show the overlay without losing votes.
+- **Text-to-Speech (TTS):** Reads alerts/events and `!tts <text>` chat messages aloud with voice selection, rate, volume, **⏭ Skip**, and **🗑 Clear**.
+
+---
+
+## 13. Twitch Clip, Stream-Marker & OBS WebSocket v5
+
+- **🎬 Twitch Clip & 🚩 Marker:** Triggered from the left sidebar, `/tablet`, or Stream Deck (`/clip`, `/marker?description=Highlight`, `/clip-and-marker?description=Highlight`). *(Requires `clips:edit` and `channel:manage:broadcast` scopes in your Twitch token.)*
+- **🎛️ OBS WebSocket v5:** Enable *Tools → WebSocket Server Settings* in OBS Studio (port `4455`), enter host/password under **⚙️ Config → 🎥 OBS & Alerts**, and control scenes, **💾 Replay**, **🎙️ Mic**, **🔴 Rec**, and **📡 Stream** from OmniStream Chat, `/tablet`, or Stream Deck.
+
+---
+
+## 14. Chat-Timer & Auto-Mod (`🤖 Bot & Auto-Mod`)
+
+- **⏱️ Chat-Timer:** Rotates through your info messages every X minutes and posts them to active write-enabled chats (Twitch & YouTube).
+- **🛡️ Auto-Mod Rules:** Filters links, caps spam (`≥75%`), symbol spam, and custom blacklist words (with optional Twitch `/delete` or `/timeout`). Mods, VIPs & Broadcaster can be exempted.
+

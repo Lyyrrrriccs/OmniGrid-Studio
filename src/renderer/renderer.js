@@ -482,6 +482,28 @@ function updateYoutubeOAuthUI(oauth = savedYoutubeOAuth) {
   if (btnLogin) btnLogin.textContent = hasWrite ? '🔄 Neu anmelden' : '🔐 Mit Google anmelden';
 }
 
+function getChatTimerSettings() {
+  const raw = document.getElementById('txtTimerMessages')?.value || '';
+  return {
+    enabled: Boolean(document.getElementById('chkTimerEnabled')?.checked),
+    intervalMin: Math.max(1, parseInt(document.getElementById('numTimerInterval')?.value || '15', 10) || 15),
+    messages: raw.split('\n').map((s) => s.trim()).filter(Boolean)
+  };
+}
+
+function getAutoModSettings() {
+  return {
+    enabled: Boolean(document.getElementById('chkAutoModEnabled')?.checked),
+    blockLinks: document.getElementById('chkAutoModLinks')?.checked !== false,
+    blockCaps: Boolean(document.getElementById('chkAutoModCaps')?.checked),
+    capsPercent: 75,
+    blockSymbols: Boolean(document.getElementById('chkAutoModSymbols')?.checked),
+    exemptMods: document.getElementById('chkAutoModExemptMods')?.checked !== false,
+    blacklist: document.getElementById('inputAutoModBlacklist')?.value.trim() || '',
+    timeoutSec: parseInt(document.getElementById('selAutoModTimeout')?.value || '60', 10) || 0
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -495,6 +517,8 @@ function getFormConfig() {
     obsAlerts: getObsAlertSettings(),
     obsGoals: getObsGoalSettings(),
     tts: getTtsSettings(),
+    chatTimers: getChatTimerSettings(),
+    autoMod: getAutoModSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1756,6 +1780,40 @@ function applyConfigToForm(cfg) {
     if (elTtsVolV) elTtsVolV.textContent = `${Math.round(Number(v) * 100)}%`;
   }
 
+  const ow = cfg.obsWs || {};
+  const elOwHost = document.getElementById('inputObsWsHost');
+  const elOwPort = document.getElementById('inputObsWsPort');
+  const elOwPass = document.getElementById('inputObsWsPass');
+  const elOwMic = document.getElementById('inputObsWsMic');
+  if (elOwHost) elOwHost.value = ow.host || '127.0.0.1';
+  if (elOwPort) elOwPort.value = ow.port || 4455;
+  if (elOwPass) elOwPass.value = ow.password || '';
+  if (elOwMic) elOwMic.value = ow.micName || '';
+
+  const ct = cfg.chatTimers || {};
+  const elCtEn = document.getElementById('chkTimerEnabled');
+  const elCtInt = document.getElementById('numTimerInterval');
+  const elCtMsg = document.getElementById('txtTimerMessages');
+  if (elCtEn) elCtEn.checked = Boolean(ct.enabled);
+  if (elCtInt) elCtInt.value = ct.intervalMin ?? 15;
+  if (elCtMsg) elCtMsg.value = Array.isArray(ct.messages) ? ct.messages.join('\n') : '';
+
+  const am = cfg.autoMod || {};
+  const elAmEn = document.getElementById('chkAutoModEnabled');
+  const elAmL = document.getElementById('chkAutoModLinks');
+  const elAmC = document.getElementById('chkAutoModCaps');
+  const elAmS = document.getElementById('chkAutoModSymbols');
+  const elAmE = document.getElementById('chkAutoModExemptMods');
+  const elAmB = document.getElementById('inputAutoModBlacklist');
+  const elAmT = document.getElementById('selAutoModTimeout');
+  if (elAmEn) elAmEn.checked = Boolean(am.enabled);
+  if (elAmL) elAmL.checked = am.blockLinks !== false;
+  if (elAmC) elAmC.checked = Boolean(am.blockCaps);
+  if (elAmS) elAmS.checked = Boolean(am.blockSymbols);
+  if (elAmE) elAmE.checked = am.exemptMods !== false;
+  if (elAmB) elAmB.value = am.blacklist || '';
+  if (elAmT) elAmT.value = String(am.timeoutSec ?? 60);
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -2517,6 +2575,9 @@ window.omnichat.onInitState((data) => {
   if (data.activePoll) {
     updatePollPreviewUI(data.activePoll);
   }
+  if (data.obsWsState) {
+    updateObsWsUI(data.obsWsState);
+  }
   if (data.spotifyObsUrl && inputSpotifyObsUrl) {
     inputSpotifyObsUrl.value = data.spotifyObsUrl;
   }
@@ -2776,4 +2837,263 @@ window.omnichat.onChatMessage((msg) => {
     rafRenderScheduled = true;
     requestAnimationFrame(flushPendingMessages);
   }
+});
+
+// --- CENTRAL CONFIG PAGE ---
+(function initCentralConfigPage() {
+  const modal = document.getElementById('configPageModal');
+  if (!modal) return;
+
+  const profileBox = document.querySelector('.profile-meta-box');
+  const tabProfile = document.getElementById('cfgTab_profile');
+  if (profileBox && tabProfile) {
+    const sec = document.createElement('div');
+    sec.className = 'sidebar-section';
+    const h3 = document.createElement('h3');
+    h3.textContent = '👑 Streamer-Profil & Keyword-Alarme';
+    sec.appendChild(h3);
+    sec.appendChild(profileBox);
+    tabProfile.appendChild(sec);
+  }
+
+  const platformSection = document.getElementById('card_twitch')?.closest('.sidebar-section');
+  const tabPlatforms = document.getElementById('cfgTab_platforms');
+  if (platformSection && tabPlatforms) {
+    platformSection.style.gridColumn = '1 / -1';
+    tabPlatforms.appendChild(platformSection);
+  }
+
+  const moveMap = [
+    ['.event-settings-box', 'cfgTab_profile'],
+    ['.design-settings-box', 'cfgTab_design'],
+    ['.emote-settings-box', 'cfgTab_design'],
+    ['.obs-box', 'cfgTab_obs'],
+    ['.obs-ws-config-box', 'cfgTab_obs'],
+    ['.obs-alerts-box', 'cfgTab_obs'],
+    ['.tablet-box', 'cfgTab_companion'],
+    ['.streamdeck-box', 'cfgTab_companion'],
+    ['.peripherals-box', 'cfgTab_system'],
+    ['.perf-settings-box', 'cfgTab_system']
+  ];
+
+  for (const [selector, targetId] of moveMap) {
+    const el = document.querySelector(selector);
+    const target = document.getElementById(targetId);
+    if (el && target) target.appendChild(el);
+  }
+
+  const openModal = () => modal.classList.remove('hidden');
+  const closeModal = () => modal.classList.add('hidden');
+
+  document.getElementById('btnOpenConfig')?.addEventListener('click', openModal);
+  document.getElementById('btnOpenConfigSidebar')?.addEventListener('click', openModal);
+  document.getElementById('btnCloseConfig')?.addEventListener('click', closeModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  const tabBtns = Array.from(document.querySelectorAll('.config-tab-btn'));
+  const tabPanels = Array.from(document.querySelectorAll('.config-tab-panel'));
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.cfgTab;
+      tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      tabPanels.forEach((p) => p.classList.toggle('active', p.id === `cfgTab_${targetTab}`));
+    });
+  });
+})();
+
+// --- TWITCH CLIP & STREAM-MARKER HANDLERS ---
+const btnCreateClip = document.getElementById('btnCreateClip');
+const btnCreateMarker = document.getElementById('btnCreateMarker');
+const inputMarkerDesc = document.getElementById('inputMarkerDesc');
+const clipMarkerResult = document.getElementById('clipMarkerResult');
+
+btnCreateClip?.addEventListener('click', async () => {
+  btnCreateClip.disabled = true;
+  btnCreateClip.textContent = '⏳ Clip...';
+  const res = await window.omnichat.createTwitchClip();
+  btnCreateClip.disabled = false;
+  btnCreateClip.textContent = '🎬 Clip erstellen';
+  if (clipMarkerResult) {
+    if (res?.ok && res.url) {
+      clipMarkerResult.style.color = '#4ade80';
+      clipMarkerResult.textContent = `✅ Clip: ${res.url} (in Zwischenablage kopiert)`;
+      try { navigator.clipboard.writeText(res.url); } catch (e) {}
+    } else {
+      clipMarkerResult.style.color = '#f87171';
+      clipMarkerResult.textContent = `❌ ${res?.error || 'Clip fehlgeschlagen.'}`;
+    }
+  }
+});
+
+btnCreateMarker?.addEventListener('click', async () => {
+  btnCreateMarker.disabled = true;
+  btnCreateMarker.textContent = '⏳ Marker...';
+  const desc = inputMarkerDesc?.value.trim() || 'OmniStream Highlight';
+  const res = await window.omnichat.createTwitchMarker(desc);
+  btnCreateMarker.disabled = false;
+  btnCreateMarker.textContent = '🚩 Marker setzen';
+  if (clipMarkerResult) {
+    if (res?.ok) {
+      clipMarkerResult.style.color = '#4ade80';
+      const pos = typeof res.positionSeconds === 'number' ? ` @ ${res.positionSeconds}s` : '';
+      clipMarkerResult.textContent = `✅ Marker gesetzt${pos}: "${res.description || desc}"`;
+      if (inputMarkerDesc) inputMarkerDesc.value = '';
+    } else {
+      clipMarkerResult.style.color = '#f87171';
+      clipMarkerResult.textContent = `❌ ${res?.error || 'Marker fehlgeschlagen.'}`;
+    }
+  }
+});
+
+// --- OBS WEBSOCKET V5 CONTROLS ---
+function updateObsWsUI(st) {
+  if (!st) return;
+  const badge = document.getElementById('obsWsLiveBadge');
+  const cfgStatus = document.getElementById('obsWsConfigStatus');
+  const btnConn = document.getElementById('btnObsWsConnect');
+  const btnDisc = document.getElementById('btnObsWsDisconnect');
+  const selScene = document.getElementById('selObsScene');
+  const btnReplay = document.getElementById('btnObsReplay');
+  const btnMic = document.getElementById('btnObsMic');
+  const btnRec = document.getElementById('btnObsRec');
+  const btnStream = document.getElementById('btnObsStream');
+
+  const isConn = Boolean(st.connected);
+  if (badge) {
+    badge.textContent = isConn ? '(Verbunden)' : st.connecting ? '(...)' : '(Aus)';
+    badge.style.color = isConn ? '#4ade80' : '#94a3b8';
+  }
+  if (cfgStatus) {
+    if (isConn) {
+      cfgStatus.style.color = '#4ade80';
+      cfgStatus.textContent = `✅ Verbunden — Szene: ${st.currentScene || 'Unbekannt'}`;
+    } else if (st.error) {
+      cfgStatus.style.color = '#f87171';
+      cfgStatus.textContent = `❌ ${st.error}`;
+    } else {
+      cfgStatus.style.color = '#94a3b8';
+      cfgStatus.textContent = st.connecting ? '⏳ Verbinde...' : 'Nicht verbunden';
+    }
+  }
+  if (btnConn) btnConn.textContent = isConn ? '🔄 Neu verbinden' : '🔌 Mit OBS verbinden';
+  if (btnDisc) btnDisc.classList.toggle('hidden', !isConn);
+
+  [selScene, btnReplay, btnMic, btnRec, btnStream].forEach((el) => {
+    if (el) el.disabled = !isConn;
+  });
+
+  if (selScene) {
+    if (!isConn) {
+      selScene.innerHTML = '<option value="">— OBS in Config verbinden —</option>';
+    } else {
+      selScene.innerHTML = '';
+      (st.scenes || []).forEach((s) => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === st.currentScene) opt.selected = true;
+        selScene.appendChild(opt);
+      });
+    }
+  }
+
+  if (btnMic) {
+    btnMic.textContent = st.micMuted ? '🔇 Mic (Aus)' : '🎙️ Mic (An)';
+    btnMic.classList.toggle('warn', Boolean(st.micMuted));
+  }
+  if (btnRec) {
+    btnRec.textContent = st.recordActive ? '⏹️ Rec läuft' : '🔴 Rec';
+    btnRec.classList.toggle('active', Boolean(st.recordActive));
+  }
+  if (btnStream) {
+    btnStream.textContent = st.streamActive ? '⏹️ Live' : '📡 Stream';
+    btnStream.classList.toggle('active', Boolean(st.streamActive));
+  }
+}
+
+window.omnichat.onObsWsState?.((st) => updateObsWsUI(st));
+
+document.getElementById('btnObsWsConnect')?.addEventListener('click', async () => {
+  const host = document.getElementById('inputObsWsHost')?.value.trim() || '127.0.0.1';
+  const port = parseInt(document.getElementById('inputObsWsPort')?.value || '4455', 10) || 4455;
+  const password = document.getElementById('inputObsWsPass')?.value || '';
+  const micName = document.getElementById('inputObsWsMic')?.value.trim() || '';
+  const res = await window.omnichat.obsWsConnect({ host, port, password, micName });
+  if (res?.state) updateObsWsUI(res.state);
+});
+
+document.getElementById('btnObsWsDisconnect')?.addEventListener('click', () => {
+  window.omnichat.obsWsDisconnect();
+});
+
+document.getElementById('selObsScene')?.addEventListener('change', (e) => {
+  if (e.target.value) {
+    window.omnichat.obsWsAction({ action: 'scene', sceneName: e.target.value });
+  }
+});
+
+document.getElementById('btnObsReplay')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btnObsReplay');
+  const res = await window.omnichat.obsWsAction({ action: 'save-replay' });
+  if (btn) {
+    btn.textContent = res?.ok ? '✅ Gespeichert!' : '❌ Replay aus?';
+    setTimeout(() => { btn.textContent = '💾 Replay'; }, 1500);
+  }
+});
+
+document.getElementById('btnObsMic')?.addEventListener('click', () => {
+  window.omnichat.obsWsAction({ action: 'toggle-mic' });
+});
+
+document.getElementById('btnObsRec')?.addEventListener('click', () => {
+  window.omnichat.obsWsAction({ action: 'toggle-record' });
+});
+
+document.getElementById('btnObsStream')?.addEventListener('click', () => {
+  window.omnichat.obsWsAction({ action: 'toggle-stream' });
+});
+
+// --- CHAT-TIMER & AUTO-MOD HANDLERS ---
+[
+  'chkTimerEnabled',
+  'numTimerInterval',
+  'txtTimerMessages',
+  'chkAutoModEnabled',
+  'chkAutoModLinks',
+  'chkAutoModCaps',
+  'chkAutoModSymbols',
+  'chkAutoModExemptMods',
+  'inputAutoModBlacklist',
+  'selAutoModTimeout'
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
+document.getElementById('btnTimerSendNow')?.addEventListener('click', async () => {
+  await window.omnichat.saveProfile(getFormConfig());
+  const statusEl = document.getElementById('timerSendStatus');
+  const res = await window.omnichat.runChatTimerNow();
+  if (statusEl) {
+    if (res?.ok) {
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = `✅ Gesendet (${res.sentTo?.join(', ') || 'log'})`;
+    } else {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ ${res?.error || 'Fehler'}`;
+    }
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
+});
+
+document.getElementById('btnOpenHelp')?.addEventListener('click', () => {
+  window.omnichat.openHelpWindow();
 });

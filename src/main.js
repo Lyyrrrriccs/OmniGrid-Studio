@@ -7,6 +7,7 @@ const { TikTokConnector } = require('./connectors/tiktok');
 const { ObsServer } = require('./obs_server');
 const { EmoteManager } = require('./emote_manager');
 const { SpotifyBridge } = require('./spotify_bridge');
+const { ObsWsClient } = require('./obs_ws_client');
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -17,6 +18,7 @@ const twitch = new TwitchConnector();
 const youtube = new YouTubeConnector();
 const tiktok = new TikTokConnector();
 const obsServer = new ObsServer(4588);
+const obsWs = new ObsWsClient();
 const emoteManager = new EmoteManager();
 const spotify = new SpotifyBridge();
 let lastSongReplyAt = 0;
@@ -131,6 +133,28 @@ function getDefaultConfig() {
       rate: 1.0,
       volume: 0.9,
       voiceURI: ''
+    },
+    obsWs: {
+      enabled: false,
+      host: '127.0.0.1',
+      port: 4455,
+      password: '',
+      micName: ''
+    },
+    chatTimers: {
+      enabled: false,
+      intervalMin: 15,
+      messages: ['Schaut gerne auf unserem Discord vorbei!']
+    },
+    autoMod: {
+      enabled: false,
+      blockLinks: true,
+      blockCaps: false,
+      capsPercent: 75,
+      blockSymbols: false,
+      blacklist: '',
+      timeoutSec: 60,
+      exemptMods: true
     },
     hideBots: false,
     collapseSpam: true,
@@ -414,6 +438,123 @@ function matchKeywordAlert(text, cfg) {
   return null;
 }
 
+const PRIVILEGED_BADGES = new Set(['STREAMER', 'BROADCASTER', 'OWNER', 'MODERATOR', 'VIP']);
+
+function checkAutoMod(msg, cfg) {
+  const am = cfg.autoMod;
+  if (!am || !am.enabled || msg.isSelf || msg.eventType) return false;
+  if (am.exemptMods !== false && Array.isArray(msg.badges)) {
+    if (msg.badges.some((b) => PRIVILEGED_BADGES.has(String(b).toUpperCase()))) return false;
+  }
+  const text = String(msg.text || '');
+  let reason = '';
+
+  if (am.blockLinks && /(https?:\/\/[^\s]+|www\.[^\s]+|\b[a-z0-9-]+\.(?:com|de|net|org|tv|gg|io|me|xyz|ly)\b)/i.test(text)) {
+    reason = 'Link blockiert';
+  }
+  if (!reason && am.blockCaps) {
+    const letters = text.replace(/[^a-zA-ZäöüÄÖÜß]/g, '');
+    if (letters.length >= 8) {
+      const upper = letters.replace(/[^A-ZÄÖÜ]/g, '').length;
+      if ((upper / letters.length) * 100 >= (Number(am.capsPercent) || 75)) {
+        reason = 'Caps-Spam';
+      }
+    }
+  }
+  if (!reason && am.blockSymbols) {
+    const symbols = text.replace(/[a-zA-Z0-9äöüÄÖÜß\s.,!?'"():-]/g, '');
+    if (symbols.length >= 10 && symbols.length / Math.max(1, text.length) > 0.45) {
+      reason = 'Symbol-Spam';
+    }
+  }
+  if (!reason && am.blacklist) {
+    const words = String(am.blacklist)
+      .split(',')
+      .map((w) => w.trim().toLowerCase())
+      .filter((w) => w.length >= 2);
+    const low = text.toLowerCase();
+    const hit = words.find((w) => low.includes(w));
+    if (hit) reason = `Blacklist ("${hit}")`;
+  }
+
+  if (!reason) return false;
+
+  appendDiagLog(msg.platform, 'warn', `🛡️ Auto-Mod (${reason}): ${msg.author} — "${text}"`);
+  if (msg.platform === 'twitch' && twitch.connected && twitch.canWrite) {
+    const tSec = Math.max(0, parseInt(am.timeoutSec ?? 60, 10) || 0);
+    try {
+      if (tSec > 0) twitch.sendMessage(`/timeout ${msg.author} ${tSec} Auto-Mod: ${reason}`);
+      else if (msg.id) twitch.sendMessage(`/delete ${msg.id}`);
+    } catch (e) {}
+  }
+  return true;
+}
+
+let chatTimerHandle = null;
+let chatTimerIndex = 0;
+
+async function runChatTimerTick(force = false) {
+  const cfg = loadConfig();
+  const ct = cfg.chatTimers;
+  if (!force && (!ct || !ct.enabled)) return { ok: false, error: 'Chat-Timer ist deaktiviert.' };
+  const lines = Array.isArray(ct?.messages)
+    ? ct.messages.map((s) => String(s || '').trim()).filter(Boolean)
+    : [];
+  if (lines.length === 0) return { ok: false, error: 'Keine Timer-Nachrichten eingetragen.' };
+
+  const text = lines[chatTimerIndex % lines.length];
+  chatTimerIndex += 1;
+  const sentTo = [];
+
+  if (demoActive) {
+    forwardChatMessage({
+      id: `timer_demo_${Date.now()}`,
+      platform: 'twitch',
+      channel: cfg.twitchChannel || 'demo-live',
+      author: cfg.streamerName || 'Chat-Timer',
+      color: '#38bdf8',
+      badges: ['BROADCASTER'],
+      text,
+      isSelf: true,
+      timestamp: Date.now()
+    });
+    sentTo.push('demo');
+  } else {
+    if (twitch.connected && twitch.canWrite) {
+      try {
+        twitch.sendMessage(text);
+        sentTo.push('twitch');
+      } catch (e) {}
+    }
+    if (youtube.connected && youtube.canWrite) {
+      try {
+        await youtube.sendMessage(text);
+        sentTo.push('youtube');
+      } catch (e) {}
+    }
+  }
+
+  appendDiagLog('system', 'info', `⏱️ Chat-Timer (${sentTo.join(', ') || 'keine aktive Schreib-Plattform'}): "${text}"`);
+  return { ok: true, text, sentTo };
+}
+
+function syncChatTimer(cfg) {
+  if (chatTimerHandle) {
+    clearInterval(chatTimerHandle);
+    chatTimerHandle = null;
+  }
+  const ct = cfg?.chatTimers;
+  if (!ct || !ct.enabled) return;
+  const lines = Array.isArray(ct.messages)
+    ? ct.messages.map((s) => String(s || '').trim()).filter(Boolean)
+    : [];
+  if (lines.length === 0) return;
+  const ms = Math.max(1, Math.min(180, Number(ct.intervalMin || 15))) * 60000;
+  chatTimerHandle = setInterval(() => {
+    runChatTimerTick(false);
+  }, ms);
+}
+
 function forwardChatMessage(msg) {
   try {
     const cfg = loadConfig();
@@ -428,6 +569,10 @@ function forwardChatMessage(msg) {
 
     const authorLow = (msg.author || '').toLowerCase();
     if (Array.isArray(cfg.mutedUsers) && cfg.mutedUsers.includes(authorLow)) {
+      return;
+    }
+
+    if (checkAutoMod(msg, cfg)) {
       return;
     }
 
@@ -657,6 +802,11 @@ twitch.on('delete-message', (msgId) => {
   conn.on('event', (ev) => forwardStreamerEvent(ev));
   conn.on('status', (st) => forwardStatus(st));
   conn.on('stats', (st) => forwardStats(st));
+});
+
+obsWs.on('state', (st) => {
+  broadcastToWindows('obs-ws-state', st);
+  obsServer.broadcastObsWsState(st);
 });
 
 youtube.on('oauth-updated', (oauth) => {
@@ -946,6 +1096,79 @@ app.whenReady().then(async () => {
       return { ok: true, visible: snap.visible, poll: snap };
     }
 
+    if (act === 'clip') {
+      if (demoActive) {
+        const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
+        appendDiagLog('twitch', 'info', `🎬 Demo-Clip erstellt: ${demoUrl}`);
+        return { ok: true, demo: true, id: 'DemoHighlightClip', url: demoUrl, editUrl: `${demoUrl}/edit` };
+      }
+      try {
+        const res = await twitch.createClip();
+        appendDiagLog('twitch', 'info', `🎬 Twitch Clip erstellt: ${res.url}`);
+        return res;
+      } catch (err) {
+        appendDiagLog('twitch', 'error', `Clip fehlgeschlagen: ${err.message}`);
+        return { ok: false, error: err.message };
+      }
+    }
+
+    if (act === 'marker') {
+      const desc = String(params.description || body.description || 'OmniStream Highlight').trim();
+      if (demoActive) {
+        appendDiagLog('twitch', 'info', `🚩 Demo-Marker gesetzt: "${desc}"`);
+        return { ok: true, demo: true, description: desc, positionSeconds: 42 };
+      }
+      try {
+        const res = await twitch.createStreamMarker(desc);
+        appendDiagLog('twitch', 'info', `🚩 Stream-Marker gesetzt: "${res.description}"`);
+        return res;
+      } catch (err) {
+        appendDiagLog('twitch', 'error', `Marker fehlgeschlagen: ${err.message}`);
+        return { ok: false, error: err.message };
+      }
+    }
+
+    if (act === 'clip-and-marker') {
+      const desc = String(params.description || body.description || 'OmniStream Highlight').trim();
+      if (demoActive) {
+        const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
+        appendDiagLog('twitch', 'info', `🎬🚩 Demo Clip + Marker: ${demoUrl} ("${desc}")`);
+        return { ok: true, demo: true, clip: { ok: true, url: demoUrl }, marker: { ok: true, description: desc } };
+      }
+      const [clipRes, markerRes] = await Promise.allSettled([
+        twitch.createClip(),
+        twitch.createStreamMarker(desc)
+      ]);
+      const clip = clipRes.status === 'fulfilled' ? clipRes.value : { ok: false, error: clipRes.reason?.message };
+      const marker = markerRes.status === 'fulfilled' ? markerRes.value : { ok: false, error: markerRes.reason?.message };
+      if (!clip.ok && !marker.ok) {
+        return { ok: false, error: `Clip: ${clip.error} | Marker: ${marker.error}`, clip, marker };
+      }
+      return { ok: true, clip, marker };
+    }
+
+    if (act === 'obs-scene') {
+      const name = String(params.name || params.scene || body.sceneName || '').trim();
+      if (!name) return { ok: false, error: 'Parameter "name" (Szenenname) fehlt.' };
+      return await obsWs.setScene(name);
+    }
+
+    if (act === 'obs-replay') {
+      return await obsWs.saveReplayBuffer();
+    }
+
+    if (act === 'obs-stream') {
+      return await obsWs.toggleStream();
+    }
+
+    if (act === 'obs-record') {
+      return await obsWs.toggleRecord();
+    }
+
+    if (act === 'obs-mic') {
+      return await obsWs.toggleMicMute(params.input || body.inputName || '');
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1193,12 +1416,20 @@ app.whenReady().then(async () => {
       tabletTargets,
       spotifyTrack: spotify.currentTrack,
       activePoll: getSanitizedPoll(),
+      obsWsState: obsWs.getState(),
       streamDeckUrl: `http://127.0.0.1:${obsPort}/api/streamdeck`,
       platformStatus,
       isAlwaysOnTop,
       demoActive,
       diagnosticLogs
     });
+
+    if (saved.obsWs?.enabled) {
+      obsWs.connect(saved.obsWs).catch((err) => {
+        appendDiagLog('system', 'warn', `OBS WebSocket Auto-Connect fehlgeschlagen: ${err.message}`);
+      });
+    }
+    syncChatTimer(saved);
 
     if (saved.chatDockOpen) {
       openStandaloneChatWindow(false);
@@ -1228,8 +1459,58 @@ app.whenReady().then(async () => {
     if (currentCfg.obsGoals) {
       obsServer.broadcastGoals(currentCfg.obsGoals);
     }
+    syncChatTimer(currentCfg);
     saveConfig(currentCfg);
     return { ok: true, config: currentCfg };
+  });
+
+  ipcMain.handle('run-chat-timer-now', () => runChatTimerTick(true));
+
+  let helpWindow = null;
+  function openHelpWindow() {
+    if (helpWindow && !helpWindow.isDestroyed()) {
+      helpWindow.focus();
+      return;
+    }
+    helpWindow = new BrowserWindow({
+      width: 900,
+      height: 760,
+      minWidth: 520,
+      minHeight: 420,
+      backgroundColor: '#0b0f19',
+      title: 'OmniStream Chat — Anleitung & Hilfe',
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    });
+    helpWindow.setMenuBarVisibility(false);
+    helpWindow.webContents.setWindowOpenHandler(({ url }) => {
+      require('electron').shell.openExternal(url);
+      return { action: 'deny' };
+    });
+    helpWindow.loadFile(path.join(__dirname, 'renderer', 'help.html'));
+    helpWindow.on('closed', () => {
+      helpWindow = null;
+    });
+  }
+
+  ipcMain.handle('open-help-window', () => {
+    openHelpWindow();
+    return { ok: true };
+  });
+
+  ipcMain.handle('get-help-doc', (_ev, docName) => {
+    const allowed = new Set(['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md']);
+    const safeName = allowed.has(docName) ? docName : 'ANLEITUNG.md';
+    try {
+      const filePath = path.join(__dirname, '..', safeName);
+      const content = fs.readFileSync(filePath, 'utf8');
+      return { ok: true, content, docName: safeName };
+    } catch (err) {
+      return { ok: false, error: `Datei ${safeName} nicht gefunden: ${err.message}` };
+    }
   });
 
   ipcMain.handle('poll-action', (_ev, payload) => {
@@ -1275,6 +1556,84 @@ app.whenReady().then(async () => {
     obsServer.broadcastPoll(snap);
     broadcastToWindows('poll-updated', snap);
     return { ok: true, poll: snap };
+  });
+
+  ipcMain.handle('twitch-create-clip', async () => {
+    if (demoActive) {
+      const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
+      appendDiagLog('twitch', 'info', `🎬 Demo-Clip erstellt: ${demoUrl}`);
+      return { ok: true, demo: true, id: 'DemoHighlightClip', url: demoUrl, editUrl: `${demoUrl}/edit` };
+    }
+    try {
+      const res = await twitch.createClip();
+      appendDiagLog('twitch', 'info', `🎬 Twitch Clip erstellt: ${res.url}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('twitch', 'error', `Clip fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('twitch-create-marker', async (_ev, description) => {
+    const desc = String(description || 'OmniStream Highlight').trim();
+    if (demoActive) {
+      appendDiagLog('twitch', 'info', `🚩 Demo-Marker gesetzt: "${desc}"`);
+      return { ok: true, demo: true, description: desc, positionSeconds: 42 };
+    }
+    try {
+      const res = await twitch.createStreamMarker(desc);
+      appendDiagLog('twitch', 'info', `🚩 Stream-Marker gesetzt: "${res.description}"`);
+      return res;
+    } catch (err) {
+      appendDiagLog('twitch', 'error', `Marker fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('obs-ws-connect', async (_ev, opts) => {
+    const cfg = loadConfig();
+    const nextObsWs = {
+      enabled: true,
+      host: String(opts?.host || cfg.obsWs?.host || '127.0.0.1').trim(),
+      port: parseInt(opts?.port || cfg.obsWs?.port || '4455', 10) || 4455,
+      password: opts?.password !== undefined ? String(opts.password) : (cfg.obsWs?.password || ''),
+      micName: opts?.micName !== undefined ? String(opts.micName).trim() : (cfg.obsWs?.micName || '')
+    };
+    cfg.obsWs = nextObsWs;
+    saveConfig(cfg);
+    try {
+      const res = await obsWs.connect(nextObsWs);
+      appendDiagLog('system', 'info', `OBS WebSocket v5 verbunden (${nextObsWs.host}:${nextObsWs.port}).`);
+      return res;
+    } catch (err) {
+      appendDiagLog('system', 'error', `OBS WebSocket Fehler: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('obs-ws-disconnect', () => {
+    const cfg = loadConfig();
+    if (cfg.obsWs) {
+      cfg.obsWs.enabled = false;
+      saveConfig(cfg);
+    }
+    obsWs.disconnect(true);
+    appendDiagLog('system', 'info', 'OBS WebSocket v5 getrennt.');
+    return { ok: true };
+  });
+
+  ipcMain.handle('obs-ws-action', async (_ev, payload) => {
+    try {
+      const act = payload?.action;
+      if (act === 'scene') return await obsWs.setScene(payload.sceneName);
+      if (act === 'toggle-stream') return await obsWs.toggleStream();
+      if (act === 'toggle-record') return await obsWs.toggleRecord();
+      if (act === 'save-replay') return await obsWs.saveReplayBuffer();
+      if (act === 'toggle-mic') return await obsWs.toggleMicMute(payload.inputName || '');
+      return { ok: false, error: 'Unbekannte OBS-Aktion.' };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   });
 
   ipcMain.handle('test-obs-alert', (_ev, type) => {
