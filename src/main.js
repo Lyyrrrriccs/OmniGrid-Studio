@@ -141,6 +141,21 @@ function getDefaultConfig() {
       password: '',
       micName: ''
     },
+    chatTimers: {
+      enabled: false,
+      intervalMin: 15,
+      messages: ['Schaut gerne auf unserem Discord vorbei!']
+    },
+    autoMod: {
+      enabled: false,
+      blockLinks: true,
+      blockCaps: false,
+      capsPercent: 75,
+      blockSymbols: false,
+      blacklist: '',
+      timeoutSec: 60,
+      exemptMods: true
+    },
     hideBots: false,
     collapseSpam: true,
     platformIndicatorStyle: 'icon_badge',
@@ -423,6 +438,123 @@ function matchKeywordAlert(text, cfg) {
   return null;
 }
 
+const PRIVILEGED_BADGES = new Set(['STREAMER', 'BROADCASTER', 'OWNER', 'MODERATOR', 'VIP']);
+
+function checkAutoMod(msg, cfg) {
+  const am = cfg.autoMod;
+  if (!am || !am.enabled || msg.isSelf || msg.eventType) return false;
+  if (am.exemptMods !== false && Array.isArray(msg.badges)) {
+    if (msg.badges.some((b) => PRIVILEGED_BADGES.has(String(b).toUpperCase()))) return false;
+  }
+  const text = String(msg.text || '');
+  let reason = '';
+
+  if (am.blockLinks && /(https?:\/\/[^\s]+|www\.[^\s]+|\b[a-z0-9-]+\.(?:com|de|net|org|tv|gg|io|me|xyz|ly)\b)/i.test(text)) {
+    reason = 'Link blockiert';
+  }
+  if (!reason && am.blockCaps) {
+    const letters = text.replace(/[^a-zA-ZäöüÄÖÜß]/g, '');
+    if (letters.length >= 8) {
+      const upper = letters.replace(/[^A-ZÄÖÜ]/g, '').length;
+      if ((upper / letters.length) * 100 >= (Number(am.capsPercent) || 75)) {
+        reason = 'Caps-Spam';
+      }
+    }
+  }
+  if (!reason && am.blockSymbols) {
+    const symbols = text.replace(/[a-zA-Z0-9äöüÄÖÜß\s.,!?'"():-]/g, '');
+    if (symbols.length >= 10 && symbols.length / Math.max(1, text.length) > 0.45) {
+      reason = 'Symbol-Spam';
+    }
+  }
+  if (!reason && am.blacklist) {
+    const words = String(am.blacklist)
+      .split(',')
+      .map((w) => w.trim().toLowerCase())
+      .filter((w) => w.length >= 2);
+    const low = text.toLowerCase();
+    const hit = words.find((w) => low.includes(w));
+    if (hit) reason = `Blacklist ("${hit}")`;
+  }
+
+  if (!reason) return false;
+
+  appendDiagLog(msg.platform, 'warn', `🛡️ Auto-Mod (${reason}): ${msg.author} — "${text}"`);
+  if (msg.platform === 'twitch' && twitch.connected && twitch.canWrite) {
+    const tSec = Math.max(0, parseInt(am.timeoutSec ?? 60, 10) || 0);
+    try {
+      if (tSec > 0) twitch.sendMessage(`/timeout ${msg.author} ${tSec} Auto-Mod: ${reason}`);
+      else if (msg.id) twitch.sendMessage(`/delete ${msg.id}`);
+    } catch (e) {}
+  }
+  return true;
+}
+
+let chatTimerHandle = null;
+let chatTimerIndex = 0;
+
+async function runChatTimerTick(force = false) {
+  const cfg = loadConfig();
+  const ct = cfg.chatTimers;
+  if (!force && (!ct || !ct.enabled)) return { ok: false, error: 'Chat-Timer ist deaktiviert.' };
+  const lines = Array.isArray(ct?.messages)
+    ? ct.messages.map((s) => String(s || '').trim()).filter(Boolean)
+    : [];
+  if (lines.length === 0) return { ok: false, error: 'Keine Timer-Nachrichten eingetragen.' };
+
+  const text = lines[chatTimerIndex % lines.length];
+  chatTimerIndex += 1;
+  const sentTo = [];
+
+  if (demoActive) {
+    forwardChatMessage({
+      id: `timer_demo_${Date.now()}`,
+      platform: 'twitch',
+      channel: cfg.twitchChannel || 'demo-live',
+      author: cfg.streamerName || 'Chat-Timer',
+      color: '#38bdf8',
+      badges: ['BROADCASTER'],
+      text,
+      isSelf: true,
+      timestamp: Date.now()
+    });
+    sentTo.push('demo');
+  } else {
+    if (twitch.connected && twitch.canWrite) {
+      try {
+        twitch.sendMessage(text);
+        sentTo.push('twitch');
+      } catch (e) {}
+    }
+    if (youtube.connected && youtube.canWrite) {
+      try {
+        await youtube.sendMessage(text);
+        sentTo.push('youtube');
+      } catch (e) {}
+    }
+  }
+
+  appendDiagLog('system', 'info', `⏱️ Chat-Timer (${sentTo.join(', ') || 'keine aktive Schreib-Plattform'}): "${text}"`);
+  return { ok: true, text, sentTo };
+}
+
+function syncChatTimer(cfg) {
+  if (chatTimerHandle) {
+    clearInterval(chatTimerHandle);
+    chatTimerHandle = null;
+  }
+  const ct = cfg?.chatTimers;
+  if (!ct || !ct.enabled) return;
+  const lines = Array.isArray(ct.messages)
+    ? ct.messages.map((s) => String(s || '').trim()).filter(Boolean)
+    : [];
+  if (lines.length === 0) return;
+  const ms = Math.max(1, Math.min(180, Number(ct.intervalMin || 15))) * 60000;
+  chatTimerHandle = setInterval(() => {
+    runChatTimerTick(false);
+  }, ms);
+}
+
 function forwardChatMessage(msg) {
   try {
     const cfg = loadConfig();
@@ -437,6 +569,10 @@ function forwardChatMessage(msg) {
 
     const authorLow = (msg.author || '').toLowerCase();
     if (Array.isArray(cfg.mutedUsers) && cfg.mutedUsers.includes(authorLow)) {
+      return;
+    }
+
+    if (checkAutoMod(msg, cfg)) {
       return;
     }
 
@@ -1293,6 +1429,7 @@ app.whenReady().then(async () => {
         appendDiagLog('system', 'warn', `OBS WebSocket Auto-Connect fehlgeschlagen: ${err.message}`);
       });
     }
+    syncChatTimer(saved);
 
     if (saved.chatDockOpen) {
       openStandaloneChatWindow(false);
@@ -1322,9 +1459,12 @@ app.whenReady().then(async () => {
     if (currentCfg.obsGoals) {
       obsServer.broadcastGoals(currentCfg.obsGoals);
     }
+    syncChatTimer(currentCfg);
     saveConfig(currentCfg);
     return { ok: true, config: currentCfg };
   });
+
+  ipcMain.handle('run-chat-timer-now', () => runChatTimerTick(true));
 
   ipcMain.handle('poll-action', (_ev, payload) => {
     const act = payload?.action || 'start';

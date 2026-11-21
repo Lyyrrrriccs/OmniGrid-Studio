@@ -482,6 +482,28 @@ function updateYoutubeOAuthUI(oauth = savedYoutubeOAuth) {
   if (btnLogin) btnLogin.textContent = hasWrite ? '🔄 Neu anmelden' : '🔐 Mit Google anmelden';
 }
 
+function getChatTimerSettings() {
+  const raw = document.getElementById('txtTimerMessages')?.value || '';
+  return {
+    enabled: Boolean(document.getElementById('chkTimerEnabled')?.checked),
+    intervalMin: Math.max(1, parseInt(document.getElementById('numTimerInterval')?.value || '15', 10) || 15),
+    messages: raw.split('\n').map((s) => s.trim()).filter(Boolean)
+  };
+}
+
+function getAutoModSettings() {
+  return {
+    enabled: Boolean(document.getElementById('chkAutoModEnabled')?.checked),
+    blockLinks: document.getElementById('chkAutoModLinks')?.checked !== false,
+    blockCaps: Boolean(document.getElementById('chkAutoModCaps')?.checked),
+    capsPercent: 75,
+    blockSymbols: Boolean(document.getElementById('chkAutoModSymbols')?.checked),
+    exemptMods: document.getElementById('chkAutoModExemptMods')?.checked !== false,
+    blacklist: document.getElementById('inputAutoModBlacklist')?.value.trim() || '',
+    timeoutSec: parseInt(document.getElementById('selAutoModTimeout')?.value || '60', 10) || 0
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -495,6 +517,8 @@ function getFormConfig() {
     obsAlerts: getObsAlertSettings(),
     obsGoals: getObsGoalSettings(),
     tts: getTtsSettings(),
+    chatTimers: getChatTimerSettings(),
+    autoMod: getAutoModSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1766,6 +1790,30 @@ function applyConfigToForm(cfg) {
   if (elOwPass) elOwPass.value = ow.password || '';
   if (elOwMic) elOwMic.value = ow.micName || '';
 
+  const ct = cfg.chatTimers || {};
+  const elCtEn = document.getElementById('chkTimerEnabled');
+  const elCtInt = document.getElementById('numTimerInterval');
+  const elCtMsg = document.getElementById('txtTimerMessages');
+  if (elCtEn) elCtEn.checked = Boolean(ct.enabled);
+  if (elCtInt) elCtInt.value = ct.intervalMin ?? 15;
+  if (elCtMsg) elCtMsg.value = Array.isArray(ct.messages) ? ct.messages.join('\n') : '';
+
+  const am = cfg.autoMod || {};
+  const elAmEn = document.getElementById('chkAutoModEnabled');
+  const elAmL = document.getElementById('chkAutoModLinks');
+  const elAmC = document.getElementById('chkAutoModCaps');
+  const elAmS = document.getElementById('chkAutoModSymbols');
+  const elAmE = document.getElementById('chkAutoModExemptMods');
+  const elAmB = document.getElementById('inputAutoModBlacklist');
+  const elAmT = document.getElementById('selAutoModTimeout');
+  if (elAmEn) elAmEn.checked = Boolean(am.enabled);
+  if (elAmL) elAmL.checked = am.blockLinks !== false;
+  if (elAmC) elAmC.checked = Boolean(am.blockCaps);
+  if (elAmS) elAmS.checked = Boolean(am.blockSymbols);
+  if (elAmE) elAmE.checked = am.exemptMods !== false;
+  if (elAmB) elAmB.value = am.blacklist || '';
+  if (elAmT) elAmT.value = String(am.timeoutSec ?? 60);
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -3010,4 +3058,38 @@ document.getElementById('btnObsRec')?.addEventListener('click', () => {
 
 document.getElementById('btnObsStream')?.addEventListener('click', () => {
   window.omnichat.obsWsAction({ action: 'toggle-stream' });
+});
+
+// --- CHAT-TIMER & AUTO-MOD HANDLERS ---
+[
+  'chkTimerEnabled',
+  'numTimerInterval',
+  'txtTimerMessages',
+  'chkAutoModEnabled',
+  'chkAutoModLinks',
+  'chkAutoModCaps',
+  'chkAutoModSymbols',
+  'chkAutoModExemptMods',
+  'inputAutoModBlacklist',
+  'selAutoModTimeout'
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    window.omnichat.saveProfile(getFormConfig());
+  });
+});
+
+document.getElementById('btnTimerSendNow')?.addEventListener('click', async () => {
+  await window.omnichat.saveProfile(getFormConfig());
+  const statusEl = document.getElementById('timerSendStatus');
+  const res = await window.omnichat.runChatTimerNow();
+  if (statusEl) {
+    if (res?.ok) {
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = `✅ Gesendet (${res.sentTo?.join(', ') || 'log'})`;
+    } else {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ ${res?.error || 'Fehler'}`;
+    }
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  }
 });
