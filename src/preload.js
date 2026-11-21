@@ -46,5 +46,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   youtubeOAuthLogout: () => ipcRenderer.invoke('youtube-oauth-logout'),
   pollAction: (payload) => ipcRenderer.invoke('poll-action', payload),
   onPollUpdated: (cb) => ipcRenderer.on('poll-updated', (_ev, data) => cb(data)),
-  onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data))
+  onGoalsUpdated: (cb) => ipcRenderer.on('goals-updated', (_ev, data) => cb(data)),
+  createTwitchClip: () => ipcRenderer.invoke('twitch-create-clip'),
+  createTwitchMarker: (description) => ipcRenderer.invoke('twitch-create-marker', description)
 });

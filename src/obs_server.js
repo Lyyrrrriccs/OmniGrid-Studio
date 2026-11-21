@@ -1031,6 +1031,8 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
       <button class="deck-btn" onclick="sdApi('/send?text=GG!')"><span class="ic">💬</span>Sende GG!</button>
       <button class="deck-btn" onclick="sdApi('/send?text=!discord')"><span class="ic">🎮</span>!discord</button>
       <button class="deck-btn" onclick="sdApi('/toggle-poll')"><span class="ic">🗳️</span>Poll Ein/Aus</button>
+      <button class="deck-btn" onclick="sdApi('/clip')"><span class="ic">🎬</span>Clip</button>
+      <button class="deck-btn" onclick="sdApi('/marker')"><span class="ic">🚩</span>Marker</button>
       <button class="deck-btn" onclick="sdApi('/reconnect?platform=all')"><span class="ic">↻</span>Reconnect</button>
     </aside>
 

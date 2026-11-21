@@ -2845,3 +2845,47 @@ window.omnichat.onChatMessage((msg) => {
     });
   });
 })();
+
+// --- TWITCH CLIP & STREAM-MARKER HANDLERS ---
+const btnCreateClip = document.getElementById('btnCreateClip');
+const btnCreateMarker = document.getElementById('btnCreateMarker');
+const inputMarkerDesc = document.getElementById('inputMarkerDesc');
+const clipMarkerResult = document.getElementById('clipMarkerResult');
+
+btnCreateClip?.addEventListener('click', async () => {
+  btnCreateClip.disabled = true;
+  btnCreateClip.textContent = '⏳ Clip...';
+  const res = await window.omnichat.createTwitchClip();
+  btnCreateClip.disabled = false;
+  btnCreateClip.textContent = '🎬 Clip erstellen';
+  if (clipMarkerResult) {
+    if (res?.ok && res.url) {
+      clipMarkerResult.style.color = '#4ade80';
+      clipMarkerResult.textContent = `✅ Clip: ${res.url} (in Zwischenablage kopiert)`;
+      try { navigator.clipboard.writeText(res.url); } catch (e) {}
+    } else {
+      clipMarkerResult.style.color = '#f87171';
+      clipMarkerResult.textContent = `❌ ${res?.error || 'Clip fehlgeschlagen.'}`;
+    }
+  }
+});
+
+btnCreateMarker?.addEventListener('click', async () => {
+  btnCreateMarker.disabled = true;
+  btnCreateMarker.textContent = '⏳ Marker...';
+  const desc = inputMarkerDesc?.value.trim() || 'OmniStream Highlight';
+  const res = await window.omnichat.createTwitchMarker(desc);
+  btnCreateMarker.disabled = false;
+  btnCreateMarker.textContent = '🚩 Marker setzen';
+  if (clipMarkerResult) {
+    if (res?.ok) {
+      clipMarkerResult.style.color = '#4ade80';
+      const pos = typeof res.positionSeconds === 'number' ? ` @ ${res.positionSeconds}s` : '';
+      clipMarkerResult.textContent = `✅ Marker gesetzt${pos}: "${res.description || desc}"`;
+      if (inputMarkerDesc) inputMarkerDesc.value = '';
+    } else {
+      clipMarkerResult.style.color = '#f87171';
+      clipMarkerResult.textContent = `❌ ${res?.error || 'Marker fehlgeschlagen.'}`;
+    }
+  }
+});

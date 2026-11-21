@@ -946,6 +946,38 @@ app.whenReady().then(async () => {
       return { ok: true, visible: snap.visible, poll: snap };
     }
 
+    if (act === 'clip') {
+      if (demoActive) {
+        const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
+        appendDiagLog('twitch', 'info', `🎬 Demo-Clip erstellt: ${demoUrl}`);
+        return { ok: true, demo: true, id: 'DemoHighlightClip', url: demoUrl, editUrl: `${demoUrl}/edit` };
+      }
+      try {
+        const res = await twitch.createClip();
+        appendDiagLog('twitch', 'info', `🎬 Twitch Clip erstellt: ${res.url}`);
+        return res;
+      } catch (err) {
+        appendDiagLog('twitch', 'error', `Clip fehlgeschlagen: ${err.message}`);
+        return { ok: false, error: err.message };
+      }
+    }
+
+    if (act === 'marker') {
+      const desc = String(params.description || body.description || 'OmniStream Highlight').trim();
+      if (demoActive) {
+        appendDiagLog('twitch', 'info', `🚩 Demo-Marker gesetzt: "${desc}"`);
+        return { ok: true, demo: true, description: desc, positionSeconds: 42 };
+      }
+      try {
+        const res = await twitch.createStreamMarker(desc);
+        appendDiagLog('twitch', 'info', `🚩 Stream-Marker gesetzt: "${res.description}"`);
+        return res;
+      } catch (err) {
+        appendDiagLog('twitch', 'error', `Marker fehlgeschlagen: ${err.message}`);
+        return { ok: false, error: err.message };
+      }
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1275,6 +1307,38 @@ app.whenReady().then(async () => {
     obsServer.broadcastPoll(snap);
     broadcastToWindows('poll-updated', snap);
     return { ok: true, poll: snap };
+  });
+
+  ipcMain.handle('twitch-create-clip', async () => {
+    if (demoActive) {
+      const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
+      appendDiagLog('twitch', 'info', `🎬 Demo-Clip erstellt: ${demoUrl}`);
+      return { ok: true, demo: true, id: 'DemoHighlightClip', url: demoUrl, editUrl: `${demoUrl}/edit` };
+    }
+    try {
+      const res = await twitch.createClip();
+      appendDiagLog('twitch', 'info', `🎬 Twitch Clip erstellt: ${res.url}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('twitch', 'error', `Clip fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('twitch-create-marker', async (_ev, description) => {
+    const desc = String(description || 'OmniStream Highlight').trim();
+    if (demoActive) {
+      appendDiagLog('twitch', 'info', `🚩 Demo-Marker gesetzt: "${desc}"`);
+      return { ok: true, demo: true, description: desc, positionSeconds: 42 };
+    }
+    try {
+      const res = await twitch.createStreamMarker(desc);
+      appendDiagLog('twitch', 'info', `🚩 Stream-Marker gesetzt: "${res.description}"`);
+      return res;
+    } catch (err) {
+      appendDiagLog('twitch', 'error', `Marker fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
   });
 
   ipcMain.handle('test-obs-alert', (_ev, type) => {

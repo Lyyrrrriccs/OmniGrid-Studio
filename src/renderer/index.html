@@ -679,6 +679,20 @@
                 <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
               </div>
             </div>
+            <div class="sd-row" data-sd-path="/clip">
+              <span class="sd-label">🎬 Twitch Clip erstellen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/marker?description=Highlight">
+              <span class="sd-label">🚩 Stream-Marker setzen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
             <div class="sd-row" data-sd-path="/clear-chat">
               <span class="sd-label">🗑️ Chat-Verlauf leeren</span>
               <div class="sd-btns">
@@ -828,6 +842,16 @@
             <button class="btn-sm" id="btnImportConfig" title="Gesicherte Einstellungen wiederherstellen">📥 Importieren</button>
             <button class="btn-sm warn" id="btnResetDefaults" title="Design-, Emote- & Event-Einstellungen auf Standardwerte zurücksetzen">↺ Standard</button>
           </div>
+        </div>
+
+        <div class="sidebar-section twitch-clip-box">
+          <h3>🎬 Twitch Clip &amp; Marker</h3>
+          <input type="text" id="inputMarkerDesc" placeholder="Marker-Notiz (optional, z. B. Bosskill)" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnCreateClip" style="flex: 1;">🎬 Clip erstellen</button>
+            <button class="btn-sm" id="btnCreateMarker" style="flex: 1;">🚩 Marker setzen</button>
+          </div>
+          <div id="clipMarkerResult" style="margin-top: 6px; font-size: 11px; color: #94a3b8; word-break: break-all;"></div>
         </div>
 
         <div class="sidebar-section config-launcher-box">

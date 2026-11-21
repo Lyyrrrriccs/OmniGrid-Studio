@@ -18,6 +18,10 @@ class TwitchConnector extends EventEmitter {
     this.ws = null;
     this.channel = null;
     this.oauthToken = null;
+    this.clientId = '';
+    this.userId = '';
+    this.roomId = '';
+    this.scopes = [];
     this.authWarning = '';
     this.canWrite = false;
     this.username = null;
@@ -110,6 +114,9 @@ class TwitchConnector extends EventEmitter {
             try {
               const info = JSON.parse(body);
               const scopes = Array.isArray(info.scopes) ? info.scopes : [];
+              this.clientId = info.client_id || this.clientId || '';
+              this.userId = info.user_id || this.userId || '';
+              this.scopes = scopes;
               const hasRead = scopes.includes('chat:read');
               const hasEdit = scopes.includes('chat:edit');
               if (!hasRead || !hasEdit) {
@@ -119,7 +126,7 @@ class TwitchConnector extends EventEmitter {
                     'Dein Twitch-Token hat keine Chat-Rechte (scopes: chat:read / chat:edit fehlen)! Chat läuft im Lese-Modus — bitte auf twitchtokengenerator.com "Bot Chat Token" wählen.'
                 });
               }
-              return resolve({ ok: true, login: info.login || '' });
+              return resolve({ ok: true, login: info.login || '', clientId: this.clientId, userId: this.userId });
             } catch (e) {
               return resolve({ ok: true, login: '' });
             }
@@ -484,6 +491,7 @@ class TwitchConnector extends EventEmitter {
 
     const { tags, rest } = this._parseTags(line);
     if (tags['room-id']) {
+      this.roomId = tags['room-id'];
       this.emit('room-id', tags['room-id']);
     }
 
@@ -647,6 +655,114 @@ class TwitchConnector extends EventEmitter {
       timestamp: Date.now(),
       isSelf: true
     });
+  }
+
+  async _helixRequest(method, pathAndQuery, bodyObj = null) {
+    const cleanTok = String(this.oauthToken || '').replace(/^oauth:/i, '').trim();
+    if (!cleanTok) {
+      throw new Error('Kein Twitch OAuth-Token hinterlegt.');
+    }
+    if (!this.clientId || !this.userId) {
+      await this._validateToken(cleanTok);
+    }
+    if (!this.clientId) {
+      throw new Error('Twitch Client-ID konnte nicht aus dem OAuth-Token ermittelt werden.');
+    }
+
+    const payload = bodyObj ? JSON.stringify(bodyObj) : null;
+    const headers = {
+      Authorization: `Bearer ${cleanTok}`,
+      'Client-Id': this.clientId
+    };
+    if (payload) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(payload);
+    }
+
+    return new Promise((resolve, reject) => {
+      const req = https.request(
+        `https://api.twitch.tv${pathAndQuery}`,
+        { method, headers, timeout: 8000 },
+        (res) => {
+          let data = '';
+          res.on('data', (c) => (data += c));
+          res.on('end', () => {
+            let json = null;
+            try {
+              json = JSON.parse(data);
+            } catch (e) {}
+            resolve({ statusCode: res.statusCode, json, data });
+          });
+        }
+      );
+      req.on('error', reject);
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Twitch Helix API Timeout'));
+      });
+      if (payload) req.write(payload);
+      req.end();
+    });
+  }
+
+  async _resolveBroadcasterId() {
+    if (this.roomId) return this.roomId;
+    if (this.channel) {
+      const resp = await this._helixRequest('GET', `/helix/users?login=${encodeURIComponent(this.channel)}`);
+      const id = resp.json?.data?.[0]?.id;
+      if (id) {
+        this.roomId = id;
+        return id;
+      }
+    }
+    if (this.userId) return this.userId;
+    throw new Error('Twitch Broadcaster-ID nicht bekannt — bitte zuerst Twitch-Kanal verbinden.');
+  }
+
+  async createClip() {
+    const broadcasterId = await this._resolveBroadcasterId();
+    const resp = await this._helixRequest('POST', `/helix/clips?broadcaster_id=${encodeURIComponent(broadcasterId)}`);
+    if (resp.statusCode === 401 || resp.statusCode === 403) {
+      throw new Error('Fehlende Berechtigung (Scope "clips:edit") — bitte auf twitchtokengenerator.com mit Scope "clips:edit" neu generieren.');
+    }
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`Twitch Clip fehlgeschlagen: ${msg}`);
+    }
+    const item = resp.json?.data?.[0];
+    if (!item?.id) {
+      throw new Error('Twitch hat keine Clip-ID zurückgegeben (ist der Stream live?).');
+    }
+    return {
+      ok: true,
+      id: item.id,
+      editUrl: item.edit_url || `https://clips.twitch.tv/${item.id}/edit`,
+      url: `https://clips.twitch.tv/${item.id}`
+    };
+  }
+
+  async createStreamMarker(description = 'OmniStream Highlight') {
+    const broadcasterId = await this._resolveBroadcasterId();
+    const cleanDesc = String(description || 'OmniStream Highlight').trim().slice(0, 140);
+    const resp = await this._helixRequest('POST', '/helix/streams/markers', {
+      user_id: broadcasterId,
+      description: cleanDesc
+    });
+    if (resp.statusCode === 401 || resp.statusCode === 403) {
+      throw new Error('Fehlende Berechtigung (Scope "channel:manage:broadcast" / "user:edit:broadcast") — bitte Token mit Marker-Rechten neu generieren.');
+    }
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`Twitch Stream-Marker fehlgeschlagen: ${msg}`);
+    }
+    const item = resp.json?.data?.[0] || {};
+    return {
+      ok: true,
+      id: item.id || null,
+      createdAt: item.created_at || null,
+      positionSeconds: item.position_seconds ?? null,
+      description: item.description || cleanDesc
+    };
   }
 
   disconnect(clearDedupe = false) {
