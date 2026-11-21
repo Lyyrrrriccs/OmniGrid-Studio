@@ -153,3 +153,38 @@ Manche WLANs (z. B. Gäste-WLAN, Wohnheim, Hotel, Router mit „Geräte dürfen 
 - ✅ **Windows:** Falls beim Start ein Windows-Firewall-Fenster aufgeht, klicke auf **Zugriff zulassen**.
 - ✅ Prüfe in der Tailscale-App auf beiden Geräten, ob **beide** als *Connected / Verbunden* angezeigt werden.
 
+---
+
+## 11. Zentrale Konfigurationsseite (`⚙️ Config`)
+
+Alle Einstellungen, die du nicht ständig während des Streams brauchst, liegen aufgeräumt unter **⚙️ Config** (oben in der Leiste oder unten links):
+- **📡 Plattformen:** Twitch, YouTube (+ OAuth2-Login) & TikTok einrichten.
+- **👤 Profil & Events:** Streamer-Name, Keyword-Alarme & Event-Hervorhebungen.
+- **🎨 Design & Emotes:** Schriftgrößen, Trennlinien, Deckkraft & Emote-Anbieter.
+- **🎥 OBS & Alerts:** OBS-URLs, OBS WebSocket v5 & Alert-Box (`/alerts` inkl. eigener GIF-/Audio-URLs).
+- **🤖 Bot & Auto-Mod:** Chat-Timer & Auto-Mod-Regeln.
+- **📱 Tablet & Stream Deck:** QR-Code (WLAN/Tailscale) & alle Stream-Deck-Endpunkte.
+- **⌨️ Peripherie & System:** Zweitmaus, Zweittastatur, Hotkeys, RAM-Limit & Backup.
+
+---
+
+## 12. OBS Goal-Bar (`/goals`), Live-Poll (`/poll`) & TTS
+
+- **OBS Goal-Bar:** Füge `http://127.0.0.1:4588/goals` als Browser-Quelle in OBS ein. Titel, Zielwert, Farbe und automatisches Hochzählen bei Follows/Subs stellst du in der Live-Sidebar ein.
+- **Multistream-Poll:** Füge `http://127.0.0.1:4588/poll` in OBS ein. Zuschauer auf Twitch, YouTube und TikTok stimmen mit `!vote 1`, `!vote 2` usw. ab. Mit **👁️ Ausblenden / Einblenden** (oder `/api/streamdeck/toggle-poll`) lässt sich das Overlay jederzeit verstecken, ohne Stimmen zu verlieren.
+- **Text-to-Speech (TTS):** Liest optional Events/Alerts und `!tts <Text>`-Nachrichten vor (mit Stimmenauswahl, Tempo, Lautstärke, **⏭ Skip** & **🗑 Leeren**).
+
+---
+
+## 13. Twitch Clip, Stream-Marker & OBS WebSocket v5
+
+- **🎬 Twitch Clip & 🚩 Marker:** Direkt in der linken Sidebar, auf `/tablet` oder per Stream Deck (`/clip`, `/marker?description=Highlight`, `/clip-and-marker?description=Highlight`). *(Benötigt die Scopes `clips:edit` bzw. `channel:manage:broadcast` im Twitch-Token.)*
+- **🎛️ OBS WebSocket v5:** Aktiviere in OBS Studio *Werkzeuge → WebSocket-Servereinstellungen* (Port `4455`), trage Host/Passwort unter **⚙️ Config → 🎥 OBS & Alerts** ein und steuere danach Szenen, **💾 Replay**, **🎙️ Mic**, **🔴 Rec** und **📡 Stream** direkt aus OmniStream Chat, `/tablet` oder Stream Deck.
+
+---
+
+## 14. Chat-Timer & Auto-Mod (`🤖 Bot & Auto-Mod`)
+
+- **⏱️ Chat-Timer:** Sendet alle X Minuten abwechselnd deine hinterlegten Info-Zeilen (z. B. Discord/Socials) in aktive Schreib-Chats.
+- **🛡️ Auto-Mod-Regeln:** Blockiert Links, Caps-Spam (`≥75%`), Symbol-Spam und eigene Blacklist-Wörter automatisch (auf Twitch optional inkl. `/delete` oder `/timeout`). Mods, VIPs & Streamer bleiben auf Wunsch ausgenommen.
+
