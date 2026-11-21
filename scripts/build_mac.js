@@ -26,6 +26,13 @@ for (const docFile of ['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md'])
   }
 }
 execSync(`cp -R "${path.join(rootDir, 'src')}" "${path.join(resourcesAppDir, 'src')}"`);
+if (fs.existsSync(path.join(rootDir, 'assets'))) {
+  execSync(`cp -R "${path.join(rootDir, 'assets')}" "${path.join(resourcesAppDir, 'assets')}"`);
+}
+const icnsSrc = path.join(rootDir, 'assets', 'icon.icns');
+if (fs.existsSync(icnsSrc)) {
+  fs.copyFileSync(icnsSrc, path.join(targetApp, 'Contents', 'Resources', 'OmniStreamChat.icns'));
+}
 
 // Copy production node_modules (ws, tiktok-live-connector) into bundle
 const nmDest = path.join(resourcesAppDir, 'node_modules');
@@ -46,6 +53,7 @@ try {
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName OmniStreamChat" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.tobias.omnistreamchat" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" "${plistPath}"`);
+  execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile OmniStreamChat.icns" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Delete :NSAppleEventsUsageDescription" "${plistPath}" 2>/dev/null || true`);
   execSync(`/usr/libexec/PlistBuddy -c "Add :NSAppleEventsUsageDescription string 'OmniStreamChat liest den aktuellen Spotify-Track fuer das OBS-Widget und !song.'" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Delete :NSLocalNetworkUsageDescription" "${plistPath}" 2>/dev/null || true`);
