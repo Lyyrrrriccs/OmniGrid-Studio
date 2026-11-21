@@ -978,6 +978,25 @@ app.whenReady().then(async () => {
       }
     }
 
+    if (act === 'clip-and-marker') {
+      const desc = String(params.description || body.description || 'OmniStream Highlight').trim();
+      if (demoActive) {
+        const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
+        appendDiagLog('twitch', 'info', `🎬🚩 Demo Clip + Marker: ${demoUrl} ("${desc}")`);
+        return { ok: true, demo: true, clip: { ok: true, url: demoUrl }, marker: { ok: true, description: desc } };
+      }
+      const [clipRes, markerRes] = await Promise.allSettled([
+        twitch.createClip(),
+        twitch.createStreamMarker(desc)
+      ]);
+      const clip = clipRes.status === 'fulfilled' ? clipRes.value : { ok: false, error: clipRes.reason?.message };
+      const marker = markerRes.status === 'fulfilled' ? markerRes.value : { ok: false, error: markerRes.reason?.message };
+      if (!clip.ok && !marker.ok) {
+        return { ok: false, error: `Clip: ${clip.error} | Marker: ${marker.error}`, clip, marker };
+      }
+      return { ok: true, clip, marker };
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
