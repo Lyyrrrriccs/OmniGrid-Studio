@@ -291,7 +291,19 @@ function persistWindowBounds(key, win) {
   }, 400);
 }
 
+function getAppIconPath() {
+  const file = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  const p = path.join(__dirname, '..', 'assets', file);
+  return fs.existsSync(p) ? p : undefined;
+}
+
 function createMainWindow() {
+  if (process.platform === 'darwin' && app.dock) {
+    const dockIcon = path.join(__dirname, '..', 'assets', 'icon.png');
+    if (fs.existsSync(dockIcon)) {
+      try { app.dock.setIcon(dockIcon); } catch (e) {}
+    }
+  }
   const saved = loadConfig();
   const b = saved.mainWindowBounds;
 
@@ -303,6 +315,7 @@ function createMainWindow() {
     minWidth: 220,
     minHeight: 360,
     backgroundColor: '#0b0f19',
+    icon: getAppIconPath(),
     title: 'OmniStream Chat — Dein Streamer Cockpit (Twitch • YouTube • TikTok)',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -355,6 +368,7 @@ function openStandaloneChatWindow(snapLeftFullHeight = false) {
     minWidth: 220,
     minHeight: 320,
     backgroundColor: '#0b0f19',
+    icon: getAppIconPath(),
     title: 'OmniStream Chat — Standalone Chat-Fenster (Links neben OBS)',
     alwaysOnTop: saved.chatDockAlwaysOnTop !== false,
     webPreferences: {
@@ -1478,6 +1492,7 @@ app.whenReady().then(async () => {
       minWidth: 520,
       minHeight: 420,
       backgroundColor: '#0b0f19',
+      icon: getAppIconPath(),
       title: 'OmniStream Chat — Anleitung & Hilfe',
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),

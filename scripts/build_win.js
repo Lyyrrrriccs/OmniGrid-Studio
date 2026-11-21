@@ -84,6 +84,13 @@ async function buildWindowsPortable() {
     }
   }
   copyRecursiveSync(path.join(rootDir, 'src'), path.join(resourcesAppDir, 'src'));
+  if (fs.existsSync(path.join(rootDir, 'assets'))) {
+    copyRecursiveSync(path.join(rootDir, 'assets'), path.join(resourcesAppDir, 'assets'));
+  }
+  const winIcoSrc = path.join(rootDir, 'assets', 'icon.ico');
+  if (fs.existsSync(winIcoSrc)) {
+    fs.copyFileSync(winIcoSrc, path.join(winOutDir, 'OmniStreamChat.ico'));
+  }
 
   const nmDest = path.join(resourcesAppDir, 'node_modules');
   fs.mkdirSync(nmDest, { recursive: true });
