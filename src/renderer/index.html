@@ -832,7 +832,7 @@
 
         <div class="sidebar-section config-launcher-box">
           <h3>⚙️ Konfiguration</h3>
-          <p class="section-hint">Design, Emotes, OBS-Overlays, Alerts, TTS, Tablet, Stream Deck &amp; System-Einstellungen befinden sich zentral auf der Config-Seite.</p>
+          <p class="section-hint">Plattformen (Twitch, YouTube, TikTok), Design, Emotes, OBS-Overlays, Alerts, Tablet, Stream Deck &amp; System-Einstellungen befinden sich zentral auf der Config-Seite.</p>
           <button class="btn-sm" id="btnOpenConfigSidebar" style="width: 100%; padding: 8px; font-weight: 700;">⚙️ Zentrale Konfiguration öffnen</button>
         </div>
       </div>
@@ -1059,14 +1059,16 @@
         <button class="btn-chip" id="btnCloseConfig">✕ Zurück zum Chat</button>
       </div>
       <div class="config-tabs-bar" id="configTabsBar">
-        <button class="config-tab-btn active" data-cfg-tab="profile">👤 Profil &amp; Events</button>
+        <button class="config-tab-btn active" data-cfg-tab="platforms">📡 Plattformen</button>
+        <button class="config-tab-btn" data-cfg-tab="profile">👤 Profil &amp; Events</button>
         <button class="config-tab-btn" data-cfg-tab="design">🎨 Design &amp; Emotes</button>
-        <button class="config-tab-btn" data-cfg-tab="obs">🎥 OBS, Alerts &amp; TTS</button>
+        <button class="config-tab-btn" data-cfg-tab="obs">🎥 OBS &amp; Alerts</button>
         <button class="config-tab-btn" data-cfg-tab="companion">📱 Tablet &amp; Stream Deck</button>
         <button class="config-tab-btn" data-cfg-tab="system">⌨️ Peripherie &amp; System</button>
       </div>
       <div class="config-modal-body">
-        <div class="config-tab-panel active" id="cfgTab_profile"></div>
+        <div class="config-tab-panel active" id="cfgTab_platforms"></div>
+        <div class="config-tab-panel" id="cfgTab_profile"></div>
         <div class="config-tab-panel" id="cfgTab_design"></div>
         <div class="config-tab-panel" id="cfgTab_obs"></div>
         <div class="config-tab-panel" id="cfgTab_companion"></div>

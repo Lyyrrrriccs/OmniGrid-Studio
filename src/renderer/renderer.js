@@ -2795,6 +2795,13 @@ window.omnichat.onChatMessage((msg) => {
     tabProfile.appendChild(sec);
   }
 
+  const platformSection = document.getElementById('card_twitch')?.closest('.sidebar-section');
+  const tabPlatforms = document.getElementById('cfgTab_platforms');
+  if (platformSection && tabPlatforms) {
+    platformSection.style.gridColumn = '1 / -1';
+    tabPlatforms.appendChild(platformSection);
+  }
+
   const moveMap = [
     ['.event-settings-box', 'cfgTab_profile'],
     ['.design-settings-box', 'cfgTab_design'],
