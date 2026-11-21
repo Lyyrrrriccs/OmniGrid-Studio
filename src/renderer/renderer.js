@@ -3093,3 +3093,7 @@ document.getElementById('btnTimerSendNow')?.addEventListener('click', async () =
     setTimeout(() => { statusEl.textContent = ''; }, 3000);
   }
 });
+
+document.getElementById('btnOpenHelp')?.addEventListener('click', () => {
+  window.omnichat.openHelpWindow();
+});

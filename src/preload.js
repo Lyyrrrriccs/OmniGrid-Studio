@@ -53,5 +53,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   obsWsDisconnect: () => ipcRenderer.invoke('obs-ws-disconnect'),
   obsWsAction: (payload) => ipcRenderer.invoke('obs-ws-action', payload),
   onObsWsState: (cb) => ipcRenderer.on('obs-ws-state', (_ev, st) => cb(st)),
-  runChatTimerNow: () => ipcRenderer.invoke('run-chat-timer-now')
+  runChatTimerNow: () => ipcRenderer.invoke('run-chat-timer-now'),
+  openHelpWindow: () => ipcRenderer.invoke('open-help-window'),
+  getHelpDoc: (docName) => ipcRenderer.invoke('get-help-doc', docName)
 });

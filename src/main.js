@@ -1466,6 +1466,53 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('run-chat-timer-now', () => runChatTimerTick(true));
 
+  let helpWindow = null;
+  function openHelpWindow() {
+    if (helpWindow && !helpWindow.isDestroyed()) {
+      helpWindow.focus();
+      return;
+    }
+    helpWindow = new BrowserWindow({
+      width: 900,
+      height: 760,
+      minWidth: 520,
+      minHeight: 420,
+      backgroundColor: '#0b0f19',
+      title: 'OmniStream Chat — Anleitung & Hilfe',
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    });
+    helpWindow.setMenuBarVisibility(false);
+    helpWindow.webContents.setWindowOpenHandler(({ url }) => {
+      require('electron').shell.openExternal(url);
+      return { action: 'deny' };
+    });
+    helpWindow.loadFile(path.join(__dirname, 'renderer', 'help.html'));
+    helpWindow.on('closed', () => {
+      helpWindow = null;
+    });
+  }
+
+  ipcMain.handle('open-help-window', () => {
+    openHelpWindow();
+    return { ok: true };
+  });
+
+  ipcMain.handle('get-help-doc', (_ev, docName) => {
+    const allowed = new Set(['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md']);
+    const safeName = allowed.has(docName) ? docName : 'ANLEITUNG.md';
+    try {
+      const filePath = path.join(__dirname, '..', safeName);
+      const content = fs.readFileSync(filePath, 'utf8');
+      return { ok: true, content, docName: safeName };
+    } catch (err) {
+      return { ok: false, error: `Datei ${safeName} nicht gefunden: ${err.message}` };
+    }
+  });
+
   ipcMain.handle('poll-action', (_ev, payload) => {
     const act = payload?.action || 'start';
     if (act === 'start') {
