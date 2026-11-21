@@ -40,6 +40,7 @@
     </div>
 
     <div class="topbar-actions">
+      <button class="btn-chip" id="btnOpenConfig" title="Zentrale Konfiguration öffnen (Design, OBS, Alerts, TTS, Stream Deck, System)">⚙️ Config</button>
       <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken & Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik & Logs</button>
       <button class="btn-chip" id="btnPopoutChat" title="Eigenständiges, vollhohes Chatfenster links neben OBS öffnen">🪟 Separates Chatfenster</button>
       <button class="btn-chip" id="btnSlimDock" title="Dieses Fenster als schmale Spalte (320px, volle Höhe) links neben OBS andocken">📐 Links neben OBS</button>
@@ -56,7 +57,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-scroll">
         <div class="sidebar-section">
-          <h3>👑 Mein Streamer-Profil</h3>
+          <h3>📡 Plattformen verbinden</h3>
           <p class="section-hint">Jede Plattform läuft isoliert mit Auto-Reconnect & Duplikat-Schutz und lässt sich einzeln aktivieren oder neu verbinden.</p>
 
           <div class="profile-meta-box">
@@ -828,6 +829,12 @@
             <button class="btn-sm warn" id="btnResetDefaults" title="Design-, Emote- & Event-Einstellungen auf Standardwerte zurücksetzen">↺ Standard</button>
           </div>
         </div>
+
+        <div class="sidebar-section config-launcher-box">
+          <h3>⚙️ Konfiguration</h3>
+          <p class="section-hint">Design, Emotes, OBS-Overlays, Alerts, TTS, Tablet, Stream Deck &amp; System-Einstellungen befinden sich zentral auf der Config-Seite.</p>
+          <button class="btn-sm" id="btnOpenConfigSidebar" style="width: 100%; padding: 8px; font-weight: 700;">⚙️ Zentrale Konfiguration öffnen</button>
+        </div>
       </div>
     </aside>
 
@@ -1038,6 +1045,33 @@
     <div class="qm-split-row">
       <button class="qm-item-half danger" id="qmBanUser">🚫 Dauerhaft bannen</button>
       <button class="qm-item-half" id="qmUnbanUser">🔓 Ban/Timeout aufheben</button>
+    </div>
+  </div>
+
+  <!-- CENTRAL CONFIG PAGE MODAL -->
+  <div class="config-modal-backdrop hidden" id="configPageModal">
+    <div class="config-modal-shell" role="dialog" aria-modal="true" aria-label="Zentrale Konfiguration">
+      <div class="config-modal-header">
+        <div>
+          <h2>⚙️ Zentrale Konfiguration</h2>
+          <p class="config-modal-sub">Alle Einstellungen werden automatisch gespeichert.</p>
+        </div>
+        <button class="btn-chip" id="btnCloseConfig">✕ Zurück zum Chat</button>
+      </div>
+      <div class="config-tabs-bar" id="configTabsBar">
+        <button class="config-tab-btn active" data-cfg-tab="profile">👤 Profil &amp; Events</button>
+        <button class="config-tab-btn" data-cfg-tab="design">🎨 Design &amp; Emotes</button>
+        <button class="config-tab-btn" data-cfg-tab="obs">🎥 OBS, Alerts &amp; TTS</button>
+        <button class="config-tab-btn" data-cfg-tab="companion">📱 Tablet &amp; Stream Deck</button>
+        <button class="config-tab-btn" data-cfg-tab="system">⌨️ Peripherie &amp; System</button>
+      </div>
+      <div class="config-modal-body">
+        <div class="config-tab-panel active" id="cfgTab_profile"></div>
+        <div class="config-tab-panel" id="cfgTab_design"></div>
+        <div class="config-tab-panel" id="cfgTab_obs"></div>
+        <div class="config-tab-panel" id="cfgTab_companion"></div>
+        <div class="config-tab-panel" id="cfgTab_system"></div>
+      </div>
     </div>
   </div>
 

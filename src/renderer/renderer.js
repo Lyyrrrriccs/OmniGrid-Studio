@@ -2777,3 +2777,64 @@ window.omnichat.onChatMessage((msg) => {
     requestAnimationFrame(flushPendingMessages);
   }
 });
+
+// --- CENTRAL CONFIG PAGE ---
+(function initCentralConfigPage() {
+  const modal = document.getElementById('configPageModal');
+  if (!modal) return;
+
+  const profileBox = document.querySelector('.profile-meta-box');
+  const tabProfile = document.getElementById('cfgTab_profile');
+  if (profileBox && tabProfile) {
+    const sec = document.createElement('div');
+    sec.className = 'sidebar-section';
+    const h3 = document.createElement('h3');
+    h3.textContent = '👑 Streamer-Profil & Keyword-Alarme';
+    sec.appendChild(h3);
+    sec.appendChild(profileBox);
+    tabProfile.appendChild(sec);
+  }
+
+  const moveMap = [
+    ['.event-settings-box', 'cfgTab_profile'],
+    ['.design-settings-box', 'cfgTab_design'],
+    ['.emote-settings-box', 'cfgTab_design'],
+    ['.obs-box', 'cfgTab_obs'],
+    ['.obs-alerts-box', 'cfgTab_obs'],
+    ['.tablet-box', 'cfgTab_companion'],
+    ['.streamdeck-box', 'cfgTab_companion'],
+    ['.peripherals-box', 'cfgTab_system'],
+    ['.perf-settings-box', 'cfgTab_system']
+  ];
+
+  for (const [selector, targetId] of moveMap) {
+    const el = document.querySelector(selector);
+    const target = document.getElementById(targetId);
+    if (el && target) target.appendChild(el);
+  }
+
+  const openModal = () => modal.classList.remove('hidden');
+  const closeModal = () => modal.classList.add('hidden');
+
+  document.getElementById('btnOpenConfig')?.addEventListener('click', openModal);
+  document.getElementById('btnOpenConfigSidebar')?.addEventListener('click', openModal);
+  document.getElementById('btnCloseConfig')?.addEventListener('click', closeModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  const tabBtns = Array.from(document.querySelectorAll('.config-tab-btn'));
+  const tabPanels = Array.from(document.querySelectorAll('.config-tab-panel'));
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.dataset.cfgTab;
+      tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      tabPanels.forEach((p) => p.classList.toggle('active', p.id === `cfgTab_${targetTab}`));
+    });
+  });
+})();
