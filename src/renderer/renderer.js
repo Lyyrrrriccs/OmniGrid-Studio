@@ -3147,3 +3147,85 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
+
+// --- STREAM-MANAGER (TITEL, SPIEL/KATEGORIE & TAGS) ---
+const inputStreamTitle = document.getElementById('inputStreamTitle');
+const inputStreamGame = document.getElementById('inputStreamGame');
+const dlStreamGames = document.getElementById('dlStreamGames');
+const inputStreamTags = document.getElementById('inputStreamTags');
+const chkSyncYtTitle = document.getElementById('chkSyncYtTitle');
+const streamInfoStatus = document.getElementById('streamInfoStatus');
+let streamGameIdMap = new Map();
+let gameSearchTimer = null;
+
+async function loadStreamManagerInfo() {
+  if (streamInfoStatus) {
+    streamInfoStatus.style.color = '#94a3b8';
+    streamInfoStatus.textContent = '⏳ Lade Kanal-Info...';
+  }
+  const res = await window.omnichat.streamManagerLoad();
+  if (res?.ok && res.twitch) {
+    if (inputStreamTitle) inputStreamTitle.value = res.twitch.title || '';
+    if (inputStreamGame) inputStreamGame.value = res.twitch.gameName || '';
+    if (res.twitch.gameName && res.twitch.gameId) {
+      streamGameIdMap.set(res.twitch.gameName.toLowerCase(), res.twitch.gameId);
+    }
+    if (inputStreamTags) inputStreamTags.value = (res.twitch.tags || []).join(', ');
+    if (streamInfoStatus) {
+      streamInfoStatus.style.color = '#4ade80';
+      streamInfoStatus.textContent = '✅ Aktuelle Twitch-Daten geladen';
+    }
+  } else if (streamInfoStatus) {
+    streamInfoStatus.style.color = '#f87171';
+    streamInfoStatus.textContent = `❌ ${res?.error || 'Laden fehlgeschlagen'}`;
+  }
+}
+
+document.getElementById('btnLoadStreamInfo')?.addEventListener('click', loadStreamManagerInfo);
+
+inputStreamGame?.addEventListener('input', () => {
+  clearTimeout(gameSearchTimer);
+  const q = inputStreamGame.value.trim();
+  if (q.length < 2) return;
+  gameSearchTimer = setTimeout(async () => {
+    const res = await window.omnichat.streamManagerSearchGames(q);
+    if (res?.ok && dlStreamGames) {
+      dlStreamGames.innerHTML = '';
+      (res.categories || []).forEach((c) => {
+        streamGameIdMap.set(c.name.toLowerCase(), c.id);
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        dlStreamGames.appendChild(opt);
+      });
+    }
+  }, 280);
+});
+
+document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async () => {
+  const btn = document.getElementById('btnSaveStreamInfo');
+  const title = inputStreamTitle?.value.trim() || '';
+  const gameName = inputStreamGame?.value.trim() || '';
+  const gameId = streamGameIdMap.get(gameName.toLowerCase()) || '';
+  const tags = inputStreamTags?.value || '';
+  const syncYoutube = Boolean(chkSyncYtTitle?.checked);
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Speichere...';
+  }
+  const res = await window.omnichat.streamManagerSave({ title, gameId, gameName, tags, syncYoutube });
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = '💾 Übernehmen';
+  }
+  if (streamInfoStatus) {
+    if (res?.ok) {
+      streamInfoStatus.style.color = '#4ade80';
+      const warn = res.warnings?.length ? ` (${res.warnings.join('; ')})` : '';
+      streamInfoStatus.textContent = `✅ Aktualisiert: ${(res.updated || []).join(', ')}${warn}`;
+    } else {
+      streamInfoStatus.style.color = '#f87171';
+      streamInfoStatus.textContent = `❌ ${res?.error || 'Update fehlgeschlagen'}`;
+    }
+  }
+});

@@ -1626,6 +1626,64 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('stream-manager-load', async () => {
+    try {
+      const tw = await twitch.getChannelInfo();
+      return { ok: true, twitch: tw, youtubeTitle: youtube.streamTitle || '' };
+    } catch (err) {
+      return { ok: false, error: err.message, youtubeTitle: youtube.streamTitle || '' };
+    }
+  });
+
+  ipcMain.handle('stream-manager-search-games', async (_ev, query) => {
+    try {
+      return await twitch.searchCategories(query);
+    } catch (err) {
+      return { ok: false, categories: [] };
+    }
+  });
+
+  ipcMain.handle('stream-manager-save', async (_ev, payload) => {
+    const title = String(payload?.title || '').trim();
+    const gameId = String(payload?.gameId || '').trim();
+    const gameName = String(payload?.gameName || '').trim();
+    const tags = Array.isArray(payload?.tags)
+      ? payload.tags
+      : String(payload?.tags || '')
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean);
+    const syncYoutube = Boolean(payload?.syncYoutube);
+
+    const results = [];
+    const errors = [];
+
+    try {
+      await twitch.updateChannelInfo({ title, gameId, gameName, tags });
+      results.push('Twitch');
+      appendDiagLog('twitch', 'info', `📝 Stream-Info aktualisiert: "${title}" (${gameName || gameId || 'unverändert'})`);
+    } catch (err) {
+      errors.push(`Twitch: ${err.message}`);
+      appendDiagLog('twitch', 'error', `Stream-Info Fehler: ${err.message}`);
+    }
+
+    if (syncYoutube && title && youtube.connected && youtube.canWrite) {
+      try {
+        await youtube.updateVideoTitle(title);
+        results.push('YouTube');
+        appendDiagLog('youtube', 'info', `📝 YouTube-Titel aktualisiert: "${title}"`);
+      } catch (err) {
+        errors.push(`YouTube: ${err.message}`);
+        appendDiagLog('youtube', 'error', `YouTube Titel-Fehler: ${err.message}`);
+      }
+    }
+
+    if (results.length > 0) {
+      return { ok: true, updated: results, warnings: errors };
+    }
+    return { ok: false, error: errors.join(' | ') || 'Keine Plattform aktualisiert.' };
+  });
+
   ipcMain.handle('poll-action', (_ev, payload) => {
     const act = payload?.action || 'start';
     if (act === 'start') {
