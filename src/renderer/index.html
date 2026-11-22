@@ -1721,7 +1721,12 @@
           <h2>🎛️ OBS Szenen- &amp; Quellen-Editor (WebSocket v5)</h2>
           <p class="config-modal-sub">Ziehe Quellen direkt mit der Maus auf der Vorschau zum Verschieben oder an den Ecken zum Vergrößern/Verkleinern.</p>
         </div>
-        <button class="btn-chip" id="btnCloseSceneEditor" style="padding: 6px 12px;">✕ Schließen</button>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span id="seObsWsBadge" style="font-size: 11px; font-weight: 700; color: #94a3b8;">● OBS: Aus</span>
+          <button class="btn-sm" id="btnSeObsWsConnect">🔌 Mit OBS verbinden</button>
+          <button class="btn-sm hidden" id="btnSeObsWsDisconnect">Trennen</button>
+          <button class="btn-chip" id="btnCloseSceneEditor" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
       </div>
       <div class="config-modal-body" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">

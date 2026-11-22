@@ -3004,6 +3004,16 @@ function updateObsWsUI(st) {
   if (btnConn) btnConn.textContent = isConn ? '🔄 Neu verbinden' : '🔌 Mit OBS verbinden';
   if (btnDisc) btnDisc.classList.toggle('hidden', !isConn);
 
+  const seBadge = document.getElementById('seObsWsBadge');
+  const seConn = document.getElementById('btnSeObsWsConnect');
+  const seDisc = document.getElementById('btnSeObsWsDisconnect');
+  if (seBadge) {
+    seBadge.textContent = isConn ? '● OBS: Verbunden' : st.connecting ? '● OBS: Verbinde...' : '● OBS: Aus';
+    seBadge.style.color = isConn ? '#4ade80' : st.error ? '#f87171' : '#94a3b8';
+  }
+  if (seConn) seConn.textContent = isConn ? '🔄 Neu verbinden' : '🔌 Mit OBS verbinden';
+  if (seDisc) seDisc.classList.toggle('hidden', !isConn);
+
   [selScene, btnReplay, btnMic, btnRec, btnStream].forEach((el) => {
     if (el) el.disabled = !isConn;
   });
@@ -5155,6 +5165,31 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   chkAutoPreview?.addEventListener('change', startPreviewLoop);
   btnRefresh?.addEventListener('click', refreshAll);
+
+  document.getElementById('btnSeObsWsConnect')?.addEventListener('click', async () => {
+    const host = document.getElementById('inputObsWsHost')?.value.trim() || '127.0.0.1';
+    const port = parseInt(document.getElementById('inputObsWsPort')?.value || '4455', 10) || 4455;
+    const password = document.getElementById('inputObsWsPass')?.value || '';
+    const micName = document.getElementById('inputObsWsMic')?.value.trim() || '';
+    setStatus('⏳ Verbinde mit OBS WebSocket...', '#38bdf8');
+    const res = await window.omnichat.obsWsConnect({ host, port, password, micName });
+    if (res?.state) updateObsWsUI(res.state);
+    if (res?.state?.connected) {
+      setStatus('✅ Mit OBS verbunden!', '#4ade80');
+      await refreshAll();
+      await loadInputKinds();
+      startPreviewLoop();
+    } else {
+      setStatus(`❌ ${res?.state?.error || res?.error || 'Verbindung zu OBS fehlgeschlagen.'}`, '#f87171');
+    }
+  });
+
+  document.getElementById('btnSeObsWsDisconnect')?.addEventListener('click', () => {
+    window.omnichat.obsWsDisconnect();
+    clearInterval(previewTimer);
+    stopVirtualCamPreview();
+    setStatus('🔌 OBS-Verbindung getrennt.', '#94a3b8');
+  });
 
   selScene?.addEventListener('change', async () => {
     const target = selScene.value;
