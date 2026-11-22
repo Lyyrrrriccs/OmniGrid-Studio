@@ -1683,11 +1683,18 @@
 
         <div id="gaStatsFields" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 8px; margin-top: 10px;"></div>
 
-        <div id="gaLolMatchControls" class="hidden" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(200,170,110,0.35);">
-          <span style="font-size: 11px; font-weight: 700; color: #c8aa6e;">Letzte 6 Matches:</span>
-          <button class="btn-sm" id="btnGaLolWin" style="background: #0d9488; color: #fff;">🏆 +Sieg</button>
-          <button class="btn-sm" id="btnGaLolLoss" style="background: #dc2626; color: #fff;">💀 +Niederlage</button>
-          <button class="btn-sm warn" id="btnGaLolClearMatches">🗑️ Historie leeren</button>
+        <div id="gaLolMatchControls" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 9px 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(200,170,110,0.35);">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #c8aa6e;">Letzte 6 Matches:</span>
+            <button class="btn-sm" id="btnGaLolWin" style="background: #0d9488; color: #fff;">🏆 +Sieg</button>
+            <button class="btn-sm" id="btnGaLolLoss" style="background: #dc2626; color: #fff;">💀 +Niederlage</button>
+            <button class="btn-sm warn" id="btnGaLolClearMatches">🗑️ Historie leeren</button>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 6px; border-top: 1px solid rgba(200,170,110,0.2);">
+            <label class="checkbox-row"><input type="checkbox" id="gaLolMapCover" /><span>🛡️ <strong>Map Streamer-Modus</strong> (Minimap verdecken)</span></label>
+            <input type="text" id="gaLolMapCoverText" placeholder="Minimap verdeckt • Kein Ghosting" style="flex: 1; min-width: 170px;" />
+            <button class="btn-sm" id="btnGaCopyMapUrl" title="OBS Browser-Quelle für das Minimap-Cover (z. B. 280×280)">🔗 OBS /lol-map URL</button>
+          </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">

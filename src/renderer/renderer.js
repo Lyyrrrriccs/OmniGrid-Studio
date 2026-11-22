@@ -4376,6 +4376,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
     const lolMatchBox = document.getElementById('gaLolMatchControls');
     if (lolMatchBox) lolMatchBox.classList.toggle('hidden', addon.id !== 'lol');
+    const chkMapCover = document.getElementById('gaLolMapCover');
+    const txtMapCover = document.getElementById('gaLolMapCoverText');
+    if (chkMapCover) chkMapCover.checked = Boolean(gaState.perAddonStats?.lol?.mapCoverEnabled);
+    if (txtMapCover) txtMapCover.value = gaState.perAddonStats?.lol?.mapCoverText || 'Minimap verdeckt • Kein Ghosting';
 
     if (!fieldsEl) return;
     fieldsEl.innerHTML = '';
@@ -4425,6 +4429,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         const k = inp.dataset.gaKey;
         nextAddonStats[k] = inp.dataset.gaType === 'number' ? (parseInt(inp.value || '0', 10) || 0) : inp.value;
       });
+      if (addon.id === 'lol') {
+        nextAddonStats.mapCoverEnabled = Boolean(document.getElementById('gaLolMapCover')?.checked);
+        nextAddonStats.mapCoverText = document.getElementById('gaLolMapCoverText')?.value.trim() || 'Minimap verdeckt • Kein Ghosting';
+      }
       gaState.perAddonStats = { ...(gaState.perAddonStats || {}), [addon.id]: nextAddonStats };
     }
     const res = await window.omnichat.gameAddonsSave(gaState);
@@ -4463,6 +4471,14 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
   document.getElementById('btnGaSave')?.addEventListener('click', saveFromForm);
+  document.getElementById('gaLolMapCover')?.addEventListener('change', saveFromForm);
+  document.getElementById('btnGaCopyMapUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-map');
+    if (statusEl) {
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = '🔗 http://127.0.0.1:4588/lol-map kopiert! (In OBS über die Minimap legen, z. B. 280×280)';
+    }
+  });
   document.getElementById('btnGaExportCs2')?.addEventListener('click', async () => {
     const res = await window.omnichat.gameAddonsExportCs2Gsi();
     if (res?.ok && statusEl) {

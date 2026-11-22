@@ -1710,6 +1710,18 @@ app.whenReady().then(async () => {
       return { ok: true, addonId: addon.id, key, value: cur[key] };
     }
 
+    if (act === 'lol-map-cover') {
+      const cfg = loadConfig();
+      const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+      const lol = ga.perAddonStats.lol || {};
+      lol.mapCoverEnabled = !Boolean(lol.mapCoverEnabled);
+      ga.perAddonStats.lol = lol;
+      cfg.gameAddons = ga;
+      saveConfig(cfg);
+      broadcastGameAddonsState(cfg);
+      return { ok: true, mapCoverEnabled: lol.mapCoverEnabled };
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -2047,7 +2059,9 @@ app.whenReady().then(async () => {
             assists: Number(me.scores?.assists || 0),
             cs: Number(me.scores?.creepScore || 0),
             level: Number(ap?.level || me.level || 1),
-            recentMatches
+            recentMatches,
+            mapCoverEnabled: Boolean(prevLol.mapCoverEnabled),
+            mapCoverText: String(prevLol.mapCoverText || 'Minimap verdeckt • Kein Ghosting')
           };
           cfg.gameAddons = ga;
           saveConfig(cfg);

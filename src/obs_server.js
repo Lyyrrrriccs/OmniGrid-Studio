@@ -2030,6 +2030,99 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_LOL_MAP_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — LoL Map Streamer-Modus</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100vw; height: 100vh; background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f0e6d2; overflow: hidden; }
+    .map-cover {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(155deg, rgba(9, 20, 40, 0.98) 0%, rgba(1, 10, 19, 0.99) 100%);
+      border: 2.5px solid #c8aa6e;
+      box-shadow: inset 0 0 0 1px rgba(200,170,110,0.35), inset 0 0 28px rgba(10,200,185,0.22);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      transition: opacity 0.25s ease;
+    }
+    .map-cover.hidden { opacity: 0; pointer-events: none; }
+    .map-cover::before, .map-cover::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2.5px solid #0ac8b9; pointer-events: none; z-index: 2; }
+    .map-cover::before { top: 4px; left: 4px; border-right: none; border-bottom: none; }
+    .map-cover::after { bottom: 4px; right: 4px; border-left: none; border-top: none; }
+    .map-splash { position: absolute; inset: 0; background-size: cover; background-position: center 20%; opacity: 0.34; filter: saturate(1.15) blur(1px); z-index: 0; }
+    .map-splash::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(9,20,40,0.45) 0%, rgba(1,10,19,0.92) 100%); }
+    .map-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .map-icon { width: 64px; height: 64px; border-radius: 6px; border: 2px solid #c8aa6e; box-shadow: 0 0 18px rgba(10,200,185,0.45); object-fit: cover; object-position: center 15%; background: #091428; }
+    .map-badge { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #0ac8b9; background: rgba(10,200,185,0.14); border: 1px solid rgba(10,200,185,0.5); padding: 3px 10px; border-radius: 3px; }
+    .map-title { font-family: Georgia, "Times New Roman", serif; font-size: 16px; font-weight: 800; color: #f0e6d2; letter-spacing: 0.04em; text-shadow: 0 2px 8px rgba(0,0,0,0.9); }
+    .map-sub { font-size: 11.5px; color: #c8aa6e; font-weight: 600; max-width: 90%; line-height: 1.35; }
+  </style>
+</head>
+<body>
+  <div class="map-cover hidden" id="mapCover">
+    <div class="map-splash" id="mapSplash"></div>
+    <div class="map-inner">
+      <img class="map-icon" id="mapIcon" alt="" style="display:none;" />
+      <div class="map-badge">🛡️ Streamer-Modus</div>
+      <div class="map-title" id="mapTitle">MINIMAP VERDECKT</div>
+      <div class="map-sub" id="mapSub">Minimap verdeckt • Kein Ghosting</div>
+    </div>
+  </div>
+  <script>
+    const coverEl = document.getElementById('mapCover');
+    const splashEl = document.getElementById('mapSplash');
+    const iconEl = document.getElementById('mapIcon');
+    const titleEl = document.getElementById('mapTitle');
+    const subEl = document.getElementById('mapSub');
+
+    function renderMapCover(data) {
+      if (!data) return;
+      const show = Boolean(data.mapCoverEnabled);
+      coverEl.classList.toggle('hidden', !show);
+      subEl.textContent = data.mapCoverText || 'Minimap verdeckt • Kein Ghosting';
+      const iconUrl = data.skinIconUrl || data.championIconUrl;
+      if (iconUrl) {
+        iconEl.style.display = 'block';
+        iconEl.src = iconUrl;
+      } else {
+        iconEl.style.display = 'none';
+      }
+      splashEl.style.backgroundImage = data.skinSplashUrl ? 'url("' + data.skinSplashUrl + '")' : 'none';
+      titleEl.textContent = data.champion ? data.champion.toUpperCase() : 'MINIMAP VERDECKT';
+    }
+
+    function fetchLatest() {
+      fetch('/api/game-stats')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && d.addonId) renderMapCover(d); })
+        .catch(() => {});
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'game-stats') renderMapCover(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest();
+    connectWs();
+    setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -2180,6 +2273,8 @@ class ObsServer {
           res.end(OBS_SOUNDBOARD_HTML);
         } else if (urlPath === '/game-stats') {
           res.end(OBS_GAME_STATS_HTML);
+        } else if (urlPath === '/lol-map') {
+          res.end(OBS_LOL_MAP_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }

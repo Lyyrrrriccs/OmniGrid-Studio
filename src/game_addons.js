@@ -7,7 +7,7 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
   perAddonStats: {
     universal: { kills: 0, deaths: 0, wins: 0, rank: 'Live' },
     cs2: { kills: 0, deaths: 0, assists: 0, mvps: 0, map: 'Mirage', score: '0 : 0' },
-    lol: { champion: 'Ahri', skinId: 0, skinName: '', championIconUrl: '', skinSplashUrl: '', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1, recentMatches: [] },
+    lol: { champion: 'Ahri', skinId: 0, skinName: '', championIconUrl: '', skinIconUrl: '', skinSplashUrl: '', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1, recentMatches: [], mapCoverEnabled: false, mapCoverText: 'Minimap verdeckt • Kein Ghosting' },
     minecraft: { deaths: 0, diamonds: 0, days: 1, mode: 'Survival' },
     souls: { deaths: 0, bosses: 0, run: 'Any%', bossName: 'Aktueller Boss' },
     valorant: { kills: 0, deaths: 0, wins: 0, rank: 'Diamond', agent: 'Jett' }
@@ -197,6 +197,8 @@ function buildObsGameStatsPayload(cfg = {}) {
     skinIconUrl: stats.skinIconUrl || '',
     skinSplashUrl: stats.skinSplashUrl || '',
     recentMatches: Array.isArray(stats.recentMatches) ? stats.recentMatches.slice(0, 6) : [],
+    mapCoverEnabled: Boolean(stats.mapCoverEnabled),
+    mapCoverText: String(stats.mapCoverText || 'Minimap verdeckt • Kein Ghosting'),
     stats: displayStats,
     chatCommands: addon.chatCommands
   };
