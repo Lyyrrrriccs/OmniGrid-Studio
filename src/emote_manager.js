@@ -1,7 +1,7 @@
 const https = require('https');
 
 /**
- * Full-Featured Multi-Provider Emote Engine for OmniStream Chat
+ * Full-Featured Multi-Provider Emote Engine for OmniGrid Studio
  * Supports:
  * - 7TV Global & Channel Emotes (v3 API, preserving animated WebP/GIF formats!)
  * - BetterTTV (BTTV) Global & Channel Emotes (preserving animated GIF/WebP!)

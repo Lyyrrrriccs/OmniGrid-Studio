@@ -7,7 +7,7 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniChat OBS Stream-Overlay</title>
+  <title>OmniGrid OBS Stream-Overlay</title>
   <style>
     :root {
       --name-size: 14px;
@@ -326,7 +326,7 @@ const OBS_CUSTOM_DOCK_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OmniStream Chat — OBS Custom Dock</title>
+  <title>OmniGrid Studio — OBS Custom Dock</title>
   <style>
     :root {
       --name-size: 13px;
@@ -547,7 +547,7 @@ const OBS_CUSTOM_DOCK_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <div class="dock-header">
-    <div class="dock-title">⚡ OmniChat Dock <span id="totalViewers" style="color:#34d399;"></span></div>
+    <div class="dock-title">⚡ OmniGrid Dock <span id="totalViewers" style="color:#34d399;"></span></div>
     <div class="status-dots">
       <span class="s-pill" id="sp_twitch"><span class="s-dot"></span>TW</span>
       <span class="s-pill" id="sp_youtube"><span class="s-dot"></span>YT</span>
@@ -720,7 +720,7 @@ const OBS_SPOTIFY_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniStream Spotify Overlay</title>
+  <title>OmniGrid Spotify Overlay</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -831,7 +831,7 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>OmniStream Tablet Companion</title>
+  <title>OmniGrid Tablet Companion</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
@@ -1012,7 +1012,7 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <header class="tb-header">
-    <div class="tb-brand">⚡ OmniStream Tablet</div>
+    <div class="tb-brand">⚡ OmniGrid Tablet</div>
     <div class="tb-pills">
       <span class="tb-sp-pill" id="tbSpotify">🎵 Spotify: Warte...</span>
       <span class="tb-pill" id="tbTw"><span class="tb-dot"></span>TW <strong id="tbTwV">0</strong></span>
@@ -1187,7 +1187,7 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniStream OBS Alert Overlay</title>
+  <title>OmniGrid OBS Alert Overlay</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -1414,7 +1414,7 @@ const OBS_GOALS_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniStream Chat — OBS Goal-Bar</title>
+  <title>OmniGrid Studio — OBS Goal-Bar</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: transparent !important; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
@@ -1517,7 +1517,7 @@ const OBS_POLL_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniStream Chat — OBS Multistream Poll</title>
+  <title>OmniGrid Studio — OBS Multistream Poll</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: transparent !important; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
@@ -1615,7 +1615,7 @@ const OBS_SCHEDULE_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniStream Schedule Overlay</title>
+  <title>OmniGrid Schedule Overlay</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
@@ -1706,7 +1706,7 @@ const OBS_GIVEAWAY_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniStream Giveaway Overlay</title>
+  <title>OmniGrid Giveaway Overlay</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
@@ -1788,7 +1788,7 @@ const OBS_GIVEAWAY_HTML = `<!DOCTYPE html>
 
 const OBS_SOUNDBOARD_HTML = `<!DOCTYPE html>
 <html lang="de">
-<head><meta charset="UTF-8" /><title>OmniStream Soundboard</title></head>
+<head><meta charset="UTF-8" /><title>OmniGrid Soundboard</title></head>
 <body style="background:transparent;">
   <script>
     function playSoundPayload(s) {

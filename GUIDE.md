@@ -1,4 +1,4 @@
-# 📖 OmniStream Chat — Complete User Guide (English)
+# 📖 OmniGrid Studio — Complete User Guide (English)
 
 🌐 [Back to Overview (README.md)](./README.md) | [Deutsche Anleitung (ANLEITUNG.md)](./ANLEITUNG.md)
 
@@ -6,8 +6,8 @@
 
 ## 1. Launching the App (No Terminal Required)
 
-- **macOS:** Double-click `dist/OmniStreamChat.app` (or drag it to `/Applications`).
-- **Windows:** Copy the `dist/OmniStreamChat-win32-x64` folder to your streaming PC and double-click `OmniStreamChat.exe`.
+- **macOS:** Double-click `dist/OmniGridStudio.app` (or drag it to `/Applications`).
+- **Windows:** Copy the `dist/OmniGridStudio-win32-x64` folder to your streaming PC and double-click `OmniGridStudio.exe`.
 
 > **Tip:** All settings, channels, and window positions are automatically persisted and restored on restart.
 
@@ -57,7 +57,7 @@ In the **"🎨 Kompaktes Chatdesign"** sidebar section, customize everything **w
 ### Option A — OBS Custom Browser Dock (Inside OBS)
 1. Copy the **Dock URL** (`http://127.0.0.1:4588/dock`) from **"🎥 5. OBS-Integration"**.
 2. In OBS Studio, open **View → Docks → Custom Browser Docks**.
-3. Enter a dock name (e.g., `OmniStream Chat`), paste the URL, and click **Apply**.
+3. Enter a dock name (e.g., `OmniGrid Studio`), paste the URL, and click **Apply**.
    *Works across all OBS scenes!*
 
 ### Option B — Standalone Full-Height Window Left of OBS
@@ -96,15 +96,15 @@ In the **"🎨 Kompaktes Chatdesign"** sidebar section, customize everything **w
 
 1. Open the **Elgato Stream Deck** app.
 2. Drag **System → Website** onto any key.
-3. In OmniStream Chat under **"🎛️ Stream Deck Integration"**, click **📋 URL** next to your desired action (e.g., `Pin latest message to OBS` or your custom quick-chat generator).
+3. In OmniGrid Studio under **"🎛️ Stream Deck Integration"**, click **📋 URL** next to your desired action (e.g., `Pin latest message to OBS` or your custom quick-chat generator).
 4. Paste the URL into Stream Deck and **enable "GET request in background"**.
-5. Use **▶ Test** inside OmniStream Chat to verify any action immediately.
+5. Use **▶ Test** inside OmniGrid Studio to verify any action immediately.
 
 ---
 
 ## 8. Peripheral Selection (2nd Keyboard, 2nd Mouse & Global Hotkeys)
 
-Under **"⌨️ Peripherie-Auswahl (Zweitgeräte)"**, you can bind a dedicated secondary USB keyboard, numpad/macro pad, or mouse exclusively to OmniStream Chat:
+Under **"⌨️ Peripherie-Auswahl (Zweitgeräte)"**, you can bind a dedicated secondary USB keyboard, numpad/macro pad, or mouse exclusively to OmniGrid Studio:
 1. Click **"🔍 Scannen"** to list all connected USB keyboards and mice.
 2. **2nd Keyboard (`🔌 Verbinden`):**
    - **Mode `Chat tippen + F1–F4 Makros`:** Type a chat message directly on your secondary keyboard and press `Enter` to send without alt-tabbing out of your game. `F1`–`F4` trigger Pin, Unpin, Clear Chat, and Compact Mode.
@@ -116,7 +116,7 @@ Under **"⌨️ Peripherie-Auswahl (Zweitgeräte)"**, you can bind a dedicated s
 
 ## 9. Spotify Live & `!song` Chat Bot
 
-Under **"🎵 Spotify Live & !song Bot"**, OmniStream Chat reads the current track directly from your local Spotify desktop app (zero API key setup!):
+Under **"🎵 Spotify Live & !song Bot"**, OmniGrid Studio reads the current track directly from your local Spotify desktop app (zero API key setup!):
 - **Live Controls:** **⏮ / ⏯ / ⏭** and **📢 Announce current track in Twitch chat**.
 - **Automatic `!song` / `!music` Bot:** When a viewer types `!song` or `!music` in Twitch chat, the app automatically replies with the current artist & track *(with a 15s anti-spam cooldown)*.
 - **OBS Spotify Widget:** Add `http://127.0.0.1:4588/spotify` as an OBS Browser Source (e.g., `420 × 80`) to display a transparent Now-Playing card with album art on stream.
@@ -138,9 +138,9 @@ Some Wi-Fi networks (guest Wi-Fi, dorms, hotels, or routers with "AP/Client Isol
 2. **Install on your Phone or Tablet:**
    - Download the **Tailscale** app from the Apple App Store or Google Play Store.
    - Sign in with the **exact same account** and turn the toggle **On / Connected**.
-3. **Restart OmniStream Chat:**
-   - Quit and reopen OmniStream Chat on your PC/Mac so it detects your new Tailscale address.
-4. **Switch to Tailscale in OmniStream Chat:**
+3. **Restart OmniGrid Studio:**
+   - Quit and reopen OmniGrid Studio on your PC/Mac so it detects your new Tailscale address.
+4. **Switch to Tailscale in OmniGrid Studio:**
    - Scroll to **"📱 Tablet & iPad Companion"** in the left sidebar.
    - Use the small dropdown above the link and select **"Tailscale / VPN (100.x.x.x)"**.
    - The QR code and URL update automatically.
@@ -149,8 +149,8 @@ Some Wi-Fi networks (guest Wi-Fi, dorms, hotels, or routers with "AP/Client Isol
 
 **Quick Checklist if it still won't load:**
 - ✅ Make sure the address bar starts with **`http://`** (not `https://`!).
-- ✅ **macOS:** Go to *System Settings → Privacy & Security → Local Network* and make sure **OmniStreamChat** is enabled.
-- ✅ **Windows:** Allow **OmniStreamChat** through Windows Defender Firewall when prompted.
+- ✅ **macOS:** Go to *System Settings → Privacy & Security → Local Network* and make sure **OmniGridStudio** is enabled.
+- ✅ **Windows:** Allow **OmniGridStudio** through Windows Defender Firewall when prompted.
 - ✅ Verify in the Tailscale app that **both** devices show as *Connected* under the same account.
 
 ---
@@ -179,7 +179,7 @@ All setup options you don't need to touch mid-stream live cleanly inside **⚙�
 ## 13. Twitch Clip, Stream-Marker & OBS WebSocket v5
 
 - **🎬 Twitch Clip & 🚩 Marker:** Triggered from the left sidebar, `/tablet`, or Stream Deck (`/clip`, `/marker?description=Highlight`, `/clip-and-marker?description=Highlight`). *(Requires `clips:edit` and `channel:manage:broadcast` scopes in your Twitch token.)*
-- **🎛️ OBS WebSocket v5:** Enable *Tools → WebSocket Server Settings* in OBS Studio (port `4455`), enter host/password under **⚙️ Config → 🎥 OBS & Alerts**, and control scenes, **💾 Replay**, **🎙️ Mic**, **🔴 Rec**, and **📡 Stream** from OmniStream Chat, `/tablet`, or Stream Deck.
+- **🎛️ OBS WebSocket v5:** Enable *Tools → WebSocket Server Settings* in OBS Studio (port `4455`), enter host/password under **⚙️ Config → 🎥 OBS & Alerts**, and control scenes, **💾 Replay**, **🎙️ Mic**, **🔴 Rec**, and **📡 Stream** from OmniGrid Studio, `/tablet`, or Stream Deck.
 
 ---
 
@@ -197,7 +197,7 @@ All setup options you don't need to touch mid-stream live cleanly inside **⚙�
 Update your **Twitch** and **YouTube** stream metadata at once right from the sidebar:
 1. Click **🎛️ Stream-Manager** in the sidebar.
 2. Enter your new **Stream Title**, **Game / Category** (with live Twitch category search), and up to 10 **Tags**.
-3. Click **Apply to Twitch & YouTube** — OmniStream Chat updates both your Twitch channel (Helix API) and your active YouTube Live broadcast (YouTube Data API v3 via OAuth2).
+3. Click **Apply to Twitch & YouTube** — OmniGrid Studio updates both your Twitch channel (Helix API) and your active YouTube Live broadcast (YouTube Data API v3 via OAuth2).
 
 ---
 

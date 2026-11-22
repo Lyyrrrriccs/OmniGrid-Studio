@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ OmniStream Chat
+# ⚡ OmniGrid Studio
 
 **Plattformübergreifender Multistream-Chat-Aggregator für Twitch, YouTube Live & TikTok Live**  
 *Für Windows & macOS — mit animierten 7TV/BTTV/FFZ-Emotes, OBS Custom Browser Dock, Event-Hervorhebung, Schnellmoderation & Elgato Stream Deck Integration.*
@@ -17,7 +17,7 @@
 
 ---
 
-## 💡 Warum OmniStream Chat? (Abgrenzung & Gesamt-Suite)
+## 💡 Warum OmniGrid Studio? (Abgrenzung & Gesamt-Suite)
 
 Normalerweise müssen Multistreamer **4 bis 6 verschiedene Programme und kostenpflichtige Cloud-Dienste** kombinieren:
 - **Restream / Streamlabs / StreamElements** für Chat & Alerts (Cloud-Zwang, Monatsabos, kein lokales 9:16-FFmpeg-Schnittstudio, keine WebHID-Zweittastatur-Steuerung, kein LAN-Tablet-Cockpit).
@@ -25,7 +25,7 @@ Normalerweise müssen Multistreamer **4 bis 6 verschiedene Programme und kostenp
 - **Eklipse.gg / OpusClip / CapCut** für vertikale 9:16-Shorts (Cloud-Uploads, Wasserzeichen/Limits, komplett getrennt vom OBS Replay-Buffer & Live-Chat).
 - **Pingcord / MEE6 / Buffer** für Go-Live-Posts & Sendepläne (separate Bots/Dienste, kein eingebauter 1080×1350-Grafik-Generator oder Multi-Plattform-Sync).
 
-**OmniStream Chat führt all das in einer 100 % lokalen Desktop-Suite zusammen (macOS & Windows, ohne Abo):**
+**OmniGrid Studio führt all das in einer 100 % lokalen Desktop-Suite zusammen (macOS & Windows, ohne Abo):**
 - **Einheitliches Live-Cockpit:** Twitch, YouTube Live & TikTok Live Chat + Moderation + 7TV/BTTV/FFZ-Emotes + **Chat-Hype-Detektor** (automatische Twitch-Marker & OBS-Replays).
 - **Broadcast- & Overlay-Zentrale:** OBS WebSocket v5 Steuerung + lokale Overlays (`/`, `/dock`, `/alerts`, `/goals`, `/poll`, `/spotify`, `/schedule`, `/giveaway`, `/soundboard`) + **Integriertes Soundboard** + **Live-Giveaway-Rad** + **Tablet Companion** + **Stream Deck API**.
 - **Clips & Community-Wachstum:** Eingebautes **FFmpeg Clip- & 9:16-Shorts-Studio** (visueller Scrubber + Direkt-Upload zu YouTube/TikTok) + **Discord, Go-Live & Sendeplan-Studio** (Discord-Embeds, X API v2, Instagram Graph API + PNG-Generator, Bluesky, Mastodon, Twitch Schedule, `.ics`-Kalender).
@@ -56,8 +56,8 @@ Normalerweise müssen Multistreamer **4 bis 6 verschiedene Programme und kostenp
 ## 🚀 Installation & Schnellstart
 
 ### Option 1: Fertige Desktop-App (ohne Terminal starten)
-- **macOS:** Doppelklick auf `dist/OmniStreamChat.app` (oder in den Ordner `Programme` ziehen).
-- **Windows:** Den Ordner `dist/OmniStreamChat-win32-x64` kopieren und direkt auf `OmniStreamChat.exe` doppelklicken.
+- **macOS:** Doppelklick auf `dist/OmniGridStudio.app` (oder in den Ordner `Programme` ziehen).
+- **Windows:** Den Ordner `dist/OmniGridStudio-win32-x64` kopieren und direkt auf `OmniGridStudio.exe` doppelklicken.
 
 ### Option 2: Aus dem Quellcode starten
 ```bash
@@ -73,8 +73,8 @@ npm run demo    # Mit simuliertem Multistream-Demo-Chat starten
 ## 🛠️ Standalone-Apps bauen
 
 ```bash
-npm run build:mac   # Erstellt dist/OmniStreamChat.app
-npm run build:win   # Erstellt dist/OmniStreamChat-win32-x64/OmniStreamChat.exe
+npm run build:mac   # Erstellt dist/OmniGridStudio.app
+npm run build:win   # Erstellt dist/OmniGridStudio-win32-x64/OmniGridStudio.exe
 ```
 
 ---

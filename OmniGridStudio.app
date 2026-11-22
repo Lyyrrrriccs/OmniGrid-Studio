@@ -1,0 +1,1 @@
+/Users/tobiasvogele/Desktop/coding/omni-stream-chat/dist/OmniGridStudio.app

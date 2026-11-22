@@ -741,9 +741,9 @@ class TwitchConnector extends EventEmitter {
     };
   }
 
-  async createStreamMarker(description = 'OmniStream Highlight') {
+  async createStreamMarker(description = 'OmniGrid Highlight') {
     const broadcasterId = await this._resolveBroadcasterId();
-    const cleanDesc = String(description || 'OmniStream Highlight').trim().slice(0, 140);
+    const cleanDesc = String(description || 'OmniGrid Highlight').trim().slice(0, 140);
     const resp = await this._helixRequest('POST', '/helix/streams/markers', {
       user_id: broadcasterId,
       description: cleanDesc

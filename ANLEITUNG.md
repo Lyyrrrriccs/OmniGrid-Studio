@@ -1,4 +1,4 @@
-# 📖 OmniStream Chat — Ausführliche Benutzeranleitung (Deutsch)
+# 📖 OmniGrid Studio — Ausführliche Benutzeranleitung (Deutsch)
 
 🌐 [Zurück zur Übersicht (README.de.md)](./README.de.md) | [English Guide (GUIDE.md)](./GUIDE.md)
 
@@ -6,8 +6,8 @@
 
 ## 1. Programm starten (ohne Terminal)
 
-- **macOS:** Doppelklicke auf `dist/OmniStreamChat.app` (oder die Verknüpfung `OmniStreamChat.app`).
-- **Windows:** Kopiere den Ordner `dist/OmniStreamChat-win32-x64` auf deinen Streaming-PC und doppelklicke auf `OmniStreamChat.exe`.
+- **macOS:** Doppelklicke auf `dist/OmniGridStudio.app` (oder die Verknüpfung `OmniGridStudio.app`).
+- **Windows:** Kopiere den Ordner `dist/OmniGridStudio-win32-x64` auf deinen Streaming-PC und doppelklicke auf `OmniGridStudio.exe`.
 
 > **Tipp:** Alle Einstellungen, Kanäle und Fensterpositionen werden automatisch gespeichert und beim nächsten Start wiederhergestellt.
 
@@ -32,7 +32,7 @@
 4. **Optional — In den YouTube-Chat schreiben (Google OAuth2):**
    - Öffne in der YouTube-Karte **„🔑 YouTube Schreiben (OAuth2)“**.
    - Aktiviere einmalig in deiner [Google Cloud Console](https://console.cloud.google.com/) die **YouTube Data API v3** und erstelle unter *Anmeldedaten* eine **OAuth-Client-ID** vom Typ **Desktop-App** *(warum individuell? Google verlangt für zentrale Apps mit `youtube.force-ssl`-Schreibrechten ein strenges App-Audit, und mit einer eigenen Client-ID nutzt jeder Streamer sein eigenes kostenloses 10.000-Units/Tag-Quota)*.
-   - Trage die **Client-ID** (und optional das **Client-Secret**) ein und klicke auf **„🔐 Mit Google anmelden“**. Danach kannst du direkt aus OmniStream Chat und per `!song`-Bot in den YouTube-Livechat schreiben.
+   - Trage die **Client-ID** (und optional das **Client-Secret**) ein und klicke auf **„🔐 Mit Google anmelden“**. Danach kannst du direkt aus OmniGrid Studio und per `!song`-Bot in den YouTube-Livechat schreiben.
 
 ### 🎵 TikTok Live
 1. Gib deinen **TikTok-@Benutzernamen** ein.
@@ -57,7 +57,7 @@ Links unter **„🎨 Kompaktes Chatdesign & Darstellung“** stellst du alles *
 ### Option A — OBS Custom Browser Dock (im OBS-Fenster)
 1. Kopiere in der App unter **„🎥 5. OBS-Integration“** den **Dock-Link** (`http://127.0.0.1:4588/dock`).
 2. Öffne in OBS Studio: **Ansicht → Docks → Benutzerdefinierte Browser-Docks**.
-3. Vergib einen Namen (z. B. `OmniStream Chat`), füge die URL ein und klicke **Anwenden**.
+3. Vergib einen Namen (z. B. `OmniGrid Studio`), füge die URL ein und klicke **Anwenden**.
    *Der Chat läuft unabhängig von deiner gewählten OBS-Szene!*
 
 ### Option B — Eigenständiges Vollhöhen-Fenster links neben OBS
@@ -96,15 +96,15 @@ Ein **Links- oder Rechtsklick** auf eine beliebige Nachricht öffnet das kompakt
 
 1. Öffne die **Elgato Stream Deck App**.
 2. Ziehe die Aktion **System → Website** auf eine freie Taste.
-3. Kopiere in OmniStream Chat unter **„🎛️ Stream Deck Integration“** die gewünschte URL (z. B. `📌 Letzte Nachricht in OBS pinnen` oder deinen eigenen Quick-Chat-Text wie `!discord`).
+3. Kopiere in OmniGrid Studio unter **„🎛️ Stream Deck Integration“** die gewünschte URL (z. B. `📌 Letzte Nachricht in OBS pinnen` oder deinen eigenen Quick-Chat-Text wie `!discord`).
 4. Füge die URL in der Stream Deck App ein und **aktiviere den Haken „Anfrage im Hintergrund senden“**.
-5. Mit **„▶ Test“** in OmniStream Chat kannst du jede Aktion sofort vorab prüfen.
+5. Mit **„▶ Test“** in OmniGrid Studio kannst du jede Aktion sofort vorab prüfen.
 
 ---
 
 ## 8. Peripherie-Auswahl (Zweittastatur, Zweitmaus & Globale Hotkeys)
 
-Unter **„⌨️ Peripherie-Auswahl (Zweitgeräte)“** kannst du eine separate USB-Tastatur, ein Numpad/Makro-Pad oder eine Zweitmaus exklusiv für OmniStream Chat nutzen:
+Unter **„⌨️ Peripherie-Auswahl (Zweitgeräte)“** kannst du eine separate USB-Tastatur, ein Numpad/Makro-Pad oder eine Zweitmaus exklusiv für OmniGrid Studio nutzen:
 1. Klicke auf **„🔍 Scannen“**, um alle angeschlossenen USB-Geräte einzulesen.
 2. **Zweittastatur (`🔌 Verbinden`):**
    - **Modus `Chat tippen + F1–F4 Makros`:** Tippe direkt eine Chat-Nachricht auf der Zweittastatur und sende sie mit `Enter`, ohne dein Spiel zu verlassen. `F1`–`F4` steuern Pin, Unpin, Chat leeren und Kompakt-Modus.
@@ -118,7 +118,7 @@ Unter **„⌨️ Peripherie-Auswahl (Zweitgeräte)“** kannst du eine separate
 
 Unter **„🎵 Spotify Live & !song Bot“** liest die App den aktuellen Song direkt aus deiner lokalen Spotify-Desktop-App aus (ohne API-Key!):
 - **Live-Steuerung:** **⏮ / ⏯ / ⏭** und **📢 Song in den Twitch-Chat posten**.
-- **Automatischer `!song` / `!music` Bot:** Schreibt ein Zuschauer auf Twitch `!song` oder `!music`, antwortet OmniStream Chat automatisch mit dem aktuellen Track *(15s Anti-Spam-Cooldown)*.
+- **Automatischer `!song` / `!music` Bot:** Schreibt ein Zuschauer auf Twitch `!song` oder `!music`, antwortet OmniGrid Studio automatisch mit dem aktuellen Track *(15s Anti-Spam-Cooldown)*.
 - **OBS Spotify-Widget:** Füge `http://127.0.0.1:4588/spotify` als Browser-Quelle (z. B. `420 × 80`) in OBS ein, um den aktuellen Song samt Cover transparent im Stream anzuzeigen.
 
 ---
@@ -138,10 +138,10 @@ Manche WLANs (z. B. Gäste-WLAN, Wohnheim, Hotel, Router mit „Geräte dürfen 
 2. **Auf dem Handy oder Tablet installieren:**
    - Lade die App **Tailscale** aus dem Apple App Store oder Google Play Store herunter.
    - Melde dich dort mit **genau demselben Konto** an und schalte den VPN-Schalter in der Tailscale-App auf **Ein / Verbunden**.
-3. **OmniStream Chat kurz neu starten:**
-   - Beende OmniStream Chat auf dem PC/Mac und öffne es neu, damit es deine neue Tailscale-Adresse erkennt.
+3. **OmniGrid Studio kurz neu starten:**
+   - Beende OmniGrid Studio auf dem PC/Mac und öffne es neu, damit es deine neue Tailscale-Adresse erkennt.
 4. **In der App auf Tailscale umschalten:**
-   - Scrolle in OmniStream Chat links zu **„📱 Tablet & iPad Companion“**.
+   - Scrolle in OmniGrid Studio links zu **„📱 Tablet & iPad Companion“**.
    - Klicke über dem Link auf das kleine Auswahlfeld und wähle **„Tailscale / VPN (100.x.x.x)“** aus.
    - Der QR-Code und der Link aktualisieren sich sofort.
 5. **QR-Code scannen & loslegen:**
@@ -149,7 +149,7 @@ Manche WLANs (z. B. Gäste-WLAN, Wohnheim, Hotel, Router mit „Geräte dürfen 
 
 **Falls es dann immer noch nicht lädt (Schnell-Check):**
 - ✅ Achte darauf, dass im Handy-Browser **`http://`** am Anfang steht (manche Browser machen automatisch `https://` daraus — das funktioniert nicht, es muss **`http://`** sein!).
-- ✅ **macOS:** Öffne *Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk* und prüfe, ob **OmniStreamChat** eingeschaltet ist.
+- ✅ **macOS:** Öffne *Systemeinstellungen → Datenschutz & Sicherheit → Lokales Netzwerk* und prüfe, ob **OmniGridStudio** eingeschaltet ist.
 - ✅ **Windows:** Falls beim Start ein Windows-Firewall-Fenster aufgeht, klicke auf **Zugriff zulassen**.
 - ✅ Prüfe in der Tailscale-App auf beiden Geräten, ob **beide** als *Connected / Verbunden* angezeigt werden.
 
@@ -179,7 +179,7 @@ Alle Einstellungen, die du nicht ständig während des Streams brauchst, liegen 
 ## 13. Twitch Clip, Stream-Marker & OBS WebSocket v5
 
 - **🎬 Twitch Clip & 🚩 Marker:** Direkt in der linken Sidebar, auf `/tablet` oder per Stream Deck (`/clip`, `/marker?description=Highlight`, `/clip-and-marker?description=Highlight`). *(Benötigt die Scopes `clips:edit` bzw. `channel:manage:broadcast` im Twitch-Token.)*
-- **🎛️ OBS WebSocket v5:** Aktiviere in OBS Studio *Werkzeuge → WebSocket-Servereinstellungen* (Port `4455`), trage Host/Passwort unter **⚙️ Config → 🎥 OBS & Alerts** ein und steuere danach Szenen, **💾 Replay**, **🎙️ Mic**, **🔴 Rec** und **📡 Stream** direkt aus OmniStream Chat, `/tablet` oder Stream Deck.
+- **🎛️ OBS WebSocket v5:** Aktiviere in OBS Studio *Werkzeuge → WebSocket-Servereinstellungen* (Port `4455`), trage Host/Passwort unter **⚙️ Config → 🎥 OBS & Alerts** ein und steuere danach Szenen, **💾 Replay**, **🎙️ Mic**, **🔴 Rec** und **📡 Stream** direkt aus OmniGrid Studio, `/tablet` oder Stream Deck.
 
 ---
 
@@ -197,7 +197,7 @@ Alle Einstellungen, die du nicht ständig während des Streams brauchst, liegen 
 Aktualisiere Titel, Spiel/Kategorie und Tags für **Twitch** und **YouTube** gleichzeitig direkt aus der Sidebar:
 1. Klicke in der Sidebar auf **🎛️ Stream-Manager** (oder im Cockpit-Menü).
 2. Gib den neuen **Stream-Titel**, das **Spiel / die Kategorie** (mit Live-Suche über Twitch) sowie bis zu 10 **Tags** ein.
-3. Klicke auf **Auf Twitch & YouTube anwenden** — OmniStream Chat aktualisiert deinen Twitch-Kanal (Helix API) und deinen aktiven YouTube-Livestream (YouTube Data API v3 über OAuth2).
+3. Klicke auf **Auf Twitch & YouTube anwenden** — OmniGrid Studio aktualisiert deinen Twitch-Kanal (Helix API) und deinen aktiven YouTube-Livestream (YouTube Data API v3 über OAuth2).
 
 ---
 
@@ -221,7 +221,7 @@ Verwandle deine **OBS Replay-Buffer**-Aufnahmen oder Stream-Videos ohne externes
 Informiere deine Community automatisch über Stream-Starts und kommende Streams:
 1. **Discord Webhook Add-on:** Hinterlege im Tab **`🔗 Discord & Plattformen`** deine Discord Webhook-URL (optional auch einen zweiten Webhook nur für den Sendeplan) sowie einen Rollen-Ping (`everyone`, `here` oder Role-ID). Aktiviere **Auto-Post bei OBS-Stream-Start**, damit beim Live-Gehen automatisch ein Rich-Embed mit Titel, Spiel & Links gepostet wird.
 2. **X (Twitter), Bluesky, Mastodon & Instagram:**
-   - **X (Twitter) API v2:** Mit deinen 4 OAuth-1.0a-Keys postet OmniStream Chat Go-Live & Sendeplan direkt auf X — alternativ jederzeit per Browser-Share (`𝕏 Auf X (Browser)`).
+   - **X (Twitter) API v2:** Mit deinen 4 OAuth-1.0a-Keys postet OmniGrid Studio Go-Live & Sendeplan direkt auf X — alternativ jederzeit per Browser-Share (`𝕏 Auf X (Browser)`).
    - **Bluesky & Mastodon:** Direktes Posten per App-Passwort bzw. Access-Token.
    - **Instagram:** Nutze **`📸 Instagram Grafik + Quick-Post`** (erzeugt automatisch eine `1080×1350`-PNG-Grafik für Go-Live oder Sendeplan, kopiert Caption + Hashtags und öffnet Instagram) — oder verbinde die **Instagram Graph API** (Business-Account + optionaler ImgBB API-Key für automatischen Grafik-Upload).
 3. **Sendeplan & Zuschauer-Integration:**

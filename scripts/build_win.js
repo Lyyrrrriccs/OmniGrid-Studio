@@ -5,12 +5,12 @@ const { execSync } = require('child_process');
 
 /**
  * Cross-Platform Windows Portable Builder (`npm run build:win`)
- * Builds a complete, standalone Windows 64-bit application folder (`dist/OmniStreamChat-win32-x64/OmniStreamChat.exe`)
+ * Builds a complete, standalone Windows 64-bit application folder (`dist/OmniGridStudio-win32-x64/OmniGridStudio.exe`)
  * directly on macOS OR Windows — ready to double-click on any Windows PC without Node.js or a terminal!
  */
 const rootDir = path.resolve(__dirname, '..');
 const distRoot = path.join(rootDir, 'dist');
-const winOutDir = path.join(distRoot, 'OmniStreamChat-win32-x64');
+const winOutDir = path.join(distRoot, 'OmniGridStudio-win32-x64');
 const cacheDir = path.join(rootDir, '.electron-cache');
 const electronVersion = '33.4.11';
 const winZipName = `electron-v${electronVersion}-win32-x64.zip`;
@@ -55,7 +55,7 @@ function copyRecursiveSync(src, dest) {
 }
 
 async function buildWindowsPortable() {
-  console.log('⚡ Building standalone Windows Application (OmniStreamChat.exe)...');
+  console.log('⚡ Building standalone Windows Application (OmniGridStudio.exe)...');
   fs.rmSync(winOutDir, { recursive: true, force: true });
   fs.mkdirSync(winOutDir, { recursive: true });
 
@@ -77,7 +77,7 @@ async function buildWindowsPortable() {
   fs.mkdirSync(resourcesAppDir, { recursive: true });
 
   fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(resourcesAppDir, 'package.json'));
-  for (const docFile of ['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md']) {
+  for (const docFile of ['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md', 'CHANGELOG.md']) {
     const srcDoc = path.join(rootDir, docFile);
     if (fs.existsSync(srcDoc)) {
       fs.copyFileSync(srcDoc, path.join(resourcesAppDir, docFile));
@@ -89,7 +89,7 @@ async function buildWindowsPortable() {
   }
   const winIcoSrc = path.join(rootDir, 'assets', 'icon.ico');
   if (fs.existsSync(winIcoSrc)) {
-    fs.copyFileSync(winIcoSrc, path.join(winOutDir, 'OmniStreamChat.ico'));
+    fs.copyFileSync(winIcoSrc, path.join(winOutDir, 'OmniGridStudio.ico'));
   }
 
   const nmDest = path.join(resourcesAppDir, 'node_modules');
@@ -99,16 +99,16 @@ async function buildWindowsPortable() {
     copyRecursiveSync(path.join(rootDir, 'node_modules', entry), path.join(nmDest, entry));
   }
 
-  // Rename electron.exe -> OmniStreamChat.exe so the user can double-click it directly!
+  // Rename electron.exe -> OmniGridStudio.exe so the user can double-click it directly!
   const rawExe = path.join(winOutDir, 'electron.exe');
-  const finalExe = path.join(winOutDir, 'OmniStreamChat.exe');
+  const finalExe = path.join(winOutDir, 'OmniGridStudio.exe');
   if (fs.existsSync(rawExe)) {
     fs.renameSync(rawExe, finalExe);
   }
 
-  // Also create a zero-console Windows double-click shortcut (.vbs & .bat) in the project root
-  const vbsLauncher = `Set WshShell = CreateObject("WScript.Shell")\r\nSet fso = CreateObject("Scripting.FileSystemObject")\r\ndir = fso.GetParentFolderName(WScript.ScriptFullName)\r\nexePath = dir & "\\dist\\OmniStreamChat-win32-x64\\OmniStreamChat.exe"\r\nIf fso.FileExists(exePath) Then\r\n  WshShell.Run """" & exePath & """", 1, False\r\nElse\r\n  WshShell.Run "cmd /c cd /d """ & dir & """ && npx electron .", 0, False\r\nEnd If\r\n`;
-  fs.writeFileSync(path.join(rootDir, 'OmniStreamChat-Starten (Windows).vbs'), vbsLauncher, 'utf8');
+  // Also create a zero-console Windows double-click shortcut (.vbs) in the project root
+  const vbsLauncher = `Set WshShell = CreateObject("WScript.Shell")\r\nSet fso = CreateObject("Scripting.FileSystemObject")\r\ndir = fso.GetParentFolderName(WScript.ScriptFullName)\r\nexePath = dir & "\\dist\\OmniGridStudio-win32-x64\\OmniGridStudio.exe"\r\nIf fso.FileExists(exePath) Then\r\n  WshShell.Run """" & exePath & """", 1, False\r\nElse\r\n  WshShell.Run "cmd /c cd /d """ & dir & """ && npx electron .", 0, False\r\nEnd If\r\n`;
+  fs.writeFileSync(path.join(rootDir, 'OmniGridStudio-Starten (Windows).vbs'), vbsLauncher, 'utf8');
 
   console.log(`✅ Standalone Windows App ready: ${finalExe}`);
 }

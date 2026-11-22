@@ -1,6 +1,6 @@
 # Changelog
 
-Alle wichtigen Änderungen und neuen Features von **OmniStream Chat** im Überblick.
+Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überblick.
 
 ---
 
@@ -42,7 +42,7 @@ Alle wichtigen Änderungen und neuen Features von **OmniStream Chat** im Überbl
   - Optionaler Google-OAuth2-Login in der YouTube-Karte zum Senden von Chat-Nachrichten, `!song`-Antworten und Video-Uploads.
 - **Tablet Companion (`/tablet`) & App-Icons:**
   - WLAN/Tailscale-Netzwerk-Umschalter mit QR-Code + `NSLocalNetworkUsageDescription` für macOS.
-  - Eigenes **OmniStream Chat** App-Icon für macOS Dock (`.icns`) und Windows (`.ico`).
+  - Eigenes **OmniGrid Studio** App-Icon für macOS Dock (`.icns`) und Windows (`.ico`).
 
 ---
 

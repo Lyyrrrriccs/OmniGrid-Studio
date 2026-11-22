@@ -2954,7 +2954,7 @@ btnCreateClip?.addEventListener('click', async () => {
 btnCreateMarker?.addEventListener('click', async () => {
   btnCreateMarker.disabled = true;
   btnCreateMarker.textContent = '⏳ Marker...';
-  const desc = inputMarkerDesc?.value.trim() || 'OmniStream Highlight';
+  const desc = inputMarkerDesc?.value.trim() || 'OmniGrid Highlight';
   const res = await window.omnichat.createTwitchMarker(desc);
   btnCreateMarker.disabled = false;
   btnCreateMarker.textContent = '🚩 Marker setzen';
@@ -3875,7 +3875,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     ctx.arc(180, 1140, 360, 0, Math.PI * 2);
     ctx.fill();
 
-    const channel = document.getElementById('inputStreamerName')?.value.trim() || 'OmniStream';
+    const channel = document.getElementById('inputStreamerName')?.value.trim() || 'OmniGrid';
     const title = document.getElementById('ssGoLiveTitle')?.value.trim() || document.getElementById('inputStreamTitle')?.value.trim() || 'Live-Stream';
     const game = document.getElementById('ssGoLiveGame')?.value.trim() || document.getElementById('inputStreamGame')?.value.trim() || 'Just Chatting';
 
@@ -3958,7 +3958,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     const urls = [ssLinks.twitchUrl, ssLinks.youtubeUrl, ssLinks.tiktokUrl].filter(Boolean);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '26px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.fillText(urls.length ? urls.join('   •   ').slice(0, 68) : 'OmniStream Chat', 80, 1260);
+    ctx.fillText(urls.length ? urls.join('   •   ').slice(0, 68) : 'OmniGrid Studio', 80, 1260);
 
     return canvas.toDataURL('image/png');
   }

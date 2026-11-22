@@ -275,7 +275,7 @@ async function postDiscordGoLive(cfg = {}, meta = {}) {
   const primaryUrl = links.twitchUrl || links.youtubeUrl || links.tiktokUrl || undefined;
 
   const payload = {
-    username: `${channel} • OmniStream`,
+    username: `${channel} • OmniGrid`,
     content: `${mentionPrefix}${msgTemplate}`.trim(),
     allowed_mentions: { parse: ['everyone', 'roles'] },
     embeds: [
@@ -284,7 +284,7 @@ async function postDiscordGoLive(cfg = {}, meta = {}) {
         url: primaryUrl,
         color: hexToIntColor(ss.discord.embedColor),
         fields,
-        footer: { text: 'OmniStream Chat • Go-Live Benachrichtigung' },
+        footer: { text: 'OmniGrid Studio • Go-Live Benachrichtigung' },
         timestamp: new Date().toISOString()
       }
     ]
@@ -464,13 +464,13 @@ function buildIcsFeed(cfg = {}) {
   const ss = normalizeSocialScheduleConfig(cfg.socialSchedule);
   const entries = getUpcomingEntries(ss.schedule, 30);
   const links = buildPlatformLinks(cfg);
-  const channel = cfg.streamerName || cfg.twitchChannel || 'OmniStream';
+  const channel = cfg.streamerName || cfg.twitchChannel || 'OmniGrid';
   const primaryUrl = links.twitchUrl || links.youtubeUrl || links.tiktokUrl || '';
 
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//OmniStream Chat//Stream Schedule//DE',
+    'PRODID:-//OmniGrid Studio//Stream Schedule//DE',
     `X-WR-CALNAME:${escapeIcsText(channel)} Stream-Plan`
   ];
 

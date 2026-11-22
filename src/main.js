@@ -253,7 +253,18 @@ function broadcastToWindows(channel, payload) {
 }
 
 function getConfigPath() {
-  return path.join(app.getPath('userData'), 'omnichat-config.json');
+  const userDataDir = app.getPath('userData');
+  const target = path.join(userDataDir, 'omnichat-config.json');
+  if (!fs.existsSync(target)) {
+    const legacyPath = path.join(path.dirname(userDataDir), 'omni-stream-chat', 'omnichat-config.json');
+    if (fs.existsSync(legacyPath)) {
+      try {
+        fs.mkdirSync(userDataDir, { recursive: true });
+        fs.copyFileSync(legacyPath, target);
+      } catch (e) {}
+    }
+  }
+  return target;
 }
 
 let cachedConfig = null;
@@ -531,7 +542,7 @@ function createMainWindow() {
     minHeight: 360,
     backgroundColor: '#0b0f19',
     icon: getAppIconPath(),
-    title: 'OmniStream Chat — Dein Streamer Cockpit (Twitch • YouTube • TikTok)',
+    title: 'OmniGrid Studio — Dein Streamer Cockpit (Twitch • YouTube • TikTok)',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -584,7 +595,7 @@ function openStandaloneChatWindow(snapLeftFullHeight = false) {
     minHeight: 320,
     backgroundColor: '#0b0f19',
     icon: getAppIconPath(),
-    title: 'OmniStream Chat — Standalone Chat-Fenster (Links neben OBS)',
+    title: 'OmniGrid Studio — Standalone Chat-Fenster (Links neben OBS)',
     alwaysOnTop: saved.chatDockAlwaysOnTop !== false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -912,7 +923,7 @@ function forwardChatMessage(msg) {
                   id: `sp_bot_${Date.now()}`,
                   platform: msg.platform || 'twitch',
                   channel: msg.channel || 'demo-live',
-                  author: cfg.streamerName || cfg.twitchUsername || 'OmniStream Bot',
+                  author: cfg.streamerName || cfg.twitchUsername || 'OmniGrid Bot',
                   color: '#1db954',
                   badges: ['BOT'],
                   text: songText,
@@ -1514,7 +1525,7 @@ app.whenReady().then(async () => {
     }
 
     if (act === 'marker') {
-      const desc = String(params.description || body.description || 'OmniStream Highlight').trim();
+      const desc = String(params.description || body.description || 'OmniGrid Highlight').trim();
       if (demoActive) {
         appendDiagLog('twitch', 'info', `🚩 Demo-Marker gesetzt: "${desc}"`);
         return { ok: true, demo: true, description: desc, positionSeconds: 42 };
@@ -1530,7 +1541,7 @@ app.whenReady().then(async () => {
     }
 
     if (act === 'clip-and-marker') {
-      const desc = String(params.description || body.description || 'OmniStream Highlight').trim();
+      const desc = String(params.description || body.description || 'OmniGrid Highlight').trim();
       if (demoActive) {
         const demoUrl = 'https://clips.twitch.tv/DemoHighlightClip';
         appendDiagLog('twitch', 'info', `🎬🚩 Demo Clip + Marker: ${demoUrl} ("${desc}")`);
@@ -1815,7 +1826,7 @@ app.whenReady().then(async () => {
     platformStatus.youtube.canWrite = youtube.canWrite;
     platformStatus.tiktok.enabled = saved.tiktokEnabled !== false;
 
-    appendDiagLog('system', 'info', `OmniStream Chat gestartet — Tablet Companion unter ${tabletUrl}`);
+    appendDiagLog('system', 'info', `OmniGrid Studio gestartet — Tablet Companion unter ${tabletUrl}`);
 
     mainWindow.webContents.send('init-state', {
       config: saved,
@@ -1900,7 +1911,7 @@ app.whenReady().then(async () => {
       minHeight: 420,
       backgroundColor: '#0b0f19',
       icon: getAppIconPath(),
-      title: 'OmniStream Chat — Anleitung & Hilfe',
+      title: 'OmniGrid Studio — Anleitung & Hilfe',
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
         contextIsolation: true,
@@ -2182,7 +2193,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('twitch-create-marker', async (_ev, description) => {
-    const desc = String(description || 'OmniStream Highlight').trim();
+    const desc = String(description || 'OmniGrid Highlight').trim();
     if (demoActive) {
       appendDiagLog('twitch', 'info', `🚩 Demo-Marker gesetzt: "${desc}"`);
       return { ok: true, demo: true, description: desc, positionSeconds: 42 };
@@ -2674,7 +2685,7 @@ app.whenReady().then(async () => {
     const { dialog } = require('electron');
     const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
     const res = await dialog.showSaveDialog(win, {
-      title: 'OmniStream Chat Einstellungen exportieren',
+      title: 'OmniGrid Studio Einstellungen exportieren',
       defaultPath: 'omnichat-backup.json',
       filters: [{ name: 'JSON Konfiguration', extensions: ['json'] }]
     });
@@ -2688,7 +2699,7 @@ app.whenReady().then(async () => {
     const { dialog } = require('electron');
     const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
     const res = await dialog.showOpenDialog(win, {
-      title: 'OmniStream Chat Einstellungen importieren',
+      title: 'OmniGrid Studio Einstellungen importieren',
       properties: ['openFile'],
       filters: [{ name: 'JSON Konfiguration', extensions: ['json'] }]
     });

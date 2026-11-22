@@ -1,7 +1,7 @@
 {
-  "name": "omni-stream-chat",
-  "version": "1.0.0",
-  "description": "Cross-Platform Multistream Chat Aggregator (Twitch, YouTube Live, TikTok Live) for Windows & macOS with OBS Browser Source Server & Always-On-Top Mode",
+  "name": "omnigrid-studio",
+  "version": "1.1.0",
+  "description": "OmniGrid Studio — Local All-in-One Streaming Suite (Multistream Chat, Clip & 9:16 Shorts Studio, OBS Control & Overlays, Discord/Social & Schedule Studio, Giveaway, Soundboard & Hype Detector)",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
