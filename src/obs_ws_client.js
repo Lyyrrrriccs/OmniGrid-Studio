@@ -414,9 +414,9 @@ class ObsWsClient extends EventEmitter {
   async getInputPropertyItems(inputName, propertyName) {
     try {
       const res = await this.call('GetInputPropertiesListPropertyItems', { inputName, propertyName });
-      return res.propertyItems || [];
+      return { ok: true, items: res.propertyItems || [] };
     } catch (e) {
-      return null;
+      return { ok: false, error: e.message };
     }
   }
 
@@ -424,13 +424,24 @@ class ObsWsClient extends EventEmitter {
     const { inputKind, inputSettings } = await this.getInputSettings(inputName);
     const candidateProps = ['type', 'window', 'application', 'display_uuid', 'display', 'device', 'device_id'];
     const properties = {};
-    for (const prop of candidateProps) {
-      const items = await this.getInputPropertyItems(inputName, prop);
-      if (Array.isArray(items) && items.length > 0) {
-        properties[prop] = items;
+    const errors = {};
+    const fetchAll = async () => {
+      for (const prop of candidateProps) {
+        const res = await this.getInputPropertyItems(inputName, prop);
+        if (res.ok) {
+          properties[prop] = res.items;
+        } else {
+          errors[prop] = res.error;
+        }
       }
+    };
+    await fetchAll();
+    // macOS screen_capture loads window/application lists asynchronously on mode switch
+    if (inputKind === 'screen_capture' && ((inputSettings.type === 1 && (!properties.window || properties.window.length === 0)) || (inputSettings.type === 2 && (!properties.application || properties.application.length === 0)))) {
+      await new Promise((r) => setTimeout(r, 300));
+      await fetchAll();
     }
-    return { ok: true, inputKind, inputSettings, properties };
+    return { ok: true, inputKind, inputSettings, properties, errors };
   }
 
   disconnect(emitUpdate = true) {

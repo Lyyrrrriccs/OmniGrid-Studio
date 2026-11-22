@@ -4578,7 +4578,12 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   const sourceConfigBox = document.getElementById('seSourceConfigBox');
   const sourceConfigFields = document.getElementById('seSourceConfigFields');
+  const btnRefreshSourceConfig = document.getElementById('btnSeRefreshSourceConfig');
   let configLoadSeq = 0;
+
+  btnRefreshSourceConfig?.addEventListener('click', () => {
+    if (selectedItem) loadInputConfig(selectedItem);
+  });
 
   const PROP_LABELS = {
     type: '🎛️ Aufnahme-Modus',
@@ -4611,8 +4616,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
     const props = res.properties || {};
     const settings = res.inputSettings || {};
-    const propKeys = ['type', 'window', 'application', 'display_uuid', 'display', 'device', 'device_id']
-      .filter((k) => Array.isArray(props[k]) && props[k].length > 0);
+    const propKeys = ['type', 'display_uuid', 'display', 'window', 'application', 'device', 'device_id']
+      .filter((k) => Array.isArray(props[k]));
     const hasUrl = typeof settings.url === 'string';
 
     sourceConfigFields.innerHTML = '';
@@ -4623,12 +4628,21 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     sourceConfigBox.style.display = 'block';
 
     propKeys.forEach((prop) => {
+      const items = props[prop];
+      // For screen_capture, hide irrelevant lists if empty (e.g. window when in monitor mode),
+      // but always show the list matching the active mode (1=window, 2=application) even if empty.
+      if (items.length === 0 && res.inputKind === 'screen_capture') {
+        const t = Number(settings.type);
+        if (prop === 'window' && t !== 1) return;
+        if (prop === 'application' && t !== 2) return;
+      }
+      if (items.length === 0 && res.inputKind !== 'screen_capture') return;
+
       const wrap = document.createElement('div');
       const lbl = document.createElement('label');
       lbl.style.fontSize = '10px';
       lbl.textContent = PROP_LABELS[prop] || prop;
       const sel = document.createElement('select');
-      const items = props[prop];
       const valMap = new Map();
       let matched = false;
       items.forEach((p, idx) => {
@@ -4647,7 +4661,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (!matched) {
         const ph = document.createElement('option');
         ph.value = '';
-        ph.textContent = '— Bitte wählen —';
+        ph.textContent = items.length ? '— Bitte wählen —' : '— Keine Einträge gefunden —';
         ph.selected = true;
         ph.disabled = true;
         sel.insertBefore(ph, sel.firstChild);
@@ -4663,6 +4677,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         if (upd?.ok) {
           setStatus(`✅ ${PROP_LABELS[prop] || prop} aktualisiert`, '#4ade80');
           if (prop === 'type') {
+            await new Promise((r) => setTimeout(r, 300));
             await loadInputConfig(item);
           }
           refreshPreview();
