@@ -1884,14 +1884,28 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       border-radius: 3px;
       letter-spacing: 0.06em;
     }
+    .gs-card.theme-lol .gs-grid { grid-template-columns: 1.55fr 1fr 0.85fr 0.75fr; gap: 6px; }
     .gs-card.theme-lol .gs-cell {
       background: linear-gradient(180deg, rgba(16, 32, 58, 0.88) 0%, rgba(7, 16, 32, 0.92) 100%);
       border: 1px solid rgba(200, 170, 110, 0.35);
       border-radius: 3px;
+      padding: 5px 6px;
     }
-    .gs-card.theme-lol .gs-lbl { color: #c8aa6e; font-weight: 700; letter-spacing: 0.07em; }
-    .gs-card.theme-lol .gs-val { color: #f0e6d2; }
+    .gs-card.theme-lol .gs-lbl { color: #c8aa6e; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; }
+    .gs-card.theme-lol .gs-val { color: #f0e6d2; font-size: 14px; }
     .gs-card.theme-lol .gs-cell.is-highlight .gs-val { color: #0ac8b9; text-shadow: 0 0 10px rgba(10,200,185,0.4); }
+    .gs-matches-wrap { display: none; margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(200, 170, 110, 0.3); }
+    .gs-card.theme-lol .gs-matches-wrap { display: block; }
+    .gs-matches-lbl { font-size: 9.5px; color: #c8aa6e; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+    .gs-matches-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+    .gs-match-slot { position: relative; height: 46px; border-radius: 4px; background: rgba(7, 16, 32, 0.82); border: 1px solid rgba(148, 163, 184, 0.25); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .gs-match-slot.win { border-color: #0ac8b9; box-shadow: 0 0 10px rgba(10, 200, 185, 0.28); }
+    .gs-match-slot.loss { border-color: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.22); }
+    .gs-match-slot img { width: 100%; height: 100%; object-fit: cover; opacity: 0.92; }
+    .gs-match-badge { position: absolute; bottom: 2px; right: 2px; font-size: 9px; font-weight: 900; padding: 1px 4px; border-radius: 3px; line-height: 1.1; }
+    .gs-match-slot.win .gs-match-badge { background: #0ac8b9; color: #010a13; }
+    .gs-match-slot.loss .gs-match-badge { background: #ef4444; color: #ffffff; }
+    .gs-match-empty { font-size: 11px; color: rgba(200,170,110,0.35); }
     .gs-splash { position: absolute; inset: 0; background-size: cover; background-position: center 20%; opacity: 0.45; pointer-events: none; z-index: 0; border-radius: inherit; filter: saturate(1.2); }
     .gs-splash::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,20,40,0.45) 0%, rgba(1,10,19,0.88) 100%); }
     .gs-content { position: relative; z-index: 1; }
@@ -1918,6 +1932,10 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         </div>
       </div>
       <div class="gs-grid" id="gsGrid"></div>
+      <div class="gs-matches-wrap" id="gsMatchesWrap">
+        <div class="gs-matches-lbl">Letzte 6 Matches</div>
+        <div class="gs-matches-row" id="gsMatchesRow"></div>
+      </div>
     </div>
   </div>
   <script>
@@ -1930,6 +1948,7 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     const champNameEl = document.getElementById('gsChampName');
     const skinNameEl = document.getElementById('gsSkinName');
     const gridEl = document.getElementById('gsGrid');
+    const matchesRowEl = document.getElementById('gsMatchesRow');
 
     function renderStats(data) {
       if (!data) return;
@@ -1966,6 +1985,24 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         cell.querySelector('.gs-val').textContent = String(s.value);
         gridEl.appendChild(cell);
       });
+
+      if (isLol && matchesRowEl) {
+        const list = Array.isArray(data.recentMatches) ? data.recentMatches.slice(0, 6) : [];
+        matchesRowEl.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+          const m = list[i];
+          const slot = document.createElement('div');
+          if (m) {
+            slot.className = 'gs-match-slot ' + (m.win ? 'win' : 'loss');
+            const img = m.championIconUrl ? '<img src="' + m.championIconUrl + '" alt="" />' : '';
+            slot.innerHTML = img + '<span class="gs-match-badge">' + (m.win ? 'W' : 'L') + '</span>';
+          } else {
+            slot.className = 'gs-match-slot';
+            slot.innerHTML = '<span class="gs-match-empty">—</span>';
+          }
+          matchesRowEl.appendChild(slot);
+        }
+      }
     }
 
     function fetchLatest() {

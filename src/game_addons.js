@@ -7,7 +7,7 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
   perAddonStats: {
     universal: { kills: 0, deaths: 0, wins: 0, rank: 'Live' },
     cs2: { kills: 0, deaths: 0, assists: 0, mvps: 0, map: 'Mirage', score: '0 : 0' },
-    lol: { champion: 'Ahri', skinId: 0, skinName: '', championIconUrl: '', skinSplashUrl: '', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1 },
+    lol: { champion: 'Ahri', skinId: 0, skinName: '', championIconUrl: '', skinSplashUrl: '', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1, recentMatches: [] },
     minecraft: { deaths: 0, diamonds: 0, days: 1, mode: 'Survival' },
     souls: { deaths: 0, bosses: 0, run: 'Any%', bossName: 'Aktueller Boss' },
     valorant: { kills: 0, deaths: 0, wins: 0, rank: 'Diamond', agent: 'Jett' }
@@ -159,18 +159,29 @@ function resolveActiveAddon(cfg = {}) {
 
 function buildObsGameStatsPayload(cfg = {}) {
   const { addon, stats, ga } = resolveActiveAddon(cfg);
-  const skipKeys = addon.id === 'lol' ? new Set(['champion', 'skinId']) : new Set();
-  const displayStats = addon.fields
-    .filter((f) => !skipKeys.has(f.key))
-    .map((f) => ({
+  let displayStats = [];
+  if (addon.id === 'lol') {
+    const k = Number(stats.kills || 0);
+    const d = Number(stats.deaths || 0);
+    const a = Number(stats.assists || 0);
+    const kd = d > 0 ? (k / d).toFixed(2) : k.toFixed(2);
+    displayStats = [
+      { key: 'kda', label: 'K / D / A', value: `${k}/${d}/${a}` },
+      { key: 'kd', label: 'K/D', value: kd },
+      { key: 'cs', label: 'CS', value: Number(stats.cs || 0) },
+      { key: 'level', label: 'LVL', value: Number(stats.level || 1) }
+    ];
+  } else {
+    displayStats = addon.fields.map((f) => ({
       key: f.key,
       label: f.label,
       value: stats[f.key] !== undefined && stats[f.key] !== '' ? stats[f.key] : '—'
     }));
-  // Add K/D ratio automatically when kills & deaths exist
-  if (typeof stats.kills === 'number' && typeof stats.deaths === 'number') {
-    const kd = stats.deaths > 0 ? (stats.kills / stats.deaths).toFixed(2) : String(stats.kills.toFixed(2));
-    displayStats.push({ key: 'kd', label: 'K/D', value: kd });
+    // Add K/D ratio automatically when kills & deaths exist
+    if (typeof stats.kills === 'number' && typeof stats.deaths === 'number') {
+      const kd = stats.deaths > 0 ? (stats.kills / stats.deaths).toFixed(2) : String(stats.kills.toFixed(2));
+      displayStats.push({ key: 'kd', label: 'K/D', value: kd });
+    }
   }
   return {
     addonId: addon.id,
@@ -185,6 +196,7 @@ function buildObsGameStatsPayload(cfg = {}) {
     championIconUrl: stats.championIconUrl || '',
     skinIconUrl: stats.skinIconUrl || '',
     skinSplashUrl: stats.skinSplashUrl || '',
+    recentMatches: Array.isArray(stats.recentMatches) ? stats.recentMatches.slice(0, 6) : [],
     stats: displayStats,
     chatCommands: addon.chatCommands
   };

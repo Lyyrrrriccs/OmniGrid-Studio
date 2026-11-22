@@ -2014,6 +2014,27 @@ app.whenReady().then(async () => {
         if (me) {
           const skinNum = Number(me.skinID ?? me.skinId ?? 0);
           const ddAssets = await gameAddons.resolveLolDdragonAssets(me.championName || '', skinNum, me.skinName || '');
+          const prevLol = ga.perAddonStats.lol || {};
+          let recentMatches = Array.isArray(prevLol.recentMatches) ? prevLol.recentMatches.slice(0, 6) : [];
+
+          const events = Array.isArray(data?.events?.Events) ? data.events.Events : [];
+          const gameEndEv = events.find((ev) => ev?.EventName === 'GameEnd');
+          if (gameEndEv && !global.__lastLolGameEndRecorded) {
+            global.__lastLolGameEndRecorded = true;
+            recentMatches.unshift({
+              champion: me.championName || '—',
+              championIconUrl: ddAssets.championIconUrl,
+              win: String(gameEndEv.Result || '').toLowerCase() === 'win',
+              kills: Number(me.scores?.kills || 0),
+              deaths: Number(me.scores?.deaths || 0),
+              assists: Number(me.scores?.assists || 0),
+              at: Date.now()
+            });
+            recentMatches = recentMatches.slice(0, 6);
+          } else if (!gameEndEv && global.__lastLolGameEndRecorded && Number(data?.gameData?.gameTime || 0) < 60) {
+            global.__lastLolGameEndRecorded = false;
+          }
+
           ga.perAddonStats.lol = {
             champion: me.championName || '—',
             skinId: skinNum,
@@ -2025,7 +2046,8 @@ app.whenReady().then(async () => {
             deaths: Number(me.scores?.deaths || 0),
             assists: Number(me.scores?.assists || 0),
             cs: Number(me.scores?.creepScore || 0),
-            level: Number(ap?.level || me.level || 1)
+            level: Number(ap?.level || me.level || 1),
+            recentMatches
           };
           cfg.gameAddons = ga;
           saveConfig(cfg);
@@ -3313,6 +3335,34 @@ app.whenReady().then(async () => {
     if (res.canceled || !res.filePath) return { ok: false, canceled: true };
     fs.writeFileSync(res.filePath, content, 'utf8');
     return { ok: true, filePath: res.filePath };
+  });
+
+  ipcMain.handle('game-addons-lol-record-match', async (_ev, payload = {}) => {
+    const cfg = loadConfig();
+    const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+    const lol = ga.perAddonStats.lol || {};
+    if (payload.clear) {
+      lol.recentMatches = [];
+    } else {
+      const champ = String(payload.champion || lol.champion || 'Ahri').trim();
+      const dd = await gameAddons.resolveLolDdragonAssets(champ, 0, '');
+      const list = Array.isArray(lol.recentMatches) ? lol.recentMatches.slice(0, 6) : [];
+      list.unshift({
+        champion: champ,
+        championIconUrl: dd.championIconUrl,
+        win: Boolean(payload.win),
+        kills: Number(lol.kills || 0),
+        deaths: Number(lol.deaths || 0),
+        assists: Number(lol.assists || 0),
+        at: Date.now()
+      });
+      lol.recentMatches = list.slice(0, 6);
+    }
+    ga.perAddonStats.lol = lol;
+    cfg.gameAddons = ga;
+    saveConfig(cfg);
+    broadcastGameAddonsState(cfg);
+    return { ok: true, gameAddons: ga };
   });
 });
 

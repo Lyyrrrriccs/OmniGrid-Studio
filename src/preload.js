@@ -90,5 +90,6 @@ contextBridge.exposeInMainWorld('omnichat', {
   gameAddonsGet: () => ipcRenderer.invoke('game-addons-get'),
   gameAddonsSave: (ga) => ipcRenderer.invoke('game-addons-save', ga),
   gameAddonsExportCs2Gsi: () => ipcRenderer.invoke('game-addons-export-cs2-gsi'),
+  gameAddonsLolRecordMatch: (payload) => ipcRenderer.invoke('game-addons-lol-record-match', payload),
   onGameAddonsUpdated: (cb) => ipcRenderer.on('game-addons-updated', (_ev, data) => cb(data))
 });

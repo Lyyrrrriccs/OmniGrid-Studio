@@ -4374,6 +4374,9 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         : '';
       banner.innerHTML = `${addon.icon} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${(addon.chatCommands || []).join('</code>, <code>')}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>${lolPreview}`;
     }
+    const lolMatchBox = document.getElementById('gaLolMatchControls');
+    if (lolMatchBox) lolMatchBox.classList.toggle('hidden', addon.id !== 'lol');
+
     if (!fieldsEl) return;
     fieldsEl.innerHTML = '';
     (addon.fields || []).forEach((f) => {
@@ -4472,6 +4475,30 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (statusEl) {
       statusEl.style.color = '#4ade80';
       statusEl.textContent = '🔗 http://127.0.0.1:4588/game-stats kopiert!';
+    }
+  });
+
+  document.getElementById('btnGaLolWin')?.addEventListener('click', async () => {
+    const champ = fieldsEl?.querySelector('input[data-ga-key="champion"]')?.value || '';
+    const res = await window.omnichat.gameAddonsLolRecordMatch({ win: true, champion: champ });
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🏆 Sieg zu den letzten 6 Matches hinzugefügt!'; }
+    }
+  });
+  document.getElementById('btnGaLolLoss')?.addEventListener('click', async () => {
+    const champ = fieldsEl?.querySelector('input[data-ga-key="champion"]')?.value || '';
+    const res = await window.omnichat.gameAddonsLolRecordMatch({ win: false, champion: champ });
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      if (statusEl) { statusEl.style.color = '#fbbf24'; statusEl.textContent = '💀 Niederlage zu den letzten 6 Matches hinzugefügt!'; }
+    }
+  });
+  document.getElementById('btnGaLolClearMatches')?.addEventListener('click', async () => {
+    const res = await window.omnichat.gameAddonsLolRecordMatch({ clear: true });
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      if (statusEl) { statusEl.style.color = '#94a3b8'; statusEl.textContent = '🗑️ Match-Historie geleert.'; }
     }
   });
 
