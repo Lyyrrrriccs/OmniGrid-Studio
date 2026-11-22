@@ -1722,6 +1722,29 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
+  ipcMain.handle('clip-studio-rename', (_ev, { filePath, newTitle }) => {
+    try {
+      const res = clipStudio.renameReplay(filePath, newTitle);
+      appendDiagLog('system', 'info', `✏️ Clip umbenannt: ${res.name}`);
+      return res;
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('clip-studio-delete', async (_ev, filePath) => {
+    try {
+      if (!filePath || !fs.existsSync(filePath)) {
+        return { ok: false, error: 'Datei nicht gefunden.' };
+      }
+      await require('electron').shell.trashItem(filePath);
+      appendDiagLog('system', 'info', `🗑️ Clip in Papierkorb verschoben: ${path.basename(filePath)}`);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('poll-action', (_ev, payload) => {
     const act = payload?.action || 'start';
     if (act === 'start') {

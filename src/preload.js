@@ -63,5 +63,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   clipStudioList: () => ipcRenderer.invoke('clip-studio-list'),
   clipStudioPickDir: () => ipcRenderer.invoke('clip-studio-pick-dir'),
   clipStudioExportShort: (payload) => ipcRenderer.invoke('clip-studio-export-short', payload),
-  clipStudioReveal: (filePath) => ipcRenderer.invoke('clip-studio-reveal', filePath)
+  clipStudioReveal: (filePath) => ipcRenderer.invoke('clip-studio-reveal', filePath),
+  clipStudioRename: (filePath, newTitle) => ipcRenderer.invoke('clip-studio-rename', { filePath, newTitle }),
+  clipStudioDelete: (filePath) => ipcRenderer.invoke('clip-studio-delete', filePath)
 });

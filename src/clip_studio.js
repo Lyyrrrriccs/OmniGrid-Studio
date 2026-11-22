@@ -115,9 +115,32 @@ function exportVerticalShort({ inputPath, startSec = 0, durationSec = 30, layout
   });
 }
 
+function renameReplay(filePath, newTitle) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    throw new Error('Datei nicht gefunden.');
+  }
+  const cleanBase = String(newTitle || '')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .trim();
+  if (!cleanBase) {
+    throw new Error('Bitte einen gültigen Clip-Titel eingeben.');
+  }
+  const ext = path.extname(filePath);
+  const nextPath = path.join(path.dirname(filePath), `${cleanBase}${ext}`);
+  if (nextPath === filePath) {
+    return { ok: true, oldPath: filePath, newPath: nextPath, name: path.basename(nextPath) };
+  }
+  if (fs.existsSync(nextPath)) {
+    throw new Error('Eine Datei mit diesem Namen existiert bereits.');
+  }
+  fs.renameSync(filePath, nextPath);
+  return { ok: true, oldPath: filePath, newPath: nextPath, name: path.basename(nextPath) };
+}
+
 module.exports = {
   getDefaultReplayDir,
   findFfmpegBinary,
   listReplays,
-  exportVerticalShort
+  exportVerticalShort,
+  renameReplay
 };

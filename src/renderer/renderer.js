@@ -3241,9 +3241,32 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const videoEl = document.getElementById('clipStudioVideo');
   const btnExport = document.getElementById('btnClipExportShort');
   const btnReveal = document.getElementById('btnClipRevealOut');
+  const inputTitle = document.getElementById('inputClipTitle');
+  const btnRename = document.getElementById('btnClipRename');
+  const btnDelete = document.getElementById('btnClipDelete');
   const statusEl = document.getElementById('clipStudioStatus');
   let selectedPath = '';
   let lastOutPath = '';
+
+  function setSelectedClip(filePath, fileName) {
+    selectedPath = filePath || '';
+    const hasSel = Boolean(selectedPath);
+    if (videoEl) {
+      if (hasSel) videoEl.src = encodeURI(`file://${selectedPath}`);
+      else {
+        videoEl.pause();
+        videoEl.removeAttribute('src');
+        videoEl.load();
+      }
+    }
+    if (inputTitle) {
+      inputTitle.disabled = !hasSel;
+      inputTitle.value = hasSel ? String(fileName || '').replace(/\.[^.]+$/, '') : '';
+    }
+    [btnExport, btnRename, btnDelete].forEach((b) => {
+      if (b) b.disabled = !hasSel;
+    });
+  }
 
   function renderReplays(res) {
     if (!res) return;
@@ -3265,16 +3288,14 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       btn.style.width = '100%';
       btn.style.padding = '7px 8px';
       btn.textContent = `🎬 ${f.name} (${f.sizeMb} MB)`;
+      if (f.path === selectedPath) btn.style.borderColor = '#9146ff';
       btn.onclick = () => {
-        selectedPath = f.path;
-        if (videoEl) {
-          videoEl.src = encodeURI(`file://${f.path}`);
-        }
-        if (btnExport) btnExport.disabled = false;
+        setSelectedClip(f.path, f.name);
         if (statusEl) {
           statusEl.style.color = '#94a3b8';
           statusEl.textContent = `Ausgewählt: ${f.name}`;
         }
+        renderReplays(res);
       };
       listEl.appendChild(btn);
     });
@@ -3303,7 +3324,52 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   document.getElementById('btnClipRefresh')?.addEventListener('click', refreshList);
   document.getElementById('btnClipPickDir')?.addEventListener('click', async () => {
     const res = await window.omnichat.clipStudioPickDir();
-    if (!res?.canceled) renderReplays(res);
+    if (!res?.canceled) {
+      setSelectedClip('', '');
+      renderReplays(res);
+    }
+  });
+
+  btnRename?.addEventListener('click', async () => {
+    if (!selectedPath || !inputTitle) return;
+    const newTitle = inputTitle.value.trim();
+    if (!newTitle) return;
+    if (videoEl) {
+      videoEl.pause();
+      videoEl.removeAttribute('src');
+      videoEl.load();
+    }
+    const res = await window.omnichat.clipStudioRename(selectedPath, newTitle);
+    if (res?.ok) {
+      setSelectedClip(res.newPath, res.name);
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `✅ Umbenannt zu: ${res.name}`;
+      }
+      refreshList();
+    } else if (statusEl) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ ${res?.error || 'Umbenennen fehlgeschlagen.'}`;
+    }
+  });
+
+  btnDelete?.addEventListener('click', async () => {
+    if (!selectedPath) return;
+    const ok = confirm('Diesen Clip wirklich in den Papierkorb verschieben?');
+    if (!ok) return;
+    const pathToTrash = selectedPath;
+    setSelectedClip('', '');
+    const res = await window.omnichat.clipStudioDelete(pathToTrash);
+    if (res?.ok) {
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = '🗑️ Clip in den Papierkorb verschoben.';
+      }
+      refreshList();
+    } else if (statusEl) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ ${res?.error || 'Löschen fehlgeschlagen.'}`;
+    }
   });
 
   btnExport?.addEventListener('click', async () => {
