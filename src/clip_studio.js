@@ -29,25 +29,34 @@ function findFfmpegBinary() {
 
 function listReplays(dirPath) {
   const targetDir = dirPath && fs.existsSync(dirPath) ? dirPath : getDefaultReplayDir();
-  const entries = fs.readdirSync(targetDir, { withFileTypes: true });
+  const scanDirs = [
+    { dir: targetDir, badge: '' },
+    { dir: path.join(targetDir, 'shorts'), badge: '9:16' },
+    { dir: path.join(targetDir, 'trimmed'), badge: 'Cut' }
+  ];
   const files = [];
-  for (const ent of entries) {
-    if (!ent.isFile()) continue;
-    const ext = path.extname(ent.name).toLowerCase();
-    if (!VIDEO_EXTS.has(ext)) continue;
-    const fullPath = path.join(targetDir, ent.name);
-    try {
-      const st = fs.statSync(fullPath);
-      files.push({
-        name: ent.name,
-        path: fullPath,
-        sizeMb: Number((st.size / (1024 * 1024)).toFixed(1)),
-        mtime: st.mtimeMs
-      });
-    } catch (e) {}
+  for (const item of scanDirs) {
+    if (!fs.existsSync(item.dir)) continue;
+    const entries = fs.readdirSync(item.dir, { withFileTypes: true });
+    for (const ent of entries) {
+      if (!ent.isFile()) continue;
+      const ext = path.extname(ent.name).toLowerCase();
+      if (!VIDEO_EXTS.has(ext)) continue;
+      const fullPath = path.join(item.dir, ent.name);
+      try {
+        const st = fs.statSync(fullPath);
+        files.push({
+          name: ent.name,
+          badge: item.badge,
+          path: fullPath,
+          sizeMb: Number((st.size / (1024 * 1024)).toFixed(1)),
+          mtime: st.mtimeMs
+        });
+      } catch (e) {}
+    }
   }
   files.sort((a, b) => b.mtime - a.mtime);
-  return { ok: true, dir: targetDir, files: files.slice(0, 40) };
+  return { ok: true, dir: targetDir, files: files.slice(0, 50) };
 }
 
 function exportVerticalShort({ inputPath, startSec = 0, endSec = null, durationSec = 30, layoutMode = 'blur_bg' }) {

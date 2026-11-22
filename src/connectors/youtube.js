@@ -708,7 +708,7 @@ class YouTubeConnector extends EventEmitter {
         authUrl.searchParams.set('client_id', cleanClientId);
         authUrl.searchParams.set('redirect_uri', redirectUri);
         authUrl.searchParams.set('response_type', 'code');
-        authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/youtube.force-ssl');
+        authUrl.searchParams.set('scope', 'https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.upload');
         authUrl.searchParams.set('access_type', 'offline');
         authUrl.searchParams.set('prompt', 'consent');
         authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -900,6 +900,107 @@ class YouTubeConnector extends EventEmitter {
     }
     this.streamTitle = cleanTitle;
     return { ok: true, title: cleanTitle };
+  }
+
+  async uploadVideo({ filePath, title = '', description = '#Shorts', privacyStatus = 'private' }) {
+    const fs = require('fs');
+    const path = require('path');
+    if (!filePath || !fs.existsSync(filePath)) {
+      throw new Error('Video-Datei nicht gefunden.');
+    }
+    if (!this.canWrite) {
+      throw new Error('YouTube OAuth2 nicht angemeldet (unter ⚙️ Config → Plattformen → YouTube anmelden).');
+    }
+
+    const token = await this._ensureValidAccessToken();
+    const stat = fs.statSync(filePath);
+    const cleanTitle = String(title || path.basename(filePath, path.extname(filePath))).trim().slice(0, 100);
+    const metaStr = JSON.stringify({
+      snippet: {
+        title: cleanTitle,
+        description: String(description || '#Shorts'),
+        categoryId: '20'
+      },
+      status: {
+        privacyStatus: ['private', 'unlisted', 'public'].includes(privacyStatus) ? privacyStatus : 'private',
+        selfDeclaredMadeForKids: false
+      }
+    });
+
+    // Step 1: Initiate resumable upload session
+    const initResp = await new Promise((resolve, reject) => {
+      const req = https.request(
+        'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Content-Length': Buffer.byteLength(metaStr),
+            'X-Upload-Content-Length': stat.size,
+            'X-Upload-Content-Type': 'video/mp4'
+          },
+          timeout: 15000
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (c) => (data += c));
+          res.on('end', () => resolve({ statusCode: res.statusCode, headers: res.headers, data }));
+        }
+      );
+      req.on('error', reject);
+      req.write(metaStr);
+      req.end();
+    });
+
+    if (initResp.statusCode === 401 || initResp.statusCode === 403) {
+      throw new Error('Fehlende YouTube-Upload-Berechtigung — bitte unter ⚙️ Config → Plattformen → YouTube einmal kurz neu mit Google anmelden.');
+    }
+    const uploadUrl = initResp.headers?.location;
+    if (initResp.statusCode >= 400 || !uploadUrl) {
+      let msg = `HTTP ${initResp.statusCode}`;
+      try {
+        msg = JSON.parse(initResp.data)?.error?.message || msg;
+      } catch (e) {}
+      throw new Error(`YouTube Upload-Start fehlgeschlagen: ${msg}`);
+    }
+
+    // Step 2: Stream video bytes to resumable upload URL
+    const putResp = await new Promise((resolve, reject) => {
+      const req = https.request(
+        uploadUrl,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Length': stat.size,
+            'Content-Type': 'video/mp4'
+          },
+          timeout: 180000
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (c) => (data += c));
+          res.on('end', () => {
+            let json = null;
+            try { json = JSON.parse(data); } catch (e) {}
+            resolve({ statusCode: res.statusCode, json, data });
+          });
+        }
+      );
+      req.on('error', reject);
+      fs.createReadStream(filePath).pipe(req);
+    });
+
+    if (putResp.statusCode >= 400 || !putResp.json?.id) {
+      const msg = putResp.json?.error?.message || `HTTP ${putResp.statusCode}`;
+      throw new Error(`YouTube Video-Upload fehlgeschlagen: ${msg}`);
+    }
+
+    return {
+      ok: true,
+      id: putResp.json.id,
+      url: `https://youtu.be/${putResp.json.id}`
+    };
   }
 
   disconnect(clearDedupe = false) {

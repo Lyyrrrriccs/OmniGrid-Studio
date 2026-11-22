@@ -3297,12 +3297,23 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       return;
     }
     files.forEach((f) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '4px';
+      row.style.alignItems = 'center';
+
       const btn = document.createElement('button');
       btn.className = 'btn-sm';
       btn.style.textAlign = 'left';
-      btn.style.width = '100%';
-      btn.style.padding = '7px 8px';
-      btn.textContent = `🎬 ${f.name} (${f.sizeMb} MB)`;
+      btn.style.flex = '1';
+      btn.style.minWidth = '0';
+      btn.style.overflow = 'hidden';
+      btn.style.textOverflow = 'ellipsis';
+      btn.style.whiteSpace = 'nowrap';
+      btn.style.padding = '6px 7px';
+      const prefix = f.badge ? `[${f.badge}] ` : '';
+      btn.textContent = `🎬 ${prefix}${f.name} (${f.sizeMb} MB)`;
+      btn.title = f.name;
       if (f.path === selectedPath) btn.style.borderColor = '#9146ff';
       btn.onclick = () => {
         setSelectedClip(f.path, f.name);
@@ -3312,7 +3323,60 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         }
         renderReplays(res);
       };
-      listEl.appendChild(btn);
+
+      const btnYt = document.createElement('button');
+      btnYt.className = 'btn-sm';
+      btnYt.style.padding = '6px 6px';
+      btnYt.style.fontSize = '11px';
+      btnYt.title = 'Direkt auf YouTube hochladen (Privat-Entwurf, benötigt YouTube OAuth2)';
+      btnYt.textContent = '▶️ YT';
+      btnYt.onclick = async (e) => {
+        e.stopPropagation();
+        btnYt.disabled = true;
+        btnYt.textContent = '⏳';
+        if (statusEl) {
+          statusEl.style.color = '#38bdf8';
+          statusEl.textContent = `⏳ Lade "${f.name}" auf YouTube hoch...`;
+        }
+        const title = f.name.replace(/\.[^.]+$/, '');
+        const upRes = await window.omnichat.clipStudioUploadYoutube({
+          filePath: f.path,
+          title,
+          privacyStatus: 'private'
+        });
+        btnYt.disabled = false;
+        btnYt.textContent = '▶️ YT';
+        if (upRes?.ok) {
+          try { navigator.clipboard.writeText(upRes.url); } catch (err) {}
+          if (statusEl) {
+            statusEl.style.color = '#4ade80';
+            statusEl.textContent = `✅ YouTube Upload fertig (Privat): ${upRes.url} (kopiert)`;
+          }
+        } else if (statusEl) {
+          statusEl.style.color = '#f87171';
+          statusEl.textContent = `❌ ${upRes?.error || 'YouTube Upload fehlgeschlagen.'}`;
+        }
+      };
+
+      const btnTt = document.createElement('button');
+      btnTt.className = 'btn-sm';
+      btnTt.style.padding = '6px 6px';
+      btnTt.style.fontSize = '11px';
+      btnTt.title = 'TikTok Upload-Seite öffnen & Datei im Ordner markieren';
+      btnTt.textContent = '🎵 TT';
+      btnTt.onclick = async (e) => {
+        e.stopPropagation();
+        await window.omnichat.clipStudioUploadTiktok(f.path);
+        if (statusEl) {
+          statusEl.style.color = '#38bdf8';
+          statusEl.textContent = `🎵 TikTok Upload geöffnet — ziehe "${f.name}" einfach ins Browserfenster.`;
+        }
+      };
+
+      row.appendChild(btn);
+      row.appendChild(btnYt);
+      row.appendChild(btnTt);
+      listEl.appendChild(row);
     });
   }
 
@@ -3469,6 +3533,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         statusEl.style.color = '#4ade80';
         statusEl.textContent = `✅ Fertig: ${res.outPath}`;
       }
+      refreshList();
     } else if (statusEl) {
       statusEl.style.color = '#f87171';
       statusEl.textContent = `❌ ${res?.error || 'Export fehlgeschlagen.'}`;

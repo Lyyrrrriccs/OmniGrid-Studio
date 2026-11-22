@@ -1756,6 +1756,32 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('clip-studio-upload-youtube', async (_ev, { filePath, title, privacyStatus }) => {
+    try {
+      const res = await youtube.uploadVideo({
+        filePath,
+        title,
+        description: '#Shorts',
+        privacyStatus: privacyStatus || 'private'
+      });
+      appendDiagLog('youtube', 'info', `▶️ YouTube Short hochgeladen: ${res.url}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('youtube', 'error', `YouTube Upload fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('clip-studio-upload-tiktok', (_ev, filePath) => {
+    const { shell } = require('electron');
+    if (filePath && fs.existsSync(filePath)) {
+      shell.showItemInFolder(filePath);
+    }
+    shell.openExternal('https://www.tiktok.com/creator-center/upload');
+    appendDiagLog('tiktok', 'info', '🎵 TikTok Upload-Seite geöffnet & Video-Datei markiert.');
+    return { ok: true };
+  });
+
   ipcMain.handle('poll-action', (_ev, payload) => {
     const act = payload?.action || 'start';
     if (act === 'start') {
