@@ -1892,13 +1892,14 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-card.theme-lol .gs-lbl { color: #c8aa6e; font-weight: 700; letter-spacing: 0.07em; }
     .gs-card.theme-lol .gs-val { color: #f0e6d2; }
     .gs-card.theme-lol .gs-cell.is-highlight .gs-val { color: #0ac8b9; text-shadow: 0 0 10px rgba(10,200,185,0.4); }
-    .gs-splash { position: absolute; inset: 0; background-size: cover; background-position: center 22%; opacity: 0.24; pointer-events: none; z-index: 0; border-radius: inherit; filter: saturate(1.15); }
+    .gs-splash { position: absolute; inset: 0; background-size: cover; background-position: center 20%; opacity: 0.45; pointer-events: none; z-index: 0; border-radius: inherit; filter: saturate(1.2); }
+    .gs-splash::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,20,40,0.45) 0%, rgba(1,10,19,0.88) 100%); }
     .gs-content { position: relative; z-index: 1; }
-    .gs-lol-hero { display: none; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .gs-lol-hero { display: none; align-items: center; gap: 11px; margin-bottom: 10px; }
     .gs-card.theme-lol .gs-lol-hero.visible { display: flex; }
-    .gs-champ-icon { width: 52px; height: 52px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 12px rgba(10,200,185,0.35); object-fit: cover; background: #091428; flex-shrink: 0; }
-    .gs-champ-name { font-size: 16px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; }
-    .gs-skin-name { font-size: 11px; color: #0ac8b9; font-weight: 700; margin-top: 2px; }
+    .gs-champ-icon { width: 56px; height: 56px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 14px rgba(10,200,185,0.42); object-fit: cover; background: #091428; flex-shrink: 0; }
+    .gs-champ-name { font-size: 17px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
+    .gs-skin-name { font-size: 11.5px; color: #0ac8b9; font-weight: 700; margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
   </style>
 </head>
 <body>

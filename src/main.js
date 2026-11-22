@@ -2000,8 +2000,17 @@ app.whenReady().then(async () => {
           req.on('error', reject);
           req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
         });
-        const ap = data?.activePlayer;
-        const me = (data?.allPlayers || []).find((p) => p.summonerName === ap?.summonerName) || data?.allPlayers?.[0];
+        const ap = data?.activePlayer || {};
+        const players = Array.isArray(data?.allPlayers) ? data.allPlayers : [];
+        const apRiot = String(ap.riotId || '').toLowerCase();
+        const apGame = String(ap.riotIdGameName || '').toLowerCase();
+        const apSum = String(ap.summonerName || '').toLowerCase();
+        const me = players.find((p) => {
+          if (apRiot && String(p.riotId || '').toLowerCase() === apRiot) return true;
+          if (apGame && String(p.riotIdGameName || '').toLowerCase() === apGame) return true;
+          if (apSum && String(p.summonerName || '').toLowerCase() === apSum) return true;
+          return false;
+        }) || players[0];
         if (me) {
           const skinNum = Number(me.skinID ?? me.skinId ?? 0);
           const ddAssets = await gameAddons.resolveLolDdragonAssets(me.championName || '', skinNum, me.skinName || '');

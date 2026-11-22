@@ -4368,7 +4368,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (!addon) return;
     const stats = (gaState.perAddonStats && gaState.perAddonStats[addon.id]) || {};
     if (banner) {
-      banner.innerHTML = `${addon.icon} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${(addon.chatCommands || []).join('</code>, <code>')}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>`;
+      const lolPreview = addon.id === 'lol' && stats.championIconUrl
+        ? `<div style="display:flex; align-items:center; gap:8px; margin-top:6px;"><img src="${escapeHtml(stats.championIconUrl)}" style="width:36px; height:36px; border-radius:4px; border:1.5px solid #c8aa6e;" /><div><strong style="color:#f0e6d2;">${escapeHtml(stats.champion || '')}</strong><div style="font-size:11px; color:#0ac8b9;">✨ ${escapeHtml(stats.skinName || 'Classic')}</div></div></div>`
+        : '';
+      banner.innerHTML = `${addon.icon} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${(addon.chatCommands || []).join('</code>, <code>')}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>${lolPreview}`;
     }
     if (!fieldsEl) return;
     fieldsEl.innerHTML = '';
