@@ -4544,6 +4544,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const btnCreateScene = document.getElementById('btnSeCreateScene');
   const btnRefresh = document.getElementById('btnSeRefresh');
   const chkAutoPreview = document.getElementById('seAutoPreview');
+  const vcamVideo = document.getElementById('seVirtualCamVideo');
   const previewImg = document.getElementById('sePreviewImg');
   const previewPlaceholder = document.getElementById('sePreviewPlaceholder');
   const canvasOverlay = document.getElementById('seCanvasOverlay');
@@ -4566,6 +4567,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   let selectedItem = null;
   let previewTimer = null;
   let dragState = null;
+  let vcamStream = null;
+  let vcamStartedByEditor = false;
 
   function setStatus(msg, color = '#94a3b8') {
     if (!statusEl) return;
@@ -4915,11 +4918,70 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     await Promise.all([loadSceneItems(currentSceneName), loadAudioInputs(), refreshPreview()]);
   }
 
+  async function startVirtualCamPreview() {
+    if (!chkAutoPreview?.checked || modal.classList.contains('hidden')) return false;
+    try {
+      const startRes = await window.omnichat.obsWsAction({ action: 'start-virtual-cam' });
+      if (startRes?.ok && startRes.startedByEditor) vcamStartedByEditor = true;
+
+      // Give OBS Virtual Camera a brief moment to initialize if freshly started
+      if (startRes?.startedByEditor) await new Promise((r) => setTimeout(r, 450));
+
+      let devices = await navigator.mediaDevices.enumerateDevices();
+      let vcamDev = devices.find((d) => d.kind === 'videoinput' && /obs.*virtual/i.test(d.label || ''));
+      if (!vcamDev) {
+        // Request permission once so device labels become visible
+        try {
+          const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          tmp.getTracks().forEach((t) => t.stop());
+          devices = await navigator.mediaDevices.enumerateDevices();
+          vcamDev = devices.find((d) => d.kind === 'videoinput' && /obs.*virtual/i.test(d.label || ''));
+        } catch (e) {}
+      }
+      if (!vcamDev || !vcamVideo) return false;
+
+      vcamStream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: vcamDev.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+        audio: false
+      });
+      vcamVideo.srcObject = vcamStream;
+      vcamVideo.style.display = 'block';
+      if (previewImg) previewImg.style.display = 'none';
+      if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+      clearInterval(previewTimer);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function stopVirtualCamPreview() {
+    if (vcamStream) {
+      vcamStream.getTracks().forEach((t) => t.stop());
+      vcamStream = null;
+    }
+    if (vcamVideo) {
+      vcamVideo.srcObject = null;
+      vcamVideo.style.display = 'none';
+    }
+    if (vcamStartedByEditor) {
+      vcamStartedByEditor = false;
+      window.omnichat.obsWsAction({ action: 'stop-virtual-cam' }).catch(() => {});
+    }
+  }
+
   function startPreviewLoop() {
     clearInterval(previewTimer);
-    if (chkAutoPreview?.checked && !modal.classList.contains('hidden')) {
-      previewTimer = setInterval(refreshPreview, 350);
+    if (!chkAutoPreview?.checked || modal.classList.contains('hidden')) {
+      stopVirtualCamPreview();
+      return;
     }
+    startVirtualCamPreview().then((ok) => {
+      if (!ok && chkAutoPreview?.checked && !modal.classList.contains('hidden')) {
+        // Fallback to 350ms screenshots if Virtual Camera is not available
+        previewTimer = setInterval(refreshPreview, 350);
+      }
+    });
   }
 
   btnOpen?.addEventListener('click', async () => {
@@ -4932,9 +4994,13 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   function closeModal() {
     modal.classList.add('hidden');
     clearInterval(previewTimer);
+    stopVirtualCamPreview();
   }
   btnClose?.addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  window.addEventListener('beforeunload', () => {
+    if (vcamStartedByEditor) stopVirtualCamPreview();
+  });
 
   chkAutoPreview?.addEventListener('change', startPreviewLoop);
   btnRefresh?.addEventListener('click', refreshAll);

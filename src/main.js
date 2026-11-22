@@ -2472,6 +2472,8 @@ app.whenReady().then(async () => {
       if (act === 'get-input-kinds') return await obsWs.getInputKinds();
       if (act === 'create-input') return await obsWs.createInput(payload);
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
+      if (act === 'start-virtual-cam') return await obsWs.startVirtualCam();
+      if (act === 'stop-virtual-cam') return await obsWs.stopVirtualCam();
       if (act === 'set-scene-editor-enabled') {
         const cfg = loadConfig();
         cfg.obsWs = { ...(cfg.obsWs || {}), sceneEditorEnabled: Boolean(payload.enabled) };

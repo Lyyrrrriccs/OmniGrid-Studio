@@ -376,6 +376,28 @@ class ObsWsClient extends EventEmitter {
     return { ok: true };
   }
 
+  async startVirtualCam() {
+    let wasActive = false;
+    try {
+      const st = await this.call('GetVirtualCamStatus');
+      wasActive = Boolean(st.outputActive);
+    } catch (e) {}
+    if (!wasActive) {
+      await this.call('StartVirtualCam');
+    }
+    return { ok: true, startedByEditor: !wasActive };
+  }
+
+  async stopVirtualCam() {
+    try {
+      const st = await this.call('GetVirtualCamStatus');
+      if (st.outputActive) {
+        await this.call('StopVirtualCam');
+      }
+    } catch (e) {}
+    return { ok: true };
+  }
+
   disconnect(emitUpdate = true) {
     for (const entry of this.pending.values()) {
       clearTimeout(entry.timer);
