@@ -4768,13 +4768,19 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
 
+  let isFetchingPreview = false;
   async function refreshPreview() {
-    if (modal.classList.contains('hidden')) return;
-    const res = await window.omnichat.obsWsAction({ action: 'get-screenshot', sceneName: currentSceneName });
-    if (res?.ok && res.imageData && previewImg) {
-      previewImg.src = res.imageData;
-      previewImg.style.display = 'block';
-      if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+    if (modal.classList.contains('hidden') || isFetchingPreview || !currentSceneName) return;
+    isFetchingPreview = true;
+    try {
+      const res = await window.omnichat.obsWsAction({ action: 'get-screenshot', sceneName: currentSceneName });
+      if (res?.ok && res.imageData && previewImg) {
+        previewImg.src = res.imageData;
+        previewImg.style.display = 'block';
+        if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+      }
+    } finally {
+      isFetchingPreview = false;
     }
   }
 
@@ -4912,7 +4918,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   function startPreviewLoop() {
     clearInterval(previewTimer);
     if (chkAutoPreview?.checked && !modal.classList.contains('hidden')) {
-      previewTimer = setInterval(refreshPreview, 2000);
+      previewTimer = setInterval(refreshPreview, 350);
     }
   }
 
