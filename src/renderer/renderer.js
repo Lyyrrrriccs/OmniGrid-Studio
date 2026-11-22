@@ -2604,11 +2604,6 @@ window.omnichat.onInitState((data) => {
   }
   if (data.config) {
     applyConfigToForm(data.config);
-    const seEnabled = Boolean(data.config?.obsWs?.sceneEditorEnabled);
-    const chkSe = document.getElementById('chkEnableSceneEditor');
-    const btnSe = document.getElementById('btnOpenSceneEditor');
-    if (chkSe) chkSe.checked = seEnabled;
-    if (btnSe) btnSe.classList.toggle('hidden', !seEnabled);
   }
   if (Array.isArray(data.diagnosticLogs)) {
     diagLogs = data.diagnosticLogs;
@@ -4541,7 +4536,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 (function initObsSceneEditorModal() {
   const modal = document.getElementById('obsSceneEditorModal');
   const btnOpen = document.getElementById('btnOpenSceneEditor');
-  const chkEnable = document.getElementById('chkEnableSceneEditor');
   if (!modal) return;
 
   const btnClose = document.getElementById('btnCloseSceneEditor');
@@ -4578,12 +4572,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     statusEl.style.color = color;
     statusEl.textContent = msg;
   }
-
-  chkEnable?.addEventListener('change', async () => {
-    const enabled = Boolean(chkEnable.checked);
-    if (btnOpen) btnOpen.classList.toggle('hidden', !enabled);
-    await window.omnichat.obsWsAction({ action: 'set-scene-editor-enabled', enabled });
-  });
 
   function selectSourceItem(item) {
     selectedItem = item;
