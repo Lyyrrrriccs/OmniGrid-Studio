@@ -4810,8 +4810,26 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         refreshPreview();
       });
 
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-sm warn';
+      delBtn.style.padding = '2px 6px';
+      delBtn.textContent = '🗑️';
+      delBtn.title = 'Quelle aus Szene entfernen';
+      delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await window.omnichat.obsWsAction({
+          action: 'remove-scene-item',
+          sceneName: currentSceneName,
+          sceneItemId: it.sceneItemId
+        });
+        if (selectedItem?.sceneItemId === it.sceneItemId) selectSourceItem(null);
+        await loadSceneItems(currentSceneName);
+        refreshPreview();
+      });
+
       row.appendChild(nameSpan);
       row.appendChild(eyeBtn);
+      row.appendChild(delBtn);
       sourcesList.appendChild(row);
     });
   }
@@ -4997,6 +5015,88 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (res?.ok) {
       await loadSceneItems(currentSceneName);
       refreshPreview();
+    }
+  });
+
+  const selNewKind = document.getElementById('seNewSourceKind');
+  const inpNewName = document.getElementById('seNewSourceName');
+  const inpNewVal = document.getElementById('seNewSourceValue');
+  const btnAddSource = document.getElementById('btnSeAddSource');
+
+  const FRIENDLY_KINDS = {
+    browser_source: '🌐 Browser-Quelle (URL)',
+    image_source: '🖼️ Bild (PNG/JPG/GIF)',
+    ffmpeg_source: '🎬 Video / Medienquelle',
+    color_source_v3: '🎨 Farbfläche',
+    text_ft2_source_v2: '📝 Text (FreeType 2)',
+    text_gdiplus_v3: '📝 Text (GDI+)',
+    screen_capture: '🖥️ Bildschirmaufnahme (macOS)',
+    macos_avcapture: '📷 Kamera / Videoaufnahmegerät',
+    av_capture_input_v2: '📷 Kamera (macOS)',
+    coreaudio_input_capture: '🎙️ Mikrofon / Audio-Eingang',
+    coreaudio_output_capture: '🔊 Audio-Ausgabe',
+    monitor_capture: '🖥️ Bildschirmaufnahme',
+    window_capture: '🪟 Fensteraufnahme',
+    game_capture: '🎮 Spielaufnahme',
+    dshow_input: '📷 Kamera / Capture-Card'
+  };
+
+  async function loadInputKinds() {
+    if (!selNewKind || selNewKind.options.length > 0) return;
+    const res = await window.omnichat.obsWsAction({ action: 'get-input-kinds' });
+    const kinds = res?.ok && Array.isArray(res.kinds) && res.kinds.length
+      ? res.kinds
+      : ['browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_ft2_source_v2'];
+    selNewKind.innerHTML = '';
+    const sorted = [...kinds].sort((a, b) => (FRIENDLY_KINDS[a] ? 0 : 1) - (FRIENDLY_KINDS[b] ? 0 : 1));
+    sorted.forEach((k) => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = FRIENDLY_KINDS[k] || k;
+      selNewKind.appendChild(opt);
+    });
+  }
+
+  btnOpen?.addEventListener('click', loadInputKinds);
+
+  btnAddSource?.addEventListener('click', async () => {
+    if (!currentSceneName) return;
+    const kind = selNewKind?.value || 'browser_source';
+    const name = inpNewName?.value.trim() || '';
+    const val = inpNewVal?.value.trim() || '';
+    if (!name) {
+      setStatus('⚠️ Bitte einen Quellennamen eingeben.', '#fbbf24');
+      return;
+    }
+    const settings = {};
+    if (val) {
+      if (kind.includes('browser')) {
+        settings.url = val;
+        settings.width = 480;
+        settings.height = 360;
+      } else if (kind.includes('text')) {
+        settings.text = val;
+      } else if (kind.includes('image')) {
+        settings.file = val;
+      } else if (kind.includes('ffmpeg')) {
+        settings.local_file = val;
+      }
+    }
+    const res = await window.omnichat.obsWsAction({
+      action: 'create-input',
+      sceneName: currentSceneName,
+      inputName: name,
+      inputKind: kind,
+      inputSettings: settings
+    });
+    if (res?.ok) {
+      if (inpNewName) inpNewName.value = '';
+      if (inpNewVal) inpNewVal.value = '';
+      setStatus(`✅ Quelle "${name}" hinzugefügt!`, '#4ade80');
+      await loadSceneItems(currentSceneName);
+      refreshPreview();
+    } else {
+      setStatus(`❌ ${res?.error || 'Quelle konnte nicht erstellt werden.'}`, '#f87171');
     }
   });
 })();

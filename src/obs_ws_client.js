@@ -346,6 +346,36 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, imageData: res.imageData || '' };
   }
 
+  async getInputKinds() {
+    const res = await this.call('GetInputKindList', { unversioned: false });
+    return { ok: true, kinds: Array.isArray(res.inputKinds) ? res.inputKinds : [] };
+  }
+
+  async createInput({ sceneName, inputName, inputKind, inputSettings = {} }) {
+    const targetScene = String(sceneName || this.state.currentScene || '').trim();
+    const name = String(inputName || '').trim();
+    const kind = String(inputKind || '').trim();
+    if (!targetScene || !name || !kind) {
+      throw new Error('Szene, Quellenname und Quelltyp sind erforderlich.');
+    }
+    const res = await this.call('CreateInput', {
+      sceneName: targetScene,
+      inputName: name,
+      inputKind: kind,
+      inputSettings,
+      sceneItemEnabled: true
+    });
+    return { ok: true, sceneItemId: res.sceneItemId, inputName: name };
+  }
+
+  async removeSceneItem(sceneName, sceneItemId) {
+    await this.call('RemoveSceneItem', {
+      sceneName: String(sceneName || this.state.currentScene),
+      sceneItemId: Number(sceneItemId)
+    });
+    return { ok: true };
+  }
+
   disconnect(emitUpdate = true) {
     for (const entry of this.pending.values()) {
       clearTimeout(entry.timer);
