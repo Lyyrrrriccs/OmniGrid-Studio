@@ -11,6 +11,9 @@ const { ObsWsClient } = require('./obs_ws_client');
 const clipStudio = require('./clip_studio');
 const socialSchedule = require('./social_schedule');
 const gameAddons = require('./game_addons');
+const { GitHubAutoUpdater } = require('./auto_updater');
+
+const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -3403,6 +3406,16 @@ app.whenReady().then(async () => {
     broadcastGameAddonsState(cfg);
     return { ok: true, gameAddons: ga };
   });
+
+  ipcMain.handle('updater-get-state', () => autoUpdater.getState());
+  ipcMain.handle('updater-check', (_ev, opts = {}) => autoUpdater.checkForUpdates({ autoDownload: opts.autoDownload !== false }));
+  ipcMain.handle('updater-install', () => autoUpdater.installDownloadedUpdate());
+
+  setTimeout(() => {
+    if (!demoActive) {
+      autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});
+    }
+  }, 4000);
 });
 
 app.on('will-quit', () => {

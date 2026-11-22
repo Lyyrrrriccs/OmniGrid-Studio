@@ -7,6 +7,16 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="updateBanner" style="display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 14px; background: linear-gradient(90deg, rgba(14,165,233,0.22), rgba(168,85,247,0.22)); border-bottom: 1px solid rgba(56,189,248,0.45); font-size: 12px; color: #f8fafc;">
+    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+      <span id="updateBannerText">⬇️ Update verfügbar</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+      <button class="btn-sm hidden" id="btnUpdateInstall" style="background: #0284c7; color: #fff; font-weight: 700;">🚀 Jetzt installieren &amp; neu starten</button>
+      <button class="btn-sm hidden" id="btnUpdateReleaseUrl">🔗 Release öffnen</button>
+      <button class="btn-sm" id="btnUpdateDismiss" title="Ausblenden">✕</button>
+    </div>
+  </div>
   <!-- TOP STREAMER COCKPIT BAR -->
   <header class="topbar">
     <div class="brand">
@@ -896,6 +906,12 @@
             <button class="btn-sm" id="btnExportConfig" title="Alle Einstellungen als JSON-Datei sichern">📤 Exportieren</button>
             <button class="btn-sm" id="btnImportConfig" title="Gesicherte Einstellungen wiederherstellen">📥 Importieren</button>
             <button class="btn-sm warn" id="btnResetDefaults" title="Design-, Emote- & Event-Einstellungen auf Standardwerte zurücksetzen">↺ Standard</button>
+          </div>
+
+          <div class="sub-divider-title" style="margin-top: 8px;">App-Updates (GitHub Releases)</div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+            <button class="btn-sm" id="btnCheckUpdates" title="Prüft auf GitHub Releases nach einer neueren Version">🔄 Nach Updates suchen</button>
+            <span id="updaterStatusText" style="font-size: 11px; color: #94a3b8;">v1.1.0</span>
           </div>
         </div>
 

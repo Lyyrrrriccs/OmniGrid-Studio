@@ -40,6 +40,11 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
   - **Twitch Clip & Stream-Marker** auf Knopfdruck (`/clip`, `/marker`, `/clip-and-marker`).
 - **YouTube Chat-Schreiben (OAuth2 PKCE):**
   - Optionaler Google-OAuth2-Login in der YouTube-Karte zum Senden von Chat-Nachrichten, `!song`-Antworten und Video-Uploads.
+- **OBS Szenen- & Quellen-Editor (`🎛️ Szenen-Editor`):**
+  - Interaktive 16:9-Leinwand mit Maus-Drag & Resize, **VirtualCam Live-Vorschau (30 FPS)** inkl. Auto-Start/Stopp, **OBS WebSocket Connect-Button direkt im Editor**, Quellen-Erstellung, Audio-Mixer sowie dynamische Auswahl für **Aufnahme-Modus**, **Bildschirm**, **Fenster**, **Anwendung**, **Gerät** und **Browser-URL**.
+- **GitHub Releases Auto-Updater & CI-Workflow:**
+  - Automatische Update-Prüfung beim Start + manueller Button (**🔄 Nach Updates suchen**), automatischer Download des Plattform-Releases, Update-Banner mit 1-Klick-Installation & Neustart sowie `.github/workflows/release.yml` für automatische macOS/Windows-Releases bei `v*`-Tags.
+- **UI-Verbesserung:** Kommagetrennte Tag-/Keyword-Listen (Keyword-Alarme, Poll-Optionen, Stream-Tags, Auto-Mod-Blacklist, Hype-Keywords) nutzen jetzt mehrzeilige, vertikal vergrößerbare `<textarea>`-Felder.
 - **Tablet Companion (`/tablet`) & App-Icons:**
   - WLAN/Tailscale-Netzwerk-Umschalter mit QR-Code + `NSLocalNetworkUsageDescription` für macOS.
   - Eigenes **OmniGrid Studio** App-Icon für macOS Dock (`.icns`) und Windows (`.ico`).

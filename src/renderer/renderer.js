@@ -5364,3 +5364,92 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
 })();
+
+// ======================================================
+// GITHUB RELEASES AUTO-UPDATER UI
+// ======================================================
+(function initGitHubAutoUpdaterUI() {
+  const banner = document.getElementById('updateBanner');
+  const bannerText = document.getElementById('updateBannerText');
+  const btnInstall = document.getElementById('btnUpdateInstall');
+  const btnReleaseUrl = document.getElementById('btnUpdateReleaseUrl');
+  const btnDismiss = document.getElementById('btnUpdateDismiss');
+  const btnCheck = document.getElementById('btnCheckUpdates');
+  const statusText = document.getElementById('updaterStatusText');
+
+  let currentReleaseUrl = '';
+  let dismissed = false;
+
+  function renderUpdaterState(st) {
+    if (!st) return;
+    currentReleaseUrl = st.releaseUrl || '';
+    if (statusText) {
+      if (st.status === 'checking') {
+        statusText.style.color = '#38bdf8';
+        statusText.textContent = '⏳ Prüfe GitHub...';
+      } else if (st.status === 'downloading') {
+        statusText.style.color = '#38bdf8';
+        statusText.textContent = `⬇️ Lade v${st.latestVersion} (${st.percent || 0}%)`;
+      } else if (st.status === 'downloaded') {
+        statusText.style.color = '#4ade80';
+        statusText.textContent = `✅ v${st.latestVersion} bereit`;
+      } else if (st.status === 'available') {
+        statusText.style.color = '#fbbf24';
+        statusText.textContent = `🆕 v${st.latestVersion} verfügbar`;
+      } else if (st.status === 'up-to-date') {
+        statusText.style.color = '#4ade80';
+        statusText.textContent = `✅ Aktuell (v${st.currentVersion})`;
+      } else if (st.status === 'error') {
+        statusText.style.color = '#f87171';
+        statusText.textContent = `❌ ${st.error || 'Fehler'}`;
+      } else {
+        statusText.style.color = '#94a3b8';
+        statusText.textContent = `v${st.currentVersion || '1.1.0'}`;
+      }
+    }
+
+    if (!banner || dismissed) return;
+    const showBanner = st.status === 'downloading' || st.status === 'downloaded' || st.status === 'available';
+    banner.style.display = showBanner ? 'flex' : 'none';
+    if (!showBanner) return;
+
+    if (st.status === 'downloading') {
+      if (bannerText) bannerText.textContent = `⬇️ Update v${st.latestVersion} wird heruntergeladen (${st.percent || 0}%)...`;
+      btnInstall?.classList.add('hidden');
+      btnReleaseUrl?.classList.add('hidden');
+    } else if (st.status === 'downloaded') {
+      if (bannerText) bannerText.textContent = `🚀 Update v${st.latestVersion} heruntergeladen (${st.assetName || 'Paket'}) — bereit zur Installation!`;
+      btnInstall?.classList.remove('hidden');
+      btnReleaseUrl?.classList.toggle('hidden', !currentReleaseUrl);
+    } else if (st.status === 'available') {
+      if (bannerText) bannerText.textContent = `🆕 Neue Version v${st.latestVersion} auf GitHub verfügbar!`;
+      btnInstall?.classList.add('hidden');
+      btnReleaseUrl?.classList.toggle('hidden', !currentReleaseUrl);
+    }
+  }
+
+  window.omnichat.onUpdaterState?.(renderUpdaterState);
+  window.omnichat.updaterGetState?.().then(renderUpdaterState).catch(() => {});
+
+  btnCheck?.addEventListener('click', async () => {
+    dismissed = false;
+    const st = await window.omnichat.updaterCheck?.({ autoDownload: true });
+    renderUpdaterState(st);
+  });
+
+  btnInstall?.addEventListener('click', async () => {
+    if (btnInstall) btnInstall.disabled = true;
+    await window.omnichat.updaterInstall?.();
+    if (btnInstall) btnInstall.disabled = false;
+  });
+
+  btnReleaseUrl?.addEventListener('click', () => {
+    if (currentReleaseUrl) window.omnichat.openExternalUrl?.(currentReleaseUrl);
+  });
+
+  btnDismiss?.addEventListener('click', () => {
+    dismissed = true;
+    if (banner) banner.style.display = 'none';
+  });
+})();
+

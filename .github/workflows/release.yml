@@ -2,48 +2,59 @@ name: Build & Release OmniGrid Studio
 
 on:
   push:
-    branches:
-      - master
-      - main
     tags:
       - 'v*'
-  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-      - run: npm run build:win
-      - name: Package Windows ZIP
-        shell: pwsh
-        run: Compress-Archive -Path dist/OmniGridStudio-win32-x64/* -DestinationPath OmniGridStudio-Windows.zip
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: OmniGridStudio-Windows.zip
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
-          name: OmniGrid Studio (${{ github.ref_name }})
-
-  build-macos:
+  build-mac:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+          cache: 'npm'
       - run: npm ci
       - run: npm run build:mac
-      - name: Package macOS ZIP
-        run: ditto -c -k --sequesterRsrc --keepParent dist/OmniGridStudio.app OmniGridStudio-macOS.zip
-      - uses: softprops/action-gh-release@v2
+      - name: Zip macOS App
+        run: ditto -c -k --sequesterRsrc --keepParent dist/OmniGridStudio.app dist/OmniGridStudio-macOS.zip
+      - uses: actions/upload-artifact@v4
         with:
-          files: OmniGridStudio-macOS.zip
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
-          name: OmniGrid Studio (${{ github.ref_name }})
+          name: OmniGridStudio-macOS
+          path: dist/OmniGridStudio-macOS.zip
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:win
+      - name: Zip Windows Build
+        shell: pwsh
+        run: Compress-Archive -Path dist/OmniGridStudio-win/* -DestinationPath dist/OmniGridStudio-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OmniGridStudio-Windows
+          path: dist/OmniGridStudio-Windows.zip
+
+  release:
+    needs: [build-mac, build-win]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/OmniGridStudio-macOS/OmniGridStudio-macOS.zip
+            artifacts/OmniGridStudio-Windows/OmniGridStudio-Windows.zip

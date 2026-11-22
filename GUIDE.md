@@ -237,5 +237,15 @@ Notify your community automatically when you go live and share your stream sched
 - **🔊 Integrated Soundboard (`🔊 Sounds`):** Trigger the 4 built-in sounds or add your own `.mp3`/`.wav`/`.ogg` files. Audio routes directly into OBS (`/alerts` and `/soundboard`) and can be triggered via Stream Deck API (`/api/streamdeck/sound?name=...`).
 - **🔥 Chat-Hype Detector (`🔥 Hype`):** Monitors chat velocity (hype keywords count double) and automatically creates a **Twitch Stream Marker**, saves the **OBS Replay Buffer**, or creates a **Twitch Clip** during hype spikes.
 
+## 19. OBS Scene & Source Editor (`🎛️ Szenen-Editor`)
 
+- **Connect Directly:** The editor header includes a live status badge and **🔌 Mit OBS verbinden** button so you can connect or reconnect OBS WebSocket v5 directly inside the editor.
+- **Smooth Live Preview (VirtualCam):** With **🎥 Live-Vorschau (VirtualCam)** enabled, the editor starts the OBS Virtual Camera (30 FPS) for smooth preview and stops it automatically when you close the editor (if started by the editor).
+- **Canvas Drag & Resize:** Drag any source on the 16:9 preview to move it or drag corners to resize. Use **🎯 Zentrieren** / **⛶ Vollbild** for instant alignment.
+- **Add & Configure Sources:** Create new sources (Browser, Image, Media, Text, Screen/Window Capture, Camera, Audio) and dynamically pick **Capture Mode**, **Display**, **Window**, **Application**, **Device**, or **Browser URL** under **🎯 Quelle konfigurieren**.
 
+## 20. Automatic Updates (GitHub Releases)
+
+- OmniGrid Studio checks `github.com/Lyyrrrriccs/omni-stream-chat/releases` on startup (and manually via **⚙️ Config → App-Updates → 🔄 Nach Updates suchen**).
+- When a newer version is available, the matching macOS/Windows asset is downloaded automatically and a top banner offers **🚀 Jetzt installieren & neu starten**.
+- Releases are built automatically via GitHub Actions (`.github/workflows/release.yml`) whenever a `v*` tag (e.g. `v1.2.0`) is pushed.

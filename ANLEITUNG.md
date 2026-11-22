@@ -237,5 +237,15 @@ Informiere deine Community automatisch über Stream-Starts und kommende Streams:
 - **🔊 Integriertes Soundboard (`🔊 Sounds`):** Nutze die 4 Standard-Sounds oder füge eigene `.mp3`/`.wav`/`.ogg`-Dateien hinzu. Sounds können lokal abgespielt und direkt an OBS (`/alerts` und `/soundboard`) sowie über die Stream Deck API (`/api/streamdeck/sound?name=...`) getriggert werden.
 - **🔥 Chat-Hype-Detektor (`🔥 Hype`):** Überwacht das Chat-Tempo (Hype-Keywords zählen doppelt) und setzt bei Spikes automatisch einen **Twitch Stream-Marker**, speichert den **OBS Replay-Buffer** oder erstellt einen **Twitch-Clip**.
 
+## 19. OBS Szenen- & Quellen-Editor (`🎛️ Szenen-Editor`)
 
+- **Direkt verbinden:** Oben rechts im Editor findest du den Status und den Button **🔌 Mit OBS verbinden** — du kannst OBS also direkt im Editor verbinden oder neu verbinden.
+- **Flüssige Live-Vorschau (VirtualCam):** Bei aktiver **🎥 Live-Vorschau (VirtualCam)** startet der Editor automatisch die OBS Virtual Camera (30 FPS) und schaltet sie beim Schließen des Editors wieder aus, sofern sie vom Editor gestartet wurde.
+- **Maus-Steuerung auf der Leinwand:** Ziehe Quellen direkt auf der 16:9-Vorschau zum Verschieben oder an den Ecken zum Vergrößern/Verkleinern. Über **🎯 Zentrieren** und **⛶ Vollbild** richtest du Quellen mit einem Klick aus.
+- **Quellen hinzufügen & konfigurieren:** Erstelle neue Quellen (Browser, Bild, Medien, Text, Bildschirm-/Fensteraufnahme, Kamera, Audio) und wähle bei einer ausgewählten Quelle unter **🎯 Quelle konfigurieren** dynamisch **Aufnahme-Modus**, **Bildschirm**, **Fenster**, **Anwendung**, **Gerät** oder **Browser-URL** aus.
 
+## 20. Automatische Updates (GitHub Releases)
+
+- OmniGrid Studio prüft beim Start (und jederzeit manuell unter **⚙️ Config → App-Updates → 🔄 Nach Updates suchen**) auf neue Releases unter `github.com/Lyyrrrriccs/omni-stream-chat/releases`.
+- Wird eine neue Version gefunden, lädt die App das passende Paket automatisch herunter und zeigt oben ein Update-Banner (**🚀 Jetzt installieren & neu starten**).
+- Neue Releases werden über GitHub Actions (`.github/workflows/release.yml`) automatisch gebaut, sobald ein Versions-Tag (`v*`, z. B. `v1.2.0`) gepusht wird.
