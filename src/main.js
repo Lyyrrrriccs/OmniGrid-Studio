@@ -2003,8 +2003,14 @@ app.whenReady().then(async () => {
         const ap = data?.activePlayer;
         const me = (data?.allPlayers || []).find((p) => p.summonerName === ap?.summonerName) || data?.allPlayers?.[0];
         if (me) {
+          const skinNum = Number(me.skinID ?? me.skinId ?? 0);
+          const ddAssets = await gameAddons.resolveLolDdragonAssets(me.championName || '', skinNum, me.skinName || '');
           ga.perAddonStats.lol = {
             champion: me.championName || '—',
+            skinId: skinNum,
+            skinName: ddAssets.skinName || me.skinName || '',
+            championIconUrl: ddAssets.championIconUrl,
+            skinSplashUrl: ddAssets.skinSplashUrl,
             kills: Number(me.scores?.kills || 0),
             deaths: Number(me.scores?.deaths || 0),
             assists: Number(me.scores?.assists || 0),
@@ -3261,9 +3267,19 @@ app.whenReady().then(async () => {
     };
   });
 
-  ipcMain.handle('game-addons-save', (_ev, nextGa) => {
+  ipcMain.handle('game-addons-save', async (_ev, nextGa) => {
     const cfg = loadConfig();
     const ga = gameAddons.normalizeGameAddonsConfig(nextGa);
+    if (ga.perAddonStats?.lol?.champion) {
+      const dd = await gameAddons.resolveLolDdragonAssets(
+        ga.perAddonStats.lol.champion,
+        ga.perAddonStats.lol.skinId || 0,
+        ''
+      );
+      ga.perAddonStats.lol.championIconUrl = dd.championIconUrl;
+      ga.perAddonStats.lol.skinSplashUrl = dd.skinSplashUrl;
+      ga.perAddonStats.lol.skinName = dd.skinName;
+    }
     cfg.gameAddons = ga;
     saveConfig(cfg);
     broadcastGameAddonsState(cfg);

@@ -7,7 +7,7 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
   perAddonStats: {
     universal: { kills: 0, deaths: 0, wins: 0, rank: 'Live' },
     cs2: { kills: 0, deaths: 0, assists: 0, mvps: 0, map: 'Mirage', score: '0 : 0' },
-    lol: { champion: '—', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1 },
+    lol: { champion: 'Ahri', skinId: 0, skinName: '', championIconUrl: '', skinSplashUrl: '', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1 },
     minecraft: { deaths: 0, diamonds: 0, days: 1, mode: 'Survival' },
     souls: { deaths: 0, bosses: 0, run: 'Any%', bossName: 'Aktueller Boss' },
     valorant: { kills: 0, deaths: 0, wins: 0, rank: 'Diamond', agent: 'Jett' }
@@ -40,6 +40,7 @@ const GAME_ADDONS = [
     gameMatches: ['league of legends', 'lol', 'teamfight tactics'],
     fields: [
       { key: 'champion', label: 'Champion', type: 'text' },
+      { key: 'skinId', label: 'Skin-ID', type: 'number' },
       { key: 'kills', label: 'Kills', type: 'number' },
       { key: 'deaths', label: 'Deaths', type: 'number' },
       { key: 'assists', label: 'Assists', type: 'number' },
@@ -158,11 +159,14 @@ function resolveActiveAddon(cfg = {}) {
 
 function buildObsGameStatsPayload(cfg = {}) {
   const { addon, stats, ga } = resolveActiveAddon(cfg);
-  const displayStats = addon.fields.map((f) => ({
-    key: f.key,
-    label: f.label,
-    value: stats[f.key] !== undefined && stats[f.key] !== '' ? stats[f.key] : '—'
-  }));
+  const skipKeys = addon.id === 'lol' ? new Set(['champion', 'skinId']) : new Set();
+  const displayStats = addon.fields
+    .filter((f) => !skipKeys.has(f.key))
+    .map((f) => ({
+      key: f.key,
+      label: f.label,
+      value: stats[f.key] !== undefined && stats[f.key] !== '' ? stats[f.key] : '—'
+    }));
   // Add K/D ratio automatically when kills & deaths exist
   if (typeof stats.kills === 'number' && typeof stats.deaths === 'number') {
     const kd = stats.deaths > 0 ? (stats.kills / stats.deaths).toFixed(2) : String(stats.kills.toFixed(2));
@@ -175,6 +179,11 @@ function buildObsGameStatsPayload(cfg = {}) {
     accent: addon.accent,
     selectedMode: ga.selectedMode,
     currentGameName: ga.currentGameName,
+    champion: stats.champion || '',
+    skinId: Number(stats.skinId || 0),
+    skinName: stats.skinName || '',
+    championIconUrl: stats.championIconUrl || '',
+    skinSplashUrl: stats.skinSplashUrl || '',
     stats: displayStats,
     chatCommands: addon.chatCommands
   };
@@ -256,6 +265,63 @@ function buildCs2GsiConfig(port = 4588) {
 `;
 }
 
+let cachedDdragon = { version: '', champions: null, skinsById: {} };
+
+async function ensureDdragonLoaded() {
+  if (cachedDdragon.version && cachedDdragon.champions) return cachedDdragon;
+  try {
+    const vResp = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+    const versions = await vResp.json();
+    const ver = Array.isArray(versions) && versions[0] ? versions[0] : '14.23.1';
+    const cResp = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ver}/data/de_DE/champion.json`);
+    const cJson = await cResp.json();
+    const map = {};
+    for (const champ of Object.values(cJson?.data || {})) {
+      map[String(champ.name || '').toLowerCase()] = champ.id;
+      map[String(champ.id || '').toLowerCase()] = champ.id;
+    }
+    cachedDdragon = { version: ver, champions: map, skinsById: {} };
+  } catch (e) {}
+  return cachedDdragon;
+}
+
+async function resolveLolDdragonAssets(championName = '', skinId = 0, explicitSkinName = '') {
+  const cleanName = String(championName || '').trim();
+  if (!cleanName || cleanName === '—') {
+    return { championIconUrl: '', skinSplashUrl: '', skinName: explicitSkinName || '' };
+  }
+
+  const dd = await ensureDdragonLoaded();
+  const ver = dd.version || '14.23.1';
+  const lower = cleanName.toLowerCase();
+  let champId = dd.champions?.[lower] || '';
+  if (!champId) {
+    const alias = { wukong: 'MonkeyKing', 'nunu & willump': 'Nunu', 'renata glasc': 'Renata' };
+    champId = alias[lower] || cleanName.replace(/[^a-zA-Z0-9]/g, '');
+  }
+
+  const num = Math.max(0, parseInt(skinId, 10) || 0);
+  let resolvedSkinName = String(explicitSkinName || '').trim();
+  if (!resolvedSkinName && num > 0 && champId) {
+    try {
+      if (!dd.skinsById[champId]) {
+        const sResp = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ver}/data/de_DE/champion/${encodeURIComponent(champId)}.json`);
+        const sJson = await sResp.json();
+        const cData = sJson?.data?.[champId];
+        if (cData?.skins) dd.skinsById[champId] = cData.skins;
+      }
+      const match = (dd.skinsById[champId] || []).find((s) => Number(s.num) === num);
+      if (match?.name && match.name !== 'default') resolvedSkinName = match.name;
+    } catch (e) {}
+  }
+
+  return {
+    championIconUrl: `https://ddragon.leagueoflegends.com/cdn/${ver}/img/champion/${champId}.png`,
+    skinSplashUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champId}_${num}.jpg`,
+    skinName: resolvedSkinName || (num === 0 ? 'Classic' : `Skin #${num}`)
+  };
+}
+
 module.exports = {
   DEFAULT_GAME_ADDONS_CONFIG,
   GAME_ADDONS,
@@ -265,5 +331,6 @@ module.exports = {
   resolveActiveAddon,
   buildObsGameStatsPayload,
   handleGameChatCommand,
-  buildCs2GsiConfig
+  buildCs2GsiConfig,
+  resolveLolDdragonAssets
 };

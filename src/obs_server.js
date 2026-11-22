@@ -1892,20 +1892,42 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-card.theme-lol .gs-lbl { color: #c8aa6e; font-weight: 700; letter-spacing: 0.07em; }
     .gs-card.theme-lol .gs-val { color: #f0e6d2; }
     .gs-card.theme-lol .gs-cell.is-highlight .gs-val { color: #0ac8b9; text-shadow: 0 0 10px rgba(10,200,185,0.4); }
+    .gs-splash { position: absolute; inset: 0; background-size: cover; background-position: center 22%; opacity: 0.24; pointer-events: none; z-index: 0; border-radius: inherit; filter: saturate(1.15); }
+    .gs-content { position: relative; z-index: 1; }
+    .gs-lol-hero { display: none; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .gs-card.theme-lol .gs-lol-hero.visible { display: flex; }
+    .gs-champ-icon { width: 52px; height: 52px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 12px rgba(10,200,185,0.35); object-fit: cover; background: #091428; flex-shrink: 0; }
+    .gs-champ-name { font-size: 16px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; }
+    .gs-skin-name { font-size: 11px; color: #0ac8b9; font-weight: 700; margin-top: 2px; }
   </style>
 </head>
 <body>
   <div class="gs-card" id="gsCard">
-    <div class="gs-head">
-      <div class="gs-title" id="gsTitle">🎮 Game Stats</div>
-      <div class="gs-badge" id="gsBadge">OmniGrid</div>
+    <div class="gs-splash" id="gsSplash"></div>
+    <div class="gs-content">
+      <div class="gs-head">
+        <div class="gs-title" id="gsTitle">🎮 Game Stats</div>
+        <div class="gs-badge" id="gsBadge">OmniGrid</div>
+      </div>
+      <div class="gs-lol-hero" id="gsLolHero">
+        <img class="gs-champ-icon" id="gsChampIcon" alt="" />
+        <div>
+          <div class="gs-champ-name" id="gsChampName"></div>
+          <div class="gs-skin-name" id="gsSkinName"></div>
+        </div>
+      </div>
+      <div class="gs-grid" id="gsGrid"></div>
     </div>
-    <div class="gs-grid" id="gsGrid"></div>
   </div>
   <script>
     const card = document.getElementById('gsCard');
+    const splashEl = document.getElementById('gsSplash');
     const titleEl = document.getElementById('gsTitle');
     const badgeEl = document.getElementById('gsBadge');
+    const lolHeroEl = document.getElementById('gsLolHero');
+    const champIconEl = document.getElementById('gsChampIcon');
+    const champNameEl = document.getElementById('gsChampName');
+    const skinNameEl = document.getElementById('gsSkinName');
     const gridEl = document.getElementById('gsGrid');
 
     function renderStats(data) {
@@ -1915,6 +1937,18 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       card.style.setProperty('--accent', data.accent || '#38bdf8');
       titleEl.textContent = (data.icon || '🎮') + ' ' + (data.addonName || 'Game Stats');
       badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
+
+      if (isLol && data.championIconUrl) {
+        lolHeroEl.classList.add('visible');
+        champIconEl.src = data.championIconUrl;
+        champNameEl.textContent = data.champion || 'Champion';
+        skinNameEl.textContent = data.skinName ? '✨ ' + data.skinName : 'Classic';
+        splashEl.style.backgroundImage = data.skinSplashUrl ? 'url("' + data.skinSplashUrl + '")' : 'none';
+      } else {
+        lolHeroEl.classList.remove('visible');
+        splashEl.style.backgroundImage = 'none';
+      }
+
       gridEl.innerHTML = '';
       (data.stats || []).forEach((s) => {
         const cell = document.createElement('div');
