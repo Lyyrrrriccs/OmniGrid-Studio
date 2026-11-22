@@ -2477,7 +2477,44 @@ app.whenReady().then(async () => {
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
       if (act === 'start-virtual-cam') return await obsWs.startVirtualCam();
       if (act === 'stop-virtual-cam') return await obsWs.stopVirtualCam();
-      if (act === 'inspect-input') return await obsWs.inspectInputProperties(payload.inputName);
+      if (act === 'inspect-input') {
+        const res = await obsWs.inspectInputProperties(payload.inputName);
+        if (process.platform === 'darwin' && ['screen_capture', 'sck_audio_capture', 'display_capture', 'window_capture'].includes(res.inputKind)) {
+          const { screen, desktopCapturer } = require('electron');
+          const { execFile } = require('child_process');
+          if (res.inputKind === 'screen_capture') {
+            res.properties.type = [
+              { itemName: 'Monitoraufnahme', itemValue: 0 },
+              { itemName: 'Fensteraufnahme', itemValue: 1 },
+              { itemName: 'Anwendungsaufnahme', itemValue: 2 }
+            ];
+            res.properties.display = screen.getAllDisplays().map((d, idx) => ({
+              itemName: `${d.label || `Display ${idx + 1}`}: ${d.bounds.width}×${d.bounds.height} @ ${d.bounds.x},${d.bounds.y}`,
+              itemValue: d.id
+            }));
+          }
+          try {
+            const sources = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 1, height: 1 } });
+            res.properties.window = sources
+              .map((s) => {
+                const m = String(s.id || '').match(/^window:(\d+):/);
+                const wid = m ? parseInt(m[1], 10) : 0;
+                return wid > 0 && s.name ? { itemName: s.name, itemValue: wid } : null;
+              })
+              .filter(Boolean);
+          } catch (e) {
+            res.properties.window = [];
+          }
+          res.properties.application = await new Promise((resolve) => {
+            const jxa = 'ObjC.import("AppKit"); const apps = $.NSWorkspace.sharedWorkspace.runningApplications; const out = []; for (let i = 0; i < apps.count; i++) { const a = apps.objectAtIndex(i); if (a.activationPolicy === $.NSApplicationActivationPolicyRegular) { const bid = ObjC.unwrap(a.bundleIdentifier); const name = ObjC.unwrap(a.localizedName); if (bid && name) out.push({ itemName: name, itemValue: bid }); } } JSON.stringify(out);';
+            execFile('osascript', ['-l', 'JavaScript', '-e', jxa], { timeout: 3000 }, (err, stdout) => {
+              if (err) return resolve([]);
+              try { resolve(JSON.parse(String(stdout || '[]').trim())); } catch (e) { resolve([]); }
+            });
+          });
+        }
+        return res;
+      }
       if (act === 'set-input-settings') return await obsWs.setInputSettings(payload.inputName, payload.inputSettings || {});
       if (act === 'set-scene-editor-enabled') {
         const cfg = loadConfig();

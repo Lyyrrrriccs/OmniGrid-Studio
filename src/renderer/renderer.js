@@ -4639,14 +4639,14 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
     propKeys.forEach((prop) => {
       const items = props[prop];
-      // For screen_capture, hide irrelevant lists if empty (e.g. window when in monitor mode),
-      // but always show the list matching the active mode (1=window, 2=application) even if empty.
-      if (items.length === 0 && res.inputKind === 'screen_capture') {
-        const t = Number(settings.type);
+      if (res.inputKind === 'screen_capture') {
+        const t = Number(settings.type || 0);
         if (prop === 'window' && t !== 1) return;
         if (prop === 'application' && t !== 2) return;
+        if (prop === 'display' && t === 1) return;
+      } else if (items.length === 0) {
+        return;
       }
-      if (items.length === 0 && res.inputKind !== 'screen_capture') return;
 
       const wrap = document.createElement('div');
       const lbl = document.createElement('label');

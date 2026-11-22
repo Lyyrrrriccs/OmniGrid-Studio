@@ -422,24 +422,19 @@ class ObsWsClient extends EventEmitter {
 
   async inspectInputProperties(inputName) {
     const { inputKind, inputSettings } = await this.getInputSettings(inputName);
-    const candidateProps = ['type', 'window', 'application', 'display_uuid', 'display', 'device', 'device_id'];
     const properties = {};
     const errors = {};
-    const fetchAll = async () => {
+    const skipObsProps = ['screen_capture', 'sck_audio_capture', 'display_capture', 'window_capture'];
+    if (!skipObsProps.includes(inputKind)) {
+      const candidateProps = ['device', 'device_id'];
       for (const prop of candidateProps) {
         const res = await this.getInputPropertyItems(inputName, prop);
-        if (res.ok) {
+        if (res.ok && res.items.length > 0) {
           properties[prop] = res.items;
-        } else {
+        } else if (!res.ok) {
           errors[prop] = res.error;
         }
       }
-    };
-    await fetchAll();
-    // macOS screen_capture loads window/application lists asynchronously on mode switch
-    if (inputKind === 'screen_capture' && ((inputSettings.type === 1 && (!properties.window || properties.window.length === 0)) || (inputSettings.type === 2 && (!properties.application || properties.application.length === 0)))) {
-      await new Promise((r) => setTimeout(r, 300));
-      await fetchAll();
     }
     return { ok: true, inputKind, inputSettings, properties, errors };
   }
