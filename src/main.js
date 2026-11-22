@@ -2019,6 +2019,7 @@ app.whenReady().then(async () => {
             skinId: skinNum,
             skinName: ddAssets.skinName || me.skinName || '',
             championIconUrl: ddAssets.championIconUrl,
+            skinIconUrl: ddAssets.skinIconUrl,
             skinSplashUrl: ddAssets.skinSplashUrl,
             kills: Number(me.scores?.kills || 0),
             deaths: Number(me.scores?.deaths || 0),
@@ -3286,6 +3287,7 @@ app.whenReady().then(async () => {
         ''
       );
       ga.perAddonStats.lol.championIconUrl = dd.championIconUrl;
+      ga.perAddonStats.lol.skinIconUrl = dd.skinIconUrl;
       ga.perAddonStats.lol.skinSplashUrl = dd.skinSplashUrl;
       ga.perAddonStats.lol.skinName = dd.skinName;
     }

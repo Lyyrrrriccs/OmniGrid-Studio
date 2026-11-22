@@ -1897,7 +1897,7 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-content { position: relative; z-index: 1; }
     .gs-lol-hero { display: none; align-items: center; gap: 11px; margin-bottom: 10px; }
     .gs-card.theme-lol .gs-lol-hero.visible { display: flex; }
-    .gs-champ-icon { width: 56px; height: 56px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 14px rgba(10,200,185,0.42); object-fit: cover; background: #091428; flex-shrink: 0; }
+    .gs-champ-icon { width: 56px; height: 56px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 14px rgba(10,200,185,0.42); object-fit: cover; object-position: center 15%; background: #091428; flex-shrink: 0; }
     .gs-champ-name { font-size: 17px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
     .gs-skin-name { font-size: 11.5px; color: #0ac8b9; font-weight: 700; margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
   </style>
@@ -1939,9 +1939,15 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       titleEl.textContent = (data.icon || '🎮') + ' ' + (data.addonName || 'Game Stats');
       badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
 
-      if (isLol && data.championIconUrl) {
+      const iconUrl = data.skinIconUrl || data.championIconUrl;
+      if (isLol && iconUrl) {
         lolHeroEl.classList.add('visible');
-        champIconEl.src = data.championIconUrl;
+        champIconEl.onerror = () => {
+          if (data.championIconUrl && champIconEl.src !== data.championIconUrl) {
+            champIconEl.src = data.championIconUrl;
+          }
+        };
+        champIconEl.src = iconUrl;
         champNameEl.textContent = data.champion || 'Champion';
         skinNameEl.textContent = data.skinName ? '✨ ' + data.skinName : 'Classic';
         splashEl.style.backgroundImage = data.skinSplashUrl ? 'url("' + data.skinSplashUrl + '")' : 'none';

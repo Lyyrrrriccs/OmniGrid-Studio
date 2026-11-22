@@ -183,6 +183,7 @@ function buildObsGameStatsPayload(cfg = {}) {
     skinId: Number(stats.skinId || 0),
     skinName: stats.skinName || '',
     championIconUrl: stats.championIconUrl || '',
+    skinIconUrl: stats.skinIconUrl || '',
     skinSplashUrl: stats.skinSplashUrl || '',
     stats: displayStats,
     chatCommands: addon.chatCommands
@@ -315,8 +316,10 @@ async function resolveLolDdragonAssets(championName = '', skinId = 0, explicitSk
     } catch (e) {}
   }
 
+  const champIcon = `https://ddragon.leagueoflegends.com/cdn/${ver}/img/champion/${champId}.png`;
   return {
-    championIconUrl: `https://ddragon.leagueoflegends.com/cdn/${ver}/img/champion/${champId}.png`,
+    championIconUrl: champIcon,
+    skinIconUrl: num > 0 ? `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champId}_${num}.jpg` : champIcon,
     skinSplashUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champId}_${num}.jpg`,
     skinName: resolvedSkinName || (num === 0 ? 'Classic' : `Skin #${num}`)
   };
