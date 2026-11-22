@@ -3246,6 +3246,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const btnPlayRange = document.getElementById('btnClipPlayRange');
   const numClipStart = document.getElementById('numClipStart');
   const numClipEnd = document.getElementById('numClipEnd');
+  const rngClipStart = document.getElementById('rngClipStart');
+  const rngClipEnd = document.getElementById('rngClipEnd');
+  const clipTimelineSel = document.getElementById('clipTimelineSel');
+  const clipTimelinePlayhead = document.getElementById('clipTimelinePlayhead');
   const clipRangeDur = document.getElementById('clipRangeDuration');
   const btnReveal = document.getElementById('btnClipRevealOut');
   const inputTitle = document.getElementById('inputClipTitle');
@@ -3255,11 +3259,21 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   let selectedPath = '';
   let lastOutPath = '';
   let rangePlayStopAt = null;
+  let videoDurationSec = 30;
 
   function updateRangeDurationLabel() {
     const s = Math.max(0, parseFloat(numClipStart?.value || '0') || 0);
     const e = Math.max(s + 0.5, parseFloat(numClipEnd?.value || '30') || 30);
     if (clipRangeDur) clipRangeDur.textContent = `Dauer: ${(e - s).toFixed(1)}s`;
+    if (rngClipStart) rngClipStart.value = String(s);
+    if (rngClipEnd) rngClipEnd.value = String(e);
+    if (clipTimelineSel) {
+      const total = Math.max(0.5, videoDurationSec || e);
+      const leftPct = Math.max(0, Math.min(100, (s / total) * 100));
+      const rightPct = Math.max(leftPct, Math.min(100, (e / total) * 100));
+      clipTimelineSel.style.left = `${leftPct}%`;
+      clipTimelineSel.style.width = `${Math.max(0.5, rightPct - leftPct)}%`;
+    }
   }
 
   function setSelectedClip(filePath, fileName) {
@@ -3278,7 +3292,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       inputTitle.disabled = !hasSel;
       inputTitle.value = hasSel ? String(fileName || '').replace(/\.[^.]+$/, '') : '';
     }
-    [btnExport, btnTrimOrig, btnMarkStart, btnMarkEnd, btnPlayRange, btnRename, btnDelete].forEach((b) => {
+    [btnExport, btnTrimOrig, btnMarkStart, btnMarkEnd, btnPlayRange, btnRename, btnDelete, rngClipStart, rngClipEnd].forEach((b) => {
       if (b) b.disabled = !hasSel;
     });
   }
@@ -3452,14 +3466,19 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   });
 
   videoEl?.addEventListener('loadedmetadata', () => {
+    const dur = Number.isFinite(videoEl.duration) && videoEl.duration > 0 ? videoEl.duration : 30;
+    videoDurationSec = dur;
+    if (rngClipStart) { rngClipStart.max = dur.toFixed(1); rngClipStart.value = '0'; }
+    if (rngClipEnd) { rngClipEnd.max = dur.toFixed(1); rngClipEnd.value = dur.toFixed(1); }
     if (numClipStart) numClipStart.value = '0';
-    if (numClipEnd && Number.isFinite(videoEl.duration) && videoEl.duration > 0) {
-      numClipEnd.value = videoEl.duration.toFixed(1);
-    }
+    if (numClipEnd) numClipEnd.value = dur.toFixed(1);
     updateRangeDurationLabel();
   });
 
   videoEl?.addEventListener('timeupdate', () => {
+    if (clipTimelinePlayhead && videoDurationSec > 0) {
+      clipTimelinePlayhead.style.left = `${Math.min(100, (videoEl.currentTime / videoDurationSec) * 100)}%`;
+    }
     if (rangePlayStopAt !== null && videoEl.currentTime >= rangePlayStopAt) {
       videoEl.pause();
       rangePlayStopAt = null;
@@ -3468,6 +3487,22 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   [numClipStart, numClipEnd].forEach((el) => {
     el?.addEventListener('input', updateRangeDurationLabel);
+  });
+
+  rngClipStart?.addEventListener('input', () => {
+    const eVal = parseFloat(numClipEnd?.value || String(videoDurationSec)) || videoDurationSec;
+    const sVal = Math.min(parseFloat(rngClipStart.value) || 0, Math.max(0, eVal - 0.5));
+    if (numClipStart) numClipStart.value = sVal.toFixed(1);
+    if (videoEl) videoEl.currentTime = sVal;
+    updateRangeDurationLabel();
+  });
+
+  rngClipEnd?.addEventListener('input', () => {
+    const sVal = parseFloat(numClipStart?.value || '0') || 0;
+    const eVal = Math.max(parseFloat(rngClipEnd.value) || 0.5, sVal + 0.5);
+    if (numClipEnd) numClipEnd.value = eVal.toFixed(1);
+    if (videoEl) videoEl.currentTime = eVal;
+    updateRangeDurationLabel();
   });
 
   btnMarkStart?.addEventListener('click', () => {

@@ -1281,7 +1281,16 @@
             <button class="btn-sm" id="btnClipRename" disabled title="Clip-Titel / Dateiname speichern">✏️ Umbenennen</button>
             <button class="btn-sm warn" id="btnClipDelete" disabled title="Clip in den Papierkorb verschieben">🗑️ Löschen</button>
           </div>
-          <video id="clipStudioVideo" controls style="width: 100%; max-height: 290px; border-radius: 10px; background: #020617; margin-top: 8px;"></video>
+          <video id="clipStudioVideo" controls style="width: 100%; max-height: 280px; border-radius: 10px; background: #020617; margin-top: 8px;"></video>
+
+          <div class="clip-timeline-wrap" id="clipTimelineWrap" title="Start- (lila) & End-Regler (blau) zum Schneiden ziehen">
+            <div class="clip-timeline-track">
+              <div class="clip-timeline-selection" id="clipTimelineSel"></div>
+              <div class="clip-timeline-playhead" id="clipTimelinePlayhead"></div>
+            </div>
+            <input type="range" class="clip-range-input start" id="rngClipStart" min="0" max="30" step="0.1" value="0" disabled />
+            <input type="range" class="clip-range-input end" id="rngClipEnd" min="0" max="30" step="0.1" value="30" disabled />
+          </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 10px; align-items: end;">
             <div>
