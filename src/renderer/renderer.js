@@ -3230,3 +3230,118 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 });
+
+// --- CLIP- & REPLAY-STUDIO (9:16 SHORTS PIPELINE) ---
+(function initClipStudio() {
+  const modal = document.getElementById('clipStudioModal');
+  if (!modal) return;
+
+  const listEl = document.getElementById('clipStudioList');
+  const dirLabel = document.getElementById('clipStudioDirLabel');
+  const videoEl = document.getElementById('clipStudioVideo');
+  const btnExport = document.getElementById('btnClipExportShort');
+  const btnReveal = document.getElementById('btnClipRevealOut');
+  const statusEl = document.getElementById('clipStudioStatus');
+  let selectedPath = '';
+  let lastOutPath = '';
+
+  function renderReplays(res) {
+    if (!res) return;
+    if (dirLabel) {
+      const ff = res.hasFfmpeg ? 'ffmpeg bereit' : '⚠️ ffmpeg fehlt';
+      dirLabel.textContent = `Ordner: ${res.dir || '—'} (${ff})`;
+    }
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    const files = res.files || [];
+    if (files.length === 0) {
+      listEl.innerHTML = '<span style="color:#94a3b8;">Keine Videos (.mp4/.mkv/.mov) gefunden. Wähle oben deinen OBS-Aufnahmeordner.</span>';
+      return;
+    }
+    files.forEach((f) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-sm';
+      btn.style.textAlign = 'left';
+      btn.style.width = '100%';
+      btn.style.padding = '7px 8px';
+      btn.textContent = `🎬 ${f.name} (${f.sizeMb} MB)`;
+      btn.onclick = () => {
+        selectedPath = f.path;
+        if (videoEl) {
+          videoEl.src = encodeURI(`file://${f.path}`);
+        }
+        if (btnExport) btnExport.disabled = false;
+        if (statusEl) {
+          statusEl.style.color = '#94a3b8';
+          statusEl.textContent = `Ausgewählt: ${f.name}`;
+        }
+      };
+      listEl.appendChild(btn);
+    });
+  }
+
+  async function refreshList() {
+    const res = await window.omnichat.clipStudioList();
+    renderReplays(res);
+  }
+
+  document.getElementById('btnOpenClipStudio')?.addEventListener('click', () => {
+    modal.classList.remove('hidden');
+    refreshList();
+  });
+  document.getElementById('btnCloseClipStudio')?.addEventListener('click', () => {
+    modal.classList.add('hidden');
+    if (videoEl) videoEl.pause();
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.add('hidden');
+      if (videoEl) videoEl.pause();
+    }
+  });
+
+  document.getElementById('btnClipRefresh')?.addEventListener('click', refreshList);
+  document.getElementById('btnClipPickDir')?.addEventListener('click', async () => {
+    const res = await window.omnichat.clipStudioPickDir();
+    if (!res?.canceled) renderReplays(res);
+  });
+
+  btnExport?.addEventListener('click', async () => {
+    if (!selectedPath) return;
+    btnExport.disabled = true;
+    btnExport.textContent = '⏳ Rendere 9:16 Short...';
+    if (btnReveal) btnReveal.classList.add('hidden');
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = '⏳ ffmpeg rendert 1080×1920 MP4... (bitte kurz warten)';
+    }
+    const startSec = parseFloat(document.getElementById('numClipStart')?.value || '0') || 0;
+    const durationSec = parseFloat(document.getElementById('numClipDuration')?.value || '30') || 30;
+    const layoutMode = document.getElementById('selClipLayout')?.value || 'blur_bg';
+
+    const res = await window.omnichat.clipStudioExportShort({
+      inputPath: selectedPath,
+      startSec,
+      durationSec,
+      layoutMode
+    });
+
+    btnExport.disabled = false;
+    btnExport.textContent = '📱 Als 9:16 Short exportieren';
+    if (res?.ok) {
+      lastOutPath = res.outPath;
+      if (btnReveal) btnReveal.classList.remove('hidden');
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `✅ Fertig: ${res.outPath}`;
+      }
+    } else if (statusEl) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ ${res?.error || 'Export fehlgeschlagen.'}`;
+    }
+  });
+
+  btnReveal?.addEventListener('click', () => {
+    if (lastOutPath) window.omnichat.clipStudioReveal(lastOutPath);
+  });
+})();

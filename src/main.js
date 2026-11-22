@@ -8,6 +8,7 @@ const { ObsServer } = require('./obs_server');
 const { EmoteManager } = require('./emote_manager');
 const { SpotifyBridge } = require('./spotify_bridge');
 const { ObsWsClient } = require('./obs_ws_client');
+const clipStudio = require('./clip_studio');
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -1682,6 +1683,43 @@ app.whenReady().then(async () => {
       return { ok: true, updated: results, warnings: errors };
     }
     return { ok: false, error: errors.join(' | ') || 'Keine Plattform aktualisiert.' };
+  });
+
+  ipcMain.handle('clip-studio-list', () => {
+    const cfg = loadConfig();
+    const res = clipStudio.listReplays(cfg.replayDir || '');
+    return { ...res, hasFfmpeg: Boolean(clipStudio.findFfmpegBinary()) };
+  });
+
+  ipcMain.handle('clip-studio-pick-dir', async () => {
+    const { dialog } = require('electron');
+    const res = await dialog.showOpenDialog(mainWindow, {
+      title: 'OBS Replay- / Aufnahme-Ordner wählen',
+      properties: ['openDirectory']
+    });
+    if (res.canceled || !res.filePaths?.[0]) return { ok: false, canceled: true };
+    const cfg = loadConfig();
+    cfg.replayDir = res.filePaths[0];
+    saveConfig(cfg);
+    return { ...clipStudio.listReplays(cfg.replayDir), hasFfmpeg: Boolean(clipStudio.findFfmpegBinary()) };
+  });
+
+  ipcMain.handle('clip-studio-export-short', async (_ev, payload) => {
+    try {
+      const res = await clipStudio.exportVerticalShort(payload || {});
+      appendDiagLog('system', 'info', `🎞️ 9:16 Short exportiert: ${res.outPath}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('system', 'error', `9:16 Short Export fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('clip-studio-reveal', (_ev, filePath) => {
+    if (filePath) {
+      require('electron').shell.showItemInFolder(filePath);
+    }
+    return { ok: true };
   });
 
   ipcMain.handle('poll-action', (_ev, payload) => {

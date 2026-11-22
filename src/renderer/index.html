@@ -41,6 +41,7 @@
 
     <div class="topbar-actions">
       <button class="btn-chip" id="btnOpenConfig" title="Zentrale Konfiguration öffnen (Design, OBS, Alerts, TTS, Stream Deck, System)">⚙️ Config</button>
+      <button class="btn-chip" id="btnOpenClipStudio" title="Clip- &amp; Replay-Studio (9:16 Shorts Export)">🎞️ Clip-Studio</button>
       <button class="btn-chip" id="btnOpenHelp" title="Anleitung & Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
       <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken & Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik & Logs</button>
       <button class="btn-chip" id="btnPopoutChat" title="Eigenständiges, vollhohes Chatfenster links neben OBS öffnen">🪟 Separates Chatfenster</button>
@@ -1248,6 +1249,57 @@
         </div>
         <div class="config-tab-panel" id="cfgTab_companion"></div>
         <div class="config-tab-panel" id="cfgTab_system"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIP- & REPLAY-STUDIO (9:16 SHORTS PIPELINE) -->
+  <div class="config-modal-backdrop hidden" id="clipStudioModal">
+    <div class="config-modal-shell" role="dialog" aria-modal="true" aria-label="Clip- &amp; Replay-Studio">
+      <div class="config-modal-header">
+        <div>
+          <h2>🎞️ Clip- &amp; Replay-Studio (9:16 Shorts-Pipeline)</h2>
+          <p class="config-modal-sub" id="clipStudioDirLabel">Ordner: —</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn-sm" id="btnClipPickDir">📁 Ordner wählen</button>
+          <button class="btn-sm" id="btnClipRefresh">↻ Aktualisieren</button>
+          <button class="btn-chip" id="btnCloseClipStudio">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body" style="display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start;">
+        <div class="sidebar-section" style="margin: 0; max-height: 68vh; overflow-y: auto;">
+          <h3>📂 Replays &amp; Aufnahmen</h3>
+          <div id="clipStudioList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-size: 12px;">
+            <span style="color: #94a3b8;">Lade Aufnahmen...</span>
+          </div>
+        </div>
+        <div class="sidebar-section" style="margin: 0;">
+          <h3>📱 Vorschau &amp; 9:16 Export</h3>
+          <video id="clipStudioVideo" controls style="width: 100%; max-height: 320px; border-radius: 10px; background: #020617; margin-top: 6px;"></video>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; margin-top: 10px;">
+            <div>
+              <label for="numClipStart" style="font-size: 11px;">Start (Sek.)</label>
+              <input type="number" id="numClipStart" min="0" step="1" value="0" style="width: 100%; margin-top: 2px;" />
+            </div>
+            <div>
+              <label for="numClipDuration" style="font-size: 11px;">Dauer (Sek.)</label>
+              <input type="number" id="numClipDuration" min="1" max="180" step="1" value="30" style="width: 100%; margin-top: 2px;" />
+            </div>
+            <div>
+              <label for="selClipLayout" style="font-size: 11px;">9:16 Layout</label>
+              <select id="selClipLayout" style="width: 100%; margin-top: 2px;">
+                <option value="blur_bg">Blur-Hintergrund (16:9 komplett)</option>
+                <option value="center_crop">Center-Crop (Vollbild 9:16)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px; align-items: center;">
+            <button class="btn-sm" id="btnClipExportShort" disabled style="flex: 1; padding: 9px; font-weight: 700;">📱 Als 9:16 Short exportieren</button>
+            <button class="btn-sm hidden" id="btnClipRevealOut">📂 Im Ordner zeigen</button>
+          </div>
+          <div id="clipStudioStatus" style="margin-top: 8px; font-size: 12px; color: #94a3b8; word-break: break-word;"></div>
+        </div>
       </div>
     </div>
   </div>

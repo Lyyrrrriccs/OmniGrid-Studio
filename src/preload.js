@@ -59,5 +59,9 @@ contextBridge.exposeInMainWorld('omnichat', {
   exportChatLog: (messages) => ipcRenderer.invoke('export-chat-log', messages),
   streamManagerLoad: () => ipcRenderer.invoke('stream-manager-load'),
   streamManagerSearchGames: (query) => ipcRenderer.invoke('stream-manager-search-games', query),
-  streamManagerSave: (payload) => ipcRenderer.invoke('stream-manager-save', payload)
+  streamManagerSave: (payload) => ipcRenderer.invoke('stream-manager-save', payload),
+  clipStudioList: () => ipcRenderer.invoke('clip-studio-list'),
+  clipStudioPickDir: () => ipcRenderer.invoke('clip-studio-pick-dir'),
+  clipStudioExportShort: (payload) => ipcRenderer.invoke('clip-studio-export-short', payload),
+  clipStudioReveal: (filePath) => ipcRenderer.invoke('clip-studio-reveal', filePath)
 });
