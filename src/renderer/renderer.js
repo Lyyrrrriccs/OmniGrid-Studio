@@ -4330,3 +4330,155 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
 })();
+
+// ======================================================
+// GAME-ADDONS & OBS GAME-STATS OVERLAY (/game-stats)
+// ======================================================
+(function initGameAddonsModal() {
+  const modal = document.getElementById('gameAddonsModal');
+  if (!modal) return;
+  const btnOpen = document.getElementById('btnOpenGameAddons');
+  const btnClose = document.getElementById('btnCloseGameAddons');
+  const selAddon = document.getElementById('gaSelectAddon');
+  const gameInput = document.getElementById('gaCurrentGameInput');
+  const banner = document.getElementById('gaActiveBanner');
+  const fieldsEl = document.getElementById('gaStatsFields');
+  const chkLol = document.getElementById('gaLolPolling');
+  const chkTrigger = document.getElementById('gaAutoTrigger');
+  const statusEl = document.getElementById('gaStatus');
+
+  let gaState = null;
+  let allAddons = [];
+
+  function resolveAddonInRenderer() {
+    const mode = selAddon?.value || gaState?.selectedMode || 'auto';
+    if (mode !== 'auto') {
+      return allAddons.find((a) => a.id === mode) || allAddons[allAddons.length - 1];
+    }
+    const g = (gameInput?.value || gaState?.currentGameName || '').toLowerCase();
+    for (const a of allAddons) {
+      if ((a.gameMatches || []).some((m) => g.includes(m))) return a;
+    }
+    return allAddons.find((a) => a.id === 'universal') || allAddons[0];
+  }
+
+  function renderFields() {
+    if (!gaState || !allAddons.length) return;
+    const addon = resolveAddonInRenderer();
+    if (!addon) return;
+    const stats = (gaState.perAddonStats && gaState.perAddonStats[addon.id]) || {};
+    if (banner) {
+      banner.innerHTML = `${addon.icon} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${(addon.chatCommands || []).join('</code>, <code>')}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>`;
+    }
+    if (!fieldsEl) return;
+    fieldsEl.innerHTML = '';
+    (addon.fields || []).forEach((f) => {
+      const box = document.createElement('div');
+      box.style.cssText = 'background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.2); border-radius:8px; padding:8px;';
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'font-size:11px; color:#94a3b8; display:block;';
+      lbl.textContent = f.label;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; gap:4px; margin-top:4px; align-items:center;';
+      const inp = document.createElement('input');
+      inp.type = f.type === 'number' ? 'number' : 'text';
+      inp.value = stats[f.key] !== undefined ? String(stats[f.key]) : '';
+      inp.style.flex = '1';
+      inp.dataset.gaKey = f.key;
+      inp.dataset.gaType = f.type;
+      row.appendChild(inp);
+
+      if (f.type === 'number') {
+        const plusBtn = document.createElement('button');
+        plusBtn.className = 'btn-sm';
+        plusBtn.textContent = '+1';
+        plusBtn.addEventListener('click', () => {
+          inp.value = String((parseInt(inp.value || '0', 10) || 0) + 1);
+          saveFromForm();
+        });
+        row.appendChild(plusBtn);
+      }
+      box.appendChild(lbl);
+      box.appendChild(row);
+      fieldsEl.appendChild(box);
+    });
+  }
+
+  async function saveFromForm() {
+    if (!gaState) return;
+    const addon = resolveAddonInRenderer();
+    gaState.selectedMode = selAddon?.value || 'auto';
+    gaState.currentGameName = gameInput?.value.trim() || '';
+    gaState.lolPollingEnabled = Boolean(chkLol?.checked);
+    gaState.autoTriggerEvents = Boolean(chkTrigger?.checked);
+
+    if (addon && fieldsEl) {
+      const nextAddonStats = { ...(gaState.perAddonStats?.[addon.id] || {}) };
+      fieldsEl.querySelectorAll('input[data-ga-key]').forEach((inp) => {
+        const k = inp.dataset.gaKey;
+        nextAddonStats[k] = inp.dataset.gaType === 'number' ? (parseInt(inp.value || '0', 10) || 0) : inp.value;
+      });
+      gaState.perAddonStats = { ...(gaState.perAddonStats || {}), [addon.id]: nextAddonStats };
+    }
+    const res = await window.omnichat.gameAddonsSave(gaState);
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `✅ OBS /game-stats & Chat-Events auf "${addon?.name || gaState.selectedMode}" aktualisiert!`;
+      }
+    }
+  }
+
+  selAddon?.addEventListener('change', () => {
+    renderFields();
+    saveFromForm();
+  });
+  gameInput?.addEventListener('change', () => {
+    renderFields();
+    saveFromForm();
+  });
+
+  btnOpen?.addEventListener('click', async () => {
+    modal.classList.remove('hidden');
+    const res = await window.omnichat.gameAddonsGet();
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      allAddons = res.addons || [];
+      if (selAddon) selAddon.value = gaState.selectedMode || 'auto';
+      if (gameInput) gameInput.value = gaState.currentGameName || document.getElementById('inputStreamGame')?.value || '';
+      if (chkLol) chkLol.checked = Boolean(gaState.lolPollingEnabled);
+      if (chkTrigger) chkTrigger.checked = gaState.autoTriggerEvents !== false;
+      renderFields();
+    }
+  });
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  document.getElementById('btnGaSave')?.addEventListener('click', saveFromForm);
+  document.getElementById('btnGaExportCs2')?.addEventListener('click', async () => {
+    const res = await window.omnichat.gameAddonsExportCs2Gsi();
+    if (res?.ok && statusEl) {
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = `📄 CS2 GSI Config gespeichert: ${res.filePath} (in CS2 Ordner game/csgo/cfg/ kopieren)`;
+    }
+  });
+  document.getElementById('btnGaCopyUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/game-stats');
+    if (statusEl) {
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = '🔗 http://127.0.0.1:4588/game-stats kopiert!';
+    }
+  });
+
+  window.omnichat.onGameAddonsUpdated((payload) => {
+    if (!payload?.gameAddons) return;
+    gaState = payload.gameAddons;
+    allAddons = payload.addons || allAddons;
+    if (!modal.classList.contains('hidden')) {
+      if (selAddon) selAddon.value = gaState.selectedMode || 'auto';
+      if (gameInput) gameInput.value = gaState.currentGameName || '';
+      renderFields();
+    }
+  });
+})();

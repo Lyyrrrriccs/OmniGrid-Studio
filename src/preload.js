@@ -86,5 +86,9 @@ contextBridge.exposeInMainWorld('omnichat', {
   onSoundboardPlay: (cb) => ipcRenderer.on('soundboard-play', (_ev, data) => cb(data)),
   hypeGet: () => ipcRenderer.invoke('hype-get'),
   hypeSave: (hd) => ipcRenderer.invoke('hype-save', hd),
-  onHypeTriggered: (cb) => ipcRenderer.on('hype-triggered', (_ev, data) => cb(data))
+  onHypeTriggered: (cb) => ipcRenderer.on('hype-triggered', (_ev, data) => cb(data)),
+  gameAddonsGet: () => ipcRenderer.invoke('game-addons-get'),
+  gameAddonsSave: (ga) => ipcRenderer.invoke('game-addons-save', ga),
+  gameAddonsExportCs2Gsi: () => ipcRenderer.invoke('game-addons-export-cs2-gsi'),
+  onGameAddonsUpdated: (cb) => ipcRenderer.on('game-addons-updated', (_ev, data) => cb(data))
 });

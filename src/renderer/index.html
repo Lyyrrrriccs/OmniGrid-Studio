@@ -46,6 +46,7 @@
       <button class="btn-chip" id="btnOpenGiveaway" title="Live-Giveaway &amp; Verlosungs-Rad (/giveaway)">🎁 Giveaway</button>
       <button class="btn-chip" id="btnOpenSoundboard" title="Integriertes Soundboard inkl. OBS-Routing">🔊 Sounds</button>
       <button class="btn-chip" id="btnOpenHype" title="Chat-Hype-Detektor (Auto-Marker &amp; Auto-Replay)">🔥 Hype</button>
+      <button class="btn-chip" id="btnOpenGameAddons" title="Game-Addons, OBS Game-Stats-Overlay (/game-stats) &amp; Auto-Switch">🎮 Game-Addons</button>
       <button class="btn-chip" id="btnOpenHelp" title="Anleitung & Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
       <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken & Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik & Logs</button>
       <button class="btn-chip" id="btnPopoutChat" title="Eigenständiges, vollhohes Chatfenster links neben OBS öffnen">🪟 Separates Chatfenster</button>
@@ -1642,6 +1643,57 @@
         </div>
         <button class="btn-sm" id="btnSaveHype" style="width: 100%; margin-top: 12px; padding: 9px; font-weight: 700;">💾 Hype-Detektor speichern</button>
         <div id="hdStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME-ADDONS & OBS STATS OVERLAY MODAL -->
+  <div class="config-modal-backdrop hidden" id="gameAddonsModal">
+    <div class="config-modal-card" style="max-width: 720px; width: 93vw; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🎮 Game-Addons &amp; OBS Stats-Overlay</h2>
+          <p class="config-modal-sub">Tausche die Game-Stats-Anzeige in OBS (<code>/game-stats</code>) per Dropdown aus — Chat-Events &amp; Commands wechseln automatisch mit dem Spiel.</p>
+        </div>
+        <button class="btn-chip" id="btnCloseGameAddons" style="padding: 6px 12px;">✕ Schließen</button>
+      </div>
+      <div class="config-modal-body" style="overflow-y: auto;">
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; align-items: end;">
+          <div>
+            <label style="font-size: 11px; font-weight: 700;">OBS Stats-Overlay &amp; Chat-Addon auswählen (Dropdown)</label>
+            <select id="gaSelectAddon" style="width: 100%; margin-top: 3px; font-weight: 700;">
+              <option value="auto">🤖 Auto (wechselt nach Twitch/Stream-Manager-Spiel)</option>
+              <option value="cs2">🎯 Counter-Strike 2 (GSI)</option>
+              <option value="lol">⚔️ League of Legends (Live API)</option>
+              <option value="minecraft">⛏️ Minecraft</option>
+              <option value="souls">💀 Elden Ring / Soulsborne</option>
+              <option value="valorant">🔫 Valorant / Tactical FPS</option>
+              <option value="universal">🏆 Universal Game Counter</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px;">Aktuelles Spiel (für Auto-Switch)</label>
+            <input type="text" id="gaCurrentGameInput" placeholder="z. B. Counter-Strike 2" />
+          </div>
+        </div>
+
+        <div id="gaActiveBanner" style="margin-top: 10px; padding: 8px 11px; border-radius: 9px; background: rgba(15,23,42,0.75); border: 1px solid rgba(56,189,248,0.3); font-size: 12px;">
+          Aktives Addon: <strong>—</strong>
+        </div>
+
+        <div id="gaStatsFields" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 8px; margin-top: 10px;"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
+          <label class="checkbox-row"><input type="checkbox" id="gaLolPolling" /><span>⚔️ League of Legends Live Client API (<code>127.0.0.1:2999</code>) automatisch pollen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="gaAutoTrigger" checked /><span>⚡ Spiel-Events automatisch auslösen (z. B. CS2 3K/Ace → Twitch Stream-Marker)</span></label>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+          <button class="btn-sm" id="btnGaSave" style="flex: 1; padding: 9px; font-weight: 700; background: #2563eb; color: #fff;">💾 Stats &amp; Addon auf OBS anwenden</button>
+          <button class="btn-sm" id="btnGaExportCs2">📄 CS2 GSI Config exportieren</button>
+          <button class="btn-sm" id="btnGaCopyUrl">🔗 OBS /game-stats URL</button>
+        </div>
+        <div id="gaStatus" style="margin-top: 8px; font-size: 11px; color: #94a3b8;"></div>
       </div>
     </div>
   </div>

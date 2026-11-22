@@ -1828,6 +1828,69 @@ const OBS_SOUNDBOARD_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — Game Stats Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
+    .gs-card { width: 390px; background: rgba(10, 15, 28, 0.90); border: 1.5px solid var(--accent, #38bdf8); border-radius: 14px; padding: 12px 14px; box-shadow: 0 0 24px rgba(56,189,248,0.18), 0 12px 28px rgba(0,0,0,0.5); transition: border-color 0.3s ease; }
+    .gs-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .gs-title { font-size: 14px; font-weight: 800; letter-spacing: 0.02em; color: #f8fafc; display: flex; align-items: center; gap: 6px; }
+    .gs-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: rgba(56,189,248,0.16); color: var(--accent, #38bdf8); }
+    .gs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .gs-cell { background: rgba(30, 41, 59, 0.78); border: 1px solid rgba(148,163,184,0.18); border-radius: 9px; padding: 7px 8px; text-align: center; }
+    .gs-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+    .gs-val { font-size: 16px; font-weight: 800; color: #f8fafc; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div class="gs-card" id="gsCard">
+    <div class="gs-head">
+      <div class="gs-title" id="gsTitle">🎮 Game Stats</div>
+      <div class="gs-badge" id="gsBadge">OmniGrid</div>
+    </div>
+    <div class="gs-grid" id="gsGrid"></div>
+  </div>
+  <script>
+    const card = document.getElementById('gsCard');
+    const titleEl = document.getElementById('gsTitle');
+    const badgeEl = document.getElementById('gsBadge');
+    const gridEl = document.getElementById('gsGrid');
+
+    function renderStats(data) {
+      if (!data) return;
+      card.style.setProperty('--accent', data.accent || '#38bdf8');
+      titleEl.textContent = (data.icon || '🎮') + ' ' + (data.addonName || 'Game Stats');
+      badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
+      gridEl.innerHTML = '';
+      (data.stats || []).forEach((s) => {
+        const cell = document.createElement('div');
+        cell.className = 'gs-cell';
+        cell.innerHTML = '<div class="gs-lbl"></div><div class="gs-val"></div>';
+        cell.querySelector('.gs-lbl').textContent = s.label;
+        cell.querySelector('.gs-val').textContent = String(s.value);
+        gridEl.appendChild(cell);
+      });
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'game-stats') renderStats(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -1844,10 +1907,12 @@ class ObsServer {
     this.currentPoll = null;
     this.currentSchedule = null;
     this.currentGiveaway = null;
+    this.currentGameStats = null;
     this.currentIcsProvider = null;
     this.soundFileResolver = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
+    this.onGameWebhook = null;
   }
 
   start(listenHost = '0.0.0.0') {
@@ -1855,6 +1920,30 @@ class ObsServer {
       this.server = http.createServer((req, res) => {
         const parsedUrl = new URL(req.url || '/', `http://127.0.0.1:${this.port}`);
         const urlPath = parsedUrl.pathname;
+
+        if (urlPath.startsWith('/api/game/')) {
+          const kind = urlPath.replace('/api/game/', '').replace(/\/+$/, '');
+          let rawBody = '';
+          req.on('data', (chunk) => {
+            rawBody += chunk;
+            if (rawBody.length > 262144) rawBody = rawBody.slice(0, 262144);
+          });
+          req.on('end', async () => {
+            let body = {};
+            if (rawBody) {
+              try { body = JSON.parse(rawBody); } catch (e) {}
+            }
+            try {
+              if (this.onGameWebhook) await this.onGameWebhook(kind, body);
+              res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.end(JSON.stringify({ ok: true }));
+            } catch (err) {
+              res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.end(JSON.stringify({ ok: false, error: err.message }));
+            }
+          });
+          return;
+        }
 
         if (urlPath.startsWith('/api/sound/')) {
           const soundId = decodeURIComponent(urlPath.replace('/api/sound/', '').trim());
@@ -1940,6 +2029,8 @@ class ObsServer {
           res.end(OBS_GIVEAWAY_HTML);
         } else if (urlPath === '/soundboard') {
           res.end(OBS_SOUNDBOARD_HTML);
+        } else if (urlPath === '/game-stats') {
+          res.end(OBS_GAME_STATS_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -1971,6 +2062,9 @@ class ObsServer {
         }
         if (this.currentGiveaway) {
           ws.send(JSON.stringify({ type: 'giveaway', data: this.currentGiveaway }));
+        }
+        if (this.currentGameStats) {
+          ws.send(JSON.stringify({ type: 'game-stats', data: this.currentGameStats }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -2107,6 +2201,11 @@ class ObsServer {
 
   setSoundFileResolver(fn) {
     this.soundFileResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  broadcastGameStats(statsPayload) {
+    this.currentGameStats = statsPayload;
+    this._broadcast({ type: 'game-stats', data: statsPayload });
   }
 
   stop() {

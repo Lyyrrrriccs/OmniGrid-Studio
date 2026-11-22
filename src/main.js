@@ -10,11 +10,81 @@ const { SpotifyBridge } = require('./spotify_bridge');
 const { ObsWsClient } = require('./obs_ws_client');
 const clipStudio = require('./clip_studio');
 const socialSchedule = require('./social_schedule');
+const gameAddons = require('./game_addons');
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
 let demoInterval = null;
 let demoActive = process.env.DEMO_MODE === 'true';
+let lastGameCmdAt = 0;
+
+function broadcastGameAddonsState(cfg) {
+  const ga = gameAddons.normalizeGameAddonsConfig(cfg?.gameAddons);
+  const obsPayload = gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga });
+  obsServer.broadcastGameStats(obsPayload);
+  broadcastToWindows('game-addons-updated', {
+    gameAddons: ga,
+    activeObsPayload: obsPayload,
+    addons: gameAddons.GAME_ADDONS
+  });
+}
+
+function syncCurrentGameFromStreamManager(gameName) {
+  const clean = String(gameName || '').trim();
+  if (!clean) return;
+  const cfg = loadConfig();
+  const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+  if (ga.currentGameName === clean) return;
+  ga.currentGameName = clean;
+  cfg.gameAddons = ga;
+  saveConfig(cfg);
+  broadcastGameAddonsState(cfg);
+  if (ga.selectedMode === 'auto') {
+    const matched = gameAddons.matchAddonByGameName(clean);
+    const addon = gameAddons.getAddonById(matched);
+    appendDiagLog('system', 'info', `🎮 Auto-Switch: "${clean}" → ${addon.icon} ${addon.name}`);
+  }
+}
+
+function handleIncomingGameWebhook(kind, body = {}) {
+  const cfg = loadConfig();
+  const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+  if (kind === 'cs2-gsi') {
+    const ms = body?.player?.match_stats;
+    const mapName = body?.map?.name || '';
+    const ctScore = body?.map?.team_ct?.score;
+    const tScore = body?.map?.team_t?.score;
+    const cur = ga.perAddonStats.cs2 || {};
+    const prevKills = Number(cur.kills || 0);
+    if (ms) {
+      cur.kills = Number(ms.kills ?? cur.kills ?? 0);
+      cur.deaths = Number(ms.deaths ?? cur.deaths ?? 0);
+      cur.assists = Number(ms.assists ?? cur.assists ?? 0);
+      cur.mvps = Number(ms.mvps ?? cur.mvps ?? 0);
+    }
+    if (mapName) cur.map = mapName.replace(/^de_/, '');
+    if (ctScore !== undefined && tScore !== undefined) cur.score = `${ctScore} : ${tScore}`;
+    ga.perAddonStats.cs2 = cur;
+    cfg.gameAddons = ga;
+    saveConfig(cfg);
+    broadcastGameAddonsState(cfg);
+
+    const roundKills = Number(body?.player?.state?.round_kills || 0);
+    if (ga.autoTriggerEvents && roundKills >= 3 && cur.kills > prevKills && twitch.connected) {
+      twitch.createMarker(`🎯 CS2 ${roundKills}K Highlight!`).catch(() => {});
+    }
+    return;
+  }
+
+  // Generic custom game webhook: { addonId?, stats?: { ... }, eventText?: string }
+  const targetId = String(body.addonId || gameAddons.resolveActiveAddon(cfg).addon.id);
+  if (body.stats && typeof body.stats === 'object') {
+    ga.perAddonStats[targetId] = { ...(ga.perAddonStats[targetId] || {}), ...body.stats };
+    cfg.gameAddons = ga;
+    saveConfig(cfg);
+    broadcastGameAddonsState(cfg);
+  }
+}
 
 const twitch = new TwitchConnector();
 const youtube = new YouTubeConnector();
@@ -371,6 +441,7 @@ function getDefaultConfig() {
       autoClip: false,
       keywords: 'pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype'
     },
+    gameAddons: gameAddons.DEFAULT_GAME_ADDONS_CONFIG,
     soundboard: {
       volume: 0.8,
       playLocally: true,
@@ -961,6 +1032,25 @@ function forwardChatMessage(msg) {
           twitch.sendMessage(replyText).catch(() => {});
         } else if (msg.platform === 'youtube' && youtube.canWrite) {
           youtube.sendMessage(replyText).catch(() => {});
+        }
+      }
+    }
+
+    // Game-Addon specific chat commands (switches automatically with active game)
+    if ((msg.platform === 'twitch' || msg.platform === 'youtube') && String(msg.text || '').trim().startsWith('!')) {
+      const now = Date.now();
+      const cfg = loadConfig();
+      const gRes = gameAddons.handleGameChatCommand(cfg, msg);
+      if (gRes) {
+        if (gRes.mutated && gRes.nextGameAddons) {
+          cfg.gameAddons = gRes.nextGameAddons;
+          saveConfig(cfg);
+          broadcastGameAddonsState(cfg);
+        }
+        if (gRes.reply && now - lastGameCmdAt > 4000) {
+          lastGameCmdAt = now;
+          if (msg.platform === 'twitch' && twitch.canWrite) twitch.sendMessage(gRes.reply).catch(() => {});
+          else if (msg.platform === 'youtube' && youtube.canWrite) youtube.sendMessage(gRes.reply).catch(() => {});
         }
       }
     }
@@ -1594,6 +1684,32 @@ app.whenReady().then(async () => {
       return playSoundboardById(target);
     }
 
+    if (act === 'game-addon') {
+      const id = String(params.id || body.id || 'auto').trim();
+      const cfg = loadConfig();
+      const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+      ga.selectedMode = id;
+      cfg.gameAddons = ga;
+      saveConfig(cfg);
+      broadcastGameAddonsState(cfg);
+      return { ok: true, selectedMode: id };
+    }
+
+    if (act === 'game-stat') {
+      const key = String(params.key || body.key || 'deaths').trim();
+      const delta = parseInt(params.delta || body.delta || '1', 10) || 1;
+      const cfg = loadConfig();
+      const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+      const { addon } = gameAddons.resolveActiveAddon({ ...cfg, gameAddons: ga });
+      const cur = ga.perAddonStats[addon.id] || {};
+      cur[key] = (Number(cur[key]) || 0) + delta;
+      ga.perAddonStats[addon.id] = cur;
+      cfg.gameAddons = ga;
+      saveConfig(cfg);
+      broadcastGameAddonsState(cfg);
+      return { ok: true, addonId: addon.id, key, value: cur[key] };
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1862,6 +1978,45 @@ app.whenReady().then(async () => {
       return found?.filePath || null;
     });
     broadcastScheduleToObs(saved);
+    obsServer.onGameWebhook = handleIncomingGameWebhook;
+    broadcastGameAddonsState(saved);
+
+    // Optional League of Legends Live Client API poller (127.0.0.1:2999)
+    setInterval(async () => {
+      const cfg = loadConfig();
+      const { addon, ga } = gameAddons.resolveActiveAddon(cfg);
+      if (!ga.lolPollingEnabled || addon.id !== 'lol') return;
+      try {
+        const https = require('https');
+        const agent = new https.Agent({ rejectUnauthorized: false });
+        const data = await new Promise((resolve, reject) => {
+          const req = https.get('https://127.0.0.1:2999/liveclientdata/allgamedata', { agent, timeout: 1500 }, (res) => {
+            let raw = '';
+            res.on('data', (c) => { raw += c; });
+            res.on('end', () => {
+              try { resolve(JSON.parse(raw)); } catch (e) { reject(e); }
+            });
+          });
+          req.on('error', reject);
+          req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+        });
+        const ap = data?.activePlayer;
+        const me = (data?.allPlayers || []).find((p) => p.summonerName === ap?.summonerName) || data?.allPlayers?.[0];
+        if (me) {
+          ga.perAddonStats.lol = {
+            champion: me.championName || '—',
+            kills: Number(me.scores?.kills || 0),
+            deaths: Number(me.scores?.deaths || 0),
+            assists: Number(me.scores?.assists || 0),
+            cs: Number(me.scores?.creepScore || 0),
+            level: Number(ap?.level || me.level || 1)
+          };
+          cfg.gameAddons = ga;
+          saveConfig(cfg);
+          broadcastGameAddonsState(cfg);
+        }
+      } catch (e) {}
+    }, 4000);
 
     if (saved.chatDockOpen) {
       openStandaloneChatWindow(false);
@@ -1979,6 +2134,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('stream-manager-load', async () => {
     try {
       const tw = await twitch.getChannelInfo();
+      if (tw?.gameName) syncCurrentGameFromStreamManager(tw.gameName);
       return { ok: true, twitch: tw, youtubeTitle: youtube.streamTitle || '' };
     } catch (err) {
       return { ok: false, error: err.message, youtubeTitle: youtube.streamTitle || '' };
@@ -2011,6 +2167,7 @@ app.whenReady().then(async () => {
     try {
       await twitch.updateChannelInfo({ title, gameId, gameName, tags });
       results.push('Twitch');
+      if (gameName) syncCurrentGameFromStreamManager(gameName);
       appendDiagLog('twitch', 'info', `📝 Stream-Info aktualisiert: "${title}" (${gameName || gameId || 'unverändert'})`);
     } catch (err) {
       errors.push(`Twitch: ${err.message}`);
@@ -3091,6 +3248,44 @@ app.whenReady().then(async () => {
     cfg.hypeDetector = { ...(DEFAULT_CONFIG.hypeDetector || {}), ...(nextHd || {}) };
     saveConfig(cfg);
     return { ok: true, hypeDetector: cfg.hypeDetector };
+  });
+
+  ipcMain.handle('game-addons-get', () => {
+    const cfg = loadConfig();
+    const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+    return {
+      ok: true,
+      gameAddons: ga,
+      activeObsPayload: gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga }),
+      addons: gameAddons.GAME_ADDONS
+    };
+  });
+
+  ipcMain.handle('game-addons-save', (_ev, nextGa) => {
+    const cfg = loadConfig();
+    const ga = gameAddons.normalizeGameAddonsConfig(nextGa);
+    cfg.gameAddons = ga;
+    saveConfig(cfg);
+    broadcastGameAddonsState(cfg);
+    return {
+      ok: true,
+      gameAddons: ga,
+      activeObsPayload: gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga }),
+      addons: gameAddons.GAME_ADDONS
+    };
+  });
+
+  ipcMain.handle('game-addons-export-cs2-gsi', async () => {
+    const { dialog } = require('electron');
+    const content = gameAddons.buildCs2GsiConfig(obsServer.port || 4588);
+    const res = await dialog.showSaveDialog(mainWindow, {
+      title: 'CS2 GSI Config speichern (in csgo/cfg/ ablegen)',
+      defaultPath: 'gamestate_integration_omnigrid.cfg',
+      filters: [{ name: 'CS2 Config (.cfg)', extensions: ['cfg'] }]
+    });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    fs.writeFileSync(res.filePath, content, 'utf8');
+    return { ok: true, filePath: res.filePath };
   });
 });
 
