@@ -1962,6 +1962,13 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       });
     }
 
+    function fetchLatest() {
+      fetch('/api/game-stats')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (d && d.addonId) renderStats(d); })
+        .catch(() => {});
+    }
+
     function connectWs() {
       const ws = new WebSocket('ws://' + location.host);
       ws.onmessage = (ev) => {
@@ -1972,7 +1979,9 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       };
       ws.onclose = () => setTimeout(connectWs, 2000);
     }
+    fetchLatest();
     connectWs();
+    setInterval(fetchLatest, 4000);
   </script>
 </body>
 </html>`;
@@ -2006,6 +2015,16 @@ class ObsServer {
       this.server = http.createServer((req, res) => {
         const parsedUrl = new URL(req.url || '/', `http://127.0.0.1:${this.port}`);
         const urlPath = parsedUrl.pathname;
+
+        if (urlPath === '/api/game-stats') {
+          res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'no-cache'
+          });
+          res.end(JSON.stringify(this.currentGameStats || {}));
+          return;
+        }
 
         if (urlPath.startsWith('/api/game/')) {
           const kind = urlPath.replace('/api/game/', '').replace(/\/+$/, '');
