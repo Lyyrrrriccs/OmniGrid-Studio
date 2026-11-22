@@ -259,6 +259,14 @@ class ObsWsClient extends EventEmitter {
   async getSceneItems(sceneName = '') {
     const target = String(sceneName || this.state.currentScene || '').trim();
     if (!target) throw new Error('Keine Szene ausgewählt.');
+    let baseWidth = 1920;
+    let baseHeight = 1080;
+    try {
+      const vs = await this.call('GetVideoSettings');
+      if (vs?.baseWidth) baseWidth = Number(vs.baseWidth);
+      if (vs?.baseHeight) baseHeight = Number(vs.baseHeight);
+    } catch (e) {}
+
     const res = await this.call('GetSceneItemList', { sceneName: target });
     const items = (Array.isArray(res.sceneItems) ? res.sceneItems : []).map((it) => ({
       sceneItemId: it.sceneItemId,
@@ -268,7 +276,7 @@ class ObsWsClient extends EventEmitter {
       sceneItemLocked: Boolean(it.sceneItemLocked),
       transform: it.sceneItemTransform || {}
     }));
-    return { ok: true, sceneName: target, items: items.reverse() };
+    return { ok: true, sceneName: target, baseWidth, baseHeight, items: items.reverse() };
   }
 
   async setSceneItemEnabled(sceneName, sceneItemId, enabled) {

@@ -1719,33 +1719,40 @@
 
   <!-- OBS SZENEN- & QUELLEN-EDITOR MODAL -->
   <div class="config-modal-backdrop hidden" id="obsSceneEditorModal">
-    <div class="config-modal-card" style="max-width: 900px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="config-modal-card" style="max-width: 96vw; width: 96vw; height: 92vh; max-height: 92vh; display: flex; flex-direction: column;">
       <div class="config-modal-header">
         <div>
           <h2>🎛️ OBS Szenen- &amp; Quellen-Editor (WebSocket v5)</h2>
-          <p class="config-modal-sub">Steuere Szenen, Quellen (👁️ Ein/Aus, Position &amp; Skalierung), Live-Vorschau und Audio-Mixer direkt über OBS.</p>
+          <p class="config-modal-sub">Ziehe Quellen direkt mit der Maus auf der Vorschau zum Verschieben oder an den Ecken zum Vergrößern/Verkleinern.</p>
         </div>
         <button class="btn-chip" id="btnCloseSceneEditor" style="padding: 6px 12px;">✕ Schließen</button>
       </div>
-      <div class="config-modal-body" style="overflow-y: auto;">
+      <div class="config-modal-body" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <select id="seSelectScene" style="min-width: 200px; font-weight: 700;"></select>
-          <input type="text" id="seNewSceneName" placeholder="Neue Szene..." style="width: 160px;" />
+          <select id="seSelectScene" style="min-width: 220px; font-weight: 700;"></select>
+          <input type="text" id="seNewSceneName" placeholder="Neue Szene..." style="width: 170px;" />
           <button class="btn-sm" id="btnSeCreateScene">➕ Szene</button>
           <button class="btn-sm" id="btnSeRefresh">🔄 Aktualisieren</button>
           <label class="checkbox-row" style="margin-left: auto;"><input type="checkbox" id="seAutoPreview" checked /><span>📸 Live-Vorschau (2s)</span></label>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 12px; margin-top: 12px;">
-          <!-- LEFT: LIVE PREVIEW & TRANSFORM -->
-          <div>
-            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #020617; border: 1px solid rgba(148,163,184,0.25); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-              <img id="sePreviewImg" alt="" style="width: 100%; height: 100%; object-fit: contain; display: none;" />
+        <div style="display: grid; grid-template-columns: 1.65fr 1fr; gap: 14px; margin-top: 12px; flex: 1; min-height: 0;">
+          <!-- LEFT: INTERACTIVE 16:9 CANVAS & TRANSFORM -->
+          <div style="display: flex; flex-direction: column; min-height: 0;">
+            <div id="seCanvasWrap" style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #020617; border: 1.5px solid rgba(56,189,248,0.35); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; user-select: none;">
+              <img id="sePreviewImg" alt="" draggable="false" style="width: 100%; height: 100%; object-fit: fill; display: none; pointer-events: none;" />
               <span id="sePreviewPlaceholder" style="font-size: 12px; color: #64748b;">OBS verbinden, um Live-Vorschau zu laden...</span>
+              <div id="seCanvasOverlay" style="position: absolute; inset: 0; z-index: 2;"></div>
             </div>
 
             <div style="margin-top: 10px; padding: 10px; border-radius: 9px; background: rgba(15,23,42,0.65); border: 1px solid rgba(148,163,184,0.18);">
-              <div style="font-size: 11px; font-weight: 700; color: #cbd5e1;">📐 Position &amp; Skalierung: <span id="seSelectedSourceName" style="color: #38bdf8;">— Quelle rechts wählen —</span></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div style="font-size: 11px; font-weight: 700; color: #cbd5e1;">📐 Position &amp; Größe: <span id="seSelectedSourceName" style="color: #38bdf8;">— Quelle anklicken —</span></div>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-sm" id="btnSeCenter" disabled title="Quelle auf der OBS-Leinwand zentrieren">🎯 Zentrieren</button>
+                  <button class="btn-sm" id="btnSeFullscreen" disabled title="Quelle auf volle Canvas-Größe skalieren">⛶ Vollbild</button>
+                </div>
+              </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; margin-top: 6px; align-items: end;">
                 <div><label style="font-size: 10px;">X (px)</label><input type="number" id="sePosX" disabled /></div>
                 <div><label style="font-size: 10px;">Y (px)</label><input type="number" id="sePosY" disabled /></div>
@@ -1756,14 +1763,14 @@
           </div>
 
           <!-- RIGHT: SOURCES & AUDIO MIXER -->
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div>
+          <div style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+            <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
               <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">🧩 Quellen in dieser Szene:</div>
-              <div id="seSourcesList" style="display: flex; flex-direction: column; gap: 5px; max-height: 185px; overflow-y: auto;"></div>
+              <div id="seSourcesList" style="display: flex; flex-direction: column; gap: 5px; overflow-y: auto; flex: 1;"></div>
             </div>
-            <div>
+            <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
               <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">🎚️ OBS Audio-Mixer:</div>
-              <div id="seAudioList" style="display: flex; flex-direction: column; gap: 6px; max-height: 155px; overflow-y: auto;"></div>
+              <div id="seAudioList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1;"></div>
             </div>
           </div>
         </div>

@@ -4552,6 +4552,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const chkAutoPreview = document.getElementById('seAutoPreview');
   const previewImg = document.getElementById('sePreviewImg');
   const previewPlaceholder = document.getElementById('sePreviewPlaceholder');
+  const canvasOverlay = document.getElementById('seCanvasOverlay');
   const sourcesList = document.getElementById('seSourcesList');
   const audioList = document.getElementById('seAudioList');
   const statusEl = document.getElementById('seStatus');
@@ -4561,10 +4562,16 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const inpPosY = document.getElementById('sePosY');
   const inpScalePct = document.getElementById('seScalePct');
   const btnApplyTransform = document.getElementById('btnSeApplyTransform');
+  const btnCenter = document.getElementById('btnSeCenter');
+  const btnFullscreen = document.getElementById('btnSeFullscreen');
 
   let currentSceneName = '';
+  let baseWidth = 1920;
+  let baseHeight = 1080;
+  let sceneItems = [];
   let selectedItem = null;
   let previewTimer = null;
+  let dragState = null;
 
   function setStatus(msg, color = '#94a3b8') {
     if (!statusEl) return;
@@ -4580,18 +4587,198 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   function selectSourceItem(item) {
     selectedItem = item;
+    const disabled = !item;
+    [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen].forEach((el) => {
+      if (el) el.disabled = disabled;
+    });
     if (!item) {
-      if (lblSelSource) lblSelSource.textContent = '— Quelle rechts wählen —';
-      [inpPosX, inpPosY, inpScalePct, btnApplyTransform].forEach((el) => { if (el) el.disabled = true; });
+      if (lblSelSource) lblSelSource.textContent = '— Quelle anklicken —';
       return;
     }
     if (lblSelSource) lblSelSource.textContent = item.sourceName;
     const tr = item.transform || {};
-    if (inpPosX) { inpPosX.disabled = false; inpPosX.value = String(Math.round(tr.positionX || 0)); }
-    if (inpPosY) { inpPosY.disabled = false; inpPosY.value = String(Math.round(tr.positionY || 0)); }
-    if (inpScalePct) { inpScalePct.disabled = false; inpScalePct.value = String(Math.round((tr.scaleX || 1) * 100)); }
-    if (btnApplyTransform) btnApplyTransform.disabled = false;
+    if (inpPosX) inpPosX.value = String(Math.round(tr.positionX || 0));
+    if (inpPosY) inpPosY.value = String(Math.round(tr.positionY || 0));
+    if (inpScalePct) inpScalePct.value = String(Math.round((tr.scaleX || 1) * 100));
   }
+
+  function getItemBoxPx(it) {
+    const tr = it.transform || {};
+    const x = Number(tr.positionX || 0);
+    const y = Number(tr.positionY || 0);
+    const w = Math.max(40, Number(tr.width || (tr.sourceWidth || 400) * (tr.scaleX || 1)));
+    const h = Math.max(30, Number(tr.height || (tr.sourceHeight || 225) * (tr.scaleY || 1)));
+    return { x, y, w, h };
+  }
+
+  function renderCanvasOverlay() {
+    if (!canvasOverlay) return;
+    canvasOverlay.innerHTML = '';
+    // Render bottom-to-top (reverse of top-to-bottom list) so top OBS layer sits on top
+    const drawOrder = sceneItems.slice().reverse();
+    drawOrder.forEach((it) => {
+      if (!it.sceneItemEnabled) return;
+      const { x, y, w, h } = getItemBoxPx(it);
+      const isSel = selectedItem?.sceneItemId === it.sceneItemId;
+
+      const box = document.createElement('div');
+      box.style.cssText = `
+        position: absolute;
+        left: ${(x / baseWidth) * 100}%;
+        top: ${(y / baseHeight) * 100}%;
+        width: ${(w / baseWidth) * 100}%;
+        height: ${(h / baseHeight) * 100}%;
+        border: ${isSel ? '2px solid #38bdf8' : '1px dashed rgba(255,255,255,0.32)'};
+        background: ${isSel ? 'rgba(56,189,248,0.12)' : 'transparent'};
+        box-sizing: border-box;
+        cursor: move;
+      `;
+
+      const tag = document.createElement('div');
+      tag.style.cssText = `position:absolute; top:2px; left:2px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; background:${isSel ? '#0284c7' : 'rgba(15,23,42,0.78)'}; color:#f8fafc; pointer-events:none; white-space:nowrap; max-width:95%; overflow:hidden; text-overflow:ellipsis;`;
+      tag.textContent = it.sourceName;
+      box.appendChild(tag);
+
+      box.addEventListener('mousedown', (e) => {
+        if (e.target.dataset.handle) return;
+        e.preventDefault();
+        e.stopPropagation();
+        selectSourceItem(it);
+        renderSourcesList();
+        renderCanvasOverlay();
+        const rect = canvasOverlay.getBoundingClientRect();
+        dragState = {
+          mode: 'move',
+          item: it,
+          startMouseX: e.clientX,
+          startMouseY: e.clientY,
+          rect,
+          origX: x,
+          origY: y,
+          origW: w,
+          origH: h
+        };
+      });
+
+      if (isSel) {
+        const corners = [
+          { id: 'nw', css: 'top:-5px; left:-5px; cursor:nwse-resize;' },
+          { id: 'ne', css: 'top:-5px; right:-5px; cursor:nesw-resize;' },
+          { id: 'sw', css: 'bottom:-5px; left:-5px; cursor:nesw-resize;' },
+          { id: 'se', css: 'bottom:-5px; right:-5px; cursor:nwse-resize;' }
+        ];
+        corners.forEach((c) => {
+          const hnd = document.createElement('div');
+          hnd.dataset.handle = c.id;
+          hnd.style.cssText = `position:absolute; width:10px; height:10px; border-radius:2px; background:#38bdf8; border:1px solid #020617; ${c.css}`;
+          hnd.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const rect = canvasOverlay.getBoundingClientRect();
+            dragState = {
+              mode: 'resize',
+              corner: c.id,
+              item: it,
+              startMouseX: e.clientX,
+              startMouseY: e.clientY,
+              rect,
+              origX: x,
+              origY: y,
+              origW: w,
+              origH: h
+            };
+          });
+          box.appendChild(hnd);
+        });
+      }
+
+      canvasOverlay.appendChild(box);
+    });
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragState) return;
+    const dxCanvas = ((e.clientX - dragState.startMouseX) / dragState.rect.width) * baseWidth;
+    const dyCanvas = ((e.clientY - dragState.startMouseY) / dragState.rect.height) * baseHeight;
+    const it = dragState.item;
+    const tr = it.transform || {};
+
+    if (dragState.mode === 'move') {
+      tr.positionX = Math.round(dragState.origX + dxCanvas);
+      tr.positionY = Math.round(dragState.origY + dyCanvas);
+      if (inpPosX) inpPosX.value = String(tr.positionX);
+      if (inpPosY) inpPosY.value = String(tr.positionY);
+    } else if (dragState.mode === 'resize') {
+      const c = dragState.corner;
+      let newX = dragState.origX;
+      let newY = dragState.origY;
+      let newW = dragState.origW;
+      let newH = dragState.origH;
+
+      if (c.includes('e')) newW = Math.max(40, dragState.origW + dxCanvas);
+      if (c.includes('s')) newH = Math.max(30, dragState.origH + dyCanvas);
+      if (c.includes('w')) {
+        newW = Math.max(40, dragState.origW - dxCanvas);
+        newX = dragState.origX + (dragState.origW - newW);
+      }
+      if (c.includes('n')) {
+        newH = Math.max(30, dragState.origH - dyCanvas);
+        newY = dragState.origY + (dragState.origH - newH);
+      }
+
+      // Preserve aspect ratio by default
+      const ratio = dragState.origW / Math.max(1, dragState.origH);
+      newH = Math.max(30, newW / ratio);
+      if (c.includes('n')) newY = dragState.origY + (dragState.origH - newH);
+
+      tr.positionX = Math.round(newX);
+      tr.positionY = Math.round(newY);
+      tr.width = Math.round(newW);
+      tr.height = Math.round(newH);
+
+      const srcW = Number(tr.sourceWidth || dragState.origW / Math.max(0.05, tr.scaleX || 1));
+      const srcH = Number(tr.sourceHeight || dragState.origH / Math.max(0.05, tr.scaleY || 1));
+      tr.scaleX = Math.max(0.05, newW / Math.max(1, srcW));
+      tr.scaleY = Math.max(0.05, newH / Math.max(1, srcH));
+      if (inpPosX) inpPosX.value = String(tr.positionX);
+      if (inpPosY) inpPosY.value = String(tr.positionY);
+      if (inpScalePct) inpScalePct.value = String(Math.round(tr.scaleX * 100));
+    }
+    it.transform = tr;
+    renderCanvasOverlay();
+  });
+
+  window.addEventListener('mouseup', async () => {
+    if (!dragState) return;
+    const finished = dragState;
+    dragState = null;
+    const tr = finished.item.transform || {};
+    const payloadTransform = {
+      positionX: Number(tr.positionX || 0),
+      positionY: Number(tr.positionY || 0)
+    };
+    if (finished.mode === 'resize') {
+      if (tr.boundsType && tr.boundsType !== 'OBS_BOUNDS_NONE') {
+        payloadTransform.boundsWidth = Math.max(20, Number(tr.width || 100));
+        payloadTransform.boundsHeight = Math.max(20, Number(tr.height || 100));
+      } else {
+        payloadTransform.scaleX = Math.max(0.05, Number(tr.scaleX || 1));
+        payloadTransform.scaleY = Math.max(0.05, Number(tr.scaleY || 1));
+      }
+    }
+    const res = await window.omnichat.obsWsAction({
+      action: 'set-scene-item-transform',
+      sceneName: currentSceneName,
+      sceneItemId: finished.item.sceneItemId,
+      transform: payloadTransform
+    });
+    if (res?.ok) {
+      setStatus(`✅ "${finished.item.sourceName}" in OBS aktualisiert.`, '#4ade80');
+      refreshPreview();
+    } else {
+      setStatus(`❌ ${res?.error || 'OBS Update fehlgeschlagen'}`, '#f87171');
+    }
+  });
 
   async function refreshPreview() {
     if (modal.classList.contains('hidden')) return;
@@ -4603,17 +4790,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
-  async function loadSceneItems(sceneName) {
+  function renderSourcesList() {
     if (!sourcesList) return;
-    const res = await window.omnichat.obsWsAction({ action: 'get-scene-items', sceneName });
-    if (!res?.ok) {
-      setStatus(`⚠️ ${res?.error || 'OBS nicht verbunden.'}`, '#fbbf24');
-      sourcesList.innerHTML = '';
-      return;
-    }
-    currentSceneName = res.sceneName;
     sourcesList.innerHTML = '';
-    (res.items || []).forEach((it) => {
+    sceneItems.forEach((it) => {
       const row = document.createElement('div');
       row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:6px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.8); border:1px solid ${selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)'}; font-size:12px; cursor:pointer;`;
       const nameSpan = document.createElement('span');
@@ -4621,7 +4801,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       nameSpan.textContent = it.sourceName;
       nameSpan.addEventListener('click', () => {
         selectSourceItem(it);
-        loadSceneItems(currentSceneName);
+        renderSourcesList();
+        renderCanvasOverlay();
       });
 
       const eyeBtn = document.createElement('button');
@@ -4645,6 +4826,27 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       row.appendChild(eyeBtn);
       sourcesList.appendChild(row);
     });
+  }
+
+  async function loadSceneItems(sceneName) {
+    if (!sourcesList) return;
+    const res = await window.omnichat.obsWsAction({ action: 'get-scene-items', sceneName });
+    if (!res?.ok) {
+      setStatus(`⚠️ ${res?.error || 'OBS nicht verbunden.'}`, '#fbbf24');
+      sourcesList.innerHTML = '';
+      if (canvasOverlay) canvasOverlay.innerHTML = '';
+      return;
+    }
+    currentSceneName = res.sceneName;
+    baseWidth = Number(res.baseWidth || 1920);
+    baseHeight = Number(res.baseHeight || 1080);
+    sceneItems = Array.isArray(res.items) ? res.items : [];
+    if (selectedItem) {
+      const updated = sceneItems.find((x) => x.sceneItemId === selectedItem.sceneItemId) || null;
+      selectSourceItem(updated);
+    }
+    renderSourcesList();
+    renderCanvasOverlay();
   }
 
   async function loadAudioInputs() {
@@ -4768,6 +4970,45 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       refreshPreview();
     } else {
       setStatus(`❌ ${res?.error || 'Transform fehlgeschlagen'}`, '#f87171');
+    }
+  });
+
+  btnCenter?.addEventListener('click', async () => {
+    if (!selectedItem || !currentSceneName) return;
+    const { w, h } = getItemBoxPx(selectedItem);
+    const posX = Math.round((baseWidth - w) / 2);
+    const posY = Math.round((baseHeight - h) / 2);
+    const res = await window.omnichat.obsWsAction({
+      action: 'set-scene-item-transform',
+      sceneName: currentSceneName,
+      sceneItemId: selectedItem.sceneItemId,
+      transform: { positionX: posX, positionY: posY }
+    });
+    if (res?.ok) {
+      await loadSceneItems(currentSceneName);
+      refreshPreview();
+    }
+  });
+
+  btnFullscreen?.addEventListener('click', async () => {
+    if (!selectedItem || !currentSceneName) return;
+    const tr = selectedItem.transform || {};
+    const srcW = Math.max(1, Number(tr.sourceWidth || baseWidth));
+    const srcH = Math.max(1, Number(tr.sourceHeight || baseHeight));
+    const scaleX = baseWidth / srcW;
+    const scaleY = baseHeight / srcH;
+    const transform = tr.boundsType && tr.boundsType !== 'OBS_BOUNDS_NONE'
+      ? { positionX: 0, positionY: 0, boundsWidth: baseWidth, boundsHeight: baseHeight }
+      : { positionX: 0, positionY: 0, scaleX, scaleY };
+    const res = await window.omnichat.obsWsAction({
+      action: 'set-scene-item-transform',
+      sceneName: currentSceneName,
+      sceneItemId: selectedItem.sceneItemId,
+      transform
+    });
+    if (res?.ok) {
+      await loadSceneItems(currentSceneName);
+      refreshPreview();
     }
   });
 })();
