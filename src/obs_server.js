@@ -1955,7 +1955,8 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       const isLol = data.addonId === 'lol';
       card.classList.toggle('theme-lol', isLol);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
-      titleEl.textContent = (data.icon || '🎮') + ' ' + (data.addonName || 'Game Stats');
+      const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\((Live API|GSI)\)/gi, '');
+      titleEl.textContent = (data.icon || '🎮') + ' ' + cleanTitle;
       badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
 
       const iconUrl = data.skinIconUrl || data.championIconUrl;
