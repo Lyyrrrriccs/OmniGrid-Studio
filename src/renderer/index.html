@@ -73,8 +73,8 @@
             <input type="text" id="inputStreamerName" placeholder="z.B. Tobias" />
 
             <label style="margin-top: 6px;">🔍 Eigene Keyword-Alarme (kommagetrennt)</label>
-            <div class="setting-row-inline" style="margin-top: 2px;">
-              <input type="text" id="inputKeywordAlerts" placeholder="z.B. frage, lobby, mikrofon, bug" style="flex: 1;" />
+            <div class="setting-row-inline" style="margin-top: 2px; align-items: flex-start;">
+              <textarea id="inputKeywordAlerts" class="tag-textarea" rows="2" placeholder="z.B. frage, lobby, mikrofon, bug" style="flex: 1;"></textarea>
               <input type="color" id="clrKeywordHighlight" value="#f97316" title="Highlight-Farbe für Keyword-Treffer" />
             </div>
 
@@ -620,7 +620,7 @@
             <button class="btn-sm" id="btnCopyObsPoll">Poll-URL</button>
           </div>
           <input type="text" id="inputPollQuestion" placeholder="Frage (z. B. Nächstes Spiel?)" style="margin-top: 6px;" />
-          <input type="text" id="inputPollOptions" placeholder="Optionen kommagetrennt (z. B. Valorant, Minecraft)" style="margin-top: 4px;" />
+          <textarea id="inputPollOptions" class="tag-textarea" rows="2" placeholder="Optionen kommagetrennt (z. B. Valorant, Minecraft)" style="margin-top: 4px;"></textarea>
           <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
             <button class="btn-sm" id="btnPollStart" style="flex: 1;">▶ Start</button>
             <button class="btn-sm" id="btnPollStop">⏹ Stopp</button>
@@ -904,7 +904,7 @@
           <input type="text" id="inputStreamTitle" placeholder="Stream-Titel..." />
           <input type="text" id="inputStreamGame" list="dlStreamGames" placeholder="Spiel / Kategorie (z. B. Just Chatting)" style="margin-top: 5px;" />
           <datalist id="dlStreamGames"></datalist>
-          <input type="text" id="inputStreamTags" placeholder="Tags kommagetrennt (z. B. Deutsch, Chill)" style="margin-top: 5px;" />
+          <textarea id="inputStreamTags" class="tag-textarea" rows="2" placeholder="Tags kommagetrennt (z. B. Deutsch, Chill)" style="margin-top: 5px;"></textarea>
           <label class="checkbox-row" style="margin-top: 5px;">
             <input type="checkbox" id="chkSyncYtTitle" checked />
             <span>Auch YouTube-Titel aktualisieren (falls OAuth2 aktiv)</span>
@@ -1227,7 +1227,7 @@
               <span>🛡️ Streamer, Mods &amp; VIPs ausnehmen</span>
             </label>
             <label style="margin-top: 6px; display: block;">Wort-Blacklist (kommagetrennt)</label>
-            <input type="text" id="inputAutoModBlacklist" placeholder="z. B. scamword, werbung, beleidigung" style="margin-top: 3px;" />
+            <textarea id="inputAutoModBlacklist" class="tag-textarea" rows="2" placeholder="z. B. scamword, werbung, beleidigung" style="margin-top: 3px;"></textarea>
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
               <label for="selAutoModTimeout" style="font-size: 12px;">Aktion auf Twitch:</label>
               <select id="selAutoModTimeout" style="flex: 1;">
@@ -1636,7 +1636,7 @@
           </div>
         </div>
         <label style="font-size: 11px; margin-top: 8px; display: block;">Hype-Keywords (zählen doppelt, kommagetrennt)</label>
-        <input type="text" id="hdKeywords" value="pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype" />
+        <textarea id="hdKeywords" class="tag-textarea" rows="2">pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype</textarea>
         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
           <label class="checkbox-row"><input type="checkbox" id="hdAutoMarker" checked /><span>🚩 Automatisch Twitch Stream-Marker setzen</span></label>
           <label class="checkbox-row"><input type="checkbox" id="hdAutoObsReplay" /><span>💾 Automatisch OBS Replay-Buffer speichern (falls OBS WS aktiv)</span></label>

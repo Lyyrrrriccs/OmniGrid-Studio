@@ -381,6 +381,26 @@ body {
   border-color: var(--accent);
 }
 
+textarea.tag-textarea {
+  width: 100%;
+  background: rgba(11, 15, 25, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 48px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+textarea.tag-textarea:focus {
+  border-color: var(--accent);
+}
+
 .auth-details {
   margin-top: 3px;
   font-size: 10.5px;
