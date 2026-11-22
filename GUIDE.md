@@ -183,8 +183,34 @@ All setup options you don't need to touch mid-stream live cleanly inside **⚙�
 
 ---
 
-## 14. Chat-Timer & Auto-Mod (`🤖 Bot & Auto-Mod`)
+## 14. Custom Commands, Chat-Timer & Auto-Mod (`🤖 Bot & Auto-Mod`)
 
+- **⚡ Custom Chat-Commands:** Define your own `!dc`, `!specs`, or `!socials` commands with per-command cooldowns (in seconds) and variables like `{user}`, `{channel}`, and `{uptime}`. Replies are posted automatically to active chats (Twitch & YouTube).
 - **⏱️ Chat-Timer:** Rotates through your info messages every X minutes and posts them to active write-enabled chats (Twitch & YouTube).
 - **🛡️ Auto-Mod Rules:** Filters links, caps spam (`≥75%`), symbol spam, and custom blacklist words (with optional Twitch `/delete` or `/timeout`). Mods, VIPs & Broadcaster can be exempted.
+- **🔍 Chat Search & Export (`⌘/Ctrl+F` / `💾 Export`):** Search live messages by text, platform, or author and export the current chat log as `.txt` or `.json`.
+
+---
+
+## 15. Stream-Manager (`🎛️ Stream-Manager`)
+
+Update your **Twitch** and **YouTube** stream metadata at once right from the sidebar:
+1. Click **🎛️ Stream-Manager** in the sidebar.
+2. Enter your new **Stream Title**, **Game / Category** (with live Twitch category search), and up to 10 **Tags**.
+3. Click **Apply to Twitch & YouTube** — OmniStream Chat updates both your Twitch channel (Helix API) and your active YouTube Live broadcast (YouTube Data API v3 via OAuth2).
+
+---
+
+## 16. Clip & Replay Studio (`🎬 Clips` — 9:16 Shorts, Trimming & Upload)
+
+Turn your **OBS Replay Buffer** saves or recordings into polished **16:9 clips** or vertical **9:16 Shorts / TikToks / Reels** without leaving the app:
+1. **Folder & FFmpeg:** Select your **OBS Recording / Replay folder** inside the Clip Studio (FFmpeg is auto-detected on macOS/Homebrew or can be configured manually).
+2. **Clip Management:** Browse all `.mp4`, `.mkv`, `.mov`, and `.webm` files, **rename (`✏️`)** them inline, or move them to the trash **(`🗑️`)**.
+3. **Visual Dual-Range Timeline Scrubber:** Directly on the video player, drag the **Start (`In`)** and **End (`Out`)** handles to mark your exact segment with live time readout and preview.
+4. **Export Modes:**
+   - **✂️ 16:9 Trim:** Trims the selected range cleanly in landscape format.
+   - **📱 9:16 Short (Blur / Crop):** Renders a vertical `1080×1920` video for YouTube Shorts, TikTok & Reels — choose between a blurred background (**Blur-BG**) or centered crop (**Center-Crop**).
+5. **Direct Upload (`▶️ YT` / `🎵 TT`):**
+   - **YouTube Upload:** Click **`▶️ YT`** next to any clip to set Title, Description & Privacy (`Public`/`Unlisted`/`Private`) and upload directly via **Google OAuth2**.
+   - **TikTok Quick-Upload:** Click **`🎵 TT`** to open the TikTok upload page and reveal the file in Finder/Explorer for instant drag-and-drop.
 

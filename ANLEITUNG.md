@@ -183,8 +183,34 @@ Alle Einstellungen, die du nicht ständig während des Streams brauchst, liegen 
 
 ---
 
-## 14. Chat-Timer & Auto-Mod (`🤖 Bot & Auto-Mod`)
+## 14. Custom Commands, Chat-Timer & Auto-Mod (`🤖 Bot & Auto-Mod`)
 
+- **⚡ Custom Chat-Commands:** Erstelle eigene Befehle wie `!dc`, `!specs` oder `!socials` mit festem Cooldown (in Sekunden) und Platzhaltern wie `{user}`, `{channel}` und `{uptime}`. Antworten werden automatisch in den jeweiligen Chat (Twitch & YouTube) gesendet.
 - **⏱️ Chat-Timer:** Sendet alle X Minuten abwechselnd deine hinterlegten Info-Zeilen (z. B. Discord/Socials) in aktive Schreib-Chats.
 - **🛡️ Auto-Mod-Regeln:** Blockiert Links, Caps-Spam (`≥75%`), Symbol-Spam und eigene Blacklist-Wörter automatisch (auf Twitch optional inkl. `/delete` oder `/timeout`). Mods, VIPs & Streamer bleiben auf Wunsch ausgenommen.
+- **🔍 Chat-Suche & Export (`⌘/Ctrl+F` / `💾 Export`):** Durchsuche den laufenden Chat live nach Text, Plattform oder Autor und exportiere den Chat-Verlauf jederzeit als `.txt` oder `.json`.
+
+---
+
+## 15. Stream-Manager (`🎛️ Stream-Manager`)
+
+Aktualisiere Titel, Spiel/Kategorie und Tags für **Twitch** und **YouTube** gleichzeitig direkt aus der Sidebar:
+1. Klicke in der Sidebar auf **🎛️ Stream-Manager** (oder im Cockpit-Menü).
+2. Gib den neuen **Stream-Titel**, das **Spiel / die Kategorie** (mit Live-Suche über Twitch) sowie bis zu 10 **Tags** ein.
+3. Klicke auf **Auf Twitch & YouTube anwenden** — OmniStream Chat aktualisiert deinen Twitch-Kanal (Helix API) und deinen aktiven YouTube-Livestream (YouTube Data API v3 über OAuth2).
+
+---
+
+## 16. Clip- & Replay-Studio (`🎬 Clips` — 9:16 Shorts, Schneiden & Upload)
+
+Verwandle deine **OBS Replay-Buffer**-Aufnahmen oder Stream-Videos ohne externes Schnittprogramm in fertige **16:9-Clips** oder **9:16-Shorts / TikToks / Reels**:
+1. **Ordner & FFmpeg:** Wähle im Clip-Studio deinen **OBS-Aufnahme- / Replay-Ordner** (und falls nötig den FFmpeg-Pfad; auf macOS/Homebrew wird `ffmpeg` meist automatisch erkannt).
+2. **Video-Auswahl & Verwaltung:** Alle Videos (`.mp4`, `.mkv`, `.mov`, `.webm`) erscheinen in der Liste. Über die kleinen Buttons kannst du Clips **umbenennen (`✏️`)** oder in den Papierkorb **löschen (`🗑️`)**.
+3. **Visueller Dual-Range-Scrubber (Start & Ende):** Direkt unter dem Videoplayer befinden sich zwei verknüpfte Schieberegler für **Start (`In`)** und **Ende (`Out`)** mit Live-Vorschau, exakter Zeitdauer-Anzeige und Play-Loop-Prüfung.
+4. **Export-Modi:**
+   - **✂️ 16:9 Trim:** Schneidet den gewählten Bereich verlustfrei/schnell im Querformat zu.
+   - **📱 9:16 Short (Blur / Crop):** Erstellt ein vertikales `1080×1920`-Video für YouTube Shorts, TikTok & Reels — wahlweise mit weichgezeichnetem Hintergrund (**Blur-BG**) oder zentriertem Ausschnitt (**Center-Crop**).
+5. **Direkter Upload (`▶️ YT` / `🎵 TT`):**
+   - **YouTube Shorts / Video:** Mit einem Klick auf **`▶️ YT`** direkt neben dem Clip öffnet sich der Upload-Dialog (Titel, Beschreibung, Sichtbarkeit `Public`/`Unlisted`/`Private`) und lädt das Video per **Google OAuth2** direkt hoch.
+   - **TikTok Quick-Upload:** Mit **`🎵 TT`** öffnest du das TikTok-Upload-Center direkt im Browser und markierst/öffnest die Datei im Finder/Explorer zum sofortigen Drag-&-Drop.
 

@@ -23,15 +23,16 @@
 |---|---|
 | **Multi-Platform Chat** | Simultaneous **Twitch** (IRC WebSocket + Helix Clip/Marker), **YouTube Live** (no API key for reading, auto stream discovery, plus optional Google OAuth2 PKCE for sending chat), and **TikTok Live** (Webcast) feeds merged chronologically with per-platform enable/disable, auto-reconnect, error isolation, and 3-layer deduplication. |
 | **Animated Emotes** | **7TV** (global & channel), **BTTV**, and **FFZ** (global & channel) plus native **Twitch**, **YouTube**, and **TikTok** emotes — animated WebP/GIF support, individual provider toggles, and zero line-height inflation. |
-| **Clean Cockpit & Central Config** | Slim live-control sidebar (Spotify, Live-Poll, TTS, Twitch Clip & Marker, OBS WebSocket v5) paired with a tabbed **Central Config Page (`⚙️ Config`)** for Platforms, Profile/Events, Design/Emotes, OBS/Alerts, Bot/Auto-Mod, Tablet/Stream Deck & System. |
+| **Clean Cockpit, Stream-Manager & Help** | Slim live-control sidebar (Spotify, Live-Poll, TTS, Twitch Clip & Marker, OBS WebSocket v5, **Stream-Manager** for updating Twitch & YouTube Title, Game/Category & Tags simultaneously) paired with a tabbed **Central Config (`⚙️ Config`)** and an integrated **Help Window (`📖 Anleitung`)**. |
+| **Clip & Replay Studio (`🎬 Clips`)** | Built-in **FFmpeg** video workflow for **OBS Replay Buffer** & recordings: visual **Dual-Range Timeline Scrubber** directly on the video player, lossless **16:9 Trim**, vertical **9:16 Shorts/TikTok/Reels** export (blur background or center crop), rename/trash management, **direct YouTube Upload** (OAuth2), and **TikTok Quick-Upload**. |
 | **OBS Integration, Widgets & WebSocket v5** | Scene-independent **OBS Custom Browser Dock** (`/dock`), **OBS Stream Overlay** (`/`), **OBS Alert-Box Overlay** (`/alerts` with custom GIF/audio media), **OBS Goal-Bar** (`/goals`), **OBS Multistream Poll** (`/poll` with show/hide toggle), **OBS Spotify Widget** (`/spotify`), and direct **OBS WebSocket v5** control (scenes, replay buffer, mic mute, record, stream). |
-| **Chat-Timer, Auto-Mod & TTS** | Rotating **Chat-Timer** info messages, **Auto-Mod** rules (block links, caps/symbol spam, word blacklist with Twitch auto-delete/timeout), and **Text-to-Speech (TTS)** queue for alerts and `!tts` commands. |
+| **Custom Commands, Timer, Auto-Mod & TTS** | **Custom Chat-Commands** (`!dc`, `!specs`, etc. with `{user}`/`{channel}`/`{uptime}` variables & cooldown), rotating **Chat-Timer** info messages, **Auto-Mod** rules (block links, caps/symbol spam, word blacklist with Twitch auto-delete/timeout), and **Text-to-Speech (TTS)** queue for alerts and `!tts`. |
 | **Event Highlighting & Keyword Alerts** | Distinct styling (`bar`, `banner`, `outline`, color & intensity) for **Follows**, **Subs**, **Resubs**, **Gifted Subs**, **Bits/SuperChats/Gifts**, **Raids**, and **Highlighted Messages**, plus custom **Keyword Alerts** with sound ping. |
 | **Quick User & Message Menu** | Click or right-click any message for user overview (avatar, roles, Twitch account age), copy text/username, reply, open profile, delete, timeout (`10s`, `1m`, `10m`, `1h`), 2-step ban, and unban with strict platform permission checks. |
 | **Stream Deck & Tablet Companion** | Built-in local REST API (`http://127.0.0.1:4588/api/streamdeck/*`) + **Tablet & iPad Companion** (`http://<LAN-IP>:4588/tablet` or Tailscale VPN via QR code) for touch chat, quick-reply, clips, markers, OBS controls & polls without installing an app. |
 | **Peripherals & Global Hotkeys** | Dedicated **2nd Keyboard / Macro Pad & 2nd Mouse** support via **WebHID** (type/send chat or scroll feed without alt-tabbing out of games) + system-wide **Global Hotkeys**. |
 | **Spotify Live & `!song` Bot** | Zero-config local Spotify Desktop bridge (no API key needed): live Now Playing controls, automatic Twitch/YouTube `!song` / `!music` replies, and transparent **OBS Spotify Widget** (`http://127.0.0.1:4588/spotify`). |
-| **Performance & Diagnostics** | 60fps `requestAnimationFrame` batch rendering, configurable DOM/RAM limits, JSON backup export/import, collapsible **Live Statistics & Connection Logs** drawer, bot filter, and spam repeat collapsing (`×N`). |
+| **Chat Search, Export & Diagnostics** | Live **Chat Search (`⌘/Ctrl+F`)** with platform & author filter, **Chat-Log Export (`💾 Export`)** as `.txt` or `.json`, 60fps `requestAnimationFrame` batch rendering, configurable DOM/RAM limits, JSON config backup, **Live Statistics & Logs**, bot filter, and spam collapsing (`×N`). |
 
 ---
 
@@ -97,6 +98,7 @@ In the **Elgato Stream Deck** app, add **System → Website**, paste one of the 
 
 ## 📚 Documentation
 
-- **[English User Guide (GUIDE.md)](./GUIDE.md)** — Complete setup walkthrough (Twitch OAuth token, YouTube, TikTok, OBS, Stream Deck, Keyword Alerts, Moderation).
+- **[Changelog (CHANGELOG.md)](./CHANGELOG.md)** — Full version history and release notes.
+- **[English User Guide (GUIDE.md)](./GUIDE.md)** — Complete setup walkthrough (Twitch OAuth token, YouTube, TikTok, OBS, Clip & Replay Studio, Stream-Manager, Custom Commands, Stream Deck).
 - **[Deutsche Anleitung (ANLEITUNG.md)](./ANLEITUNG.md)** — Ausführliche Schritt-für-Schritt-Anleitung auf Deutsch.
 - **[Deutsches README (README.de.md)](./README.de.md)** — Projektübersicht auf Deutsch.

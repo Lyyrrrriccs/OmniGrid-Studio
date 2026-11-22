@@ -1,0 +1,41 @@
+# Changelog
+
+Alle wichtigen Änderungen und neuen Features von **OmniStream Chat** im Überblick.
+
+---
+
+## [1.1.0] — 2026-11-22
+
+### ✨ Neue Features
+- **Clip- & Replay-Studio (`🎞️ Clip-Studio`):**
+  - Replay-/Aufnahme-Browser (inkl. `shorts/` und `trimmed/` Unterordnern) mit HTML5-Videovorschau.
+  - Visueller **Dual-Range-Timeline-Schieberegler** (Start- & End-Marker mit Live-Frame-Scrubbing) sowie **▶ Auswahl testen**.
+  - **✂️ 16:9 schneiden** & **📱 Als 9:16 Short** Export via `ffmpeg` (Blur-Hintergrund oder Center-Crop).
+  - Clips direkt **✏️ Umbenennen**, in den Papierkorb **🗑️ Löschen**, sowie **▶️ YT** (Direkt-Upload als Privat-Entwurf via YouTube Data API v3) und **🎵 TT** (TikTok Upload-Seite + Datei markieren) direkt neben jedem Video.
+- **Stream-Manager (`📝 Stream-Manager`):**
+  - Stream-Titel, Spiel/Kategorie (mit Live-Suche) und Tags für **Twitch** direkt aus der Sidebar laden und aktualisieren — inkl. optionalem Titel-Sync zu **YouTube**.
+- **Zentrale Konfigurationsseite (`⚙️ Config`) & Anleitungs-Fenster (`📖 Anleitung`):**
+  - Alle Setup-Einstellungen (Plattformen, Profil/Events, Design/Emotes, OBS/Alerts/TTS, Bot/Auto-Mod, Tablet/Stream Deck, Peripherie/System) übersichtlich in Tabs gebündelt.
+  - Eigenes Markdown-Hilfefenster (`📖 Anleitung`) mit Suche und Sprachumschaltung (`ANLEITUNG.md`, `GUIDE.md`, `README.de.md`, `README.md`).
+- **Bot, Auto-Mod & Chat-Tools:**
+  - **Custom Chat-Commands** (`!befehl | Antworttext`, Cooldown, `{user}`/`{platform}`, `!commands`) für Twitch & YouTube.
+  - **Chat-Timer** für rotierende Info-Nachrichten alle X Minuten.
+  - **Auto-Mod-Regeln** (Link-, Caps- & Symbol-Filter, Wort-Blacklist, automatisches Löschen/Timeout auf Twitch).
+  - **Chat-Suche (`⌘/Ctrl+F`)** und **💾 Export** (`.txt` / `.json`).
+- **OBS-Widgets, WebSocket v5 & Twitch Actions:**
+  - **OBS Alert-Box Overlay (`/alerts`)** mit Event-Filter, Animationen, Sound-Chime & eigenen GIF-/Audio-URLs.
+  - **OBS Goal-Bar (`/goals`)** mit Auto-Increment bei Follows/Subs.
+  - **OBS Multistream-Poll (`/poll`)** mit `!vote 1..N` und **👁️ Ein-/Ausblenden** (App, Tablet & `/api/streamdeck/toggle-poll`).
+  - **Text-to-Speech (TTS)** für Events/Alerts und `!tts`-Nachrichten.
+  - **OBS WebSocket v5** Steuerung (Szenenwechsel, Replay-Buffer, Mic-Mute, Aufnahme, Stream) in App, Tablet & Stream Deck.
+  - **Twitch Clip & Stream-Marker** auf Knopfdruck (`/clip`, `/marker`, `/clip-and-marker`).
+- **YouTube Chat-Schreiben (OAuth2 PKCE):**
+  - Optionaler Google-OAuth2-Login in der YouTube-Karte zum Senden von Chat-Nachrichten, `!song`-Antworten und Video-Uploads.
+- **Tablet Companion (`/tablet`) & App-Icons:**
+  - WLAN/Tailscale-Netzwerk-Umschalter mit QR-Code + `NSLocalNetworkUsageDescription` für macOS.
+  - Eigenes **OmniStream Chat** App-Icon für macOS Dock (`.icns`) und Windows (`.ico`).
+
+---
+
+## [1.0.0] — Initial Release
+- Multistream Chat Aggregator für **Twitch**, **YouTube Live** und **TikTok Live** mit 7TV/BTTV/FFZ-Emotes, kompaktem Streamer-Layout, OBS Custom Browser Dock (`/dock`), OBS Stream-Overlay (`/`), Spotify-Bridge (`/spotify` + `!song`), WebHID-Zweittastatur/Zweitmaus & Elgato Stream Deck REST-API.
