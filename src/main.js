@@ -1715,6 +1715,17 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('clip-studio-trim-original', async (_ev, payload) => {
+    try {
+      const res = await clipStudio.trimOriginalVideo(payload || {});
+      appendDiagLog('system', 'info', `✂️ 16:9 Clip geschnitten: ${res.outPath}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('system', 'error', `16:9 Schnitt fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('clip-studio-reveal', (_ev, filePath) => {
     if (filePath) {
       require('electron').shell.showItemInFolder(filePath);

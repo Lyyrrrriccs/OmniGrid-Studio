@@ -50,7 +50,7 @@ function listReplays(dirPath) {
   return { ok: true, dir: targetDir, files: files.slice(0, 40) };
 }
 
-function exportVerticalShort({ inputPath, startSec = 0, durationSec = 30, layoutMode = 'blur_bg' }) {
+function exportVerticalShort({ inputPath, startSec = 0, endSec = null, durationSec = 30, layoutMode = 'blur_bg' }) {
   return new Promise((resolve, reject) => {
     if (!inputPath || !fs.existsSync(inputPath)) {
       return reject(new Error('Eingabe-Video nicht gefunden.'));
@@ -74,7 +74,11 @@ function exportVerticalShort({ inputPath, startSec = 0, durationSec = 30, layout
 
     const args = ['-y'];
     const s = Math.max(0, Number(startSec) || 0);
-    const d = Math.max(1, Math.min(180, Number(durationSec) || 30));
+    const computedDur =
+      endSec !== null && endSec !== undefined && Number(endSec) > s
+        ? Number(endSec) - s
+        : Number(durationSec) || 30;
+    const d = Math.max(0.5, Math.min(600, computedDur));
     if (s > 0) args.push('-ss', String(s));
     args.push('-i', inputPath, '-t', String(d));
 
@@ -94,6 +98,64 @@ function exportVerticalShort({ inputPath, startSec = 0, durationSec = 30, layout
       '-pix_fmt', 'yuv420p',
       '-c:a', 'aac',
       '-b:a', '160k',
+      '-movflags', '+faststart',
+      outPath
+    );
+
+    const proc = spawn(ffmpegBin, args, { windowsHide: true });
+    let errLog = '';
+    proc.stderr.on('data', (chunk) => {
+      errLog += chunk.toString();
+      if (errLog.length > 4000) errLog = errLog.slice(-4000);
+    });
+    proc.on('error', (err) => reject(err));
+    proc.on('close', (code) => {
+      if (code === 0 && fs.existsSync(outPath)) {
+        resolve({ ok: true, outPath, fileName: path.basename(outPath) });
+      } else {
+        reject(new Error(`ffmpeg beendet (Code ${code}): ${errLog.split('\n').slice(-4).join(' ')}`));
+      }
+    });
+  });
+}
+
+function trimOriginalVideo({ inputPath, startSec = 0, endSec = 30 }) {
+  return new Promise((resolve, reject) => {
+    if (!inputPath || !fs.existsSync(inputPath)) {
+      return reject(new Error('Eingabe-Video nicht gefunden.'));
+    }
+    const ffmpegBin = findFfmpegBinary();
+    if (!ffmpegBin) {
+      return reject(
+        new Error(
+          process.platform === 'darwin'
+            ? 'ffmpeg nicht gefunden. Bitte im Terminal installieren: brew install ffmpeg'
+            : 'ffmpeg.exe nicht gefunden. Bitte installieren: winget install Gyan.FFmpeg'
+        )
+      );
+    }
+
+    const baseName = path.basename(inputPath, path.extname(inputPath));
+    const trimmedDir = path.join(path.dirname(inputPath), 'trimmed');
+    fs.mkdirSync(trimmedDir, { recursive: true });
+    const stamp = new Date().toISOString().slice(11, 19).replace(/:/g, '');
+    const outPath = path.join(trimmedDir, `${baseName}_cut_${stamp}.mp4`);
+
+    const s = Math.max(0, Number(startSec) || 0);
+    const e = Number(endSec) || 0;
+    const d = Math.max(0.5, e > s ? e - s : 30);
+
+    const args = ['-y'];
+    if (s > 0) args.push('-ss', String(s));
+    args.push(
+      '-i', inputPath,
+      '-t', String(d),
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-crf', '20',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '192k',
       '-movflags', '+faststart',
       outPath
     );
@@ -142,5 +204,6 @@ module.exports = {
   findFfmpegBinary,
   listReplays,
   exportVerticalShort,
+  trimOriginalVideo,
   renameReplay
 };

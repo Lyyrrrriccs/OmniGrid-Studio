@@ -3240,6 +3240,13 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const dirLabel = document.getElementById('clipStudioDirLabel');
   const videoEl = document.getElementById('clipStudioVideo');
   const btnExport = document.getElementById('btnClipExportShort');
+  const btnTrimOrig = document.getElementById('btnClipTrimOriginal');
+  const btnMarkStart = document.getElementById('btnMarkStart');
+  const btnMarkEnd = document.getElementById('btnMarkEnd');
+  const btnPlayRange = document.getElementById('btnClipPlayRange');
+  const numClipStart = document.getElementById('numClipStart');
+  const numClipEnd = document.getElementById('numClipEnd');
+  const clipRangeDur = document.getElementById('clipRangeDuration');
   const btnReveal = document.getElementById('btnClipRevealOut');
   const inputTitle = document.getElementById('inputClipTitle');
   const btnRename = document.getElementById('btnClipRename');
@@ -3247,10 +3254,18 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const statusEl = document.getElementById('clipStudioStatus');
   let selectedPath = '';
   let lastOutPath = '';
+  let rangePlayStopAt = null;
+
+  function updateRangeDurationLabel() {
+    const s = Math.max(0, parseFloat(numClipStart?.value || '0') || 0);
+    const e = Math.max(s + 0.5, parseFloat(numClipEnd?.value || '30') || 30);
+    if (clipRangeDur) clipRangeDur.textContent = `Dauer: ${(e - s).toFixed(1)}s`;
+  }
 
   function setSelectedClip(filePath, fileName) {
     selectedPath = filePath || '';
     const hasSel = Boolean(selectedPath);
+    rangePlayStopAt = null;
     if (videoEl) {
       if (hasSel) videoEl.src = encodeURI(`file://${selectedPath}`);
       else {
@@ -3263,7 +3278,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       inputTitle.disabled = !hasSel;
       inputTitle.value = hasSel ? String(fileName || '').replace(/\.[^.]+$/, '') : '';
     }
-    [btnExport, btnRename, btnDelete].forEach((b) => {
+    [btnExport, btnTrimOrig, btnMarkStart, btnMarkEnd, btnPlayRange, btnRename, btnDelete].forEach((b) => {
       if (b) b.disabled = !hasSel;
     });
   }
@@ -3372,28 +3387,81 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
 
-  btnExport?.addEventListener('click', async () => {
+  videoEl?.addEventListener('loadedmetadata', () => {
+    if (numClipStart) numClipStart.value = '0';
+    if (numClipEnd && Number.isFinite(videoEl.duration) && videoEl.duration > 0) {
+      numClipEnd.value = videoEl.duration.toFixed(1);
+    }
+    updateRangeDurationLabel();
+  });
+
+  videoEl?.addEventListener('timeupdate', () => {
+    if (rangePlayStopAt !== null && videoEl.currentTime >= rangePlayStopAt) {
+      videoEl.pause();
+      rangePlayStopAt = null;
+    }
+  });
+
+  [numClipStart, numClipEnd].forEach((el) => {
+    el?.addEventListener('input', updateRangeDurationLabel);
+  });
+
+  btnMarkStart?.addEventListener('click', () => {
+    if (!videoEl || !numClipStart) return;
+    numClipStart.value = videoEl.currentTime.toFixed(1);
+    if (numClipEnd && parseFloat(numClipEnd.value) <= parseFloat(numClipStart.value)) {
+      const fallbackEnd = Number.isFinite(videoEl.duration) ? videoEl.duration : parseFloat(numClipStart.value) + 10;
+      numClipEnd.value = fallbackEnd.toFixed(1);
+    }
+    updateRangeDurationLabel();
+  });
+
+  btnMarkEnd?.addEventListener('click', () => {
+    if (!videoEl || !numClipEnd) return;
+    const t = Math.max(0.5, videoEl.currentTime);
+    numClipEnd.value = t.toFixed(1);
+    if (numClipStart && parseFloat(numClipStart.value) >= t) {
+      numClipStart.value = Math.max(0, t - 5).toFixed(1);
+    }
+    updateRangeDurationLabel();
+  });
+
+  btnPlayRange?.addEventListener('click', () => {
+    if (!videoEl || !selectedPath) return;
+    const s = Math.max(0, parseFloat(numClipStart?.value || '0') || 0);
+    const e = Math.max(s + 0.5, parseFloat(numClipEnd?.value || '30') || 30);
+    rangePlayStopAt = e;
+    videoEl.currentTime = s;
+    videoEl.play().catch(() => {});
+  });
+
+  async function runClipExport(mode) {
     if (!selectedPath) return;
-    btnExport.disabled = true;
-    btnExport.textContent = '⏳ Rendere 9:16 Short...';
+    const isShort = mode === 'short';
+    const activeBtn = isShort ? btnExport : btnTrimOrig;
+    const defaultLabel = isShort ? '📱 Als 9:16 Short' : '✂️ 16:9 schneiden';
+    if (btnExport) btnExport.disabled = true;
+    if (btnTrimOrig) btnTrimOrig.disabled = true;
+    if (activeBtn) activeBtn.textContent = isShort ? '⏳ Rendere 9:16...' : '⏳ Schneide 16:9...';
     if (btnReveal) btnReveal.classList.add('hidden');
     if (statusEl) {
       statusEl.style.color = '#38bdf8';
-      statusEl.textContent = '⏳ ffmpeg rendert 1080×1920 MP4... (bitte kurz warten)';
+      statusEl.textContent = isShort
+        ? '⏳ ffmpeg rendert 1080×1920 Short... (bitte kurz warten)'
+        : '⏳ ffmpeg schneidet 16:9 Clip... (bitte kurz warten)';
     }
-    const startSec = parseFloat(document.getElementById('numClipStart')?.value || '0') || 0;
-    const durationSec = parseFloat(document.getElementById('numClipDuration')?.value || '30') || 30;
+
+    const startSec = Math.max(0, parseFloat(numClipStart?.value || '0') || 0);
+    const endSec = Math.max(startSec + 0.5, parseFloat(numClipEnd?.value || '30') || 30);
     const layoutMode = document.getElementById('selClipLayout')?.value || 'blur_bg';
 
-    const res = await window.omnichat.clipStudioExportShort({
-      inputPath: selectedPath,
-      startSec,
-      durationSec,
-      layoutMode
-    });
+    const res = isShort
+      ? await window.omnichat.clipStudioExportShort({ inputPath: selectedPath, startSec, endSec, layoutMode })
+      : await window.omnichat.clipStudioTrimOriginal({ inputPath: selectedPath, startSec, endSec });
 
-    btnExport.disabled = false;
-    btnExport.textContent = '📱 Als 9:16 Short exportieren';
+    if (btnExport) btnExport.disabled = false;
+    if (btnTrimOrig) btnTrimOrig.disabled = false;
+    if (activeBtn) activeBtn.textContent = defaultLabel;
     if (res?.ok) {
       lastOutPath = res.outPath;
       if (btnReveal) btnReveal.classList.remove('hidden');
@@ -3405,7 +3473,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       statusEl.style.color = '#f87171';
       statusEl.textContent = `❌ ${res?.error || 'Export fehlgeschlagen.'}`;
     }
-  });
+  }
+
+  btnExport?.addEventListener('click', () => runClipExport('short'));
+  btnTrimOrig?.addEventListener('click', () => runClipExport('trim'));
 
   btnReveal?.addEventListener('click', () => {
     if (lastOutPath) window.omnichat.clipStudioReveal(lastOutPath);
