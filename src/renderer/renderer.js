@@ -2604,6 +2604,11 @@ window.omnichat.onInitState((data) => {
   }
   if (data.config) {
     applyConfigToForm(data.config);
+    const seEnabled = Boolean(data.config?.obsWs?.sceneEditorEnabled);
+    const chkSe = document.getElementById('chkEnableSceneEditor');
+    const btnSe = document.getElementById('btnOpenSceneEditor');
+    if (chkSe) chkSe.checked = seEnabled;
+    if (btnSe) btnSe.classList.toggle('hidden', !seEnabled);
   }
   if (Array.isArray(data.diagnosticLogs)) {
     diagLogs = data.diagnosticLogs;
@@ -4526,6 +4531,243 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (selAddon) selAddon.value = gaState.selectedMode || 'auto';
       if (gameInput) gameInput.value = gaState.currentGameName || '';
       renderFields();
+    }
+  });
+})();
+
+// ======================================================
+// OPTIONALER OBS SZENEN- & QUELLEN-EDITOR (WebSocket v5)
+// ======================================================
+(function initObsSceneEditorModal() {
+  const modal = document.getElementById('obsSceneEditorModal');
+  const btnOpen = document.getElementById('btnOpenSceneEditor');
+  const chkEnable = document.getElementById('chkEnableSceneEditor');
+  if (!modal) return;
+
+  const btnClose = document.getElementById('btnCloseSceneEditor');
+  const selScene = document.getElementById('seSelectScene');
+  const newSceneInput = document.getElementById('seNewSceneName');
+  const btnCreateScene = document.getElementById('btnSeCreateScene');
+  const btnRefresh = document.getElementById('btnSeRefresh');
+  const chkAutoPreview = document.getElementById('seAutoPreview');
+  const previewImg = document.getElementById('sePreviewImg');
+  const previewPlaceholder = document.getElementById('sePreviewPlaceholder');
+  const sourcesList = document.getElementById('seSourcesList');
+  const audioList = document.getElementById('seAudioList');
+  const statusEl = document.getElementById('seStatus');
+
+  const lblSelSource = document.getElementById('seSelectedSourceName');
+  const inpPosX = document.getElementById('sePosX');
+  const inpPosY = document.getElementById('sePosY');
+  const inpScalePct = document.getElementById('seScalePct');
+  const btnApplyTransform = document.getElementById('btnSeApplyTransform');
+
+  let currentSceneName = '';
+  let selectedItem = null;
+  let previewTimer = null;
+
+  function setStatus(msg, color = '#94a3b8') {
+    if (!statusEl) return;
+    statusEl.style.color = color;
+    statusEl.textContent = msg;
+  }
+
+  chkEnable?.addEventListener('change', async () => {
+    const enabled = Boolean(chkEnable.checked);
+    if (btnOpen) btnOpen.classList.toggle('hidden', !enabled);
+    await window.omnichat.obsWsAction({ action: 'set-scene-editor-enabled', enabled });
+  });
+
+  function selectSourceItem(item) {
+    selectedItem = item;
+    if (!item) {
+      if (lblSelSource) lblSelSource.textContent = '— Quelle rechts wählen —';
+      [inpPosX, inpPosY, inpScalePct, btnApplyTransform].forEach((el) => { if (el) el.disabled = true; });
+      return;
+    }
+    if (lblSelSource) lblSelSource.textContent = item.sourceName;
+    const tr = item.transform || {};
+    if (inpPosX) { inpPosX.disabled = false; inpPosX.value = String(Math.round(tr.positionX || 0)); }
+    if (inpPosY) { inpPosY.disabled = false; inpPosY.value = String(Math.round(tr.positionY || 0)); }
+    if (inpScalePct) { inpScalePct.disabled = false; inpScalePct.value = String(Math.round((tr.scaleX || 1) * 100)); }
+    if (btnApplyTransform) btnApplyTransform.disabled = false;
+  }
+
+  async function refreshPreview() {
+    if (modal.classList.contains('hidden')) return;
+    const res = await window.omnichat.obsWsAction({ action: 'get-screenshot', sceneName: currentSceneName });
+    if (res?.ok && res.imageData && previewImg) {
+      previewImg.src = res.imageData;
+      previewImg.style.display = 'block';
+      if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+    }
+  }
+
+  async function loadSceneItems(sceneName) {
+    if (!sourcesList) return;
+    const res = await window.omnichat.obsWsAction({ action: 'get-scene-items', sceneName });
+    if (!res?.ok) {
+      setStatus(`⚠️ ${res?.error || 'OBS nicht verbunden.'}`, '#fbbf24');
+      sourcesList.innerHTML = '';
+      return;
+    }
+    currentSceneName = res.sceneName;
+    sourcesList.innerHTML = '';
+    (res.items || []).forEach((it) => {
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:6px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.8); border:1px solid ${selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)'}; font-size:12px; cursor:pointer;`;
+      const nameSpan = document.createElement('span');
+      nameSpan.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+      nameSpan.textContent = it.sourceName;
+      nameSpan.addEventListener('click', () => {
+        selectSourceItem(it);
+        loadSceneItems(currentSceneName);
+      });
+
+      const eyeBtn = document.createElement('button');
+      eyeBtn.className = 'btn-sm';
+      eyeBtn.style.padding = '2px 7px';
+      eyeBtn.textContent = it.sceneItemEnabled ? '👁️' : '🚫';
+      eyeBtn.title = it.sceneItemEnabled ? 'Quelle ausblenden' : 'Quelle einblenden';
+      eyeBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await window.omnichat.obsWsAction({
+          action: 'set-scene-item-enabled',
+          sceneName: currentSceneName,
+          sceneItemId: it.sceneItemId,
+          enabled: !it.sceneItemEnabled
+        });
+        await loadSceneItems(currentSceneName);
+        refreshPreview();
+      });
+
+      row.appendChild(nameSpan);
+      row.appendChild(eyeBtn);
+      sourcesList.appendChild(row);
+    });
+  }
+
+  async function loadAudioInputs() {
+    if (!audioList) return;
+    const res = await window.omnichat.obsWsAction({ action: 'get-audio-inputs' });
+    if (!res?.ok) { audioList.innerHTML = ''; return; }
+    audioList.innerHTML = '';
+    (res.inputs || []).forEach((inp) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.16); font-size:11px;';
+      const lbl = document.createElement('span');
+      lbl.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+      lbl.textContent = inp.inputName;
+
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = '0';
+      slider.max = '1';
+      slider.step = '0.02';
+      slider.value = String(Math.min(1, Math.max(0, inp.volumeMul ?? 1)));
+      slider.style.width = '85px';
+      slider.addEventListener('change', async () => {
+        await window.omnichat.obsWsAction({ action: 'set-input-volume', inputName: inp.inputName, volumeMul: parseFloat(slider.value) });
+      });
+
+      const muteBtn = document.createElement('button');
+      muteBtn.className = 'btn-sm';
+      muteBtn.style.padding = '2px 6px';
+      muteBtn.textContent = inp.muted ? '🔇' : '🔊';
+      muteBtn.addEventListener('click', async () => {
+        await window.omnichat.obsWsAction({ action: 'toggle-mic', inputName: inp.inputName });
+        loadAudioInputs();
+      });
+
+      row.appendChild(lbl);
+      row.appendChild(slider);
+      row.appendChild(muteBtn);
+      audioList.appendChild(row);
+    });
+  }
+
+  async function refreshAll() {
+    const sidebarSel = document.getElementById('selObsScene');
+    if (selScene && sidebarSel) {
+      selScene.innerHTML = sidebarSel.innerHTML;
+      selScene.value = sidebarSel.value;
+      currentSceneName = selScene.value || '';
+    }
+    if (!currentSceneName) {
+      setStatus('⚠️ Bitte zuerst in Config → OBS WebSocket v5 verbinden.', '#fbbf24');
+      return;
+    }
+    setStatus('');
+    await Promise.all([loadSceneItems(currentSceneName), loadAudioInputs(), refreshPreview()]);
+  }
+
+  function startPreviewLoop() {
+    clearInterval(previewTimer);
+    if (chkAutoPreview?.checked && !modal.classList.contains('hidden')) {
+      previewTimer = setInterval(refreshPreview, 2000);
+    }
+  }
+
+  btnOpen?.addEventListener('click', async () => {
+    modal.classList.remove('hidden');
+    selectSourceItem(null);
+    await refreshAll();
+    startPreviewLoop();
+  });
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    clearInterval(previewTimer);
+  }
+  btnClose?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  chkAutoPreview?.addEventListener('change', startPreviewLoop);
+  btnRefresh?.addEventListener('click', refreshAll);
+
+  selScene?.addEventListener('change', async () => {
+    const target = selScene.value;
+    if (!target) return;
+    await window.omnichat.obsWsAction({ action: 'scene', sceneName: target });
+    currentSceneName = target;
+    selectSourceItem(null);
+    await loadSceneItems(target);
+    refreshPreview();
+  });
+
+  btnCreateScene?.addEventListener('click', async () => {
+    const name = newSceneInput?.value.trim() || '';
+    if (!name) return;
+    const res = await window.omnichat.obsWsAction({ action: 'create-scene', sceneName: name });
+    if (res?.ok) {
+      if (newSceneInput) newSceneInput.value = '';
+      setStatus(`✅ Szene "${name}" erstellt!`, '#4ade80');
+      setTimeout(refreshAll, 300);
+    } else {
+      setStatus(`❌ ${res?.error || 'Fehler beim Erstellen'}`, '#f87171');
+    }
+  });
+
+  btnApplyTransform?.addEventListener('click', async () => {
+    if (!selectedItem || !currentSceneName) return;
+    const scale = Math.max(0.05, Math.min(4, (parseFloat(inpScalePct?.value || '100') || 100) / 100));
+    const res = await window.omnichat.obsWsAction({
+      action: 'set-scene-item-transform',
+      sceneName: currentSceneName,
+      sceneItemId: selectedItem.sceneItemId,
+      transform: {
+        positionX: parseFloat(inpPosX?.value || '0') || 0,
+        positionY: parseFloat(inpPosY?.value || '0') || 0,
+        scaleX: scale,
+        scaleY: scale
+      }
+    });
+    if (res?.ok) {
+      setStatus(`✅ Transform für "${selectedItem.sourceName}" gesetzt.`, '#4ade80');
+      await loadSceneItems(currentSceneName);
+      refreshPreview();
+    } else {
+      setStatus(`❌ ${res?.error || 'Transform fehlgeschlagen'}`, '#f87171');
     }
   });
 })();

@@ -256,6 +256,88 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, micName: target, micMuted: Boolean(res.inputMuted) };
   }
 
+  async getSceneItems(sceneName = '') {
+    const target = String(sceneName || this.state.currentScene || '').trim();
+    if (!target) throw new Error('Keine Szene ausgewählt.');
+    const res = await this.call('GetSceneItemList', { sceneName: target });
+    const items = (Array.isArray(res.sceneItems) ? res.sceneItems : []).map((it) => ({
+      sceneItemId: it.sceneItemId,
+      sourceName: it.sourceName,
+      inputKind: it.inputKind || '',
+      sceneItemEnabled: Boolean(it.sceneItemEnabled),
+      sceneItemLocked: Boolean(it.sceneItemLocked),
+      transform: it.sceneItemTransform || {}
+    }));
+    return { ok: true, sceneName: target, items: items.reverse() };
+  }
+
+  async setSceneItemEnabled(sceneName, sceneItemId, enabled) {
+    await this.call('SetSceneItemEnabled', {
+      sceneName: String(sceneName),
+      sceneItemId: Number(sceneItemId),
+      sceneItemEnabled: Boolean(enabled)
+    });
+    return { ok: true };
+  }
+
+  async setSceneItemTransform(sceneName, sceneItemId, transform = {}) {
+    await this.call('SetSceneItemTransform', {
+      sceneName: String(sceneName),
+      sceneItemId: Number(sceneItemId),
+      sceneItemTransform: transform
+    });
+    return { ok: true };
+  }
+
+  async createScene(sceneName) {
+    const clean = String(sceneName || '').trim();
+    if (!clean) throw new Error('Bitte Szenennamen angeben.');
+    await this.call('CreateScene', { sceneName: clean });
+    await this.refreshState();
+    return { ok: true, sceneName: clean };
+  }
+
+  async getAudioInputs() {
+    const res = await this.call('GetInputList');
+    const inputs = Array.isArray(res.inputs) ? res.inputs : [];
+    const audioList = [];
+    for (const inp of inputs) {
+      try {
+        const vol = await this.call('GetInputVolume', { inputName: inp.inputName });
+        const mute = await this.call('GetInputMute', { inputName: inp.inputName });
+        audioList.push({
+          inputName: inp.inputName,
+          inputKind: inp.inputKind || '',
+          volumeMul: typeof vol.inputVolumeMul === 'number' ? vol.inputVolumeMul : 1,
+          volumeDb: typeof vol.inputVolumeDb === 'number' ? vol.inputVolumeDb : 0,
+          muted: Boolean(mute.inputMuted)
+        });
+      } catch (e) {
+        // Input has no audio track (e.g. pure Image/Color source) — skip
+      }
+    }
+    return { ok: true, inputs: audioList };
+  }
+
+  async setInputVolume(inputName, volumeMul) {
+    const mul = Math.max(0, Math.min(2, Number(volumeMul)));
+    await this.call('SetInputVolume', { inputName: String(inputName), inputVolumeMul: mul });
+    return { ok: true, inputName, volumeMul: mul };
+  }
+
+  async getSceneScreenshot(sceneName = '') {
+    const target = String(sceneName || this.state.currentScene || '').trim();
+    if (!target) throw new Error('Keine Szene ausgewählt.');
+    const res = await this.call('GetSourceScreenshot', {
+      sourceName: target,
+      imageFormat: 'jpg',
+      imageWidth: 640,
+      imageHeight: 360,
+      imageCompressionQuality: 70
+    });
+    return { ok: true, imageData: res.imageData || '' };
+  }
+
   disconnect(emitUpdate = true) {
     for (const entry of this.pending.values()) {
       clearTimeout(entry.timer);

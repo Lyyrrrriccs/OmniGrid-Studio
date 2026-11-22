@@ -405,7 +405,8 @@ function getDefaultConfig() {
       host: '127.0.0.1',
       port: 4455,
       password: '',
-      micName: ''
+      micName: '',
+      sceneEditorEnabled: false
     },
     chatTimers: {
       enabled: false,
@@ -2457,6 +2458,23 @@ app.whenReady().then(async () => {
       if (act === 'toggle-record') return await obsWs.toggleRecord();
       if (act === 'save-replay') return await obsWs.saveReplayBuffer();
       if (act === 'toggle-mic') return await obsWs.toggleMicMute(payload.inputName || '');
+      if (act === 'get-scene-items') return await obsWs.getSceneItems(payload.sceneName || '');
+      if (act === 'set-scene-item-enabled') {
+        return await obsWs.setSceneItemEnabled(payload.sceneName, payload.sceneItemId, payload.enabled);
+      }
+      if (act === 'set-scene-item-transform') {
+        return await obsWs.setSceneItemTransform(payload.sceneName, payload.sceneItemId, payload.transform || {});
+      }
+      if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
+      if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
+      if (act === 'set-input-volume') return await obsWs.setInputVolume(payload.inputName, payload.volumeMul);
+      if (act === 'get-screenshot') return await obsWs.getSceneScreenshot(payload.sceneName || '');
+      if (act === 'set-scene-editor-enabled') {
+        const cfg = loadConfig();
+        cfg.obsWs = { ...(cfg.obsWs || {}), sceneEditorEnabled: Boolean(payload.enabled) };
+        saveConfig(cfg);
+        return { ok: true, sceneEditorEnabled: cfg.obsWs.sceneEditorEnabled };
+      }
       return { ok: false, error: 'Unbekannte OBS-Aktion.' };
     } catch (err) {
       return { ok: false, error: err.message };
