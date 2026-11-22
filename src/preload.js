@@ -68,5 +68,12 @@ contextBridge.exposeInMainWorld('omnichat', {
   clipStudioRename: (filePath, newTitle) => ipcRenderer.invoke('clip-studio-rename', { filePath, newTitle }),
   clipStudioDelete: (filePath) => ipcRenderer.invoke('clip-studio-delete', filePath),
   clipStudioUploadYoutube: (payload) => ipcRenderer.invoke('clip-studio-upload-youtube', payload),
-  clipStudioUploadTiktok: (filePath) => ipcRenderer.invoke('clip-studio-upload-tiktok', filePath)
+  clipStudioUploadTiktok: (filePath) => ipcRenderer.invoke('clip-studio-upload-tiktok', filePath),
+  socialScheduleGet: () => ipcRenderer.invoke('social-schedule-get'),
+  socialScheduleSave: (socialSchedule) => ipcRenderer.invoke('social-schedule-save', socialSchedule),
+  socialPostGoLive: (payload) => ipcRenderer.invoke('social-post-golive', payload),
+  socialPostSchedule: (payload) => ipcRenderer.invoke('social-post-schedule', payload),
+  socialSyncTwitchSchedule: () => ipcRenderer.invoke('social-sync-twitch-schedule'),
+  socialExportIcs: () => ipcRenderer.invoke('social-export-ics'),
+  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url)
 });

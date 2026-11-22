@@ -836,6 +836,39 @@ class TwitchConnector extends EventEmitter {
     return { ok: true, updated: body };
   }
 
+  async createScheduleSegment({ startTimeIso, durationMin = 120, title = '', gameName = '', isRecurring = false }) {
+    const broadcasterId = await this._resolveBroadcasterId();
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Berlin';
+    const body = {
+      start_time: startTimeIso,
+      timezone: tz,
+      duration: String(Math.max(30, Math.min(1380, parseInt(durationMin, 10) || 120))),
+      is_recurring: Boolean(isRecurring)
+    };
+    if (title) {
+      body.title = String(title).trim().slice(0, 140);
+    }
+    if (gameName) {
+      const gResp = await this._helixRequest('GET', `/helix/games?name=${encodeURIComponent(String(gameName).trim())}`);
+      let categoryId = gResp.json?.data?.[0]?.id || '';
+      if (!categoryId) {
+        const sResp = await this._helixRequest('GET', `/helix/search/categories?query=${encodeURIComponent(String(gameName).trim())}&first=1`);
+        categoryId = sResp.json?.data?.[0]?.id || '';
+      }
+      if (categoryId) body.category_id = categoryId;
+    }
+
+    const resp = await this._helixRequest('POST', `/helix/schedule/segment?broadcaster_id=${encodeURIComponent(broadcasterId)}`, body);
+    if (resp.statusCode === 401 || resp.statusCode === 403) {
+      throw new Error('Fehlende Berechtigung (Scope "channel:manage:schedule") — bitte Twitch OAuth-Token mit "channel:manage:schedule" generieren.');
+    }
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`Twitch Schedule Fehler: ${msg}`);
+    }
+    return { ok: true, segment: resp.json?.data?.segments?.[0] || null };
+  }
+
   disconnect(clearDedupe = false) {
     this.shouldReconnect = false;
     clearTimeout(this.reconnectTimer);

@@ -3582,3 +3582,322 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (lastOutPath) window.omnichat.clipStudioReveal(lastOutPath);
   });
 })();
+
+// ======================================================
+// DISCORD, GO-LIVE & SENDEPLAN STUDIO
+// ======================================================
+(function initSocialScheduleStudio() {
+  const modal = document.getElementById('socialScheduleModal');
+  if (!modal) return;
+
+  const btnOpenTop = document.getElementById('btnOpenSocialSchedule');
+  const btnOpenSide = document.getElementById('btnSidebarSocialSchedule');
+  const btnClose = document.getElementById('btnCloseSocialSchedule');
+  const statusEl = document.getElementById('socialScheduleStatus');
+
+  const tabBtns = modal.querySelectorAll('[data-ss-tab]');
+  const panes = {
+    golive: document.getElementById('ssPane_golive'),
+    schedule: document.getElementById('ssPane_schedule'),
+    connections: document.getElementById('ssPane_connections')
+  };
+
+  let ssState = null;
+  let ssLinks = {};
+
+  function setStatus(msg, color = '#94a3b8') {
+    if (!statusEl) return;
+    statusEl.style.color = color;
+    statusEl.textContent = msg;
+  }
+
+  function switchTab(tab) {
+    tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.ssTab === tab));
+    Object.entries(panes).forEach(([k, el]) => {
+      if (el) el.classList.toggle('hidden', k !== tab);
+    });
+  }
+
+  tabBtns.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.ssTab)));
+
+  function renderScheduleList() {
+    const listEl = document.getElementById('ssScheduleList');
+    if (!listEl || !ssState) return;
+    const items = Array.isArray(ssState.schedule) ? ssState.schedule : [];
+    if (!items.length) {
+      listEl.innerHTML = '<div style="font-size:12px; color:#94a3b8; padding:8px;">Noch keine Termine eingetragen.</div>';
+      return;
+    }
+    const sorted = [...items].sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+    listEl.innerHTML = '';
+    sorted.forEach((item) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 10px; border-radius:8px; background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.16); font-size:12px;';
+      const plats = (item.platforms || []).map((p) => p.toUpperCase()).join('/');
+      row.innerHTML = `
+        <div style="min-width:0;">
+          <div style="font-weight:700; color:#f1f5f9;">${escapeHtml(item.title)} ${item.recurringWeekly ? '🔁' : ''}</div>
+          <div style="font-size:11px; color:#94a3b8;">📅 ${escapeHtml(item.date)} • 🕒 ${escapeHtml(item.time)} (${item.durationMin || 120} Min.) • ${escapeHtml(item.game || '—')} • [${escapeHtml(plats)}]</div>
+        </div>
+        <button class="btn-sm warn" data-del-id="${escapeHtml(item.id)}" title="Termin löschen" style="padding:3px 8px;">🗑️</button>
+      `;
+      row.querySelector('[data-del-id]')?.addEventListener('click', async () => {
+        ssState.schedule = ssState.schedule.filter((x) => x.id !== item.id);
+        const saved = await window.omnichat.socialScheduleSave(ssState);
+        if (saved?.ok) {
+          ssState = saved.socialSchedule;
+          renderScheduleList();
+          setStatus('🗑️ Termin entfernt.', '#94a3b8');
+        }
+      });
+      listEl.appendChild(row);
+    });
+  }
+
+  function fillFormFromState() {
+    if (!ssState) return;
+    const d = ssState.discord || {};
+    const b = ssState.bluesky || {};
+    const m = ssState.mastodon || {};
+    const l = ssState.links || {};
+
+    document.getElementById('ssGoLiveMessage').value = d.goLiveMessage || '🔴 **{channel} ist jetzt LIVE!** Komm vorbei!';
+    document.getElementById('chkGoLiveDiscord').checked = Boolean(d.enabled && d.webhookUrl);
+    document.getElementById('chkGoLiveBluesky').checked = Boolean(b.enabled && b.handle);
+    document.getElementById('chkGoLiveMastodon').checked = Boolean(m.enabled && m.accessToken);
+
+    document.getElementById('ssDiscordEnabled').checked = Boolean(d.enabled);
+    document.getElementById('ssDiscordWebhook').value = d.webhookUrl || '';
+    document.getElementById('ssDiscordScheduleWebhook').value = d.scheduleWebhookUrl || '';
+    document.getElementById('ssDiscordRole').value = d.mentionRole || '';
+    document.getElementById('ssDiscordColor').value = d.embedColor || '#9146ff';
+    document.getElementById('ssDiscordAutoObs').checked = Boolean(d.autoPostOnObsLive);
+
+    document.getElementById('ssBskyEnabled').checked = Boolean(b.enabled);
+    document.getElementById('ssBskyHandle').value = b.handle || '';
+    document.getElementById('ssBskyAppPass').value = b.appPassword || '';
+    document.getElementById('ssBskyAutoLive').checked = Boolean(b.autoPostOnLive);
+
+    document.getElementById('ssMastoEnabled').checked = Boolean(m.enabled);
+    document.getElementById('ssMastoInstance').value = m.instanceUrl || 'https://mastodon.social';
+    document.getElementById('ssMastoToken').value = m.accessToken || '';
+    document.getElementById('ssMastoAutoLive').checked = Boolean(m.autoPostOnLive);
+
+    document.getElementById('ssLinkTwitch').value = l.twitchUrl || '';
+    document.getElementById('ssLinkYoutube').value = l.youtubeUrl || '';
+    document.getElementById('ssLinkTiktok').value = l.tiktokUrl || '';
+    document.getElementById('ssLinkKick').value = l.kickUrl || '';
+
+    const titleInput = document.getElementById('ssGoLiveTitle');
+    const gameInput = document.getElementById('ssGoLiveGame');
+    if (titleInput && !titleInput.value) {
+      titleInput.value = document.getElementById('inputStreamTitle')?.value || '';
+    }
+    if (gameInput && !gameInput.value) {
+      gameInput.value = document.getElementById('inputStreamGame')?.value || '';
+    }
+    const dateInput = document.getElementById('ssAddDate');
+    if (dateInput && !dateInput.value) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
+    renderScheduleList();
+  }
+
+  function readConnectionsIntoState() {
+    if (!ssState) return;
+    ssState.discord = {
+      ...(ssState.discord || {}),
+      enabled: document.getElementById('ssDiscordEnabled').checked,
+      webhookUrl: document.getElementById('ssDiscordWebhook').value.trim(),
+      scheduleWebhookUrl: document.getElementById('ssDiscordScheduleWebhook').value.trim(),
+      mentionRole: document.getElementById('ssDiscordRole').value.trim(),
+      embedColor: document.getElementById('ssDiscordColor').value || '#9146ff',
+      autoPostOnObsLive: document.getElementById('ssDiscordAutoObs').checked,
+      goLiveMessage: document.getElementById('ssGoLiveMessage').value.trim() || '🔴 **{channel} ist jetzt LIVE!** Komm vorbei!'
+    };
+    ssState.bluesky = {
+      enabled: document.getElementById('ssBskyEnabled').checked,
+      handle: document.getElementById('ssBskyHandle').value.trim(),
+      appPassword: document.getElementById('ssBskyAppPass').value.trim(),
+      autoPostOnLive: document.getElementById('ssBskyAutoLive').checked
+    };
+    ssState.mastodon = {
+      enabled: document.getElementById('ssMastoEnabled').checked,
+      instanceUrl: document.getElementById('ssMastoInstance').value.trim() || 'https://mastodon.social',
+      accessToken: document.getElementById('ssMastoToken').value.trim(),
+      autoPostOnLive: document.getElementById('ssMastoAutoLive').checked
+    };
+    ssState.links = {
+      twitchUrl: document.getElementById('ssLinkTwitch').value.trim(),
+      youtubeUrl: document.getElementById('ssLinkYoutube').value.trim(),
+      tiktokUrl: document.getElementById('ssLinkTiktok').value.trim(),
+      kickUrl: document.getElementById('ssLinkKick').value.trim()
+    };
+  }
+
+  async function openModal() {
+    modal.classList.remove('hidden');
+    setStatus('Lade Einstellungen...');
+    const res = await window.omnichat.socialScheduleGet();
+    if (res?.ok) {
+      ssState = res.socialSchedule;
+      ssLinks = res.links || {};
+      fillFormFromState();
+      setStatus('');
+    }
+  }
+
+  btnOpenTop?.addEventListener('click', openModal);
+  btnOpenSide?.addEventListener('click', openModal);
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.add('hidden');
+  });
+
+  document.getElementById('btnSaveSocialConfig')?.addEventListener('click', async () => {
+    readConnectionsIntoState();
+    const res = await window.omnichat.socialScheduleSave(ssState);
+    if (res?.ok) {
+      ssState = res.socialSchedule;
+      ssLinks = res.links || {};
+      fillFormFromState();
+      setStatus('✅ Discord & Plattform-Einstellungen gespeichert!', '#4ade80');
+    } else {
+      setStatus('❌ Speichern fehlgeschlagen.', '#f87171');
+    }
+  });
+
+  document.getElementById('btnSsAddEntry')?.addEventListener('click', async () => {
+    const title = document.getElementById('ssAddTitle').value.trim();
+    const game = document.getElementById('ssAddGame').value.trim();
+    const date = document.getElementById('ssAddDate').value;
+    const time = document.getElementById('ssAddTime').value || '19:00';
+    const durationMin = parseInt(document.getElementById('ssAddDuration').value || '180', 10) || 180;
+    if (!title || !date) {
+      setStatus('⚠️ Bitte Titel und Datum angeben.', '#fbbf24');
+      return;
+    }
+    const platforms = [];
+    if (document.getElementById('ssAddPlatTwitch').checked) platforms.push('twitch');
+    if (document.getElementById('ssAddPlatYoutube').checked) platforms.push('youtube');
+    if (document.getElementById('ssAddPlatTiktok').checked) platforms.push('tiktok');
+    if (!platforms.length) platforms.push('twitch');
+
+    ssState.schedule = ssState.schedule || [];
+    ssState.schedule.push({
+      id: `sch_${Date.now()}`,
+      title,
+      game,
+      date,
+      time,
+      durationMin,
+      platforms,
+      recurringWeekly: document.getElementById('ssAddRecurring').checked
+    });
+
+    const res = await window.omnichat.socialScheduleSave(ssState);
+    if (res?.ok) {
+      ssState = res.socialSchedule;
+      document.getElementById('ssAddTitle').value = '';
+      renderScheduleList();
+      setStatus('✅ Termin zum Sendeplan hinzugefügt!', '#4ade80');
+    }
+  });
+
+  function buildSharePreviewText() {
+    const title = document.getElementById('ssGoLiveTitle').value.trim() || 'Live-Stream';
+    const game = document.getElementById('ssGoLiveGame').value.trim();
+    const msg = (document.getElementById('ssGoLiveMessage').value.trim() || '🔴 Jetzt LIVE!')
+      .replace(/\{channel\}/gi, document.getElementById('inputStreamerName')?.value || 'Stream')
+      .replace(/\{title\}/gi, title)
+      .replace(/\{game\}/gi, game || 'Just Chatting')
+      .replace(/\*\*/g, '');
+    const urls = [ssLinks.twitchUrl, ssLinks.youtubeUrl, ssLinks.tiktokUrl, ssLinks.kickUrl].filter(Boolean);
+    return `${msg}\n📺 ${title}${game ? ` — 🎮 ${game}` : ''}${urls.length ? `\n${urls.join(' | ')}` : ''}`;
+  }
+
+  document.getElementById('btnPostGoLiveNow')?.addEventListener('click', async () => {
+    setStatus('⏳ Sende Go-Live Ankündigung...', '#38bdf8');
+    const tagsRaw = document.getElementById('inputStreamTags')?.value || '';
+    const tags = tagsRaw.split(',').map((t) => t.trim()).filter(Boolean);
+    const res = await window.omnichat.socialPostGoLive({
+      title: document.getElementById('ssGoLiveTitle').value.trim(),
+      game: document.getElementById('ssGoLiveGame').value.trim(),
+      tags,
+      message: document.getElementById('ssGoLiveMessage').value.trim(),
+      targets: {
+        discord: document.getElementById('chkGoLiveDiscord').checked,
+        bluesky: document.getElementById('chkGoLiveBluesky').checked,
+        mastodon: document.getElementById('chkGoLiveMastodon').checked
+      }
+    });
+    if (res?.posted?.length && !res?.errors?.length) {
+      setStatus(`✅ Go-Live gepostet an: ${res.posted.join(', ')}`, '#4ade80');
+    } else if (res?.posted?.length) {
+      setStatus(`⚠️ Gepostet (${res.posted.join(', ')}), Hinweise: ${res.errors.join(' | ')}`, '#fbbf24');
+    } else {
+      setStatus(`❌ ${(res?.errors || ['Keine Ziel-Plattform aktiviert oder konfiguriert.']).join(' | ')}`, '#f87171');
+    }
+  });
+
+  document.getElementById('btnPostScheduleNow')?.addEventListener('click', async () => {
+    setStatus('⏳ Poste Sendeplan...', '#38bdf8');
+    const res = await window.omnichat.socialPostSchedule({
+      targets: {
+        discord: Boolean(ssState?.discord?.webhookUrl),
+        bluesky: Boolean(ssState?.bluesky?.enabled),
+        mastodon: Boolean(ssState?.mastodon?.enabled)
+      }
+    });
+    if (res?.posted?.length && !res?.errors?.length) {
+      setStatus(`✅ Sendeplan gepostet an: ${res.posted.join(', ')}`, '#4ade80');
+    } else if (res?.posted?.length) {
+      setStatus(`⚠️ Gepostet (${res.posted.join(', ')}), Hinweise: ${res.errors.join(' | ')}`, '#fbbf24');
+    } else {
+      setStatus(`❌ ${(res?.errors || ['Bitte zuerst Discord Webhook oder Social-Account konfigurieren.']).join(' | ')}`, '#f87171');
+    }
+  });
+
+  document.getElementById('btnSyncTwitchSchedule')?.addEventListener('click', async () => {
+    setStatus('⏳ Synchronisiere Termine mit Twitch Schedule...', '#38bdf8');
+    const res = await window.omnichat.socialSyncTwitchSchedule();
+    if (res?.ok) {
+      setStatus(`✅ ${res.created.length} Termin(e) auf Twitch Schedule übertragen!`, '#4ade80');
+    } else {
+      setStatus(`❌ ${res?.error || (res?.errors || []).join(' | ') || 'Twitch Sync fehlgeschlagen.'}`, '#f87171');
+    }
+  });
+
+  document.getElementById('btnExportIcs')?.addEventListener('click', async () => {
+    const res = await window.omnichat.socialExportIcs();
+    if (res?.ok) {
+      setStatus(`✅ .ics Kalender gespeichert: ${res.filePath}`, '#4ade80');
+    }
+  });
+
+  document.getElementById('btnCopyObsScheduleUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/schedule');
+    setStatus('🔗 OBS Browser-Quelle kopiert: http://127.0.0.1:4588/schedule (auch .ics unter /schedule.ics)', '#4ade80');
+  });
+
+  document.getElementById('btnShareX')?.addEventListener('click', () => {
+    const text = buildSharePreviewText();
+    window.omnichat.openExternalUrl(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`);
+  });
+
+  document.getElementById('btnShareThreads')?.addEventListener('click', () => {
+    const text = buildSharePreviewText();
+    window.omnichat.openExternalUrl(`https://www.threads.net/intent/post?text=${encodeURIComponent(text)}`);
+  });
+
+  document.getElementById('btnShareYtCommunity')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(buildSharePreviewText());
+    window.omnichat.openExternalUrl('https://studio.youtube.com');
+    setStatus('📋 Go-Live Text kopiert & YouTube Studio geöffnet!', '#4ade80');
+  });
+
+  document.getElementById('btnCopyGoLiveText')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(buildSharePreviewText());
+    setStatus('📋 Go-Live Text in die Zwischenablage kopiert!', '#4ade80');
+  });
+})();

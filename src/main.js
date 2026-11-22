@@ -9,6 +9,7 @@ const { EmoteManager } = require('./emote_manager');
 const { SpotifyBridge } = require('./spotify_bridge');
 const { ObsWsClient } = require('./obs_ws_client');
 const clipStudio = require('./clip_studio');
+const socialSchedule = require('./social_schedule');
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -23,6 +24,100 @@ const obsWs = new ObsWsClient();
 const emoteManager = new EmoteManager();
 const spotify = new SpotifyBridge();
 let lastSongReplyAt = 0;
+let lastScheduleReplyAt = 0;
+let lastObsStreaming = false;
+let lastAutoGoLiveAt = 0;
+
+function broadcastScheduleToObs(cfg) {
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg?.socialSchedule);
+  const channel = cfg?.streamerName || cfg?.twitchChannel || 'Stream';
+  const entries = socialSchedule.getUpcomingEntries(ss.schedule, 10);
+  obsServer.broadcastSchedule({ channel, entries });
+}
+
+async function executeGoLivePost(cfg, payload = {}) {
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const targets = payload.targets || {};
+  const meta = {
+    channel: cfg.streamerName || cfg.twitchChannel || 'Stream',
+    title: payload.title || '',
+    game: payload.game || '',
+    tags: Array.isArray(payload.tags) ? payload.tags : [],
+    message: payload.message || ''
+  };
+  if (!meta.title && twitch.connected) {
+    try {
+      const info = await twitch.getChannelInfo();
+      meta.title = info.title || meta.title;
+      meta.game = info.gameName || meta.game;
+      if (!meta.tags.length && Array.isArray(info.tags)) meta.tags = info.tags;
+    } catch (e) {}
+  }
+
+  const posted = [];
+  const errors = [];
+
+  if (targets.discord ?? ss.discord.enabled) {
+    try {
+      await socialSchedule.postDiscordGoLive(cfg, meta);
+      posted.push('Discord');
+    } catch (e) {
+      errors.push(`Discord: ${e.message}`);
+    }
+  }
+  const text = socialSchedule.formatGoLiveText(cfg, meta);
+  if (targets.bluesky ?? ss.bluesky.enabled) {
+    try {
+      await socialSchedule.postBluesky(cfg, text);
+      posted.push('Bluesky');
+    } catch (e) {
+      errors.push(`Bluesky: ${e.message}`);
+    }
+  }
+  if (targets.mastodon ?? ss.mastodon.enabled) {
+    try {
+      await socialSchedule.postMastodon(cfg, text);
+      posted.push('Mastodon');
+    } catch (e) {
+      errors.push(`Mastodon: ${e.message}`);
+    }
+  }
+  return { ok: errors.length === 0 || posted.length > 0, posted, errors, text };
+}
+
+async function executeSchedulePost(cfg, payload = {}) {
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const targets = payload.targets || {};
+  const posted = [];
+  const errors = [];
+
+  if (targets.discord ?? ss.discord.enabled) {
+    try {
+      await socialSchedule.postDiscordSchedule(cfg);
+      posted.push('Discord');
+    } catch (e) {
+      errors.push(`Discord: ${e.message}`);
+    }
+  }
+  const text = socialSchedule.formatScheduleText(cfg, 6);
+  if (targets.bluesky ?? ss.bluesky.enabled) {
+    try {
+      await socialSchedule.postBluesky(cfg, text);
+      posted.push('Bluesky');
+    } catch (e) {
+      errors.push(`Bluesky: ${e.message}`);
+    }
+  }
+  if (targets.mastodon ?? ss.mastodon.enabled) {
+    try {
+      await socialSchedule.postMastodon(cfg, text);
+      posted.push('Mastodon');
+    } catch (e) {
+      errors.push(`Mastodon: ${e.message}`);
+    }
+  }
+  return { ok: errors.length === 0 || posted.length > 0, posted, errors, text };
+}
 
 // Global deduplication ring buffer across all connectors & reconnects
 const globalSeenMsgKeys = new Set();
@@ -165,6 +260,7 @@ function getDefaultConfig() {
         '!lurk | Danke für den Lurk, @{user}!'
       ]
     },
+    socialSchedule: socialSchedule.DEFAULT_SOCIAL_SCHEDULE,
     hideBots: false,
     collapseSpam: true,
     platformIndicatorStyle: 'icon_badge',
@@ -729,6 +825,24 @@ function forwardChatMessage(msg) {
         }
       }
     }
+
+    // Auto-reply to !schedule / !plan in Twitch/YouTube chat (10s anti-spam cooldown)
+    if (
+      (msg.platform === 'twitch' || msg.platform === 'youtube') &&
+      /^!(schedule|plan|sendeplan)\b/i.test(String(msg.text || '').trim())
+    ) {
+      const now = Date.now();
+      if (now - lastScheduleReplyAt > 10000) {
+        lastScheduleReplyAt = now;
+        const cfg = loadConfig();
+        const replyText = socialSchedule.formatScheduleChatReply(cfg);
+        if (msg.platform === 'twitch' && twitch.canWrite) {
+          twitch.sendMessage(replyText).catch(() => {});
+        } else if (msg.platform === 'youtube' && youtube.canWrite) {
+          youtube.sendMessage(replyText).catch(() => {});
+        }
+      }
+    }
   } catch (e) {}
 }
 
@@ -890,6 +1004,34 @@ twitch.on('delete-message', (msgId) => {
 obsWs.on('state', (st) => {
   broadcastToWindows('obs-ws-state', st);
   obsServer.broadcastObsWsState(st);
+
+  const isStreaming = Boolean(st?.streaming);
+  if (isStreaming && !lastObsStreaming) {
+    const now = Date.now();
+    if (now - lastAutoGoLiveAt > 15 * 60 * 1000) {
+      const cfg = loadConfig();
+      const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+      const targets = {
+        discord: Boolean(ss.discord.enabled && ss.discord.autoPostOnObsLive && ss.discord.webhookUrl),
+        bluesky: Boolean(ss.bluesky.enabled && ss.bluesky.autoPostOnLive),
+        mastodon: Boolean(ss.mastodon.enabled && ss.mastodon.autoPostOnLive)
+      };
+      if (targets.discord || targets.bluesky || targets.mastodon) {
+        lastAutoGoLiveAt = now;
+        executeGoLivePost(cfg, { targets })
+          .then((res) => {
+            if (res.posted?.length) {
+              appendDiagLog('system', 'info', `🚀 Auto-Go-Live gepostet: ${res.posted.join(', ')}`);
+            }
+            if (res.errors?.length) {
+              appendDiagLog('system', 'warn', `Auto-Go-Live Fehler: ${res.errors.join(' | ')}`);
+            }
+          })
+          .catch((err) => appendDiagLog('system', 'error', `Auto-Go-Live Fehler: ${err.message}`));
+      }
+    }
+  }
+  lastObsStreaming = isStreaming;
 });
 
 youtube.on('oauth-updated', (oauth) => {
@@ -1252,6 +1394,14 @@ app.whenReady().then(async () => {
       return await obsWs.toggleMicMute(params.input || body.inputName || '');
     }
 
+    if (act === 'go-live') {
+      return await executeGoLivePost(loadConfig(), body || {});
+    }
+
+    if (act === 'post-schedule') {
+      return await executeSchedulePost(loadConfig(), body || {});
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1513,6 +1663,8 @@ app.whenReady().then(async () => {
       });
     }
     syncChatTimer(saved);
+    obsServer.setIcsProvider(() => socialSchedule.buildIcsFeed(loadConfig()));
+    broadcastScheduleToObs(saved);
 
     if (saved.chatDockOpen) {
       openStandaloneChatWindow(false);
@@ -2535,6 +2687,105 @@ app.whenReady().then(async () => {
         resolve({ ok: true, devices: [] });
       }
     });
+  });
+
+  ipcMain.handle('social-schedule-get', () => {
+    const cfg = loadConfig();
+    return {
+      ok: true,
+      socialSchedule: socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule),
+      links: socialSchedule.buildPlatformLinks(cfg),
+      upcoming: socialSchedule.getUpcomingEntries(cfg.socialSchedule?.schedule || [], 12)
+    };
+  });
+
+  ipcMain.handle('social-schedule-save', (_ev, nextSs) => {
+    const cfg = loadConfig();
+    cfg.socialSchedule = socialSchedule.normalizeSocialScheduleConfig(nextSs);
+    saveConfig(cfg);
+    broadcastScheduleToObs(cfg);
+    return {
+      ok: true,
+      socialSchedule: cfg.socialSchedule,
+      links: socialSchedule.buildPlatformLinks(cfg),
+      upcoming: socialSchedule.getUpcomingEntries(cfg.socialSchedule.schedule, 12)
+    };
+  });
+
+  ipcMain.handle('social-post-golive', async (_ev, payload) => {
+    const cfg = loadConfig();
+    const res = await executeGoLivePost(cfg, payload || {});
+    if (res.posted?.length) {
+      appendDiagLog('system', 'info', `📢 Go-Live gepostet: ${res.posted.join(', ')}`);
+    }
+    if (res.errors?.length) {
+      appendDiagLog('system', 'warn', `Go-Live Hinweis: ${res.errors.join(' | ')}`);
+    }
+    return res;
+  });
+
+  ipcMain.handle('social-post-schedule', async (_ev, payload) => {
+    const cfg = loadConfig();
+    const res = await executeSchedulePost(cfg, payload || {});
+    if (res.posted?.length) {
+      appendDiagLog('system', 'info', `📅 Sendeplan gepostet: ${res.posted.join(', ')}`);
+    }
+    if (res.errors?.length) {
+      appendDiagLog('system', 'warn', `Sendeplan Hinweis: ${res.errors.join(' | ')}`);
+    }
+    return res;
+  });
+
+  ipcMain.handle('social-sync-twitch-schedule', async () => {
+    const cfg = loadConfig();
+    const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+    const entries = socialSchedule.getUpcomingEntries(ss.schedule, 5);
+    if (!entries.length) {
+      return { ok: false, error: 'Keine zukünftigen Termine im Sendeplan vorhanden.' };
+    }
+    const created = [];
+    const errors = [];
+    for (const e of entries) {
+      try {
+        await twitch.createScheduleSegment({
+          startTimeIso: new Date(e.startMs).toISOString(),
+          durationMin: e.durationMin,
+          title: e.title,
+          gameName: e.game,
+          isRecurring: e.recurringWeekly
+        });
+        created.push(e.title);
+      } catch (err) {
+        errors.push(`${e.title}: ${err.message}`);
+        if (err.message.includes('channel:manage:schedule')) break;
+      }
+    }
+    if (created.length) {
+      appendDiagLog('twitch', 'info', `📅 ${created.length} Termin(e) auf Twitch Schedule übertragen.`);
+    }
+    return { ok: created.length > 0 && errors.length === 0, created, errors };
+  });
+
+  ipcMain.handle('social-export-ics', async () => {
+    const { dialog } = require('electron');
+    const cfg = loadConfig();
+    const ics = socialSchedule.buildIcsFeed(cfg);
+    const res = await dialog.showSaveDialog(mainWindow, {
+      title: 'Stream-Sendeplan (.ics) exportieren',
+      defaultPath: 'stream-schedule.ics',
+      filters: [{ name: 'iCalendar (.ics)', extensions: ['ics'] }]
+    });
+    if (res.canceled || !res.filePath) return { ok: false, canceled: true };
+    fs.writeFileSync(res.filePath, ics, 'utf8');
+    return { ok: true, filePath: res.filePath };
+  });
+
+  ipcMain.handle('open-external-url', async (_ev, url) => {
+    const { shell } = require('electron');
+    const target = String(url || '').trim();
+    if (!/^https?:\/\//i.test(target)) return { ok: false, error: 'Ungültige URL' };
+    await shell.openExternal(target);
+    return { ok: true };
   });
 });
 

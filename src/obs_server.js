@@ -1588,6 +1588,97 @@ const OBS_POLL_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_SCHEDULE_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniStream Schedule Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
+    .sched-card { width: 420px; background: rgba(15, 23, 42, 0.90); border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 14px; padding: 14px 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.45); }
+    .sched-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .sched-title { font-size: 15px; font-weight: 800; color: #f8fafc; }
+    .sched-next { font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56,189,248,0.14); padding: 3px 8px; border-radius: 999px; }
+    .sched-list { display: flex; flex-direction: column; gap: 8px; }
+    .sched-row { background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 10px; padding: 8px 11px; }
+    .sched-top { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94a3b8; font-weight: 600; }
+    .sched-name { font-size: 13px; font-weight: 700; color: #f1f5f9; margin-top: 2px; }
+    .sched-meta { font-size: 11px; color: #cbd5e1; margin-top: 2px; display: flex; justify-content: space-between; }
+    .sched-empty { font-size: 12px; color: #94a3b8; padding: 10px 0; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="sched-card" id="schedCard">
+    <div class="sched-head">
+      <span class="sched-title" id="schedTitle">📅 Stream-Sendeplan</span>
+      <span class="sched-next" id="schedNext">—</span>
+    </div>
+    <div class="sched-list" id="schedList">
+      <div class="sched-empty">Lade Sendeplan...</div>
+    </div>
+  </div>
+  <script>
+    const titleEl = document.getElementById('schedTitle');
+    const nextEl = document.getElementById('schedNext');
+    const listEl = document.getElementById('schedList');
+    let latestData = null;
+
+    function formatCountdown(ms) {
+      const diff = ms - Date.now();
+      if (diff <= 0) return '🔴 JETZT / BALD';
+      const mins = Math.floor(diff / 60000);
+      const hrs = Math.floor(mins / 60);
+      const days = Math.floor(hrs / 24);
+      if (days > 0) return 'in ' + days + 'd ' + (hrs % 24) + 'h';
+      if (hrs > 0) return 'in ' + hrs + 'h ' + (mins % 60) + 'm';
+      return 'in ' + mins + 'm';
+    }
+
+    function renderSchedule(data) {
+      latestData = data;
+      if (!data) return;
+      titleEl.textContent = '📅 ' + (data.channel || 'Stream') + ' Sendeplan';
+      const items = Array.isArray(data.entries) ? data.entries : [];
+      if (!items.length) {
+        nextEl.textContent = 'Keine Termine';
+        listEl.innerHTML = '<div class="sched-empty">Aktuell keine Termine geplant.</div>';
+        return;
+      }
+      nextEl.textContent = formatCountdown(items[0].startMs);
+      listEl.innerHTML = '';
+      items.slice(0, 5).forEach((e) => {
+        const dt = new Date(e.startMs);
+        const dateStr = dt.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: '2-digit' });
+        const timeStr = dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        const plats = (e.platforms || []).map((p) => p.toUpperCase()).join(' • ');
+        const row = document.createElement('div');
+        row.className = 'sched-row';
+        row.innerHTML =
+          '<div class="sched-top"><span>' + dateStr + ' • ' + timeStr + '</span><span>' + plats + '</span></div>' +
+          '<div class="sched-name">' + String(e.title || '').replace(/</g, '&lt;') + '</div>' +
+          (e.game ? '<div class="sched-meta"><span>🎮 ' + String(e.game).replace(/</g, '&lt;') + '</span><span>' + e.durationMin + ' Min.</span></div>' : '');
+        listEl.appendChild(row);
+      });
+    }
+
+    setInterval(() => { if (latestData) renderSchedule(latestData); }, 30000);
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'schedule') renderSchedule(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -1602,6 +1693,8 @@ class ObsServer {
     this.currentAlertConfig = null;
     this.currentGoals = null;
     this.currentPoll = null;
+    this.currentSchedule = null;
+    this.currentIcsProvider = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
   }
@@ -1648,6 +1741,17 @@ class ObsServer {
           return;
         }
 
+        if (urlPath === '/schedule.ics') {
+          const ics = this.currentIcsProvider ? this.currentIcsProvider() : 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR';
+          res.writeHead(200, {
+            'Content-Type': 'text/calendar; charset=utf-8',
+            'Content-Disposition': 'inline; filename="stream-schedule.ics"',
+            'Cache-Control': 'no-cache'
+          });
+          res.end(ics);
+          return;
+        }
+
         res.writeHead(200, {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'no-cache'
@@ -1664,6 +1768,8 @@ class ObsServer {
           res.end(OBS_GOALS_HTML);
         } else if (urlPath === '/poll') {
           res.end(OBS_POLL_HTML);
+        } else if (urlPath === '/schedule') {
+          res.end(OBS_SCHEDULE_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -1689,6 +1795,9 @@ class ObsServer {
         }
         if (this.currentPoll) {
           ws.send(JSON.stringify({ type: 'poll', data: this.currentPoll }));
+        }
+        if (this.currentSchedule) {
+          ws.send(JSON.stringify({ type: 'schedule', data: this.currentSchedule }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -1803,6 +1912,15 @@ class ObsServer {
   broadcastObsWsState(st) {
     this.currentObsWsState = st;
     this._broadcast({ type: 'obs-ws', data: st });
+  }
+
+  broadcastSchedule(schedulePayload) {
+    this.currentSchedule = schedulePayload;
+    this._broadcast({ type: 'schedule', data: schedulePayload });
+  }
+
+  setIcsProvider(fn) {
+    this.currentIcsProvider = typeof fn === 'function' ? fn : null;
   }
 
   stop() {
