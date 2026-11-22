@@ -1836,7 +1836,7 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
-    .gs-card { width: 390px; background: rgba(10, 15, 28, 0.90); border: 1.5px solid var(--accent, #38bdf8); border-radius: 14px; padding: 12px 14px; box-shadow: 0 0 24px rgba(56,189,248,0.18), 0 12px 28px rgba(0,0,0,0.5); transition: border-color 0.3s ease; }
+    .gs-card { position: relative; width: 390px; background: rgba(10, 15, 28, 0.90); border: 1.5px solid var(--accent, #38bdf8); border-radius: 14px; padding: 12px 14px; box-shadow: 0 0 24px rgba(56,189,248,0.18), 0 12px 28px rgba(0,0,0,0.5); transition: all 0.3s ease; }
     .gs-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .gs-title { font-size: 14px; font-weight: 800; letter-spacing: 0.02em; color: #f8fafc; display: flex; align-items: center; gap: 6px; }
     .gs-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: rgba(56,189,248,0.16); color: var(--accent, #38bdf8); }
@@ -1844,6 +1844,54 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-cell { background: rgba(30, 41, 59, 0.78); border: 1px solid rgba(148,163,184,0.18); border-radius: 9px; padding: 7px 8px; text-align: center; }
     .gs-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
     .gs-val { font-size: 16px; font-weight: 800; color: #f8fafc; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* League of Legends Hextech Theme */
+    .gs-card.theme-lol {
+      width: 410px;
+      background: linear-gradient(155deg, rgba(9, 20, 40, 0.96) 0%, rgba(1, 10, 19, 0.97) 100%);
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+      padding: 13px 15px;
+      box-shadow: inset 0 0 0 1px rgba(200, 170, 110, 0.32), 0 0 26px rgba(10, 200, 185, 0.20), 0 12px 32px rgba(0,0,0,0.65);
+    }
+    .gs-card.theme-lol::before,
+    .gs-card.theme-lol::after {
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border: 2px solid #0ac8b9;
+      pointer-events: none;
+    }
+    .gs-card.theme-lol::before { top: -3px; left: -3px; border-right: none; border-bottom: none; }
+    .gs-card.theme-lol::after { bottom: -3px; right: -3px; border-left: none; border-top: none; }
+    .gs-card.theme-lol .gs-head {
+      border-bottom: 1px solid rgba(200, 170, 110, 0.42);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .gs-card.theme-lol .gs-title {
+      color: #f0e6d2;
+      font-family: Georgia, "Times New Roman", serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 13.5px;
+    }
+    .gs-card.theme-lol .gs-badge {
+      background: rgba(10, 200, 185, 0.14);
+      border: 1px solid rgba(10, 200, 185, 0.55);
+      color: #0ac8b9;
+      border-radius: 3px;
+      letter-spacing: 0.06em;
+    }
+    .gs-card.theme-lol .gs-cell {
+      background: linear-gradient(180deg, rgba(16, 32, 58, 0.88) 0%, rgba(7, 16, 32, 0.92) 100%);
+      border: 1px solid rgba(200, 170, 110, 0.35);
+      border-radius: 3px;
+    }
+    .gs-card.theme-lol .gs-lbl { color: #c8aa6e; font-weight: 700; letter-spacing: 0.07em; }
+    .gs-card.theme-lol .gs-val { color: #f0e6d2; }
+    .gs-card.theme-lol .gs-cell.is-highlight .gs-val { color: #0ac8b9; text-shadow: 0 0 10px rgba(10,200,185,0.4); }
   </style>
 </head>
 <body>
@@ -1862,13 +1910,16 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
 
     function renderStats(data) {
       if (!data) return;
+      const isLol = data.addonId === 'lol';
+      card.classList.toggle('theme-lol', isLol);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
       titleEl.textContent = (data.icon || '🎮') + ' ' + (data.addonName || 'Game Stats');
       badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
       gridEl.innerHTML = '';
       (data.stats || []).forEach((s) => {
         const cell = document.createElement('div');
-        cell.className = 'gs-cell';
+        const highlight = isLol && (s.key === 'champion' || s.key === 'kd');
+        cell.className = 'gs-cell' + (highlight ? ' is-highlight' : '');
         cell.innerHTML = '<div class="gs-lbl"></div><div class="gs-val"></div>';
         cell.querySelector('.gs-lbl').textContent = s.label;
         cell.querySelector('.gs-val').textContent = String(s.value);
