@@ -892,6 +892,23 @@
           </div>
         </div>
 
+        <div class="sidebar-section stream-manager-box">
+          <h3>📝 Stream-Manager</h3>
+          <input type="text" id="inputStreamTitle" placeholder="Stream-Titel..." />
+          <input type="text" id="inputStreamGame" list="dlStreamGames" placeholder="Spiel / Kategorie (z. B. Just Chatting)" style="margin-top: 5px;" />
+          <datalist id="dlStreamGames"></datalist>
+          <input type="text" id="inputStreamTags" placeholder="Tags kommagetrennt (z. B. Deutsch, Chill)" style="margin-top: 5px;" />
+          <label class="checkbox-row" style="margin-top: 5px;">
+            <input type="checkbox" id="chkSyncYtTitle" checked />
+            <span>Auch YouTube-Titel aktualisieren (falls OAuth2 aktiv)</span>
+          </label>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnLoadStreamInfo">🔄 Laden</button>
+            <button class="btn-sm" id="btnSaveStreamInfo" style="flex: 1;">💾 Übernehmen</button>
+          </div>
+          <div id="streamInfoStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;"></div>
+        </div>
+
         <div class="sidebar-section twitch-clip-box">
           <h3>🎬 Twitch Clip &amp; Marker</h3>
           <input type="text" id="inputMarkerDesc" placeholder="Marker-Notiz (optional, z. B. Bosskill)" />

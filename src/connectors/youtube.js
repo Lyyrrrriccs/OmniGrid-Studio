@@ -853,6 +853,55 @@ class YouTubeConnector extends EventEmitter {
     return { ok: true, id: resp.json?.id || null };
   }
 
+  async updateVideoTitle(newTitle) {
+    const cleanTitle = String(newTitle || '').trim().slice(0, 100);
+    if (!cleanTitle) throw new Error('Leerer YouTube-Titel.');
+    if (!this.connected || !this.videoId) {
+      throw new Error('Kein aktiver YouTube-Livestream verbunden.');
+    }
+    if (!this.canWrite) {
+      throw new Error('YouTube OAuth2 nicht angemeldet.');
+    }
+
+    const token = await this._ensureValidAccessToken();
+    const getResp = await this._httpsRequest(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(this.videoId)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const snippet = getResp.json?.items?.[0]?.snippet;
+    if (!snippet) {
+      throw new Error('YouTube Video-Metadaten konnten nicht geladen werden.');
+    }
+
+    const payload = JSON.stringify({
+      id: this.videoId,
+      snippet: {
+        title: cleanTitle,
+        description: snippet.description || '',
+        categoryId: snippet.categoryId || '20'
+      }
+    });
+
+    const putResp = await this._httpsRequest(
+      'https://www.googleapis.com/youtube/v3/videos?part=snippet',
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload)
+        },
+        body: payload
+      }
+    );
+    if (putResp.statusCode >= 400) {
+      const msg = putResp.json?.error?.message || `HTTP ${putResp.statusCode}`;
+      throw new Error(`YouTube Titel-Update fehlgeschlagen: ${msg}`);
+    }
+    this.streamTitle = cleanTitle;
+    return { ok: true, title: cleanTitle };
+  }
+
   disconnect(clearDedupe = false) {
     this.shouldWatch = false;
     this.connected = false;

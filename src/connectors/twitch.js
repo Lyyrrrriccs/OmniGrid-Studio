@@ -765,6 +765,77 @@ class TwitchConnector extends EventEmitter {
     };
   }
 
+  async getChannelInfo() {
+    const broadcasterId = await this._resolveBroadcasterId();
+    const resp = await this._helixRequest('GET', `/helix/channels?broadcaster_id=${encodeURIComponent(broadcasterId)}`);
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`Kanal-Info Abruf fehlgeschlagen: ${msg}`);
+    }
+    const ch = resp.json?.data?.[0];
+    if (!ch) throw new Error('Keine Kanaldaten von Twitch erhalten.');
+    return {
+      ok: true,
+      title: ch.title || '',
+      gameId: ch.game_id || '',
+      gameName: ch.game_name || '',
+      tags: Array.isArray(ch.tags) ? ch.tags : []
+    };
+  }
+
+  async searchCategories(query) {
+    const q = String(query || '').trim();
+    if (!q) return { ok: true, categories: [] };
+    const resp = await this._helixRequest('GET', `/helix/search/categories?query=${encodeURIComponent(q)}&first=10`);
+    if (resp.statusCode >= 400) {
+      return { ok: false, categories: [] };
+    }
+    const categories = (resp.json?.data || []).map((c) => ({ id: c.id, name: c.name }));
+    return { ok: true, categories };
+  }
+
+  async updateChannelInfo({ title, gameId, gameName, tags }) {
+    const broadcasterId = await this._resolveBroadcasterId();
+    const body = {};
+    if (typeof title === 'string' && title.trim()) {
+      body.title = title.trim().slice(0, 140);
+    }
+
+    let resolvedGameId = String(gameId || '').trim();
+    if (!resolvedGameId && typeof gameName === 'string' && gameName.trim()) {
+      const gResp = await this._helixRequest('GET', `/helix/games?name=${encodeURIComponent(gameName.trim())}`);
+      resolvedGameId = gResp.json?.data?.[0]?.id || '';
+      if (!resolvedGameId) {
+        const sResp = await this._helixRequest('GET', `/helix/search/categories?query=${encodeURIComponent(gameName.trim())}&first=1`);
+        resolvedGameId = sResp.json?.data?.[0]?.id || '';
+      }
+    }
+    if (resolvedGameId) {
+      body.game_id = resolvedGameId;
+    }
+
+    if (Array.isArray(tags)) {
+      body.tags = tags
+        .map((t) => String(t || '').replace(/\s+/g, '').slice(0, 25))
+        .filter(Boolean)
+        .slice(0, 10);
+    }
+
+    if (Object.keys(body).length === 0) {
+      throw new Error('Keine gültigen Änderungen (Titel, Spiel oder Tags) angegeben.');
+    }
+
+    const resp = await this._helixRequest('PATCH', `/helix/channels?broadcaster_id=${encodeURIComponent(broadcasterId)}`, body);
+    if (resp.statusCode === 401 || resp.statusCode === 403) {
+      throw new Error('Fehlende Berechtigung (Scope "channel:manage:broadcast") — bitte Token mit "channel:manage:broadcast" neu generieren.');
+    }
+    if (resp.statusCode >= 400) {
+      const msg = resp.json?.message || `HTTP ${resp.statusCode}`;
+      throw new Error(`Twitch Kanal-Update fehlgeschlagen: ${msg}`);
+    }
+    return { ok: true, updated: body };
+  }
+
   disconnect(clearDedupe = false) {
     this.shouldReconnect = false;
     clearTimeout(this.reconnectTimer);

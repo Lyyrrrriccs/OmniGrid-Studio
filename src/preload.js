@@ -56,5 +56,8 @@ contextBridge.exposeInMainWorld('omnichat', {
   runChatTimerNow: () => ipcRenderer.invoke('run-chat-timer-now'),
   openHelpWindow: () => ipcRenderer.invoke('open-help-window'),
   getHelpDoc: (docName) => ipcRenderer.invoke('get-help-doc', docName),
-  exportChatLog: (messages) => ipcRenderer.invoke('export-chat-log', messages)
+  exportChatLog: (messages) => ipcRenderer.invoke('export-chat-log', messages),
+  streamManagerLoad: () => ipcRenderer.invoke('stream-manager-load'),
+  streamManagerSearchGames: (query) => ipcRenderer.invoke('stream-manager-search-games', query),
+  streamManagerSave: (payload) => ipcRenderer.invoke('stream-manager-save', payload)
 });
