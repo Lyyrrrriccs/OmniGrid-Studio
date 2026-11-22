@@ -17,6 +17,21 @@
 
 ---
 
+## 💡 Why OmniStream Chat? (Comparison & All-in-One Scope)
+
+Normally, multistreamers have to stitch together **4–6 separate tools and paid cloud subscriptions**:
+- **Restream / Streamlabs / StreamElements** for chat & alerts (cloud-locked, monthly paywalls, no local 9:16 FFmpeg editor, no WebHID 2nd-keyboard control, no LAN tablet cockpit).
+- **Streamer.bot / Mix It Up** for OBS automation & soundboards (Windows-only, steep setup, no built-in Twitch+YouTube+TikTok chat feed with 7TV/BTTV/FFZ emotes or video editing).
+- **Eklipse.gg / OpusClip / CapCut** for vertical 9:16 Shorts (cloud uploads, watermarks/limits, disconnected from OBS Replay Buffer & live chat).
+- **Pingcord / MEE6 / Buffer** for Go-Live announcements & stream schedules (separate bots/services, no built-in 1080×1350 graphic generator or multi-platform sync).
+
+**OmniStream Chat brings all of this together in one 100% local desktop suite (macOS & Windows, zero subscriptions):**
+- **Unified Live Cockpit:** Twitch, YouTube Live & TikTok Live chat + moderation + 7TV/BTTV/FFZ emotes + **Chat-Hype Detector** (auto Twitch markers & OBS replays).
+- **Broadcast & Overlay Engine:** OBS WebSocket v5 control + local overlays (`/`, `/dock`, `/alerts`, `/goals`, `/poll`, `/spotify`, `/schedule`, `/giveaway`, `/soundboard`) + **Integrated Soundboard** + **Live Giveaway Wheel** + **Tablet Companion** + **Stream Deck API**.
+- **Post-Production & Growth in One Place:** Built-in **FFmpeg Clip & 9:16 Shorts Studio** (with visual scrubber & direct YouTube/TikTok upload) + **Discord, Go-Live & Schedule Studio** (Discord embeds, X API v2, Instagram Graph API + PNG generator, Bluesky, Mastodon, Twitch Schedule, `.ics` calendar).
+
+---
+
 ## ✨ Features
 
 | Category | Highlights |
@@ -26,6 +41,7 @@
 | **Clean Cockpit, Stream-Manager & Help** | Slim live-control sidebar (Spotify, Live-Poll, TTS, Twitch Clip & Marker, OBS WebSocket v5, **Stream-Manager** for updating Twitch & YouTube Title, Game/Category & Tags simultaneously) paired with a tabbed **Central Config (`⚙️ Config`)** and an integrated **Help Window (`📖 Anleitung`)**. |
 | **Clip & Replay Studio (`🎬 Clips`)** | Built-in **FFmpeg** video workflow for **OBS Replay Buffer** & recordings: visual **Dual-Range Timeline Scrubber** directly on the video player, lossless **16:9 Trim**, vertical **9:16 Shorts/TikTok/Reels** export (blur background or center crop), rename/trash management, **direct YouTube Upload** (OAuth2), and **TikTok Quick-Upload**. |
 | **Discord, Social & Schedule Studio (`📅 Schedule & Go-Live`)** | **Discord Webhook** Go-Live & Schedule Embeds (with dynamic local timestamps & OBS auto-post), **X (Twitter) API v2**, **Instagram Graph API** + **1080×1350 PNG Graphic Generator**, **Bluesky**, **Mastodon**, **Twitch Schedule Sync**, **OBS `/schedule` Overlay**, **`.ics` Calendar Feed**, and `!schedule` chat command. |
+| **Giveaway, Soundboard & Hype Detector** | **Live-Giveaway (`🎁 Giveaway`)** with `!join` chat entry, Sub/VIP multipliers & animated OBS wheel (`/giveaway`), **Soundboard (`🔊 Sounds`)** routed into OBS (`/alerts` & `/soundboard`) + Stream Deck API, and **Chat-Hype Detector (`🔥 Hype`)** for automatic Twitch Markers, OBS Replays & Clips on chat spikes. |
 | **OBS Integration, Widgets & WebSocket v5** | Scene-independent **OBS Custom Browser Dock** (`/dock`), **OBS Stream Overlay** (`/`), **OBS Alert-Box Overlay** (`/alerts` with custom GIF/audio media), **OBS Goal-Bar** (`/goals`), **OBS Multistream Poll** (`/poll` with show/hide toggle), **OBS Spotify Widget** (`/spotify`), and direct **OBS WebSocket v5** control (scenes, replay buffer, mic mute, record, stream). |
 | **Custom Commands, Timer, Auto-Mod & TTS** | **Custom Chat-Commands** (`!dc`, `!specs`, etc. with `{user}`/`{channel}`/`{uptime}` variables & cooldown), rotating **Chat-Timer** info messages, **Auto-Mod** rules (block links, caps/symbol spam, word blacklist with Twitch auto-delete/timeout), and **Text-to-Speech (TTS)** queue for alerts and `!tts`. |
 | **Event Highlighting & Keyword Alerts** | Distinct styling (`bar`, `banner`, `outline`, color & intensity) for **Follows**, **Subs**, **Resubs**, **Gifted Subs**, **Bits/SuperChats/Gifts**, **Raids**, and **Highlighted Messages**, plus custom **Keyword Alerts** with sound ping. |

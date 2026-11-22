@@ -229,4 +229,13 @@ Informiere deine Community automatisch über Stream-Starts und kommende Streams:
    - **OBS `/schedule` & `.ics` Kalender:** Binde `http://127.0.0.1:4588/schedule` als OBS-Overlay ein oder exportiere/teile den Kalender unter `/schedule.ics`.
    - **Chat-Befehl:** Zuschauer können im Twitch/YouTube-Chat jederzeit `!schedule` oder `!plan` schreiben.
 
+---
+
+## 18. Live-Giveaway, Soundboard & Chat-Hype-Detektor
+
+- **🎁 Live-Giveaway (`🎁 Giveaway`):** Definiere Titel, Keyword (z. B. `!join`) und Sub/VIP/Mod-Multiplikator (`1×`–`3×`). Starte das Giveaway, ziehe einen gewichteten Gewinner und zeige das animierte Verlosungs-Overlay in OBS unter `http://127.0.0.1:4588/giveaway`.
+- **🔊 Integriertes Soundboard (`🔊 Sounds`):** Nutze die 4 Standard-Sounds oder füge eigene `.mp3`/`.wav`/`.ogg`-Dateien hinzu. Sounds können lokal abgespielt und direkt an OBS (`/alerts` und `/soundboard`) sowie über die Stream Deck API (`/api/streamdeck/sound?name=...`) getriggert werden.
+- **🔥 Chat-Hype-Detektor (`🔥 Hype`):** Überwacht das Chat-Tempo (Hype-Keywords zählen doppelt) und setzt bei Spikes automatisch einen **Twitch Stream-Marker**, speichert den **OBS Replay-Buffer** oder erstellt einen **Twitch-Clip**.
+
+
 

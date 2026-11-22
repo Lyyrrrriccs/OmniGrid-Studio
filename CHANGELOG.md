@@ -7,6 +7,10 @@ Alle wichtigen Änderungen und neuen Features von **OmniStream Chat** im Überbl
 ## [1.1.0] — 2026-11-22
 
 ### ✨ Neue Features
+- **Chat-Hype-Detektor (`🔥 Hype`), Live-Giveaway (`🎁 Giveaway`) & Soundboard (`🔊 Sounds`):**
+  - **Chat-Hype-Detektor:** Erkennt Chat-Spikes im konfigurierbaren Zeitfenster (Hype-Keywords zählen doppelt) und setzt automatisch **Twitch Stream-Marker**, speichert den **OBS Replay-Buffer** und/oder erstellt einen **Twitch Clip**.
+  - **Live-Giveaway & Verlosungs-Rad (`/giveaway`):** Zuschauer treten per Chat-Keyword (`!join`) auf Twitch, YouTube & TikTok bei (mit Sub/VIP/Mod-Multiplikator `1×`–`3×`); gewichtete Ziehung mit animiertem OBS-Overlay.
+  - **Integriertes Soundboard (`/soundboard` & `/alerts`):** 4 eingebaute Standard-Sounds + eigene `.mp3`/`.wav`/`.ogg`-Dateien (gestreamt via `/api/sound/:id`), OBS-Routing und Stream Deck Endpunkt (`/api/streamdeck/sound?name=...`).
 - **Discord, Go-Live & Sendeplan-Studio (`📅 Schedule & Go-Live`):**
   - **Discord Webhook Add-on:** Rich-Embeds für Stream-Start (Go-Live) und Sendeplan (mit automatischen Discord-Zeitzonen-Timestamps `<t:UNIX:F>`) inkl. optionalem Rollen-Ping und **Auto-Post bei OBS-Stream-Start**.
   - **Social Auto-Posting:** Direkte Integration für **X (Twitter) API v2 (OAuth 1.0a)**, **Bluesky (ATProto)**, **Mastodon** und **Instagram Graph API (Business/Creator)** (inkl. optionalem ImgBB-Upload für generierte Grafiken).

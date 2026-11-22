@@ -17,6 +17,21 @@
 
 ---
 
+## 💡 Warum OmniStream Chat? (Abgrenzung & Gesamt-Suite)
+
+Normalerweise müssen Multistreamer **4 bis 6 verschiedene Programme und kostenpflichtige Cloud-Dienste** kombinieren:
+- **Restream / Streamlabs / StreamElements** für Chat & Alerts (Cloud-Zwang, Monatsabos, kein lokales 9:16-FFmpeg-Schnittstudio, keine WebHID-Zweittastatur-Steuerung, kein LAN-Tablet-Cockpit).
+- **Streamer.bot / Mix It Up** für OBS-Automationen & Soundboards (nur Windows, komplexe Einrichtung, kein eigener Twitch+YouTube+TikTok-Chat mit 7TV/BTTV/FFZ-Emotes oder Videoschnitt).
+- **Eklipse.gg / OpusClip / CapCut** für vertikale 9:16-Shorts (Cloud-Uploads, Wasserzeichen/Limits, komplett getrennt vom OBS Replay-Buffer & Live-Chat).
+- **Pingcord / MEE6 / Buffer** für Go-Live-Posts & Sendepläne (separate Bots/Dienste, kein eingebauter 1080×1350-Grafik-Generator oder Multi-Plattform-Sync).
+
+**OmniStream Chat führt all das in einer 100 % lokalen Desktop-Suite zusammen (macOS & Windows, ohne Abo):**
+- **Einheitliches Live-Cockpit:** Twitch, YouTube Live & TikTok Live Chat + Moderation + 7TV/BTTV/FFZ-Emotes + **Chat-Hype-Detektor** (automatische Twitch-Marker & OBS-Replays).
+- **Broadcast- & Overlay-Zentrale:** OBS WebSocket v5 Steuerung + lokale Overlays (`/`, `/dock`, `/alerts`, `/goals`, `/poll`, `/spotify`, `/schedule`, `/giveaway`, `/soundboard`) + **Integriertes Soundboard** + **Live-Giveaway-Rad** + **Tablet Companion** + **Stream Deck API**.
+- **Clips & Community-Wachstum:** Eingebautes **FFmpeg Clip- & 9:16-Shorts-Studio** (visueller Scrubber + Direkt-Upload zu YouTube/TikTok) + **Discord, Go-Live & Sendeplan-Studio** (Discord-Embeds, X API v2, Instagram Graph API + PNG-Generator, Bluesky, Mastodon, Twitch Schedule, `.ics`-Kalender).
+
+---
+
 ## ✨ Funktionen im Überblick
 
 | Bereich | Highlights |
@@ -26,6 +41,7 @@
 | **Cockpit, Stream-Manager & Hilfe** | Schlanke Live-Sidebar (Spotify, Live-Poll, TTS, Twitch Clip & Marker, OBS WebSocket v5, **Stream-Manager** für gleichzeitiges Update von Twitch- & YouTube-Titel, Spiel/Kategorie & Tags) kombiniert mit einer getabbten **Zentralen Config (`⚙️ Config`)** und integriertem **Anleitungs-Fenster (`📖 Anleitung`)**. |
 | **Clip- & Replay-Studio (`🎬 Clips`)** | Eingebauter **FFmpeg**-Video-Workflow für **OBS Replay-Buffer** & Aufnahmen: visueller **Dual-Range Timeline-Scrubber** direkt am Videoplayer, verlustfreier **16:9-Zuschnitt**, vertikaler **9:16 Shorts/TikTok/Reels**-Export (Blur-Hintergrund oder Center-Crop), Umbenennen/Löschen, **direkter YouTube-Upload** (OAuth2) & **TikTok Quick-Upload**. |
 | **Discord, Social & Sendeplan-Studio (`📅 Schedule & Go-Live`)** | **Discord Webhook** Go-Live & Sendeplan-Embeds (mit dynamischen Zeitzonen & OBS Auto-Post), **X (Twitter) API v2**, **Instagram Graph API** + **1080×1350 PNG-Grafik-Generator**, **Bluesky**, **Mastodon**, **Twitch Schedule Sync**, **OBS `/schedule`-Overlay**, **`.ics`-Kalender-Feed** & `!schedule` Chat-Befehl. |
+| **Giveaway, Soundboard & Hype-Detektor** | **Live-Giveaway (`🎁 Giveaway`)** per `!join`-Chat-Befehl, Sub/VIP-Multiplikator & animiertem OBS-Overlay (`/giveaway`), **Soundboard (`🔊 Sounds`)** mit OBS-Routing (`/alerts` & `/soundboard`) + Stream Deck API sowie **Chat-Hype-Detektor (`🔥 Hype`)** für automatische Twitch-Marker, OBS-Replays & Clips bei Chat-Spikes. |
 | **OBS-Integration, Widgets & WebSocket v5** | Szenenunabhängiges **OBS Custom Browser Dock** (`/dock`), **OBS Stream-Overlay** (`/`), **OBS Alert-Box Overlay** (`/alerts` mit eigenen GIFs/Audio-URLs), **OBS Goal-Bar** (`/goals`), **OBS Multistream-Poll** (`/poll` mit Ein-/Ausblenden), **OBS Spotify-Widget** (`/spotify`) & direkte **OBS WebSocket v5**-Steuerung (Szenen, Replay, Mic-Mute, Rec, Stream). |
 | **Custom Commands, Timer, Auto-Mod & TTS** | **Eigene Chat-Commands** (`!dc`, `!specs` usw. mit `{user}`/`{channel}`/`{uptime}`-Variablen & Cooldown), rotierender **Chat-Timer**, **Auto-Mod-Regeln** (Links blockieren, Caps-/Symbol-Spam, Wort-Blacklist mit Twitch-Timeout/Löschen) und **Text-to-Speech (TTS)** für Alerts & `!tts`. |
 | **Event-Hervorhebung & Keyword-Alarme** | Eigene Farben, Stile (`Balken`, `Banner`, `Rahmen`) & Intensität für **Follows**, **Subs**, **Resubs**, **Gifted Subs**, **Bits/SuperChats/Gifts**, **Raids** und **Hervorgehobene Nachrichten** + eigene **Keyword-Alarme** mit Sound-Ping. |

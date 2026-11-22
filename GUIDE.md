@@ -229,4 +229,13 @@ Notify your community automatically when you go live and share your stream sched
    - **OBS `/schedule` & `.ics` Calendar:** Use `http://127.0.0.1:4588/schedule` as an OBS Browser Source or export/share `/schedule.ics`.
    - **Chat Command:** Viewers can type `!schedule` or `!plan` in Twitch/YouTube chat anytime.
 
+---
+
+## 18. Live Giveaway, Soundboard & Chat-Hype Detector
+
+- **🎁 Live Giveaway (`🎁 Giveaway`):** Set a title, chat keyword (e.g. `!join`), and Sub/VIP/Mod weight multiplier (`1×`–`3×`). Draw a weighted winner with the animated OBS overlay at `http://127.0.0.1:4588/giveaway`.
+- **🔊 Integrated Soundboard (`🔊 Sounds`):** Trigger the 4 built-in sounds or add your own `.mp3`/`.wav`/`.ogg` files. Audio routes directly into OBS (`/alerts` and `/soundboard`) and can be triggered via Stream Deck API (`/api/streamdeck/sound?name=...`).
+- **🔥 Chat-Hype Detector (`🔥 Hype`):** Monitors chat velocity (hype keywords count double) and automatically creates a **Twitch Stream Marker**, saves the **OBS Replay Buffer**, or creates a **Twitch Clip** during hype spikes.
+
+
 
