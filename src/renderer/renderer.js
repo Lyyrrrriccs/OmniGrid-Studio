@@ -2888,6 +2888,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.obs-box', 'cfgTab_obs'],
     ['.obs-ws-config-box', 'cfgTab_obs'],
     ['.obs-alerts-box', 'cfgTab_obs'],
+    ['.tts-box', 'cfgTab_obs'],
     ['.tablet-box', 'cfgTab_companion'],
     ['.streamdeck-box', 'cfgTab_companion'],
     ['.peripherals-box', 'cfgTab_system'],
