@@ -398,6 +398,41 @@ class ObsWsClient extends EventEmitter {
     return { ok: true };
   }
 
+  async getInputSettings(inputName) {
+    const res = await this.call('GetInputSettings', { inputName });
+    return {
+      inputKind: res.inputKind || '',
+      inputSettings: res.inputSettings || {}
+    };
+  }
+
+  async setInputSettings(inputName, inputSettings, overlay = true) {
+    await this.call('SetInputSettings', { inputName, inputSettings, overlay });
+    return { ok: true };
+  }
+
+  async getInputPropertyItems(inputName, propertyName) {
+    try {
+      const res = await this.call('GetInputPropertiesListPropertyItems', { inputName, propertyName });
+      return res.propertyItems || [];
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async inspectInputProperties(inputName) {
+    const { inputKind, inputSettings } = await this.getInputSettings(inputName);
+    const candidateProps = ['type', 'window', 'application', 'display_uuid', 'display', 'device', 'device_id'];
+    const properties = {};
+    for (const prop of candidateProps) {
+      const items = await this.getInputPropertyItems(inputName, prop);
+      if (Array.isArray(items) && items.length > 0) {
+        properties[prop] = items;
+      }
+    }
+    return { inputKind, inputSettings, properties };
+  }
+
   disconnect(emitUpdate = true) {
     for (const entry of this.pending.values()) {
       clearTimeout(entry.timer);

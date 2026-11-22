@@ -4576,6 +4576,129 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     statusEl.textContent = msg;
   }
 
+  const sourceConfigBox = document.getElementById('seSourceConfigBox');
+  const sourceConfigFields = document.getElementById('seSourceConfigFields');
+  let configLoadSeq = 0;
+
+  const PROP_LABELS = {
+    type: '🎛️ Aufnahme-Modus',
+    window: '🪟 Fenster',
+    application: '📱 Anwendung',
+    display_uuid: '🖥️ Bildschirm',
+    display: '🖥️ Bildschirm',
+    device: '📷 / 🎙️ Gerät',
+    device_id: '📷 / 🎙️ Gerät'
+  };
+
+  async function loadInputConfig(item) {
+    const seq = ++configLoadSeq;
+    if (!sourceConfigBox || !sourceConfigFields) return;
+    if (!item) {
+      sourceConfigBox.style.display = 'none';
+      sourceConfigFields.innerHTML = '';
+      return;
+    }
+    const res = await window.omnichat.obsWsAction({
+      action: 'inspect-input',
+      inputName: item.sourceName
+    });
+    if (seq !== configLoadSeq) return;
+    if (!res?.ok) {
+      sourceConfigBox.style.display = 'none';
+      sourceConfigFields.innerHTML = '';
+      return;
+    }
+
+    const props = res.properties || {};
+    const settings = res.inputSettings || {};
+    const propKeys = ['type', 'window', 'application', 'display_uuid', 'display', 'device', 'device_id']
+      .filter((k) => Array.isArray(props[k]) && props[k].length > 0);
+    const hasUrl = typeof settings.url === 'string';
+
+    sourceConfigFields.innerHTML = '';
+    if (!propKeys.length && !hasUrl) {
+      sourceConfigBox.style.display = 'none';
+      return;
+    }
+    sourceConfigBox.style.display = 'block';
+
+    propKeys.forEach((prop) => {
+      const wrap = document.createElement('div');
+      const lbl = document.createElement('label');
+      lbl.style.fontSize = '10px';
+      lbl.textContent = PROP_LABELS[prop] || prop;
+      const sel = document.createElement('select');
+      const items = props[prop];
+      const valMap = new Map();
+      items.forEach((p, idx) => {
+        const key = String(idx);
+        valMap.set(key, p.itemValue);
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = p.itemName || String(p.itemValue);
+        if (p.itemEnabled === false) opt.disabled = true;
+        if (p.itemValue === settings[prop] || String(p.itemValue) === String(settings[prop])) {
+          opt.selected = true;
+        }
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', async () => {
+        const chosenVal = valMap.get(sel.value);
+        const upd = await window.omnichat.obsWsAction({
+          action: 'set-input-settings',
+          inputName: item.sourceName,
+          inputSettings: { [prop]: chosenVal }
+        });
+        if (upd?.ok) {
+          setStatus(`✅ ${PROP_LABELS[prop] || prop} aktualisiert`, '#4ade80');
+          if (prop === 'type') {
+            await loadInputConfig(item);
+          }
+          refreshPreview();
+        } else {
+          setStatus(`❌ ${upd?.error || 'Einstellung konnte nicht gespeichert werden.'}`, '#f87171');
+        }
+      });
+      wrap.appendChild(lbl);
+      wrap.appendChild(sel);
+      sourceConfigFields.appendChild(wrap);
+    });
+
+    if (hasUrl) {
+      const wrap = document.createElement('div');
+      const lbl = document.createElement('label');
+      lbl.style.fontSize = '10px';
+      lbl.textContent = '🌐 Browser-URL';
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; gap: 6px;';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = settings.url || '';
+      const btn = document.createElement('button');
+      btn.className = 'btn-sm';
+      btn.textContent = '💾';
+      btn.title = 'URL übernehmen';
+      const applyUrl = async () => {
+        const upd = await window.omnichat.obsWsAction({
+          action: 'set-input-settings',
+          inputName: item.sourceName,
+          inputSettings: { url: inp.value.trim() }
+        });
+        if (upd?.ok) {
+          setStatus('✅ URL aktualisiert', '#4ade80');
+          refreshPreview();
+        }
+      };
+      btn.addEventListener('click', applyUrl);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyUrl(); });
+      row.appendChild(inp);
+      row.appendChild(btn);
+      wrap.appendChild(lbl);
+      wrap.appendChild(row);
+      sourceConfigFields.appendChild(wrap);
+    }
+  }
+
   function selectSourceItem(item) {
     selectedItem = item;
     const disabled = !item;
@@ -4584,6 +4707,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     });
     if (!item) {
       if (lblSelSource) lblSelSource.textContent = '— Quelle anklicken —';
+      loadInputConfig(null);
       return;
     }
     if (lblSelSource) lblSelSource.textContent = item.sourceName;
@@ -4591,6 +4715,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (inpPosX) inpPosX.value = String(Math.round(tr.positionX || 0));
     if (inpPosY) inpPosY.value = String(Math.round(tr.positionY || 0));
     if (inpScalePct) inpScalePct.value = String(Math.round((tr.scaleX || 1) * 100));
+    loadInputConfig(item);
   }
 
   function getItemBoxPx(it) {
@@ -5166,6 +5291,12 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (inpNewVal) inpNewVal.value = '';
       setStatus(`✅ Quelle "${name}" hinzugefügt!`, '#4ade80');
       await loadSceneItems(currentSceneName);
+      const created = sceneItems.find((x) => x.sourceName === name);
+      if (created) {
+        selectSourceItem(created);
+        renderSourcesList();
+        renderCanvasOverlay();
+      }
       refreshPreview();
     } else {
       setStatus(`❌ ${res?.error || 'Quelle konnte nicht erstellt werden.'}`, '#f87171');
