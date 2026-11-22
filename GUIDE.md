@@ -214,3 +214,19 @@ Turn your **OBS Replay Buffer** saves or recordings into polished **16:9 clips**
    - **YouTube Upload:** Click **`▶️ YT`** next to any clip to set Title, Description & Privacy (`Public`/`Unlisted`/`Private`) and upload directly via **Google OAuth2**.
    - **TikTok Quick-Upload:** Click **`🎵 TT`** to open the TikTok upload page and reveal the file in Finder/Explorer for instant drag-and-drop.
 
+---
+
+## 17. Discord, Go-Live & Schedule Studio (`📅 Schedule & Go-Live`)
+
+Notify your community automatically when you go live and share your stream schedule across platforms:
+1. **Discord Webhook Add-on:** In the **`🔗 Discord & Plattformen`** tab, paste your Discord Webhook URL (plus an optional separate Schedule Webhook) and role ping (`everyone`, `here`, or Role ID). Enable **Auto-post when OBS stream starts** to publish a rich embed with title, game & platform links automatically.
+2. **X (Twitter), Bluesky, Mastodon & Instagram:**
+   - **X (Twitter) API v2:** Enter your 4 OAuth 1.0a keys for direct auto-posting — or use the 1-click browser composer (`𝕏 Auf X (Browser)`).
+   - **Bluesky & Mastodon:** Direct posting via App Password or Access Token.
+   - **Instagram:** Use **`📸 Instagram Grafik + Quick-Post`** to generate a `1080×1350` PNG graphic for Go-Live or Schedule, copy caption + hashtags, and open Instagram — or connect the **Instagram Graph API** (Business/Creator account + optional ImgBB API key for automatic graphic upload).
+3. **Schedule Ecosystem:**
+   - **Twitch Schedule Sync:** Push upcoming slots directly to your Twitch channel schedule.
+   - **OBS `/schedule` & `.ics` Calendar:** Use `http://127.0.0.1:4588/schedule` as an OBS Browser Source or export/share `/schedule.ics`.
+   - **Chat Command:** Viewers can type `!schedule` or `!plan` in Twitch/YouTube chat anytime.
+
+

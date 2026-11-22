@@ -214,3 +214,19 @@ Verwandle deine **OBS Replay-Buffer**-Aufnahmen oder Stream-Videos ohne externes
    - **YouTube Shorts / Video:** Mit einem Klick auf **`▶️ YT`** direkt neben dem Clip öffnet sich der Upload-Dialog (Titel, Beschreibung, Sichtbarkeit `Public`/`Unlisted`/`Private`) und lädt das Video per **Google OAuth2** direkt hoch.
    - **TikTok Quick-Upload:** Mit **`🎵 TT`** öffnest du das TikTok-Upload-Center direkt im Browser und markierst/öffnest die Datei im Finder/Explorer zum sofortigen Drag-&-Drop.
 
+---
+
+## 17. Discord, Go-Live & Sendeplan-Studio (`📅 Schedule & Go-Live`)
+
+Informiere deine Community automatisch über Stream-Starts und kommende Streams:
+1. **Discord Webhook Add-on:** Hinterlege im Tab **`🔗 Discord & Plattformen`** deine Discord Webhook-URL (optional auch einen zweiten Webhook nur für den Sendeplan) sowie einen Rollen-Ping (`everyone`, `here` oder Role-ID). Aktiviere **Auto-Post bei OBS-Stream-Start**, damit beim Live-Gehen automatisch ein Rich-Embed mit Titel, Spiel & Links gepostet wird.
+2. **X (Twitter), Bluesky, Mastodon & Instagram:**
+   - **X (Twitter) API v2:** Mit deinen 4 OAuth-1.0a-Keys postet OmniStream Chat Go-Live & Sendeplan direkt auf X — alternativ jederzeit per Browser-Share (`𝕏 Auf X (Browser)`).
+   - **Bluesky & Mastodon:** Direktes Posten per App-Passwort bzw. Access-Token.
+   - **Instagram:** Nutze **`📸 Instagram Grafik + Quick-Post`** (erzeugt automatisch eine `1080×1350`-PNG-Grafik für Go-Live oder Sendeplan, kopiert Caption + Hashtags und öffnet Instagram) — oder verbinde die **Instagram Graph API** (Business-Account + optionaler ImgBB API-Key für automatischen Grafik-Upload).
+3. **Sendeplan & Zuschauer-Integration:**
+   - **Twitch Schedule Sync:** Übertrage deine Termine per Klick direkt in deinen Twitch-Zeitplan.
+   - **OBS `/schedule` & `.ics` Kalender:** Binde `http://127.0.0.1:4588/schedule` als OBS-Overlay ein oder exportiere/teile den Kalender unter `/schedule.ics`.
+   - **Chat-Befehl:** Zuschauer können im Twitch/YouTube-Chat jederzeit `!schedule` oder `!plan` schreiben.
+
+

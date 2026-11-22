@@ -7,6 +7,11 @@ Alle wichtigen Änderungen und neuen Features von **OmniStream Chat** im Überbl
 ## [1.1.0] — 2026-11-22
 
 ### ✨ Neue Features
+- **Discord, Go-Live & Sendeplan-Studio (`📅 Schedule & Go-Live`):**
+  - **Discord Webhook Add-on:** Rich-Embeds für Stream-Start (Go-Live) und Sendeplan (mit automatischen Discord-Zeitzonen-Timestamps `<t:UNIX:F>`) inkl. optionalem Rollen-Ping und **Auto-Post bei OBS-Stream-Start**.
+  - **Social Auto-Posting:** Direkte Integration für **X (Twitter) API v2 (OAuth 1.0a)**, **Bluesky (ATProto)**, **Mastodon** und **Instagram Graph API (Business/Creator)** (inkl. optionalem ImgBB-Upload für generierte Grafiken).
+  - **Instagram Grafik-Generator & Quick-Post:** Erstellt auf Knopfdruck `1080×1350`-PNG-Grafiken für Go-Live und Sendeplan, kopiert Caption + Hashtags und öffnet Instagram.
+  - **1-Klick-Share & Sendeplan-Ökosystem:** Browser-Share für X, Threads & YouTube Community, **Twitch Schedule Sync** (`Helix`), **OBS/Web-Sendeplan (`/schedule`)**, **iCalendar-Feed (`/schedule.ics` & `.ics`-Export)**, Chat-Befehl **`!schedule` / `!plan`** sowie Stream Deck Endpunkte (`/api/streamdeck/go-live`, `/api/streamdeck/post-schedule`).
 - **Clip- & Replay-Studio (`🎞️ Clip-Studio`):**
   - Replay-/Aufnahme-Browser (inkl. `shorts/` und `trimmed/` Unterordnern) mit HTML5-Videovorschau.
   - Visueller **Dual-Range-Timeline-Schieberegler** (Start- & End-Marker mit Live-Frame-Scrubbing) sowie **▶ Auswahl testen**.

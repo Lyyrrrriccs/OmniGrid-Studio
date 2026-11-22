@@ -3659,12 +3659,18 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     const d = ssState.discord || {};
     const b = ssState.bluesky || {};
     const m = ssState.mastodon || {};
+    const x = ssState.x || {};
+    const ig = ssState.instagram || {};
     const l = ssState.links || {};
 
     document.getElementById('ssGoLiveMessage').value = d.goLiveMessage || '🔴 **{channel} ist jetzt LIVE!** Komm vorbei!';
     document.getElementById('chkGoLiveDiscord').checked = Boolean(d.enabled && d.webhookUrl);
     document.getElementById('chkGoLiveBluesky').checked = Boolean(b.enabled && b.handle);
     document.getElementById('chkGoLiveMastodon').checked = Boolean(m.enabled && m.accessToken);
+    const chkX = document.getElementById('chkGoLiveX');
+    const chkIg = document.getElementById('chkGoLiveInstagram');
+    if (chkX) chkX.checked = Boolean(x.enabled && x.apiKey && x.accessToken);
+    if (chkIg) chkIg.checked = Boolean(ig.enabled && ig.igUserId && ig.accessToken);
 
     document.getElementById('ssDiscordEnabled').checked = Boolean(d.enabled);
     document.getElementById('ssDiscordWebhook').value = d.webhookUrl || '';
@@ -3682,6 +3688,20 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     document.getElementById('ssMastoInstance').value = m.instanceUrl || 'https://mastodon.social';
     document.getElementById('ssMastoToken').value = m.accessToken || '';
     document.getElementById('ssMastoAutoLive').checked = Boolean(m.autoPostOnLive);
+
+    document.getElementById('ssXEnabled').checked = Boolean(x.enabled);
+    document.getElementById('ssXApiKey').value = x.apiKey || '';
+    document.getElementById('ssXApiSecret').value = x.apiSecret || '';
+    document.getElementById('ssXAccessToken').value = x.accessToken || '';
+    document.getElementById('ssXAccessSecret').value = x.accessTokenSecret || '';
+    document.getElementById('ssXAutoLive').checked = Boolean(x.autoPostOnLive);
+
+    document.getElementById('ssIgEnabled').checked = Boolean(ig.enabled);
+    document.getElementById('ssIgUserId').value = ig.igUserId || '';
+    document.getElementById('ssIgAccessToken').value = ig.accessToken || '';
+    document.getElementById('ssIgDefaultImgUrl').value = ig.defaultImageUrl || '';
+    document.getElementById('ssIgImgbbKey').value = ig.imgbbApiKey || '';
+    document.getElementById('ssIgAutoLive').checked = Boolean(ig.autoPostOnLive);
 
     document.getElementById('ssLinkTwitch').value = l.twitchUrl || '';
     document.getElementById('ssLinkYoutube').value = l.youtubeUrl || '';
@@ -3726,6 +3746,22 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       instanceUrl: document.getElementById('ssMastoInstance').value.trim() || 'https://mastodon.social',
       accessToken: document.getElementById('ssMastoToken').value.trim(),
       autoPostOnLive: document.getElementById('ssMastoAutoLive').checked
+    };
+    ssState.x = {
+      enabled: document.getElementById('ssXEnabled').checked,
+      apiKey: document.getElementById('ssXApiKey').value.trim(),
+      apiSecret: document.getElementById('ssXApiSecret').value.trim(),
+      accessToken: document.getElementById('ssXAccessToken').value.trim(),
+      accessTokenSecret: document.getElementById('ssXAccessSecret').value.trim(),
+      autoPostOnLive: document.getElementById('ssXAutoLive').checked
+    };
+    ssState.instagram = {
+      enabled: document.getElementById('ssIgEnabled').checked,
+      igUserId: document.getElementById('ssIgUserId').value.trim(),
+      accessToken: document.getElementById('ssIgAccessToken').value.trim(),
+      defaultImageUrl: document.getElementById('ssIgDefaultImgUrl').value.trim(),
+      imgbbApiKey: document.getElementById('ssIgImgbbKey').value.trim(),
+      autoPostOnLive: document.getElementById('ssIgAutoLive').checked
     };
     ssState.links = {
       twitchUrl: document.getElementById('ssLinkTwitch').value.trim(),
@@ -3816,19 +3852,136 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     return `${msg}\n📺 ${title}${game ? ` — 🎮 ${game}` : ''}${urls.length ? `\n${urls.join(' | ')}` : ''}`;
   }
 
+  function generateSocialGraphicPng(mode = 'golive') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext('2d');
+
+    const grad = ctx.createLinearGradient(0, 0, 1080, 1350);
+    grad.addColorStop(0, '#0f172a');
+    grad.addColorStop(0.55, '#1e1b4b');
+    grad.addColorStop(1, '#090d16');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1350);
+
+    // Subtle accent glow circles
+    ctx.fillStyle = mode === 'golive' ? 'rgba(239, 68, 68, 0.16)' : 'rgba(56, 189, 248, 0.16)';
+    ctx.beginPath();
+    ctx.arc(880, 200, 320, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(145, 70, 255, 0.18)';
+    ctx.beginPath();
+    ctx.arc(180, 1140, 360, 0, Math.PI * 2);
+    ctx.fill();
+
+    const channel = document.getElementById('inputStreamerName')?.value.trim() || 'OmniStream';
+    const title = document.getElementById('ssGoLiveTitle')?.value.trim() || document.getElementById('inputStreamTitle')?.value.trim() || 'Live-Stream';
+    const game = document.getElementById('ssGoLiveGame')?.value.trim() || document.getElementById('inputStreamGame')?.value.trim() || 'Just Chatting';
+
+    // Top badge
+    ctx.fillStyle = mode === 'golive' ? '#ef4444' : '#38bdf8';
+    ctx.beginPath();
+    ctx.roundRect(80, 88, mode === 'golive' ? 270 : 350, 58, 29);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(mode === 'golive' ? '● JETZT LIVE' : '📅 SENDEPLAN', 112, 127);
+
+    // Channel name
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(channel.toUpperCase(), 80, 225);
+
+    if (mode === 'golive') {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 68px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      const words = title.split(/\s+/);
+      let line = '';
+      let y = 350;
+      for (const w of words) {
+        const test = line ? `${line} ${w}` : w;
+        if (ctx.measureText(test).width > 910) {
+          ctx.fillText(line, 80, y);
+          line = w;
+          y += 84;
+          if (y > 760) break;
+        } else {
+          line = test;
+        }
+      }
+      if (line && y <= 760) ctx.fillText(line, 80, y);
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(80, 860, 920, 120, 24);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillText(`🎮  ${game}`, 120, 932);
+    } else {
+      const items = (ssState?.schedule || [])
+        .slice()
+        .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+        .slice(0, 5);
+      let y = 310;
+      if (!items.length) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        ctx.fillText('Noch keine Termine eingetragen.', 80, 380);
+      } else {
+        for (const item of items) {
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.80)';
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(80, y, 920, 145, 22);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+          ctx.fillText(`${item.date}  •  ${item.time} Uhr`, 115, y + 52);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+          ctx.fillText(String(item.title || '').slice(0, 38), 115, y + 102);
+          y += 168;
+        }
+      }
+    }
+
+    // Footer links
+    const urls = [ssLinks.twitchUrl, ssLinks.youtubeUrl, ssLinks.tiktokUrl].filter(Boolean);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '26px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.fillText(urls.length ? urls.join('   •   ').slice(0, 68) : 'OmniStream Chat', 80, 1260);
+
+    return canvas.toDataURL('image/png');
+  }
+
   document.getElementById('btnPostGoLiveNow')?.addEventListener('click', async () => {
     setStatus('⏳ Sende Go-Live Ankündigung...', '#38bdf8');
     const tagsRaw = document.getElementById('inputStreamTags')?.value || '';
     const tags = tagsRaw.split(',').map((t) => t.trim()).filter(Boolean);
+    const useIg = Boolean(document.getElementById('chkGoLiveInstagram')?.checked);
+    const imageBase64 = useIg ? generateSocialGraphicPng('golive') : '';
+
     const res = await window.omnichat.socialPostGoLive({
       title: document.getElementById('ssGoLiveTitle').value.trim(),
       game: document.getElementById('ssGoLiveGame').value.trim(),
       tags,
       message: document.getElementById('ssGoLiveMessage').value.trim(),
+      imageBase64,
       targets: {
         discord: document.getElementById('chkGoLiveDiscord').checked,
         bluesky: document.getElementById('chkGoLiveBluesky').checked,
-        mastodon: document.getElementById('chkGoLiveMastodon').checked
+        mastodon: document.getElementById('chkGoLiveMastodon').checked,
+        x: Boolean(document.getElementById('chkGoLiveX')?.checked),
+        instagram: useIg
       }
     });
     if (res?.posted?.length && !res?.errors?.length) {
@@ -3842,11 +3995,16 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   document.getElementById('btnPostScheduleNow')?.addEventListener('click', async () => {
     setStatus('⏳ Poste Sendeplan...', '#38bdf8');
+    const useIg = Boolean(ssState?.instagram?.enabled);
+    const imageBase64 = useIg ? generateSocialGraphicPng('schedule') : '';
     const res = await window.omnichat.socialPostSchedule({
+      imageBase64,
       targets: {
         discord: Boolean(ssState?.discord?.webhookUrl),
         bluesky: Boolean(ssState?.bluesky?.enabled),
-        mastodon: Boolean(ssState?.mastodon?.enabled)
+        mastodon: Boolean(ssState?.mastodon?.enabled),
+        x: Boolean(ssState?.x?.enabled),
+        instagram: useIg
       }
     });
     if (res?.posted?.length && !res?.errors?.length) {
@@ -3857,6 +4015,23 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       setStatus(`❌ ${(res?.errors || ['Bitte zuerst Discord Webhook oder Social-Account konfigurieren.']).join(' | ')}`, '#f87171');
     }
   });
+
+  async function runInstagramQuickPost(mode) {
+    const pngDataUrl = generateSocialGraphicPng(mode);
+    const fileName = mode === 'schedule' ? `sendeplan-${Date.now()}.png` : `golive-${Date.now()}.png`;
+    const saveRes = await window.omnichat.socialSaveGraphicPng({ base64Png: pngDataUrl, fileName });
+    const caption = mode === 'schedule'
+      ? `📅 Stream-Sendeplan!\n\n#livestream #twitch #youtube #gaming #sendeplan`
+      : `${buildSharePreviewText()}\n\n#livestream #twitch #youtube #gaming #live`;
+    await navigator.clipboard.writeText(caption);
+    window.omnichat.openExternalUrl('https://www.instagram.com/');
+    if (saveRes?.ok) {
+      setStatus(`📸 Grafik gespeichert (${saveRes.filePath}), Caption kopiert & Instagram geöffnet!`, '#4ade80');
+    }
+  }
+
+  document.getElementById('btnIgQuickPostGoLive')?.addEventListener('click', () => runInstagramQuickPost('golive'));
+  document.getElementById('btnIgQuickPostSchedule')?.addEventListener('click', () => runInstagramQuickPost('schedule'));
 
   document.getElementById('btnSyncTwitchSchedule')?.addEventListener('click', async () => {
     setStatus('⏳ Synchronisiere Termine mit Twitch Schedule...', '#38bdf8');

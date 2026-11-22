@@ -22,6 +22,22 @@ const DEFAULT_SOCIAL_SCHEDULE = {
     accessToken: '',
     autoPostOnLive: false
   },
+  x: {
+    enabled: false,
+    apiKey: '',
+    apiSecret: '',
+    accessToken: '',
+    accessTokenSecret: '',
+    autoPostOnLive: false
+  },
+  instagram: {
+    enabled: false,
+    igUserId: '',
+    accessToken: '',
+    defaultImageUrl: '',
+    imgbbApiKey: '',
+    autoPostOnLive: false
+  },
   links: {
     twitchUrl: '',
     youtubeUrl: '',
@@ -38,6 +54,8 @@ function normalizeSocialScheduleConfig(raw = {}) {
     discord: { ...DEFAULT_SOCIAL_SCHEDULE.discord, ...(src.discord || {}) },
     bluesky: { ...DEFAULT_SOCIAL_SCHEDULE.bluesky, ...(src.bluesky || {}) },
     mastodon: { ...DEFAULT_SOCIAL_SCHEDULE.mastodon, ...(src.mastodon || {}) },
+    x: { ...DEFAULT_SOCIAL_SCHEDULE.x, ...(src.x || {}) },
+    instagram: { ...DEFAULT_SOCIAL_SCHEDULE.instagram, ...(src.instagram || {}) },
     links: { ...DEFAULT_SOCIAL_SCHEDULE.links, ...(src.links || {}) },
     schedule: Array.isArray(src.schedule) ? src.schedule : []
   };
@@ -481,6 +499,158 @@ function buildIcsFeed(cfg = {}) {
   return lines.join('\r\n');
 }
 
+function rfc3986Encode(str) {
+  return encodeURIComponent(String(str)).replace(/[!'()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+function buildOAuth1Header({ method = 'POST', url, apiKey, apiSecret, accessToken, accessTokenSecret }) {
+  const oauthParams = {
+    oauth_consumer_key: apiKey,
+    oauth_nonce: crypto.randomBytes(16).toString('hex'),
+    oauth_signature_method: 'HMAC-SHA1',
+    oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+    oauth_token: accessToken,
+    oauth_version: '1.0'
+  };
+
+  const parsed = new URL(url);
+  const allParams = [];
+  for (const [k, v] of parsed.searchParams.entries()) {
+    allParams.push([rfc3986Encode(k), rfc3986Encode(v)]);
+  }
+  for (const [k, v] of Object.entries(oauthParams)) {
+    allParams.push([rfc3986Encode(k), rfc3986Encode(v)]);
+  }
+  allParams.sort((a, b) => (a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0])));
+  const paramStr = allParams.map(([k, v]) => `${k}=${v}`).join('&');
+  const baseUrl = `${parsed.origin}${parsed.pathname}`;
+  const baseString = `${method.toUpperCase()}&${rfc3986Encode(baseUrl)}&${rfc3986Encode(paramStr)}`;
+  const signingKey = `${rfc3986Encode(apiSecret)}&${rfc3986Encode(accessTokenSecret)}`;
+  const signature = crypto.createHmac('sha1', signingKey).update(baseString).digest('base64');
+
+  const headerParams = { ...oauthParams, oauth_signature: signature };
+  const headerStr = Object.keys(headerParams)
+    .sort()
+    .map((k) => `${rfc3986Encode(k)}="${rfc3986Encode(headerParams[k])}"`)
+    .join(', ');
+  return `OAuth ${headerStr}`;
+}
+
+async function postX(cfg = {}, text = '') {
+  const ss = normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const { apiKey, apiSecret, accessToken, accessTokenSecret } = ss.x;
+  if (!apiKey || !apiSecret || !accessToken || !accessTokenSecret) {
+    throw new Error('X (Twitter) OAuth 1.0a Keys/Tokens unvollständig.');
+  }
+
+  const endpoint = 'https://api.twitter.com/2/tweets';
+  const authHeader = buildOAuth1Header({
+    method: 'POST',
+    url: endpoint,
+    apiKey: apiKey.trim(),
+    apiSecret: apiSecret.trim(),
+    accessToken: accessToken.trim(),
+    accessTokenSecret: accessTokenSecret.trim()
+  });
+
+  const trimmed = String(text || '').slice(0, 280);
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      Authorization: authHeader,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ text: trimmed })
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const errMsg = data.detail || data.title || data.errors?.[0]?.message || `HTTP ${resp.status}`;
+    throw new Error(`X Post fehlgeschlagen: ${errMsg}`);
+  }
+  return { ok: true, id: data?.data?.id || '' };
+}
+
+async function uploadPngToImgbb(apiKey, base64Png) {
+  const key = String(apiKey || '').trim();
+  const cleanB64 = String(base64Png || '').replace(/^data:image\/\w+;base64,/, '').trim();
+  if (!key || !cleanB64) {
+    throw new Error('ImgBB API-Key oder Bilddaten fehlen.');
+  }
+  const form = new URLSearchParams();
+  form.set('key', key);
+  form.set('image', cleanB64);
+  const resp = await fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    body: form
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || !data?.data?.url) {
+    throw new Error(`ImgBB Upload fehlgeschlagen: ${data?.error?.message || resp.status}`);
+  }
+  return data.data.url;
+}
+
+function formatInstagramCaption(cfg = {}, meta = {}, mode = 'golive') {
+  const baseText = mode === 'schedule' ? formatScheduleText(cfg, 6) : formatGoLiveText(cfg, meta);
+  const tags = Array.isArray(meta.tags) && meta.tags.length
+    ? meta.tags.slice(0, 6).map((t) => `#${String(t).replace(/[^a-zA-Z0-9äöüÄÖÜß_]/g, '')}`).filter((t) => t.length > 1)
+    : [];
+  const defaultTags = ['#livestream', '#twitch', '#youtube', '#gaming', '#streamer'];
+  const allTags = [...new Set([...tags, ...defaultTags])].slice(0, 10).join(' ');
+  return `${baseText}\n\n${allTags}`;
+}
+
+async function postInstagramGraph(cfg = {}, { caption = '', imageUrl = '', imageBase64 = '' } = {}) {
+  const ss = normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const igUserId = String(ss.instagram.igUserId || '').trim();
+  const accessToken = String(ss.instagram.accessToken || '').trim();
+  if (!igUserId || !accessToken) {
+    throw new Error('Instagram Business User-ID oder Meta Access-Token fehlt.');
+  }
+
+  let resolvedUrl = String(imageUrl || '').trim();
+  if (!resolvedUrl && imageBase64 && ss.instagram.imgbbApiKey) {
+    resolvedUrl = await uploadPngToImgbb(ss.instagram.imgbbApiKey, imageBase64);
+  }
+  if (!resolvedUrl) {
+    resolvedUrl = String(ss.instagram.defaultImageUrl || '').trim();
+  }
+  if (!/^https:\/\//i.test(resolvedUrl)) {
+    throw new Error('Instagram benötigt eine öffentliche HTTPS-Bild-URL (oder einen ImgBB API-Key für automatischen Grafik-Upload).');
+  }
+
+  const createResp = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(igUserId)}/media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      image_url: resolvedUrl,
+      caption: String(caption || '').slice(0, 2200),
+      access_token: accessToken
+    })
+  });
+  const createData = await createResp.json().catch(() => ({}));
+  if (!createResp.ok || !createData.id) {
+    throw new Error(`Instagram Media-Container fehlgeschlagen: ${createData?.error?.message || createResp.status}`);
+  }
+
+  // Wait briefly for Meta container processing
+  await new Promise((r) => setTimeout(r, 1500));
+
+  const pubResp = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(igUserId)}/media_publish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      creation_id: createData.id,
+      access_token: accessToken
+    })
+  });
+  const pubData = await pubResp.json().catch(() => ({}));
+  if (!pubResp.ok || !pubData.id) {
+    throw new Error(`Instagram Publish fehlgeschlagen: ${pubData?.error?.message || pubResp.status}`);
+  }
+  return { ok: true, id: pubData.id, imageUrl: resolvedUrl };
+}
+
 module.exports = {
   DEFAULT_SOCIAL_SCHEDULE,
   normalizeSocialScheduleConfig,
@@ -489,9 +659,14 @@ module.exports = {
   formatGoLiveText,
   formatScheduleText,
   formatScheduleChatReply,
+  formatInstagramCaption,
   postDiscordGoLive,
   postDiscordSchedule,
   postBluesky,
   postMastodon,
+  buildOAuth1Header,
+  postX,
+  uploadPngToImgbb,
+  postInstagramGraph,
   buildIcsFeed
 };

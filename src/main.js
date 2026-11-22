@@ -82,6 +82,27 @@ async function executeGoLivePost(cfg, payload = {}) {
       errors.push(`Mastodon: ${e.message}`);
     }
   }
+  if (targets.x ?? ss.x.enabled) {
+    try {
+      await socialSchedule.postX(cfg, text);
+      posted.push('X');
+    } catch (e) {
+      errors.push(`X: ${e.message}`);
+    }
+  }
+  if (targets.instagram ?? ss.instagram.enabled) {
+    try {
+      const caption = socialSchedule.formatInstagramCaption(cfg, meta, 'golive');
+      await socialSchedule.postInstagramGraph(cfg, {
+        caption,
+        imageUrl: payload.imageUrl || '',
+        imageBase64: payload.imageBase64 || ''
+      });
+      posted.push('Instagram');
+    } catch (e) {
+      errors.push(`Instagram: ${e.message}`);
+    }
+  }
   return { ok: errors.length === 0 || posted.length > 0, posted, errors, text };
 }
 
@@ -114,6 +135,27 @@ async function executeSchedulePost(cfg, payload = {}) {
       posted.push('Mastodon');
     } catch (e) {
       errors.push(`Mastodon: ${e.message}`);
+    }
+  }
+  if (targets.x ?? ss.x.enabled) {
+    try {
+      await socialSchedule.postX(cfg, text);
+      posted.push('X');
+    } catch (e) {
+      errors.push(`X: ${e.message}`);
+    }
+  }
+  if (targets.instagram ?? ss.instagram.enabled) {
+    try {
+      const caption = socialSchedule.formatInstagramCaption(cfg, {}, 'schedule');
+      await socialSchedule.postInstagramGraph(cfg, {
+        caption,
+        imageUrl: payload.imageUrl || '',
+        imageBase64: payload.imageBase64 || ''
+      });
+      posted.push('Instagram');
+    } catch (e) {
+      errors.push(`Instagram: ${e.message}`);
     }
   }
   return { ok: errors.length === 0 || posted.length > 0, posted, errors, text };
@@ -1014,9 +1056,11 @@ obsWs.on('state', (st) => {
       const targets = {
         discord: Boolean(ss.discord.enabled && ss.discord.autoPostOnObsLive && ss.discord.webhookUrl),
         bluesky: Boolean(ss.bluesky.enabled && ss.bluesky.autoPostOnLive),
-        mastodon: Boolean(ss.mastodon.enabled && ss.mastodon.autoPostOnLive)
+        mastodon: Boolean(ss.mastodon.enabled && ss.mastodon.autoPostOnLive),
+        x: Boolean(ss.x.enabled && ss.x.autoPostOnLive),
+        instagram: Boolean(ss.instagram.enabled && ss.instagram.autoPostOnLive && ss.instagram.defaultImageUrl)
       };
-      if (targets.discord || targets.bluesky || targets.mastodon) {
+      if (targets.discord || targets.bluesky || targets.mastodon || targets.x || targets.instagram) {
         lastAutoGoLiveAt = now;
         executeGoLivePost(cfg, { targets })
           .then((res) => {
@@ -2778,6 +2822,17 @@ app.whenReady().then(async () => {
     if (res.canceled || !res.filePath) return { ok: false, canceled: true };
     fs.writeFileSync(res.filePath, ics, 'utf8');
     return { ok: true, filePath: res.filePath };
+  });
+
+  ipcMain.handle('social-save-graphic-png', async (_ev, { base64Png, fileName }) => {
+    const { shell } = require('electron');
+    const cleanB64 = String(base64Png || '').replace(/^data:image\/\w+;base64,/, '');
+    if (!cleanB64) return { ok: false, error: 'Keine Bilddaten übergeben.' };
+    const safeName = String(fileName || `omnistream-${Date.now()}.png`).replace(/[^a-zA-Z0-9._-]/g, '_');
+    const outPath = path.join(app.getPath('downloads'), safeName);
+    fs.writeFileSync(outPath, Buffer.from(cleanB64, 'base64'));
+    shell.showItemInFolder(outPath);
+    return { ok: true, filePath: outPath };
   });
 
   ipcMain.handle('open-external-url', async (_ev, url) => {

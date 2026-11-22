@@ -75,5 +75,6 @@ contextBridge.exposeInMainWorld('omnichat', {
   socialPostSchedule: (payload) => ipcRenderer.invoke('social-post-schedule', payload),
   socialSyncTwitchSchedule: () => ipcRenderer.invoke('social-sync-twitch-schedule'),
   socialExportIcs: () => ipcRenderer.invoke('social-export-ics'),
+  socialSaveGraphicPng: (payload) => ipcRenderer.invoke('social-save-graphic-png', payload),
   openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url)
 });
