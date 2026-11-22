@@ -4630,6 +4630,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       const sel = document.createElement('select');
       const items = props[prop];
       const valMap = new Map();
+      let matched = false;
       items.forEach((p, idx) => {
         const key = String(idx);
         valMap.set(key, p.itemValue);
@@ -4637,12 +4638,22 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         opt.value = key;
         opt.textContent = p.itemName || String(p.itemValue);
         if (p.itemEnabled === false) opt.disabled = true;
-        if (p.itemValue === settings[prop] || String(p.itemValue) === String(settings[prop])) {
+        if (settings[prop] !== undefined && settings[prop] !== null && (p.itemValue === settings[prop] || String(p.itemValue) === String(settings[prop]))) {
           opt.selected = true;
+          matched = true;
         }
         sel.appendChild(opt);
       });
+      if (!matched) {
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.textContent = '— Bitte wählen —';
+        ph.selected = true;
+        ph.disabled = true;
+        sel.insertBefore(ph, sel.firstChild);
+      }
       sel.addEventListener('change', async () => {
+        if (!sel.value) return;
         const chosenVal = valMap.get(sel.value);
         const upd = await window.omnichat.obsWsAction({
           action: 'set-input-settings',

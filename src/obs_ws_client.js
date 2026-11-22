@@ -430,7 +430,7 @@ class ObsWsClient extends EventEmitter {
         properties[prop] = items;
       }
     }
-    return { inputKind, inputSettings, properties };
+    return { ok: true, inputKind, inputSettings, properties };
   }
 
   disconnect(emitUpdate = true) {
