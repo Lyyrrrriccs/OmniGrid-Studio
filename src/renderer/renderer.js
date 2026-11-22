@@ -4076,3 +4076,257 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     setStatus('📋 Go-Live Text in die Zwischenablage kopiert!', '#4ade80');
   });
 })();
+
+// ======================================================
+// LIVE-GIVEAWAY / VERLOSUNGS-RAD
+// ======================================================
+(function initGiveawayModal() {
+  const modal = document.getElementById('giveawayModal');
+  if (!modal) return;
+  const btnOpen = document.getElementById('btnOpenGiveaway');
+  const btnClose = document.getElementById('btnCloseGiveaway');
+  const box = document.getElementById('gwWinnerBox');
+  const countEl = document.getElementById('gwPartCount');
+  const listEl = document.getElementById('gwPartList');
+
+  function renderGw(gw) {
+    if (!gw) return;
+    const parts = Array.isArray(gw.participants) ? gw.participants : [];
+    if (countEl) countEl.textContent = String(parts.length);
+    if (box) {
+      if (gw.spinning) {
+        box.innerHTML = '🎲 <strong>Ziehung läuft auf OBS-Overlay...</strong>';
+      } else if (gw.winner) {
+        box.innerHTML = `🏆 Gewinner: <strong style="color:#fde047;">${escapeHtml(gw.winner.name)}</strong> (${escapeHtml(gw.winner.platform)})`;
+      } else if (gw.active) {
+        box.innerHTML = `🟢 <strong>Teilnahme offen</strong> — Keyword: <code>${escapeHtml(gw.keyword)}</code> (${gw.subMultiplier}× für Subs/VIPs/Mods)`;
+      } else {
+        box.innerHTML = `⏸ <strong>Pausiert / Bereit</strong> — OBS Overlay: ${gw.visible ? 'Sichtbar' : 'Ausgeblendet'}`;
+      }
+    }
+    if (listEl) {
+      listEl.innerHTML = '';
+      parts.forEach((p) => {
+        const pill = document.createElement('span');
+        pill.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:999px; background:rgba(30,41,59,0.9); border:1px solid rgba(148,163,184,0.25); color:#f1f5f9;';
+        pill.textContent = `${p.name}${p.weight > 1 ? ` (${p.weight}×)` : ''}`;
+        listEl.appendChild(pill);
+      });
+    }
+  }
+
+  btnOpen?.addEventListener('click', async () => {
+    modal.classList.remove('hidden');
+    const res = await window.omnichat.giveawayAction({ action: 'get' });
+    if (res?.giveaway) renderGw(res.giveaway);
+  });
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  document.getElementById('btnGwStart')?.addEventListener('click', async () => {
+    const res = await window.omnichat.giveawayAction({
+      action: 'start',
+      title: document.getElementById('gwInputTitle')?.value || 'Stream-Verlosung',
+      keyword: document.getElementById('gwInputKeyword')?.value || '!join',
+      subMultiplier: document.getElementById('gwSelectMult')?.value || 2
+    });
+    if (res?.giveaway) renderGw(res.giveaway);
+  });
+  document.getElementById('btnGwStop')?.addEventListener('click', async () => {
+    const res = await window.omnichat.giveawayAction({ action: 'stop' });
+    if (res?.giveaway) renderGw(res.giveaway);
+  });
+  document.getElementById('btnGwDraw')?.addEventListener('click', async () => {
+    const res = await window.omnichat.giveawayAction({ action: 'draw' });
+    if (res?.giveaway) renderGw(res.giveaway);
+    if (res?.error && box) box.innerHTML = `⚠️ ${escapeHtml(res.error)}`;
+  });
+  document.getElementById('btnGwReset')?.addEventListener('click', async () => {
+    const res = await window.omnichat.giveawayAction({ action: 'reset' });
+    if (res?.giveaway) renderGw(res.giveaway);
+  });
+  document.getElementById('btnGwToggleObs')?.addEventListener('click', async () => {
+    const res = await window.omnichat.giveawayAction({ action: 'toggle-visible' });
+    if (res?.giveaway) renderGw(res.giveaway);
+  });
+  document.getElementById('btnGwCopyUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/giveaway');
+    if (box) box.innerHTML = '🔗 <strong>http://127.0.0.1:4588/giveaway</strong> kopiert!';
+  });
+
+  window.omnichat.onGiveawayUpdated((gw) => renderGw(gw));
+})();
+
+// ======================================================
+// INTEGRIERTES SOUNDBOARD (INKL. OBS-ROUTING)
+// ======================================================
+(function initSoundboardModal() {
+  const modal = document.getElementById('soundboardModal');
+  if (!modal) return;
+  const btnOpen = document.getElementById('btnOpenSoundboard');
+  const btnClose = document.getElementById('btnCloseSoundboard');
+  const grid = document.getElementById('sbGrid');
+  const statusEl = document.getElementById('sbStatus');
+  const volInput = document.getElementById('sbVolume');
+  const chkLocal = document.getElementById('sbPlayLocal');
+  const chkObs = document.getElementById('sbRouteObs');
+  let sbState = { volume: 0.8, playLocally: true, routeToObs: true, sounds: [] };
+
+  function playSoundLocally(s) {
+    if (!s) return;
+    const vol = Math.max(0, Math.min(1, Number(s.volume ?? 0.8)));
+    if (s.url) {
+      const a = new Audio(s.url);
+      a.volume = vol;
+      a.play().catch(() => {});
+    } else if (s.builtin) {
+      try {
+        const actx = new (window.AudioContext || window.webkitAudioContext)();
+        const g = actx.createGain();
+        g.gain.value = vol * 0.35;
+        g.connect(actx.destination);
+        const o = actx.createOscillator();
+        o.type = s.builtin === 'airhorn' ? 'sawtooth' : s.builtin === 'alarm' ? 'square' : 'sine';
+        o.frequency.setValueAtTime(s.builtin === 'airhorn' ? 440 : s.builtin === 'ding' ? 880 : s.builtin === 'rimshot' ? 220 : 660, actx.currentTime);
+        o.connect(g);
+        o.start();
+        o.stop(actx.currentTime + (s.builtin === 'airhorn' ? 0.55 : 0.25));
+      } catch (e) {}
+    }
+  }
+
+  window.omnichat.onSoundboardPlay((payload) => playSoundLocally(payload));
+
+  function renderGrid() {
+    if (!grid) return;
+    grid.innerHTML = '';
+    (sbState.sounds || []).forEach((s) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; align-items:center; gap:4px; background:rgba(30,41,59,0.85); border:1px solid rgba(148,163,184,0.22); border-radius:10px; padding:6px;';
+      const playBtn = document.createElement('button');
+      playBtn.className = 'btn-sm';
+      playBtn.style.cssText = 'flex:1; text-align:left; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+      playBtn.textContent = `${s.emoji || '🔊'} ${s.name}`;
+      playBtn.addEventListener('click', () => window.omnichat.soundboardPlay(s.id));
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-sm warn';
+      delBtn.style.padding = '3px 6px';
+      delBtn.textContent = '✕';
+      delBtn.title = 'Sound entfernen';
+      delBtn.addEventListener('click', async () => {
+        sbState.sounds = sbState.sounds.filter((x) => x.id !== s.id);
+        await window.omnichat.soundboardSave(sbState);
+        renderGrid();
+      });
+
+      wrap.appendChild(playBtn);
+      wrap.appendChild(delBtn);
+      grid.appendChild(wrap);
+    });
+  }
+
+  async function saveSettings() {
+    sbState.volume = parseFloat(volInput?.value || '0.8') || 0.8;
+    sbState.playLocally = Boolean(chkLocal?.checked);
+    sbState.routeToObs = Boolean(chkObs?.checked);
+    await window.omnichat.soundboardSave(sbState);
+  }
+
+  volInput?.addEventListener('change', saveSettings);
+  chkLocal?.addEventListener('change', saveSettings);
+  chkObs?.addEventListener('change', saveSettings);
+
+  btnOpen?.addEventListener('click', async () => {
+    modal.classList.remove('hidden');
+    const res = await window.omnichat.soundboardGet();
+    if (res?.ok && res.soundboard) {
+      sbState = res.soundboard;
+      if (volInput) volInput.value = String(sbState.volume ?? 0.8);
+      if (chkLocal) chkLocal.checked = sbState.playLocally !== false;
+      if (chkObs) chkObs.checked = sbState.routeToObs !== false;
+      renderGrid();
+    }
+  });
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  document.getElementById('btnSbAddFile')?.addEventListener('click', async () => {
+    const pick = await window.omnichat.soundboardPickFile();
+    if (!pick?.ok) return;
+    sbState.sounds = sbState.sounds || [];
+    sbState.sounds.push({
+      id: `sb_${Date.now()}`,
+      name: pick.name || 'Sound',
+      emoji: '🎵',
+      builtin: '',
+      filePath: pick.filePath
+    });
+    await window.omnichat.soundboardSave(sbState);
+    renderGrid();
+    if (statusEl) statusEl.textContent = `✅ Sound hinzugefügt: ${pick.name}`;
+  });
+
+  document.getElementById('btnSbCopyUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/soundboard');
+    if (statusEl) statusEl.textContent = '🔗 http://127.0.0.1:4588/soundboard kopiert! (Hinweis: /alerts spielt Sounds ebenfalls direkt mit ab.)';
+  });
+})();
+
+// ======================================================
+// CHAT-HYPE-DETEKTOR
+// ======================================================
+(function initHypeModal() {
+  const modal = document.getElementById('hypeModal');
+  if (!modal) return;
+  const btnOpen = document.getElementById('btnOpenHype');
+  const btnClose = document.getElementById('btnCloseHype');
+  const statusEl = document.getElementById('hdStatus');
+
+  btnOpen?.addEventListener('click', async () => {
+    modal.classList.remove('hidden');
+    const res = await window.omnichat.hypeGet();
+    if (res?.ok && res.hypeDetector) {
+      const hd = res.hypeDetector;
+      document.getElementById('hdEnabled').checked = Boolean(hd.enabled);
+      document.getElementById('hdWindowSec').value = hd.windowSec || 10;
+      document.getElementById('hdMinMsgs').value = hd.minMessages || 12;
+      document.getElementById('hdCooldownSec').value = hd.cooldownSec || 90;
+      document.getElementById('hdKeywords').value = hd.keywords || '';
+      document.getElementById('hdAutoMarker').checked = hd.autoMarker !== false;
+      document.getElementById('hdAutoObsReplay').checked = Boolean(hd.autoObsReplay);
+      document.getElementById('hdAutoClip').checked = Boolean(hd.autoClip);
+    }
+  });
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  document.getElementById('btnSaveHype')?.addEventListener('click', async () => {
+    const nextHd = {
+      enabled: document.getElementById('hdEnabled').checked,
+      windowSec: parseInt(document.getElementById('hdWindowSec').value || '10', 10) || 10,
+      minMessages: parseInt(document.getElementById('hdMinMsgs').value || '12', 10) || 12,
+      cooldownSec: parseInt(document.getElementById('hdCooldownSec').value || '90', 10) || 90,
+      keywords: document.getElementById('hdKeywords').value.trim(),
+      autoMarker: document.getElementById('hdAutoMarker').checked,
+      autoObsReplay: document.getElementById('hdAutoObsReplay').checked,
+      autoClip: document.getElementById('hdAutoClip').checked
+    };
+    const res = await window.omnichat.hypeSave(nextHd);
+    if (res?.ok && statusEl) {
+      statusEl.style.color = '#4ade80';
+      statusEl.textContent = '✅ Hype-Detektor gespeichert!';
+    }
+  });
+
+  window.omnichat.onHypeTriggered((ev) => {
+    if (btnOpen) {
+      btnOpen.style.boxShadow = '0 0 12px #f97316';
+      setTimeout(() => { btnOpen.style.boxShadow = ''; }, 5000);
+    }
+    if (statusEl && ev?.desc) {
+      statusEl.style.color = '#fb923c';
+      statusEl.textContent = `🔥 Zuletzt ausgelöst: ${ev.desc}`;
+    }
+  });
+})();

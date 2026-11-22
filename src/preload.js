@@ -76,5 +76,15 @@ contextBridge.exposeInMainWorld('omnichat', {
   socialSyncTwitchSchedule: () => ipcRenderer.invoke('social-sync-twitch-schedule'),
   socialExportIcs: () => ipcRenderer.invoke('social-export-ics'),
   socialSaveGraphicPng: (payload) => ipcRenderer.invoke('social-save-graphic-png', payload),
-  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url)
+  openExternalUrl: (url) => ipcRenderer.invoke('open-external-url', url),
+  giveawayAction: (payload) => ipcRenderer.invoke('giveaway-action', payload),
+  onGiveawayUpdated: (cb) => ipcRenderer.on('giveaway-updated', (_ev, data) => cb(data)),
+  soundboardGet: () => ipcRenderer.invoke('soundboard-get'),
+  soundboardSave: (sb) => ipcRenderer.invoke('soundboard-save', sb),
+  soundboardPickFile: () => ipcRenderer.invoke('soundboard-pick-file'),
+  soundboardPlay: (soundId) => ipcRenderer.invoke('soundboard-play', soundId),
+  onSoundboardPlay: (cb) => ipcRenderer.on('soundboard-play', (_ev, data) => cb(data)),
+  hypeGet: () => ipcRenderer.invoke('hype-get'),
+  hypeSave: (hd) => ipcRenderer.invoke('hype-save', hd),
+  onHypeTriggered: (cb) => ipcRenderer.on('hype-triggered', (_ev, data) => cb(data))
 });

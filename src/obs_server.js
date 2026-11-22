@@ -1,4 +1,6 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const WebSocket = require('ws');
 
 const OBS_OVERLAY_HTML = `<!DOCTYPE html>
@@ -1377,6 +1379,27 @@ const OBS_ALERTS_HTML = `<!DOCTYPE html>
           } else if (p.type === 'obs-alert' && p.data) {
             queue.push(p.data);
             processQueue();
+          } else if (p.type === 'soundboard' && p.data) {
+            try {
+              const s = p.data;
+              const vol = Math.max(0, Math.min(1, Number(s.volume ?? 0.8)));
+              if (s.url) {
+                const a = new Audio(s.url);
+                a.volume = vol;
+                a.play().catch(() => {});
+              } else if (s.builtin) {
+                const actx = new (window.AudioContext || window.webkitAudioContext)();
+                const g = actx.createGain();
+                g.gain.value = vol * 0.35;
+                g.connect(actx.destination);
+                const o = actx.createOscillator();
+                o.type = s.builtin === 'airhorn' ? 'sawtooth' : s.builtin === 'alarm' ? 'square' : 'sine';
+                o.frequency.setValueAtTime(s.builtin === 'airhorn' ? 440 : s.builtin === 'ding' ? 880 : s.builtin === 'rimshot' ? 220 : 660, actx.currentTime);
+                o.connect(g);
+                o.start();
+                o.stop(actx.currentTime + (s.builtin === 'airhorn' ? 0.55 : 0.25));
+              }
+            } catch (e) {}
           }
         } catch (e) {}
       };
@@ -1679,6 +1702,132 @@ const OBS_SCHEDULE_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_GIVEAWAY_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniStream Giveaway Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
+    .gw-card { width: 420px; background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(168, 85, 247, 0.45); border-radius: 16px; padding: 16px 18px; box-shadow: 0 14px 36px rgba(0,0,0,0.55); transition: opacity 0.25s, transform 0.25s; }
+    .gw-card.hidden { opacity: 0; transform: translateY(10px); pointer-events: none; }
+    .gw-head { display: flex; justify-content: space-between; align-items: center; }
+    .gw-title { font-size: 16px; font-weight: 800; color: #f8fafc; }
+    .gw-badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(168,85,247,0.22); color: #e9d5ff; }
+    .gw-sub { font-size: 12px; color: #cbd5e1; margin-top: 4px; }
+    .gw-slot { margin-top: 12px; background: rgba(2, 6, 23, 0.78); border: 1px solid rgba(148,163,184,0.25); border-radius: 12px; padding: 14px; text-align: center; min-height: 62px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+    .gw-winner { font-size: 22px; font-weight: 900; color: #fde047; text-shadow: 0 0 18px rgba(250,204,21,0.45); }
+    .gw-plat { font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+  </style>
+</head>
+<body>
+  <div class="gw-card hidden" id="gwCard">
+    <div class="gw-head">
+      <span class="gw-title" id="gwTitle">🎁 Giveaway</span>
+      <span class="gw-badge" id="gwCount">0 Teilnehmer</span>
+    </div>
+    <div class="gw-sub" id="gwSub">Schreibe !join in den Chat</div>
+    <div class="gw-slot">
+      <div class="gw-winner" id="gwWinner">—</div>
+      <div class="gw-plat" id="gwPlat"></div>
+    </div>
+  </div>
+  <script>
+    const card = document.getElementById('gwCard');
+    const titleEl = document.getElementById('gwTitle');
+    const countEl = document.getElementById('gwCount');
+    const subEl = document.getElementById('gwSub');
+    const winnerEl = document.getElementById('gwWinner');
+    const platEl = document.getElementById('gwPlat');
+    let spinTimer = null;
+
+    function renderGiveaway(gw) {
+      if (!gw || !gw.visible) {
+        card.classList.add('hidden');
+        return;
+      }
+      card.classList.remove('hidden');
+      titleEl.textContent = '🎁 ' + (gw.title || 'Giveaway');
+      const list = Array.isArray(gw.participants) ? gw.participants : [];
+      countEl.textContent = list.length + ' Teilnehmer';
+      subEl.textContent = gw.active
+        ? 'Teilnahme offen: Schreibe ' + (gw.keyword || '!join') + ' in den Chat!'
+        : (gw.winner ? '🎉 Gewinner gezogen!' : 'Teilnahme geschlossen');
+
+      clearInterval(spinTimer);
+      if (gw.spinning && list.length > 0) {
+        platEl.textContent = 'Ziehung läuft...';
+        spinTimer = setInterval(() => {
+          const pick = list[Math.floor(Math.random() * list.length)];
+          winnerEl.textContent = pick.name;
+        }, 70);
+      } else if (gw.winner) {
+        winnerEl.textContent = '🏆 ' + gw.winner.name;
+        platEl.textContent = gw.winner.platform || '';
+      } else {
+        winnerEl.textContent = list.length ? 'Bereit zur Ziehung...' : 'Warte auf Teilnehmer...';
+        platEl.textContent = '';
+      }
+    }
+
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'giveaway') renderGiveaway(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
+const OBS_SOUNDBOARD_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8" /><title>OmniStream Soundboard</title></head>
+<body style="background:transparent;">
+  <script>
+    function playSoundPayload(s) {
+      if (!s) return;
+      const vol = Math.max(0, Math.min(1, Number(s.volume ?? 0.8)));
+      if (s.url) {
+        const a = new Audio(s.url);
+        a.volume = vol;
+        a.play().catch(() => {});
+      } else if (s.builtin) {
+        try {
+          const actx = new (window.AudioContext || window.webkitAudioContext)();
+          const g = actx.createGain();
+          g.gain.value = vol * 0.35;
+          g.connect(actx.destination);
+          const o = actx.createOscillator();
+          o.type = s.builtin === 'airhorn' ? 'sawtooth' : s.builtin === 'alarm' ? 'square' : 'sine';
+          o.frequency.setValueAtTime(s.builtin === 'airhorn' ? 440 : s.builtin === 'ding' ? 880 : s.builtin === 'rimshot' ? 220 : 660, actx.currentTime);
+          o.connect(g);
+          o.start();
+          o.stop(actx.currentTime + (s.builtin === 'airhorn' ? 0.55 : 0.25));
+        } catch (e) {}
+      }
+    }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'soundboard') playSoundPayload(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -1694,7 +1843,9 @@ class ObsServer {
     this.currentGoals = null;
     this.currentPoll = null;
     this.currentSchedule = null;
+    this.currentGiveaway = null;
     this.currentIcsProvider = null;
+    this.soundFileResolver = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
   }
@@ -1704,6 +1855,21 @@ class ObsServer {
       this.server = http.createServer((req, res) => {
         const parsedUrl = new URL(req.url || '/', `http://127.0.0.1:${this.port}`);
         const urlPath = parsedUrl.pathname;
+
+        if (urlPath.startsWith('/api/sound/')) {
+          const soundId = decodeURIComponent(urlPath.replace('/api/sound/', '').trim());
+          const filePath = this.soundFileResolver ? this.soundFileResolver(soundId) : null;
+          if (!filePath || !fs.existsSync(filePath)) {
+            res.writeHead(404);
+            res.end('Sound not found');
+            return;
+          }
+          const ext = path.extname(filePath).toLowerCase();
+          const mime = ext === '.wav' ? 'audio/wav' : ext === '.ogg' ? 'audio/ogg' : 'audio/mpeg';
+          res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
+          fs.createReadStream(filePath).pipe(res);
+          return;
+        }
 
         if (urlPath.startsWith('/api/streamdeck')) {
           const action = urlPath.replace(/^\/api\/streamdeck\/?/, '').replace(/\/+$/, '') || 'status';
@@ -1770,6 +1936,10 @@ class ObsServer {
           res.end(OBS_POLL_HTML);
         } else if (urlPath === '/schedule') {
           res.end(OBS_SCHEDULE_HTML);
+        } else if (urlPath === '/giveaway') {
+          res.end(OBS_GIVEAWAY_HTML);
+        } else if (urlPath === '/soundboard') {
+          res.end(OBS_SOUNDBOARD_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -1798,6 +1968,9 @@ class ObsServer {
         }
         if (this.currentSchedule) {
           ws.send(JSON.stringify({ type: 'schedule', data: this.currentSchedule }));
+        }
+        if (this.currentGiveaway) {
+          ws.send(JSON.stringify({ type: 'giveaway', data: this.currentGiveaway }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -1921,6 +2094,19 @@ class ObsServer {
 
   setIcsProvider(fn) {
     this.currentIcsProvider = typeof fn === 'function' ? fn : null;
+  }
+
+  broadcastGiveaway(giveawayPayload) {
+    this.currentGiveaway = giveawayPayload;
+    this._broadcast({ type: 'giveaway', data: giveawayPayload });
+  }
+
+  broadcastSound(soundPayload) {
+    this._broadcast({ type: 'soundboard', data: soundPayload });
+  }
+
+  setSoundFileResolver(fn) {
+    this.soundFileResolver = typeof fn === 'function' ? fn : null;
   }
 
   stop() {

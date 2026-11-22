@@ -28,6 +28,53 @@ let lastScheduleReplyAt = 0;
 let lastObsStreaming = false;
 let lastAutoGoLiveAt = 0;
 
+const hypeTimestamps = [];
+let lastHypeTriggerAt = 0;
+
+const activeGiveaway = {
+  active: false,
+  visible: false,
+  keyword: '!join',
+  title: 'Stream-Verlosung',
+  subMultiplier: 2,
+  participants: [],
+  winner: null,
+  spinning: false
+};
+
+function broadcastGiveawayState() {
+  const payload = { ...activeGiveaway, participants: activeGiveaway.participants.slice() };
+  broadcastToWindows('giveaway-updated', payload);
+  obsServer.broadcastGiveaway(payload);
+}
+
+function playSoundboardById(soundIdOrName) {
+  const cfg = loadConfig();
+  const sb = cfg.soundboard || {};
+  const sounds = Array.isArray(sb.sounds) ? sb.sounds : [];
+  const key = String(soundIdOrName || '').trim().toLowerCase();
+  const item = sounds.find((s) => s.id === soundIdOrName || String(s.name || '').toLowerCase() === key);
+  if (!item) return { ok: false, error: 'Sound nicht gefunden.' };
+
+  const port = obsServer.port || 4588;
+  const payload = {
+    id: item.id,
+    name: item.name,
+    emoji: item.emoji || '🔊',
+    builtin: item.builtin || '',
+    url: item.filePath ? `http://127.0.0.1:${port}/api/sound/${encodeURIComponent(item.id)}?t=${Date.now()}` : '',
+    volume: typeof sb.volume === 'number' ? sb.volume : 0.8
+  };
+
+  if (sb.routeToObs !== false) {
+    obsServer.broadcastSound(payload);
+  }
+  if (sb.playLocally !== false) {
+    broadcastToWindows('soundboard-play', payload);
+  }
+  return { ok: true, sound: item.name };
+}
+
 function broadcastScheduleToObs(cfg) {
   const ss = socialSchedule.normalizeSocialScheduleConfig(cfg?.socialSchedule);
   const channel = cfg?.streamerName || cfg?.twitchChannel || 'Stream';
@@ -303,6 +350,27 @@ function getDefaultConfig() {
       ]
     },
     socialSchedule: socialSchedule.DEFAULT_SOCIAL_SCHEDULE,
+    hypeDetector: {
+      enabled: false,
+      windowSec: 10,
+      minMessages: 12,
+      cooldownSec: 90,
+      autoMarker: true,
+      autoObsReplay: false,
+      autoClip: false,
+      keywords: 'pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype'
+    },
+    soundboard: {
+      volume: 0.8,
+      playLocally: true,
+      routeToObs: true,
+      sounds: [
+        { id: 'sb_airhorn', name: 'Airhorn', emoji: '🎺', builtin: 'airhorn', filePath: '' },
+        { id: 'sb_rimshot', name: 'Rimshot', emoji: '🥁', builtin: 'rimshot', filePath: '' },
+        { id: 'sb_ding', name: 'Ding', emoji: '🔔', builtin: 'ding', filePath: '' },
+        { id: 'sb_alarm', name: 'Alarm', emoji: '🚨', builtin: 'alarm', filePath: '' }
+      ]
+    },
     hideBots: false,
     collapseSpam: true,
     platformIndicatorStyle: 'icon_badge',
@@ -885,6 +953,70 @@ function forwardChatMessage(msg) {
         }
       }
     }
+
+    // Live-Giveaway entry
+    if (activeGiveaway.active && msg.author) {
+      const kw = String(activeGiveaway.keyword || '!join').trim().toLowerCase();
+      const txtLower = String(msg.text || '').trim().toLowerCase();
+      if (kw && (txtLower === kw || txtLower.startsWith(kw + ' '))) {
+        const key = `${msg.platform}:${msg.author.toLowerCase()}`;
+        if (!activeGiveaway.participants.some((p) => p.key === key)) {
+          const roles = Array.isArray(msg.roles) ? msg.roles : [];
+          const isBoosted = roles.some((r) => ['sub', 'subscriber', 'vip', 'mod', 'moderator', 'broadcaster'].includes(String(r).toLowerCase()));
+          const weight = isBoosted ? Math.max(1, Number(activeGiveaway.subMultiplier || 1)) : 1;
+          activeGiveaway.participants.push({
+            key,
+            name: msg.author,
+            platform: msg.platform,
+            color: msg.color || '#cbd5e1',
+            weight,
+            isBoosted
+          });
+          broadcastGiveawayState();
+        }
+      }
+    }
+
+    // Chat-Hype-Detektor (Auto-Marker / Auto-OBS-Replay / Auto-Clip)
+    {
+      const cfg = loadConfig();
+      const hd = cfg.hypeDetector || {};
+      if (hd.enabled) {
+        const now = Date.now();
+        const winMs = Math.max(5, Number(hd.windowSec || 10)) * 1000;
+        const kwList = String(hd.keywords || '')
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean);
+        const lower = String(msg.text || '').toLowerCase();
+        const hasHypeKw = kwList.some((k) => lower.includes(k));
+        hypeTimestamps.push({ ts: now, weight: hasHypeKw ? 2 : 1 });
+
+        while (hypeTimestamps.length && now - hypeTimestamps[0].ts > winMs) {
+          hypeTimestamps.shift();
+        }
+        const score = hypeTimestamps.reduce((acc, x) => acc + x.weight, 0);
+        const minMsgs = Math.max(4, Number(hd.minMessages || 12));
+        const cooldownMs = Math.max(15, Number(hd.cooldownSec || 90)) * 1000;
+
+        if (score >= minMsgs && now - lastHypeTriggerAt > cooldownMs) {
+          lastHypeTriggerAt = now;
+          const desc = `🔥 Chat-Hype (${score} Punkte / ${Math.round(winMs / 1000)}s)`;
+          appendDiagLog('system', 'info', `${desc} erkannt!`);
+          broadcastToWindows('hype-triggered', { score, desc, at: now });
+
+          if (hd.autoMarker && twitch.connected) {
+            twitch.createMarker(desc).catch(() => {});
+          }
+          if (hd.autoObsReplay && obsWs.getState()?.connected) {
+            obsWs.saveReplayBuffer().catch(() => {});
+          }
+          if (hd.autoClip && twitch.connected) {
+            twitch.createClip().catch(() => {});
+          }
+        }
+      }
+    }
   } catch (e) {}
 }
 
@@ -1446,6 +1578,11 @@ app.whenReady().then(async () => {
       return await executeSchedulePost(loadConfig(), body || {});
     }
 
+    if (act === 'sound') {
+      const target = params.id || params.name || body.id || body.name || '';
+      return playSoundboardById(target);
+    }
+
     if (act === 'clear-chat') {
       globalSeenMsgKeys.clear();
       obsServer.clearChat();
@@ -1708,6 +1845,11 @@ app.whenReady().then(async () => {
     }
     syncChatTimer(saved);
     obsServer.setIcsProvider(() => socialSchedule.buildIcsFeed(loadConfig()));
+    obsServer.setSoundFileResolver((soundId) => {
+      const sounds = loadConfig().soundboard?.sounds || [];
+      const found = sounds.find((s) => s.id === soundId);
+      return found?.filePath || null;
+    });
     broadcastScheduleToObs(saved);
 
     if (saved.chatDockOpen) {
@@ -2841,6 +2983,103 @@ app.whenReady().then(async () => {
     if (!/^https?:\/\//i.test(target)) return { ok: false, error: 'Ungültige URL' };
     await shell.openExternal(target);
     return { ok: true };
+  });
+
+  ipcMain.handle('giveaway-action', (_ev, payload = {}) => {
+    const act = String(payload.action || 'get');
+    if (act === 'start') {
+      activeGiveaway.title = String(payload.title || activeGiveaway.title || 'Stream-Verlosung').trim();
+      activeGiveaway.keyword = String(payload.keyword || activeGiveaway.keyword || '!join').trim() || '!join';
+      activeGiveaway.subMultiplier = Math.max(1, Math.min(5, parseInt(payload.subMultiplier, 10) || 2));
+      activeGiveaway.active = true;
+      activeGiveaway.visible = true;
+      activeGiveaway.winner = null;
+      activeGiveaway.spinning = false;
+      if (payload.clear) activeGiveaway.participants = [];
+      broadcastGiveawayState();
+    } else if (act === 'stop') {
+      activeGiveaway.active = false;
+      broadcastGiveawayState();
+    } else if (act === 'reset') {
+      activeGiveaway.active = false;
+      activeGiveaway.participants = [];
+      activeGiveaway.winner = null;
+      activeGiveaway.spinning = false;
+      broadcastGiveawayState();
+    } else if (act === 'toggle-visible') {
+      activeGiveaway.visible = !activeGiveaway.visible;
+      broadcastGiveawayState();
+    } else if (act === 'draw') {
+      if (!activeGiveaway.participants.length) {
+        return { ok: false, error: 'Keine Teilnehmer vorhanden.', giveaway: activeGiveaway };
+      }
+      activeGiveaway.active = false;
+      activeGiveaway.visible = true;
+      activeGiveaway.spinning = true;
+      activeGiveaway.winner = null;
+
+      // Weighted random pick
+      const pool = [];
+      for (const p of activeGiveaway.participants) {
+        const w = Math.max(1, Number(p.weight || 1));
+        for (let i = 0; i < w; i++) pool.push(p);
+      }
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      broadcastGiveawayState();
+
+      setTimeout(() => {
+        activeGiveaway.spinning = false;
+        activeGiveaway.winner = { name: chosen.name, platform: chosen.platform, spunAt: Date.now() };
+        broadcastGiveawayState();
+        appendDiagLog('system', 'info', `🎁 Giveaway-Gewinner: ${chosen.name} (${chosen.platform})`);
+      }, 2800);
+    }
+    return { ok: true, giveaway: { ...activeGiveaway, participants: activeGiveaway.participants.slice() } };
+  });
+
+  ipcMain.handle('soundboard-get', () => {
+    const cfg = loadConfig();
+    return { ok: true, soundboard: cfg.soundboard || DEFAULT_CONFIG.soundboard };
+  });
+
+  ipcMain.handle('soundboard-save', (_ev, nextSb) => {
+    const cfg = loadConfig();
+    cfg.soundboard = {
+      volume: typeof nextSb?.volume === 'number' ? nextSb.volume : 0.8,
+      playLocally: nextSb?.playLocally !== false,
+      routeToObs: nextSb?.routeToObs !== false,
+      sounds: Array.isArray(nextSb?.sounds) ? nextSb.sounds : []
+    };
+    saveConfig(cfg);
+    return { ok: true, soundboard: cfg.soundboard };
+  });
+
+  ipcMain.handle('soundboard-pick-file', async () => {
+    const { dialog } = require('electron');
+    const res = await dialog.showOpenDialog(mainWindow, {
+      title: 'Sound-Datei (.mp3, .wav, .ogg) auswählen',
+      properties: ['openFile'],
+      filters: [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a'] }]
+    });
+    if (res.canceled || !res.filePaths?.length) return { ok: false, canceled: true };
+    const fp = res.filePaths[0];
+    return { ok: true, filePath: fp, name: path.basename(fp, path.extname(fp)) };
+  });
+
+  ipcMain.handle('soundboard-play', (_ev, soundId) => {
+    return playSoundboardById(soundId);
+  });
+
+  ipcMain.handle('hype-get', () => {
+    const cfg = loadConfig();
+    return { ok: true, hypeDetector: cfg.hypeDetector || DEFAULT_CONFIG.hypeDetector };
+  });
+
+  ipcMain.handle('hype-save', (_ev, nextHd) => {
+    const cfg = loadConfig();
+    cfg.hypeDetector = { ...(DEFAULT_CONFIG.hypeDetector || {}), ...(nextHd || {}) };
+    saveConfig(cfg);
+    return { ok: true, hypeDetector: cfg.hypeDetector };
   });
 });
 
