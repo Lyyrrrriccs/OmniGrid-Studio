@@ -114,12 +114,12 @@ Under **"⌨️ Peripherie-Auswahl (Zweitgeräte)"**, you can bind a dedicated s
 
 ---
 
-## 9. Spotify Live & `!song` Chat Bot
+## 9. Spotify, Apple Music & Amazon Music Live + `!song` Chat Bot
 
-Under **"🎵 Spotify Live & !song Bot"**, OmniGrid Studio reads the current track directly from your local Spotify desktop app (zero API key setup!):
+Under **"🎵 Spotify / Apple / Amazon Music & !song"**, OmniGrid Studio reads the current track directly from your local **Spotify**, **Apple Music**, or **Amazon Music** desktop app (zero API key setup, with automatic 300×300 album artwork lookup!):
 - **Live Controls:** **⏮ / ⏯ / ⏭** and **📢 Announce current track in Twitch chat**.
-- **Automatic `!song` / `!music` Bot:** When a viewer types `!song` or `!music` in Twitch chat, the app automatically replies with the current artist & track *(with a 15s anti-spam cooldown)*.
-- **OBS Spotify Widget:** Add `http://127.0.0.1:4588/spotify` as an OBS Browser Source (e.g., `420 × 80`) to display a transparent Now-Playing card with album art on stream.
+- **Automatic `!song` / `!music` Bot:** When a viewer types `!song` or `!music` in Twitch or YouTube chat, the app automatically replies with the current artist & track *(with a 15s anti-spam cooldown)*.
+- **OBS Music Widget:** Add `http://127.0.0.1:4588/spotify` as an OBS Browser Source (e.g., `420 × 80`) to display a transparent Now-Playing card with album art and a dynamic player badge (`SPOTIFY`, `APPLE MUSIC`, or `AMAZON MUSIC`) on stream.
 
 ---
 
@@ -157,14 +157,14 @@ Some Wi-Fi networks (guest Wi-Fi, dorms, hotels, or routers with "AP/Client Isol
 
 ## 11. Central Config Page (`⚙️ Config`)
 
-All setup options you don't need to touch mid-stream live cleanly inside **⚙️ Config** (top bar or bottom-left button):
+All setup options you don't need to touch mid-stream live cleanly inside the full-size **⚙️ Config** modal (`96vw × 92vh`):
 - **📡 Plattformen:** Twitch, YouTube (+ OAuth2 login) & TikTok settings.
-- **👤 Profil & Events:** Streamer name, keyword alerts & event highlight styles.
+- **👤 Profil & Events:** Streamer name, multi-line keyword alerts & event highlight styles.
 - **🎨 Design & Emotes:** Fonts, dividers, opacity & emote providers.
-- **🎥 OBS & Alerts:** OBS URLs, OBS WebSocket v5 & Alert-Box (`/alerts` incl. custom GIF/audio URLs).
-- **🤖 Bot & Auto-Mod:** Chat-Timer & Auto-Mod rules.
+- **🎥 OBS, Licht & Alerts:** OBS URLs, OBS WebSocket v5, **💡 Elgato Key Light**, **🌈 Govee Smart-Light & Event Scenes**, Alert-Box (`/alerts`) & TTS.
+- **🤖 Bot & Auto-Mod:** Chat-Timer, Auto-Mod rules (with multi-line word blacklist) & Custom Commands.
 - **📱 Tablet & Stream Deck:** QR code (Wi-Fi/Tailscale) & all Stream Deck endpoints.
-- **⌨️ Peripherie & System:** 2nd mouse, 2nd keyboard, global hotkeys, RAM limits & JSON backup.
+- **⌨️ Peripherie & System:** 2nd mouse, 2nd keyboard, global hotkeys, RAM limits, JSON backup & **GitHub Auto-Updater**.
 
 ---
 
@@ -240,12 +240,24 @@ Notify your community automatically when you go live and share your stream sched
 ## 19. OBS Scene & Source Editor (`🎛️ Szenen-Editor`)
 
 - **Connect Directly:** The editor header includes a live status badge and **🔌 Mit OBS verbinden** button so you can connect or reconnect OBS WebSocket v5 directly inside the editor.
-- **Smooth Live Preview (VirtualCam):** With **🎥 Live-Vorschau (VirtualCam)** enabled, the editor starts the OBS Virtual Camera (30 FPS) for smooth preview and stops it automatically when you close the editor (if started by the editor).
-- **Canvas Drag & Resize:** Drag any source on the 16:9 preview to move it or drag corners to resize. Use **🎯 Zentrieren** / **⛶ Vollbild** for instant alignment.
-- **Add & Configure Sources:** Create new sources (Browser, Image, Media, Text, Screen/Window Capture, Camera, Audio) and dynamically pick **Capture Mode**, **Display**, **Window**, **Application**, **Device**, or **Browser URL** under **🎯 Quelle konfigurieren**.
+- **Crisp 1080p HD Snapshot Preview:** Loads a sharp `1920 × 1080` snapshot of your scene (no continuous live preview / VirtualCam overhead) and refreshes automatically whenever you change scenes/sources or click **🔄 Vorschau aktualisieren**. Audio-only sources are excluded from the 16:9 canvas overlay while remaining controllable in the right-hand source list and audio mixer.
+- **Canvas Drag & Resize:** Drag any video source on the 16:9 preview to move it or drag corners to resize. Use **🎯 Zentrieren** / **⛶ Vollbild** for instant alignment.
+- **Add & Configure Sources:** Create new sources (Browser, Image, Media, Text, Screen/Window Capture, Camera, Audio) and dynamically pick **Capture Mode**, **Display**, **Window**, **Application**, **Device**, or **Browser URL** under **🎯 Quelle konfigurieren** (enumerated locally on macOS for 100% crash-free OBS operation).
 
 ## 20. Automatic Updates (GitHub Releases)
 
-- OmniGrid Studio checks `github.com/Lyyrrrriccs/omni-stream-chat/releases` on startup (and manually via **⚙️ Config → App-Updates → 🔄 Nach Updates suchen**).
+- OmniGrid Studio checks `github.com/Lyyrrrriccs/omni-stream-chat/releases` on startup (and manually via **⚙️ Config → ⌨️ Peripherie & System → 🔄 Nach Updates suchen**).
 - When a newer version is available, the matching macOS/Windows asset is downloaded automatically and a top banner offers **🚀 Jetzt installieren & neu starten**.
 - Releases are built automatically via GitHub Actions (`.github/workflows/release.yml`) whenever a `v*` tag (e.g. `v1.2.0`) is pushed.
+
+## 21. Smart Lighting: Elgato Key Light & Govee Event Scenes (`⚙️ Config → 🎥 OBS, Licht & Alerts`)
+
+### 💡 Elgato Key Light & Stream Lighting
+- **LAN Auto-Discovery (`Port 9123`):** Click **🔍 Suchen** to automatically discover Elgato Key Light / Key Light Air / Ring Light / Light Strip devices on your Wi-Fi (or enter multiple IPs comma-separated).
+- **Live Controls & OBS Auto-Sync:** Adjust brightness (`3–100%`) and color temperature (`2900K–7000K`) live. With **🟢 Automatisch einschalten wenn Stream LIVE geht (OBS)** enabled, your studio lights turn on automatically when your OBS stream starts (and optionally turn off when the stream ends).
+
+### 🌈 Govee Smart-Light & Event Scenes
+- **Personal Govee API Key:** For licensing and rate-limit reasons, each streamer requests their own free Govee API key (*Govee Home App → Profile → Settings ⚙️ → Apply for API Key* or via **🌐 Govee API-Key beantragen / Developer-Portal öffnen**). The entire integration can be toggled on/off at any time.
+- **Single or Multi-Lamp Selection:** After clicking **🔄 Geräte & Szenen laden**, check **a single lamp** (**Nur 1 Lampe**) or multiple lamps (**Alle**) in the lamp checklist.
+- **Event Coupling & Per-Event Single-Lamp Override:** Assign any dynamic Govee scene, DIY scene, or RGB color preset to **🏠 Default Scene**, **🟢 Stream Start**, **💙 Follow**, **💜 Sub**, **🔮 Resub**, **🎁 Sub-Gift**, **🪙 Bits/Gift**, **🚀 Raid**, **🔥 Chat-Hype**, and **⏹️ Stream Stop** — either across your checked lamps (`🎯 Gewählte Lampe(n)`) or targeted to **a specific single lamp (`💡 Nur: <Lamp>`)** per event! Automatically reverts to your default scene after X seconds.
+
