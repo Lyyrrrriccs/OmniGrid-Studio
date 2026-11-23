@@ -339,9 +339,9 @@ class ObsWsClient extends EventEmitter {
     const res = await this.call('GetSourceScreenshot', {
       sourceName: target,
       imageFormat: 'jpg',
-      imageWidth: 640,
-      imageHeight: 360,
-      imageCompressionQuality: 70
+      imageWidth: 1920,
+      imageHeight: 1080,
+      imageCompressionQuality: 96
     });
     return { ok: true, imageData: res.imageData || '' };
   }

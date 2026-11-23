@@ -4718,6 +4718,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
           if (prop === 'type') {
             await new Promise((r) => setTimeout(r, 300));
             await loadInputConfig(item);
+          } else {
+            await new Promise((r) => setTimeout(r, 250));
           }
           refreshPreview();
         } else {
@@ -5162,16 +5164,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   function startPreviewLoop() {
     clearInterval(previewTimer);
-    if (!chkAutoPreview?.checked || modal.classList.contains('hidden')) {
-      stopVirtualCamPreview();
-      return;
-    }
-    startVirtualCamPreview().then((ok) => {
-      if (!ok && chkAutoPreview?.checked && !modal.classList.contains('hidden')) {
-        // Fallback to 350ms screenshots if Virtual Camera is not available
-        previewTimer = setInterval(refreshPreview, 350);
-      }
-    });
+    stopVirtualCamPreview();
+    refreshPreview();
   }
 
   btnOpen?.addEventListener('click', async () => {
