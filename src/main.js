@@ -3387,7 +3387,7 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('soundboard-get', () => {
     const cfg = loadConfig();
-    return { ok: true, soundboard: cfg.soundboard || DEFAULT_CONFIG.soundboard };
+    return { ok: true, soundboard: cfg.soundboard || getDefaultConfig().soundboard };
   });
 
   ipcMain.handle('soundboard-save', (_ev, nextSb) => {
@@ -3420,14 +3420,47 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('hype-get', () => {
     const cfg = loadConfig();
-    return { ok: true, hypeDetector: cfg.hypeDetector || DEFAULT_CONFIG.hypeDetector };
+    return { ok: true, hypeDetector: { ...getDefaultConfig().hypeDetector, ...(cfg.hypeDetector || {}) } };
   });
 
   ipcMain.handle('hype-save', (_ev, nextHd) => {
     const cfg = loadConfig();
-    cfg.hypeDetector = { ...(DEFAULT_CONFIG.hypeDetector || {}), ...(nextHd || {}) };
+    cfg.hypeDetector = { ...getDefaultConfig().hypeDetector, ...(cfg.hypeDetector || {}), ...(nextHd || {}) };
     saveConfig(cfg);
     return { ok: true, hypeDetector: cfg.hypeDetector };
+  });
+
+  ipcMain.handle('hype-trigger-now', async (_ev, nextHd) => {
+    const cfg = loadConfig();
+    if (nextHd && typeof nextHd === 'object') {
+      cfg.hypeDetector = { ...getDefaultConfig().hypeDetector, ...(cfg.hypeDetector || {}), ...nextHd };
+      saveConfig(cfg);
+    }
+    const hd = cfg.hypeDetector || getDefaultConfig().hypeDetector;
+    const now = Date.now();
+    lastHypeTriggerAt = now;
+    const desc = '🔥 Manuell ausgelöster Chat-Hype!';
+    appendDiagLog('system', 'info', `${desc}`);
+    broadcastToWindows('hype-triggered', { score: 100, desc, at: now });
+
+    const actions = [];
+    if (hd.autoMarker && twitch.connected) {
+      twitch.createMarker(desc).catch(() => {});
+      actions.push('Twitch-Marker');
+    }
+    if (hd.autoObsReplay && obsWs.getState()?.connected) {
+      obsWs.saveReplayBuffer().catch(() => {});
+      actions.push('OBS-Replay');
+    }
+    if (hd.autoClip && twitch.connected) {
+      twitch.createClip().catch(() => {});
+      actions.push('Twitch-Clip');
+    }
+    if (cfg.goveeLights?.enabled && cfg.goveeLights?.eventScenes?.hype) {
+      goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'hype').catch(() => {});
+      actions.push('Govee-Lichtszene');
+    }
+    return { ok: true, desc, actions };
   });
 
   ipcMain.handle('game-addons-get', () => {
