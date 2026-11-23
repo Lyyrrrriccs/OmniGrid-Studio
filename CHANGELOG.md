@@ -47,6 +47,8 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
 - **GitHub Releases Auto-Updater, Feedback-Dialog (`💬 Feedback`) & CI-Workflow:**
   - Automatische Update-Prüfung beim Start + manueller Button (**🔄 Nach Updates suchen**), automatischer Download des Plattform-Releases, Update-Banner mit 1-Klick-Installation & Neustart sowie `.github/workflows/release.yml` für automatische macOS/Windows-Releases bei `v*`-Tags.
   - Integrierter **💬 Feedback**-Button in der Topbar zum Anlegen von **GitHub Discussions** (direkt per GitHub GraphQL API `createDiscussion` oder als vorausgefülltes Browser-Formular) und GitHub Issues inkl. automatischer Versions- & System-Info.
+- **Datenschutz- & Zero-Telemetry-Nachweis (`🔒 Datenschutz` & `PRIVACY.md`):**
+  - Interaktiver **🔒 Datenschutz**-Dialog in der Topbar mit Live-Quellcode-Domain-Scanner (`scripts/audit_privacy.js`), Direktzugriff auf die lokale `config.json` und den unverschlüsselten `src/`-Ordner, 10-Sekunden-OS-Netzwerk-Selbsttest sowie automatischem CI-Domain-Audit + SHA-256 Checksummen bei jedem GitHub-Release.
 - **Apple Music & Amazon Music Support (macOS & Windows):**
   - Die lokale Musik-Bridge unterstützt neben **Spotify** jetzt auch **Amazon Music** (über macOS `MediaRemote` & Windows) und **Apple Music** (`Music.app` / `iTunes`) ohne API-Key — inklusive Play/Pause/Skip-Steuerung, `!song`-Chat-Bot, automatischem Album-Cover-Lookup und dynamischem `AMAZON MUSIC` (`#00a8e1`) / `APPLE MUSIC` (`#fb7185`) / `SPOTIFY` (`#1ed760`) Badge im OBS-Widget (`/spotify`).
 - **Elgato Key Light & Stream-Licht (`💡 Elgato Key Light`):**

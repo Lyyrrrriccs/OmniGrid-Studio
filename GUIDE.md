@@ -274,5 +274,15 @@ OBS only handles **rendering & encoding once (`1×`)**, while OmniGrid Studio di
 - **Category, Title & Description:** Automatically appends your OmniGrid Studio version (`v1.1.0`) and OS/architecture.
 - **Direct GraphQL API or Pre-Filled Browser Flow:** With an optional personal GitHub token, OmniGrid Studio creates the GitHub Discussion directly via the GitHub GraphQL API (`createDiscussion`); without a token, it opens the pre-filled **GitHub Discussion** or **GitHub Issue** page in your browser.
 
+## 24. Privacy, Security & Zero-Telemetry Proof (`🔒 Datenschutz`)
+
+- **100% Local-First / No OmniGrid Server:** All credentials, OAuth tokens, stream keys, and API keys are stored exclusively in your local `config.json` on your disk and are never transmitted to any developer server.
+- **Built-In Live Source Scanner (`🔒 Datenschutz`):** Click **🔒 Datenschutz** in the top cockpit bar to:
+  1. Reveal your local `config.json` directly in Finder / Explorer.
+  2. Open the unobfuscated plaintext source code (`src/`) of the running app.
+  3. Run a **Live Source Code Domain Audit** listing every outbound endpoint in the codebase with file name and line number.
+  4. Copy the OS socket inspection command (`lsof` / `Get-NetTCPConnection`) to verify active connections directly in your terminal.
+
+
 
 

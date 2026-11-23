@@ -22,13 +22,20 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Zero-Telemetry & Outbound Domain Audit
+        run: node scripts/audit_privacy.js
       - run: npm run build:win
-      - name: Package Windows ZIP
+      - name: Package Windows ZIP & SHA-256 Checksum
         shell: pwsh
-        run: Compress-Archive -Path dist/OmniGridStudio-win32-x64/* -DestinationPath OmniGridStudio-Windows.zip
+        run: |
+          Compress-Archive -Path dist/OmniGridStudio-win32-x64/* -DestinationPath OmniGridStudio-Windows.zip
+          $hash = (Get-FileHash OmniGridStudio-Windows.zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  OmniGridStudio-Windows.zip" | Out-File -Encoding utf8 OmniGridStudio-Windows.zip.sha256
       - uses: softprops/action-gh-release@v2
         with:
-          files: OmniGridStudio-Windows.zip
+          files: |
+            OmniGridStudio-Windows.zip
+            OmniGridStudio-Windows.zip.sha256
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
           name: OmniGrid Studio (${{ github.ref_name }})
 
@@ -40,11 +47,17 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
+      - name: Zero-Telemetry & Outbound Domain Audit
+        run: node scripts/audit_privacy.js
       - run: npm run build:mac
-      - name: Package macOS ZIP
-        run: ditto -c -k --sequesterRsrc --keepParent dist/OmniGridStudio.app OmniGridStudio-macOS.zip
+      - name: Package macOS ZIP & SHA-256 Checksum
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent dist/OmniGridStudio.app OmniGridStudio-macOS.zip
+          shasum -a 256 OmniGridStudio-macOS.zip > OmniGridStudio-macOS.zip.sha256
       - uses: softprops/action-gh-release@v2
         with:
-          files: OmniGridStudio-macOS.zip
+          files: |
+            OmniGridStudio-macOS.zip
+            OmniGridStudio-macOS.zip.sha256
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
           name: OmniGrid Studio (${{ github.ref_name }})

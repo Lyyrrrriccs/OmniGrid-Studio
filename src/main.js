@@ -3700,6 +3700,58 @@ app.whenReady().then(async () => {
     return { ok: true, mode: 'browser', url };
   });
 
+  ipcMain.handle('privacy-audit-run', async () => {
+    const { runPrivacyAudit } = require('./privacy_audit');
+    const audit = runPrivacyAudit(__dirname);
+    const groupedMap = new Map();
+    for (const item of audit.findings) {
+      const existing = groupedMap.get(item.host) || {
+        host: item.host,
+        purpose: item.purpose,
+        allowed: item.allowed,
+        count: 0,
+        examples: []
+      };
+      existing.count++;
+      if (existing.examples.length < 3) {
+        existing.examples.push(`${item.file}:${item.line}`);
+      }
+      groupedMap.set(item.host, existing);
+    }
+    const osNetCmd =
+      process.platform === 'win32'
+        ? 'Get-NetTCPConnection -OwningProcess (Get-Process OmniGridStudio -ErrorAction SilentlyContinue).Id'
+        : 'lsof -i -n -P | grep -iE "Electron|OmniGrid"';
+    return {
+      ok: audit.ok,
+      configPath: getConfigPath(),
+      srcPath: __dirname,
+      scannedFiles: audit.scannedFiles,
+      totalEndpoints: audit.totalEndpoints,
+      unknownEndpoints: audit.unknownEndpoints,
+      domains: Array.from(groupedMap.values()),
+      osNetCmd
+    };
+  });
+
+  ipcMain.handle('privacy-open-path', async (_ev, target) => {
+    const { shell } = require('electron');
+    if (target === 'config') {
+      const cfgPath = getConfigPath();
+      if (fs.existsSync(cfgPath)) {
+        shell.showItemInFolder(cfgPath);
+      } else {
+        await shell.openPath(path.dirname(cfgPath));
+      }
+      return { ok: true };
+    }
+    if (target === 'src') {
+      await shell.openPath(__dirname);
+      return { ok: true };
+    }
+    return { ok: false };
+  });
+
   setTimeout(() => {
     if (!demoActive) {
       autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});

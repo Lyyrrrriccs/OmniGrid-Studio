@@ -107,5 +107,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   multiStreamStart: (payload) => ipcRenderer.invoke('multistream-start', payload),
   multiStreamStop: () => ipcRenderer.invoke('multistream-stop'),
   multiStreamConfigureObs: (payload) => ipcRenderer.invoke('multistream-configure-obs', payload),
-  submitGithubFeedback: (payload) => ipcRenderer.invoke('submit-github-feedback', payload)
+  submitGithubFeedback: (payload) => ipcRenderer.invoke('submit-github-feedback', payload),
+  privacyAuditRun: () => ipcRenderer.invoke('privacy-audit-run'),
+  privacyOpenPath: (target) => ipcRenderer.invoke('privacy-open-path', target)
 });

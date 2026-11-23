@@ -6228,6 +6228,98 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnIssue?.addEventListener('click', () => submitFeedback('issue'));
 })();
 
+// ======================================================
+// PRIVACY & ZERO-TELEMETRY PROOF MODAL UI
+// ======================================================
+(function initPrivacyAuditModalUI() {
+  const modal = document.getElementById('privacyAuditModal');
+  const btnOpen = document.getElementById('btnOpenPrivacyAudit');
+  const btnClose = document.getElementById('btnClosePrivacyAudit');
+  const banner = document.getElementById('privacyAuditBanner');
+  const inpConfigPath = document.getElementById('inputPrivacyConfigPath');
+  const inpSrcPath = document.getElementById('inputPrivacySrcPath');
+  const inpOsCmd = document.getElementById('inputPrivacyOsCmd');
+  const btnRevealConfig = document.getElementById('btnPrivacyRevealConfig');
+  const btnOpenSrc = document.getElementById('btnPrivacyOpenSrc');
+  const btnCopyOsCmd = document.getElementById('btnPrivacyCopyOsCmd');
+  const btnRescan = document.getElementById('btnPrivacyRescan');
+  const domainsList = document.getElementById('privacyDomainsList');
+
+  if (!modal) return;
+
+  async function runAudit() {
+    if (banner) {
+      banner.style.color = '#38bdf8';
+      banner.textContent = '⏳ Scanne laufenden App-Quellcode (src/) auf Netzwerk-Domains...';
+    }
+    const res = await window.omnichat.privacyAuditRun?.();
+    if (!res) return;
+    if (inpConfigPath) inpConfigPath.value = res.configPath || '';
+    if (inpSrcPath) inpSrcPath.value = res.srcPath || '';
+    if (inpOsCmd) inpOsCmd.value = res.osNetCmd || '';
+
+    if (banner) {
+      if (res.ok) {
+        banner.style.color = '#4ade80';
+        banner.style.borderColor = 'rgba(16,185,129,0.45)';
+        banner.textContent = `✅ ZERO-TELEMETRY AUDIT BESTANDEN: ${res.scannedFiles} Quellcode-Dateien (${res.totalEndpoints} Endpunkte) live geprüft — 0 fremde Server, 0 Tracker, 100 % direkte offizielle APIs.`;
+      } else {
+        banner.style.color = '#f87171';
+        banner.textContent = `⚠️ Unbekannte Domains gefunden (${res.unknownEndpoints?.length || 0})`;
+      }
+    }
+
+    if (domainsList) {
+      domainsList.innerHTML = '';
+      (res.domains || []).forEach((d) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: grid; grid-template-columns: 210px 1fr auto; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 6px; background: rgba(15,23,42,0.75); border: 1px solid rgba(148,163,184,0.14);';
+        const hostSpan = document.createElement('strong');
+        hostSpan.style.color = d.allowed ? '#4ade80' : '#f87171';
+        hostSpan.textContent = `${d.allowed ? '✅' : '❌'} ${d.host}`;
+        const purposeSpan = document.createElement('span');
+        purposeSpan.style.color = '#cbd5e1';
+        purposeSpan.textContent = d.purpose;
+        const countSpan = document.createElement('span');
+        countSpan.style.cssText = 'color: #64748b; font-size: 10px; white-space: nowrap;';
+        countSpan.textContent = `${d.count}× (${(d.examples || [])[0] || ''})`;
+        row.appendChild(hostSpan);
+        row.appendChild(purposeSpan);
+        row.appendChild(countSpan);
+        domainsList.appendChild(row);
+      });
+    }
+  }
+
+  btnOpen?.addEventListener('click', () => {
+    modal.classList.remove('hidden');
+    runAudit();
+  });
+
+  function closeModal() {
+    modal.classList.add('hidden');
+  }
+
+  btnClose?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  btnRescan?.addEventListener('click', runAudit);
+  btnRevealConfig?.addEventListener('click', () => window.omnichat.privacyOpenPath?.('config'));
+  btnOpenSrc?.addEventListener('click', () => window.omnichat.privacyOpenPath?.('src'));
+
+  btnCopyOsCmd?.addEventListener('click', () => {
+    if (!inpOsCmd?.value) return;
+    navigator.clipboard.writeText(inpOsCmd.value);
+    btnCopyOsCmd.textContent = '✅ Kopiert!';
+    setTimeout(() => {
+      btnCopyOsCmd.textContent = '📋 Befehl kopieren';
+    }, 1500);
+  });
+})();
+
+
 
 
 

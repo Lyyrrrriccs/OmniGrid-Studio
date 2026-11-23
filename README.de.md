@@ -6,12 +6,13 @@
 *Für Windows & macOS — mit animierten 7TV/BTTV/FFZ-Emotes, OBS Custom Browser Dock, Event-Hervorhebung, Schnellmoderation & Elgato Stream Deck Integration.*
 
 [![Plattform](https://img.shields.io/badge/Plattform-Windows%20%7C%20macOS-blue?style=flat-square)](#installation--schnellstart)
+[![Datenschutz](https://img.shields.io/badge/Datenschutz-100%25%20Lokal%20%7C%20Zero%20Telemetry-10b981?style=flat-square)](./PRIVACY.md)
 [![Electron](https://img.shields.io/badge/Electron-33.x-47848F?style=flat-square&logo=electron)](#standalone-apps-bauen)
 [![OBS](https://img.shields.io/badge/OBS-Custom%20Dock%20%26%20Overlay-302E31?style=flat-square&logo=obsstudio)](#obs-integration)
 [![Stream Deck](https://img.shields.io/badge/Elgato-Stream%20Deck%20API-000000?style=flat-square)](#stream-deck-integration)
 
 🌐 **Sprache:** **Deutsch** | [English (README.md)](./README.md)  
-📖 **Schritt-für-Schritt-Anleitungen:** [Deutsche Anleitung (ANLEITUNG.md)](./ANLEITUNG.md) | [English Guide (GUIDE.md)](./GUIDE.md)
+📖 **Schritt-für-Schritt-Anleitungen:** [Deutsche Anleitung (ANLEITUNG.md)](./ANLEITUNG.md) | [English Guide (GUIDE.md)](./GUIDE.md) | [🔒 Datenschutz- & Zero-Telemetry-Nachweis (PRIVACY.md)](./PRIVACY.md)
 
 </div>
 

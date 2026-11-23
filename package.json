@@ -7,7 +7,8 @@
     "start": "electron .",
     "demo": "DEMO_MODE=true electron .",
     "build:mac": "node scripts/build_mac.js",
-    "build:win": "node scripts/build_win.js"
+    "build:win": "node scripts/build_win.js",
+    "audit:privacy": "node scripts/audit_privacy.js"
   },
   "dependencies": {
     "qrcode": "^1.5.4",

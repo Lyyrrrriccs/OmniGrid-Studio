@@ -274,5 +274,15 @@ OBS übernimmt nur noch das **einmalige Rendern & Enkodieren (`1×`)**, während
 - **Kategorie, Titel & Beschreibung:** App-Version (`v1.1.0`) und Betriebssystem (`macOS` / `Windows`) werden automatisch angehängt.
 - **Direkt-API oder Browser:** Mit optionalem persönlichem GitHub-Token legt OmniGrid Studio die Diskussion sofort per GitHub GraphQL API (`createDiscussion`) an; ohne Token öffnet sich das fertig vorausgefüllte **GitHub Discussion**- bzw. **GitHub Issue**-Formular im Browser.
 
+## 24. Datenschutz-, Sicherheits- & Zero-Telemetry-Nachweis (`🔒 Datenschutz`)
+
+- **100 % Local-First / Kein OmniGrid-Server:** Alle Zugangsdaten, Tokens, Stream-Keys und API-Keys werden ausschließlich lokal in deiner `config.json` auf deiner Festplatte gespeichert und verlassen deinen Computer niemals in Richtung eines Entwickler-Servers.
+- **Live Quellcode-Scanner in der App (`🔒 Datenschutz`):** Klicke oben in der Cockpit-Leiste auf **🔒 Datenschutz**, um:
+  1. Deine lokale `config.json` direkt im Finder/Explorer zu öffnen.
+  2. Den unverschlüsselten Klartext-Quellcode (`src/`) der laufenden App direkt einzusehen.
+  3. Einen **Live-Quellcode-Scan** über alle Dateien auszuführen, der jede im Code existierende Ziel-Domain samt Datei & Zeilennummer auflistet.
+  4. Den System-Befehl (`lsof` / `Get-NetTCPConnection`) zu kopieren, um direkt im Betriebssystem alle offenen Netzwerkverbindungen zu kontrollieren.
+
+
 
 
