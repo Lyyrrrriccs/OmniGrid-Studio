@@ -1892,8 +1892,10 @@ body.hide-platicons .msg-plat-dot {
   display: none;
 }
 .config-modal-shell {
-  width: min(1020px, 96vw);
-  height: min(860px, 90vh);
+  width: 96vw;
+  max-width: 1600px;
+  height: 92vh;
+  max-height: 92vh;
   background: #0f172a;
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 16px;
@@ -1951,7 +1953,7 @@ body.hide-platicons .msg-plat-dot {
 }
 .config-tab-panel {
   display: none;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 14px;
   align-items: start;
 }
