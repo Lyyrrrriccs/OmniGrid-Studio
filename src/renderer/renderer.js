@@ -530,9 +530,16 @@ let goveeCachedScenes = [];
 function getGoveeLightsSettings() {
   const selDev = document.getElementById('selGoveeDevice');
   const [sku, device] = String(selDev?.value || '').split('||');
+  const checkedBoxes = Array.from(document.querySelectorAll('.govee-dev-chk:checked'));
+  const selectedDevices = checkedBoxes.map((cb) => cb.value).filter(Boolean);
+  if (!selectedDevices.length && sku && device) {
+    selectedDevices.push(`${sku}||${device}`);
+  }
   const eventScenes = {};
+  const eventDevices = {};
   GOVEE_EVENT_KEYS.forEach((k) => {
     eventScenes[k] = document.getElementById(`selGovee_${k}`)?.value || '';
+    eventDevices[k] = document.getElementById(`selGoveeDev_${k}`)?.value || '';
   });
   return {
     enabled: Boolean(document.getElementById('chkGoveeEnabled')?.checked),
@@ -540,10 +547,12 @@ function getGoveeLightsSettings() {
     sku: sku || '',
     device: device || '',
     deviceName: selDev?.selectedOptions?.[0]?.textContent || '',
+    selectedDevices,
     revertAfterSec: Math.max(0, parseInt(document.getElementById('numGoveeRevertSec')?.value || '8', 10) || 0),
     cachedDevices: goveeCachedDevices,
     cachedScenes: goveeCachedScenes,
-    eventScenes
+    eventScenes,
+    eventDevices
   };
 }
 
@@ -5680,6 +5689,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     { id: 'power:off', name: '🌑 Gerät Ausschalten' }
   ];
 
+  const checklistEl = document.getElementById('goveeDevicesChecklist');
+  const btnOnlyFirst = document.getElementById('btnGoveeSelectOnlyFirst');
+  const btnSelectAll = document.getElementById('btnGoveeSelectAll');
+
   function setStatus(msg, color = '#94a3b8') {
     if (!statusEl) return;
     statusEl.style.color = color;
@@ -5688,6 +5701,54 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   function saveGoveeConfig() {
     window.omnichat.saveProfile(getFormConfig());
+  }
+
+  function renderDevicesChecklist(selectedDevices = []) {
+    if (!checklistEl) return;
+    if (!goveeCachedDevices.length) {
+      checklistEl.textContent = 'Zuerst API-Key eingeben & auf „🔄 Geräte & Szenen laden“ klicken.';
+      return;
+    }
+    const selSet = new Set(Array.isArray(selectedDevices) && selectedDevices.length ? selectedDevices : [`${goveeCachedDevices[0].sku}||${goveeCachedDevices[0].device}`]);
+    checklistEl.innerHTML = '';
+    goveeCachedDevices.forEach((d) => {
+      const key = `${d.sku}||${d.device}`;
+      const row = document.createElement('label');
+      row.className = 'checkbox-row';
+      row.style.marginTop = '2px';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'govee-dev-chk';
+      cb.value = key;
+      cb.checked = selSet.has(key);
+      cb.addEventListener('change', saveGoveeConfig);
+      const sp = document.createElement('span');
+      sp.textContent = `💡 ${d.deviceName} (${d.sku})`;
+      row.appendChild(cb);
+      row.appendChild(sp);
+      checklistEl.appendChild(row);
+    });
+  }
+
+  function renderEventDeviceDropdowns(eventDevices = {}) {
+    GOVEE_EVENT_KEYS.forEach((evKey) => {
+      const sel = document.getElementById(`selGoveeDev_${evKey}`);
+      if (!sel) return;
+      const curVal = eventDevices[evKey] !== undefined ? eventDevices[evKey] : sel.value;
+      sel.innerHTML = '';
+      const defOpt = document.createElement('option');
+      defOpt.value = '';
+      defOpt.textContent = '🎯 Gewählte Lampe(n)';
+      sel.appendChild(defOpt);
+      goveeCachedDevices.forEach((d) => {
+        const key = `${d.sku}||${d.device}`;
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = `💡 Nur: ${d.deviceName}`;
+        if (key === curVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    });
   }
 
   function renderDeviceDropdown(selectedSku, selectedDevice) {
@@ -5732,10 +5793,34 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   window.__populateGoveeUI = (gov = {}) => {
     renderDeviceDropdown(gov.sku, gov.device);
+    renderDevicesChecklist(gov.selectedDevices || (gov.sku && gov.device ? [`${gov.sku}||${gov.device}`] : []));
+    renderEventDeviceDropdowns(gov.eventDevices || {});
     renderEventSceneDropdowns(gov.eventScenes || {});
   };
 
+  renderEventDeviceDropdowns({});
   renderEventSceneDropdowns({});
+
+  btnOnlyFirst?.addEventListener('click', () => {
+    const cbs = Array.from(document.querySelectorAll('.govee-dev-chk'));
+    const catalogVal = selDevice?.value || '';
+    let matched = false;
+    cbs.forEach((cb) => {
+      if (!matched && (cb.value === catalogVal || !catalogVal)) {
+        cb.checked = true;
+        matched = true;
+      } else {
+        cb.checked = false;
+      }
+    });
+    if (!matched && cbs[0]) cbs[0].checked = true;
+    saveGoveeConfig();
+  });
+
+  btnSelectAll?.addEventListener('click', () => {
+    document.querySelectorAll('.govee-dev-chk').forEach((cb) => { cb.checked = true; });
+    saveGoveeConfig();
+  });
 
   btnOpenUrl?.addEventListener('click', () => {
     window.omnichat.openExternalUrl?.('https://developer.govee.com/');
@@ -5747,6 +5832,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   GOVEE_EVENT_KEYS.forEach((evKey) => {
     document.getElementById(`selGovee_${evKey}`)?.addEventListener('change', saveGoveeConfig);
+    document.getElementById(`selGoveeDev_${evKey}`)?.addEventListener('change', saveGoveeConfig);
   });
 
   async function loadScenesForCurrentDevice() {
@@ -5795,6 +5881,12 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       }
       const first = goveeCachedDevices[0];
       renderDeviceDropdown(first.sku, first.device);
+      renderDevicesChecklist([`${first.sku}||${first.device}`]);
+      const curDevMap = {};
+      GOVEE_EVENT_KEYS.forEach((k) => {
+        curDevMap[k] = document.getElementById(`selGoveeDev_${k}`)?.value || '';
+      });
+      renderEventDeviceDropdowns(curDevMap);
       saveGoveeConfig();
       await loadScenesForCurrentDevice();
     } finally {
@@ -5806,20 +5898,23 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     btn.addEventListener('click', async () => {
       const evKey = btn.getAttribute('data-govee-test');
       const actionId = document.getElementById(`selGovee_${evKey}`)?.value || '';
-      const [sku, device] = String(selDevice?.value || '').split('||');
+      const perEventDev = document.getElementById(`selGoveeDev_${evKey}`)?.value || '';
+      const checkedDevs = Array.from(document.querySelectorAll('.govee-dev-chk:checked')).map((cb) => cb.value).filter(Boolean);
+      const fallbackDev = selDevice?.value || '';
+      const targets = perEventDev ? [perEventDev] : (checkedDevs.length ? checkedDevs : (fallbackDev ? [fallbackDev] : []));
       const apiKey = inpApiKey?.value.trim() || '';
-      if (!apiKey || !sku || !device) {
-        setStatus('⚠️ Bitte zuerst API-Key eingeben und ein Govee-Gerät auswählen.', '#fbbf24');
+      if (!apiKey || !targets.length) {
+        setStatus('⚠️ Bitte zuerst API-Key eingeben und mindestens eine Govee-Lampe auswählen.', '#fbbf24');
         return;
       }
       if (!actionId) {
         setStatus('⚠️ Bitte zuerst eine Szene oder Farbe für dieses Event auswählen.', '#fbbf24');
         return;
       }
-      setStatus(`⏳ Teste Govee-Szene für "${evKey}"...`, '#38bdf8');
-      const res = await window.omnichat.goveeApplyAction?.({ apiKey, sku, device, actionId });
+      setStatus(`⏳ Teste Govee-Szene für "${evKey}" (${targets.length} Lampe(n))...`, '#38bdf8');
+      const res = await window.omnichat.goveeApplyAction?.({ apiKey, targets, actionId });
       if (res?.ok) {
-        setStatus(`✅ Govee-Szene für "${evKey}" gesendet!`, '#4ade80');
+        setStatus(`✅ Govee-Szene für "${evKey}" an ${res.updatedCount || targets.length} Lampe(n) gesendet!`, '#4ade80');
       } else {
         setStatus(`❌ ${res?.error || 'Govee-Steuerung fehlgeschlagen.'}`, '#f87171');
       }

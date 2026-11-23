@@ -3562,9 +3562,10 @@ app.whenReady().then(async () => {
     try {
       const cfg = loadConfig();
       const apiKey = String(payload.apiKey ?? cfg.goveeLights?.apiKey ?? '').trim();
-      const sku = String(payload.sku ?? cfg.goveeLights?.sku ?? '').trim();
-      const device = String(payload.device ?? cfg.goveeLights?.device ?? '').trim();
-      return await goveeLights.applyGoveeAction(apiKey, { sku, device }, payload.actionId);
+      const targets =
+        payload.targets ||
+        (payload.sku && payload.device ? [{ sku: payload.sku, device: payload.device }] : cfg.goveeLights?.selectedDevices || [{ sku: cfg.goveeLights?.sku, device: cfg.goveeLights?.device }]);
+      return await goveeLights.applyGoveeAction(apiKey, targets, payload.actionId);
     } catch (err) {
       return { ok: false, error: err.message };
     }

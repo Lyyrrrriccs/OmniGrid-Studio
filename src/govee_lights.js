@@ -137,10 +137,38 @@ async function listGoveeScenes(apiKey, { sku, device }) {
   };
 }
 
-async function applyGoveeAction(apiKey, { sku, device }, actionId) {
+function parseDeviceSpec(spec) {
+  if (!spec) return null;
+  if (typeof spec === 'object' && spec.sku && spec.device) {
+    return { sku: String(spec.sku).trim(), device: String(spec.device).trim() };
+  }
+  const [sku, device] = String(spec).split('||').map((s) => s.trim());
+  if (sku && device) return { sku, device };
+  return null;
+}
+
+function resolveTargets(targetsInput) {
+  const rawList = Array.isArray(targetsInput) ? targetsInput : [targetsInput];
+  const out = [];
+  const seen = new Set();
+  for (const item of rawList) {
+    const parsed = parseDeviceSpec(item);
+    if (parsed) {
+      const key = `${parsed.sku}||${parsed.device}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(parsed);
+      }
+    }
+  }
+  return out;
+}
+
+async function applyGoveeAction(apiKey, targetsInput, actionId) {
   const act = String(actionId || '').trim();
   if (!act) return { ok: false, error: 'Keine Szene oder Aktion ausgewählt.' };
-  if (!sku || !device) return { ok: false, error: 'Bitte zuerst ein Govee-Gerät auswählen.' };
+  const targets = resolveTargets(targetsInput);
+  if (!targets.length) return { ok: false, error: 'Bitte zuerst mindestens eine Govee-Lampe auswählen.' };
 
   let capability = null;
   if (act.startsWith('scene:')) {
@@ -174,26 +202,52 @@ async function applyGoveeAction(apiKey, { sku, device }, actionId) {
     return { ok: false, error: `Unbekannte Govee-Aktion: ${act}` };
   }
 
-  await goveeRequest(apiKey, '/router/api/v1/device/control', 'POST', {
-    requestId: crypto.randomUUID(),
-    payload: {
-      sku,
-      device,
-      capability
-    }
-  });
+  const errors = [];
+  let successCount = 0;
+  await Promise.all(
+    targets.map(async ({ sku, device }) => {
+      try {
+        await goveeRequest(apiKey, '/router/api/v1/device/control', 'POST', {
+          requestId: crypto.randomUUID(),
+          payload: { sku, device, capability }
+        });
+        successCount++;
+      } catch (err) {
+        errors.push(`${sku}: ${err.message}`);
+      }
+    })
+  );
 
-  return { ok: true };
+  return {
+    ok: successCount > 0,
+    updatedCount: successCount,
+    error: successCount === 0 ? errors.join(' | ') : ''
+  };
 }
 
 let revertTimer = null;
 
+function getTargetsForEvent(goveeCfg, eventType) {
+  const perEventSpec = goveeCfg?.eventDevices?.[eventType];
+  if (perEventSpec) {
+    const single = resolveTargets(perEventSpec);
+    if (single.length) return single;
+  }
+  if (Array.isArray(goveeCfg?.selectedDevices) && goveeCfg.selectedDevices.length) {
+    const list = resolveTargets(goveeCfg.selectedDevices);
+    if (list.length) return list;
+  }
+  if (goveeCfg?.sku && goveeCfg?.device) {
+    return [{ sku: String(goveeCfg.sku).trim(), device: String(goveeCfg.device).trim() }];
+  }
+  return [];
+}
+
 async function triggerGoveeForEvent(goveeCfg, eventType) {
   if (!goveeCfg || !goveeCfg.enabled) return { ok: false, skipped: true };
   const apiKey = String(goveeCfg.apiKey || '').trim();
-  const sku = String(goveeCfg.sku || '').trim();
-  const device = String(goveeCfg.device || '').trim();
-  if (!apiKey || !sku || !device) return { ok: false, skipped: true };
+  const targets = getTargetsForEvent(goveeCfg, eventType);
+  if (!apiKey || !targets.length) return { ok: false, skipped: true };
 
   const map = goveeCfg.eventScenes || {};
   const actionId = String(map[eventType] || '').trim();
@@ -204,7 +258,7 @@ async function triggerGoveeForEvent(goveeCfg, eventType) {
     revertTimer = null;
   }
 
-  const res = await applyGoveeAction(apiKey, { sku, device }, actionId);
+  const res = await applyGoveeAction(apiKey, targets, actionId);
 
   const revertSec = Math.max(0, Number(goveeCfg.revertAfterSec ?? 8));
   const fallbackScene = String(map.defaultScene || map.streamStart || '').trim();
@@ -217,8 +271,10 @@ async function triggerGoveeForEvent(goveeCfg, eventType) {
     eventType !== 'defaultScene' &&
     fallbackScene !== actionId
   ) {
+    const fallbackTargets = getTargetsForEvent(goveeCfg, 'defaultScene');
+    const revertTargets = fallbackTargets.length ? fallbackTargets : targets;
     revertTimer = setTimeout(() => {
-      applyGoveeAction(apiKey, { sku, device }, fallbackScene).catch(() => {});
+      applyGoveeAction(apiKey, revertTargets, fallbackScene).catch(() => {});
     }, revertSec * 1000);
   }
 
