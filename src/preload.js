@@ -98,5 +98,8 @@ contextBridge.exposeInMainWorld('omnichat', {
   updaterInstall: () => ipcRenderer.invoke('updater-install'),
   elgatoLightsDiscover: () => ipcRenderer.invoke('elgato-lights-discover'),
   elgatoLightsSet: (payload) => ipcRenderer.invoke('elgato-lights-set', payload),
-  elgatoLightsToggle: (payload) => ipcRenderer.invoke('elgato-lights-toggle', payload)
+  elgatoLightsToggle: (payload) => ipcRenderer.invoke('elgato-lights-toggle', payload),
+  goveeListDevices: (payload) => ipcRenderer.invoke('govee-list-devices', payload),
+  goveeListScenes: (payload) => ipcRenderer.invoke('govee-list-scenes', payload),
+  goveeApplyAction: (payload) => ipcRenderer.invoke('govee-apply-action', payload)
 });

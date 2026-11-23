@@ -1,0 +1,234 @@
+const https = require('https');
+const crypto = require('crypto');
+
+const GOVEE_BASE_HOST = 'openapi.api.govee.com';
+
+const PRESET_COLOR_OPTIONS = [
+  { id: 'color:#9146ff', name: '🎨 Farbe: Twitch Lila (#9146ff)' },
+  { id: 'color:#38bdf8', name: '🎨 Farbe: Cyber Cyan (#38bdf8)' },
+  { id: 'color:#ef4444', name: '🎨 Farbe: Raid / Alarm Rot (#ef4444)' },
+  { id: 'color:#10b981', name: '🎨 Farbe: Emerald Grün (#10b981)' },
+  { id: 'color:#f59e0b', name: '🎨 Farbe: Gold / Bits Amber (#f59e0b)' },
+  { id: 'color:#ec4899', name: '🎨 Farbe: SubGift Neon Pink (#ec4899)' },
+  { id: 'color:#a855f7', name: '🎨 Farbe: Resub Violett (#a855f7)' },
+  { id: 'color:#ffffff', name: '🎨 Farbe: Studio Tageslicht Weiß (#ffffff)' },
+  { id: 'power:on', name: '💡 Gerät Einschalten' },
+  { id: 'power:off', name: '🌑 Gerät Ausschalten' }
+];
+
+function hexToGoveeRgbInt(hex) {
+  const clean = String(hex || '').replace(/^#/, '').trim();
+  const num = parseInt(clean, 16);
+  if (Number.isNaN(num)) return 0xffffff;
+  return num & 0xffffff;
+}
+
+function goveeRequest(apiKey, urlPath, method = 'GET', bodyObj = null, timeoutMs = 6000) {
+  return new Promise((resolve, reject) => {
+    const key = String(apiKey || '').trim();
+    if (!key) return reject(new Error('Kein Govee API-Key angegeben.'));
+    const payload = bodyObj ? Buffer.from(JSON.stringify(bodyObj), 'utf8') : null;
+    const headers = {
+      'Govee-API-Key': key,
+      Accept: 'application/json'
+    };
+    if (payload) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = payload.length;
+    }
+
+    const req = https.request(
+      {
+        host: GOVEE_BASE_HOST,
+        port: 443,
+        path: urlPath,
+        method,
+        timeout: timeoutMs,
+        headers
+      },
+      (res) => {
+        let raw = '';
+        res.on('data', (c) => { raw += c; });
+        res.on('end', () => {
+          let parsed = null;
+          try { parsed = JSON.parse(raw); } catch (e) {}
+          if (res.statusCode === 401 || res.statusCode === 403) {
+            return reject(new Error('Govee API-Key ungültig oder abgelehnt (401/403).'));
+          }
+          if (res.statusCode === 429) {
+            return reject(new Error('Govee API Rate-Limit erreicht (429).'));
+          }
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            return reject(new Error(parsed?.message || parsed?.msg || `Govee HTTP ${res.statusCode}`));
+          }
+          if (parsed && parsed.code && parsed.code !== 200) {
+            return reject(new Error(parsed.message || parsed.msg || `Govee Fehlercode ${parsed.code}`));
+          }
+          resolve(parsed || {});
+        });
+      }
+    );
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('Govee API Timeout')));
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
+async function listGoveeDevices(apiKey) {
+  const res = await goveeRequest(apiKey, '/router/api/v1/user/devices', 'GET');
+  const list = Array.isArray(res.data) ? res.data : [];
+  return list.map((d) => ({
+    sku: d.sku || '',
+    device: d.device || '',
+    deviceName: d.deviceName || `${d.sku || 'Govee'} (${d.device || ''})`,
+    type: d.type || ''
+  }));
+}
+
+async function listGoveeScenes(apiKey, { sku, device }) {
+  if (!sku || !device) {
+    return { ok: true, scenes: [...PRESET_COLOR_OPTIONS] };
+  }
+  const dynamicOptions = [];
+  const diyOptions = [];
+
+  try {
+    const dynRes = await goveeRequest(apiKey, '/router/api/v1/device/scenes', 'POST', {
+      requestId: crypto.randomUUID(),
+      payload: { sku, device }
+    });
+    const caps = dynRes?.payload?.capabilities || [];
+    for (const cap of caps) {
+      const opts = cap?.parameters?.options || [];
+      for (const opt of opts) {
+        if (opt && opt.name !== undefined && opt.value !== undefined) {
+          dynamicOptions.push({
+            id: `scene:${JSON.stringify(opt.value)}`,
+            name: `✨ Szene: ${opt.name}`
+          });
+        }
+      }
+    }
+  } catch (e) {}
+
+  try {
+    const diyRes = await goveeRequest(apiKey, '/router/api/v1/device/diy-scenes', 'POST', {
+      requestId: crypto.randomUUID(),
+      payload: { sku, device }
+    });
+    const caps = diyRes?.payload?.capabilities || [];
+    for (const cap of caps) {
+      const opts = cap?.parameters?.options || [];
+      for (const opt of opts) {
+        if (opt && opt.name !== undefined && opt.value !== undefined) {
+          diyOptions.push({
+            id: `diy:${JSON.stringify(opt.value)}`,
+            name: `🛠️ DIY-Szene: ${opt.name}`
+          });
+        }
+      }
+    }
+  } catch (e) {}
+
+  return {
+    ok: true,
+    scenes: [...dynamicOptions, ...diyOptions, ...PRESET_COLOR_OPTIONS]
+  };
+}
+
+async function applyGoveeAction(apiKey, { sku, device }, actionId) {
+  const act = String(actionId || '').trim();
+  if (!act) return { ok: false, error: 'Keine Szene oder Aktion ausgewählt.' };
+  if (!sku || !device) return { ok: false, error: 'Bitte zuerst ein Govee-Gerät auswählen.' };
+
+  let capability = null;
+  if (act.startsWith('scene:')) {
+    const val = JSON.parse(act.slice(6));
+    capability = {
+      type: 'devices.capabilities.dynamic_scene',
+      instance: 'lightScene',
+      value: val
+    };
+  } else if (act.startsWith('diy:')) {
+    const val = JSON.parse(act.slice(4));
+    capability = {
+      type: 'devices.capabilities.diy_scene',
+      instance: 'diyScene',
+      value: val
+    };
+  } else if (act.startsWith('color:')) {
+    const hex = act.slice(6);
+    capability = {
+      type: 'devices.capabilities.color_setting',
+      instance: 'colorRgb',
+      value: hexToGoveeRgbInt(hex)
+    };
+  } else if (act === 'power:on' || act === 'power:off') {
+    capability = {
+      type: 'devices.capabilities.on_off',
+      instance: 'powerSwitch',
+      value: act === 'power:on' ? 1 : 0
+    };
+  } else {
+    return { ok: false, error: `Unbekannte Govee-Aktion: ${act}` };
+  }
+
+  await goveeRequest(apiKey, '/router/api/v1/device/control', 'POST', {
+    requestId: crypto.randomUUID(),
+    payload: {
+      sku,
+      device,
+      capability
+    }
+  });
+
+  return { ok: true };
+}
+
+let revertTimer = null;
+
+async function triggerGoveeForEvent(goveeCfg, eventType) {
+  if (!goveeCfg || !goveeCfg.enabled) return { ok: false, skipped: true };
+  const apiKey = String(goveeCfg.apiKey || '').trim();
+  const sku = String(goveeCfg.sku || '').trim();
+  const device = String(goveeCfg.device || '').trim();
+  if (!apiKey || !sku || !device) return { ok: false, skipped: true };
+
+  const map = goveeCfg.eventScenes || {};
+  const actionId = String(map[eventType] || '').trim();
+  if (!actionId) return { ok: false, skipped: true };
+
+  if (revertTimer) {
+    clearTimeout(revertTimer);
+    revertTimer = null;
+  }
+
+  const res = await applyGoveeAction(apiKey, { sku, device }, actionId);
+
+  const revertSec = Math.max(0, Number(goveeCfg.revertAfterSec ?? 8));
+  const fallbackScene = String(map.defaultScene || map.streamStart || '').trim();
+  if (
+    res.ok &&
+    revertSec > 0 &&
+    fallbackScene &&
+    eventType !== 'streamStart' &&
+    eventType !== 'streamStop' &&
+    eventType !== 'defaultScene' &&
+    fallbackScene !== actionId
+  ) {
+    revertTimer = setTimeout(() => {
+      applyGoveeAction(apiKey, { sku, device }, fallbackScene).catch(() => {});
+    }, revertSec * 1000);
+  }
+
+  return res;
+}
+
+module.exports = {
+  PRESET_COLOR_OPTIONS,
+  listGoveeDevices,
+  listGoveeScenes,
+  applyGoveeAction,
+  triggerGoveeForEvent
+};

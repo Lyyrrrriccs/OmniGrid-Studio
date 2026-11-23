@@ -13,6 +13,7 @@ const socialSchedule = require('./social_schedule');
 const gameAddons = require('./game_addons');
 const { GitHubAutoUpdater } = require('./auto_updater');
 const elgatoLights = require('./elgato_lights');
+const goveeLights = require('./govee_lights');
 
 const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
 
@@ -418,6 +419,28 @@ function getDefaultConfig() {
       autoOffStop: false,
       brightness: 60,
       temperatureK: 4500
+    },
+    goveeLights: {
+      enabled: false,
+      apiKey: '',
+      sku: '',
+      device: '',
+      deviceName: '',
+      revertAfterSec: 8,
+      cachedDevices: [],
+      cachedScenes: [],
+      eventScenes: {
+        streamStart: '',
+        streamStop: '',
+        defaultScene: '',
+        follow: '',
+        sub: '',
+        resub: '',
+        subgift: '',
+        bits: '',
+        raid: '',
+        hype: ''
+      }
     },
     chatTimers: {
       enabled: false,
@@ -1127,6 +1150,7 @@ function forwardChatMessage(msg) {
           if (hd.autoClip && twitch.connected) {
             twitch.createClip().catch(() => {});
           }
+          goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'hype').catch(() => {});
         }
       }
     }
@@ -1172,6 +1196,7 @@ function broadcastEventToObsAlert(ev, bypassFilter = false) {
     normType,
     color: OBS_ALERT_COLOR_MAP[normType] || '#9146ff'
   });
+  goveeLights.triggerGoveeForEvent(cfg.goveeLights, normType).catch(() => {});
 }
 
 let activePoll = {
@@ -1309,6 +1334,7 @@ obsWs.on('state', (st) => {
         })
         .catch(() => {});
     }
+    goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'streamStart').catch(() => {});
     const now = Date.now();
     if (now - lastAutoGoLiveAt > 15 * 60 * 1000) {
       const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
@@ -1343,6 +1369,7 @@ obsWs.on('state', (st) => {
         })
         .catch(() => {});
     }
+    goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'streamStop').catch(() => {});
   }
   lastObsStreaming = isStreaming;
 });
@@ -3506,6 +3533,41 @@ app.whenReady().then(async () => {
       brightness: payload.brightness ?? elCfg.brightness ?? 60,
       temperatureK: payload.temperatureK ?? elCfg.temperatureK ?? 4500
     });
+  });
+
+  ipcMain.handle('govee-list-devices', async (_ev, payload = {}) => {
+    try {
+      const cfg = loadConfig();
+      const apiKey = String(payload.apiKey ?? cfg.goveeLights?.apiKey ?? '').trim();
+      const devices = await goveeLights.listGoveeDevices(apiKey);
+      return { ok: true, devices };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('govee-list-scenes', async (_ev, payload = {}) => {
+    try {
+      const cfg = loadConfig();
+      const apiKey = String(payload.apiKey ?? cfg.goveeLights?.apiKey ?? '').trim();
+      const sku = String(payload.sku ?? cfg.goveeLights?.sku ?? '').trim();
+      const device = String(payload.device ?? cfg.goveeLights?.device ?? '').trim();
+      return await goveeLights.listGoveeScenes(apiKey, { sku, device });
+    } catch (err) {
+      return { ok: false, error: err.message, scenes: goveeLights.PRESET_COLOR_OPTIONS };
+    }
+  });
+
+  ipcMain.handle('govee-apply-action', async (_ev, payload = {}) => {
+    try {
+      const cfg = loadConfig();
+      const apiKey = String(payload.apiKey ?? cfg.goveeLights?.apiKey ?? '').trim();
+      const sku = String(payload.sku ?? cfg.goveeLights?.sku ?? '').trim();
+      const device = String(payload.device ?? cfg.goveeLights?.device ?? '').trim();
+      return await goveeLights.applyGoveeAction(apiKey, { sku, device }, payload.actionId);
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   });
 
   setTimeout(() => {

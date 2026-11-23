@@ -48,6 +48,8 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
   - Die lokale Musik-Bridge unterstützt neben **Spotify** jetzt auch **Amazon Music** (über macOS `MediaRemote` & Windows) und **Apple Music** (`Music.app` / `iTunes`) ohne API-Key — inklusive Play/Pause/Skip-Steuerung, `!song`-Chat-Bot, automatischem Album-Cover-Lookup und dynamischem `AMAZON MUSIC` (`#00a8e1`) / `APPLE MUSIC` (`#fb7185`) / `SPOTIFY` (`#1ed760`) Badge im OBS-Widget (`/spotify`).
 - **Elgato Key Light & Stream-Licht (`💡 Elgato Key Light`):**
   - Lokale WLAN-Steuerung (Port `9123`) für Elgato Key Light / Key Light Air / Ring Light / Light Strip inkl. 1-Klick-WLAN-Suche (`🔍 Suchen`), Live-Slidern für Helligkeit (`3–100%`) & Farbtemperatur (`2900–7000K`) sowie **automatischem Einschalten bei OBS-Stream-Start** (und optionalem Ausschalten bei Stream-Ende).
+- **Govee Smart-Light & Event-Szenen (`🌈 Govee Smart-Light`):**
+  - Integration der Govee OpenAPI v1.0 (mit eigenem Govee API-Key des Streamers + Direktlink zum Developer-Portal). Lädt alle Govee-Geräte, dynamischen Lichtszenen, DIY-Szenen & Farben und koppelt sie frei wählbar (und jederzeit abschaltbar) an **Stream-Start**, **Stream-Ende**, **Follow**, **Sub**, **Resub**, **Sub-Gift**, **Bits/SuperChat/Gift**, **Raid** und **Chat-Hype-Spike** — inklusive automatischer Rückkehr zur Standard-Szene nach X Sekunden.
 - **UI-Verbesserung:** Kommagetrennte Tag-/Keyword-Listen (Keyword-Alarme, Poll-Optionen, Stream-Tags, Auto-Mod-Blacklist, Hype-Keywords) nutzen jetzt mehrzeilige, vertikal vergrößerbare `<textarea>`-Felder.
 - **Tablet Companion (`/tablet`) & App-Icons:**
   - WLAN/Tailscale-Netzwerk-Umschalter mit QR-Code + `NSLocalNetworkUsageDescription` für macOS.

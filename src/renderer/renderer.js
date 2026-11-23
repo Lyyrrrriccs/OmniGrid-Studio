@@ -523,6 +523,30 @@ function getElgatoLightsSettings() {
   };
 }
 
+const GOVEE_EVENT_KEYS = ['defaultScene', 'streamStart', 'follow', 'sub', 'resub', 'subgift', 'bits', 'raid', 'hype', 'streamStop'];
+let goveeCachedDevices = [];
+let goveeCachedScenes = [];
+
+function getGoveeLightsSettings() {
+  const selDev = document.getElementById('selGoveeDevice');
+  const [sku, device] = String(selDev?.value || '').split('||');
+  const eventScenes = {};
+  GOVEE_EVENT_KEYS.forEach((k) => {
+    eventScenes[k] = document.getElementById(`selGovee_${k}`)?.value || '';
+  });
+  return {
+    enabled: Boolean(document.getElementById('chkGoveeEnabled')?.checked),
+    apiKey: document.getElementById('inputGoveeApiKey')?.value.trim() || '',
+    sku: sku || '',
+    device: device || '',
+    deviceName: selDev?.selectedOptions?.[0]?.textContent || '',
+    revertAfterSec: Math.max(0, parseInt(document.getElementById('numGoveeRevertSec')?.value || '8', 10) || 0),
+    cachedDevices: goveeCachedDevices,
+    cachedScenes: goveeCachedScenes,
+    eventScenes
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -540,6 +564,7 @@ function getFormConfig() {
     autoMod: getAutoModSettings(),
     customCommands: getCustomCommandsSettings(),
     elgatoLights: getElgatoLightsSettings(),
+    goveeLights: getGoveeLightsSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1859,6 +1884,19 @@ function applyConfigToForm(cfg) {
   if (rngElgTp) rngElgTp.value = String(elg.temperatureK ?? 4500);
   if (valElgTp) valElgTp.textContent = `${elg.temperatureK ?? 4500}K`;
 
+  const gov = cfg.goveeLights || {};
+  const chkGovEn = document.getElementById('chkGoveeEnabled');
+  const inpGovKey = document.getElementById('inputGoveeApiKey');
+  const numGovRev = document.getElementById('numGoveeRevertSec');
+  if (chkGovEn) chkGovEn.checked = Boolean(gov.enabled);
+  if (inpGovKey) inpGovKey.value = gov.apiKey || '';
+  if (numGovRev) numGovRev.value = String(gov.revertAfterSec ?? 8);
+  if (Array.isArray(gov.cachedDevices)) goveeCachedDevices = gov.cachedDevices;
+  if (Array.isArray(gov.cachedScenes)) goveeCachedScenes = gov.cachedScenes;
+  if (typeof window.__populateGoveeUI === 'function') {
+    window.__populateGoveeUI(gov);
+  }
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -2916,6 +2954,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.obs-box', 'cfgTab_obs'],
     ['.obs-ws-config-box', 'cfgTab_obs'],
     ['.elgato-lights-box', 'cfgTab_obs'],
+    ['.govee-lights-box', 'cfgTab_obs'],
     ['.obs-alerts-box', 'cfgTab_obs'],
     ['.tts-box', 'cfgTab_obs'],
     ['.tablet-box', 'cfgTab_companion'],
@@ -5615,5 +5654,178 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
 })();
+
+// ======================================================
+// GOVEE SMART-LIGHT & EVENT SCENES UI
+// ======================================================
+(function initGoveeLightsUI() {
+  const chkEnabled = document.getElementById('chkGoveeEnabled');
+  const btnOpenUrl = document.getElementById('btnGoveeOpenKeyUrl');
+  const inpApiKey = document.getElementById('inputGoveeApiKey');
+  const btnLoad = document.getElementById('btnGoveeLoadDevices');
+  const selDevice = document.getElementById('selGoveeDevice');
+  const numRevert = document.getElementById('numGoveeRevertSec');
+  const statusEl = document.getElementById('goveeLightsStatus');
+
+  const DEFAULT_COLOR_SCENES = [
+    { id: 'color:#9146ff', name: '🎨 Farbe: Twitch Lila (#9146ff)' },
+    { id: 'color:#38bdf8', name: '🎨 Farbe: Cyber Cyan (#38bdf8)' },
+    { id: 'color:#ef4444', name: '🎨 Farbe: Raid / Alarm Rot (#ef4444)' },
+    { id: 'color:#10b981', name: '🎨 Farbe: Emerald Grün (#10b981)' },
+    { id: 'color:#f59e0b', name: '🎨 Farbe: Gold / Bits Amber (#f59e0b)' },
+    { id: 'color:#ec4899', name: '🎨 Farbe: SubGift Neon Pink (#ec4899)' },
+    { id: 'color:#a855f7', name: '🎨 Farbe: Resub Violett (#a855f7)' },
+    { id: 'color:#ffffff', name: '🎨 Farbe: Studio Tageslicht Weiß (#ffffff)' },
+    { id: 'power:on', name: '💡 Gerät Einschalten' },
+    { id: 'power:off', name: '🌑 Gerät Ausschalten' }
+  ];
+
+  function setStatus(msg, color = '#94a3b8') {
+    if (!statusEl) return;
+    statusEl.style.color = color;
+    statusEl.textContent = msg;
+  }
+
+  function saveGoveeConfig() {
+    window.omnichat.saveProfile(getFormConfig());
+  }
+
+  function renderDeviceDropdown(selectedSku, selectedDevice) {
+    if (!selDevice) return;
+    selDevice.innerHTML = '';
+    if (!goveeCachedDevices.length) {
+      const ph = document.createElement('option');
+      ph.value = selectedSku && selectedDevice ? `${selectedSku}||${selectedDevice}` : '';
+      ph.textContent = selectedSku && selectedDevice ? `${selectedSku} (${selectedDevice})` : '— Zuerst API-Key eingeben & Geräte laden —';
+      selDevice.appendChild(ph);
+      return;
+    }
+    goveeCachedDevices.forEach((d) => {
+      const opt = document.createElement('option');
+      opt.value = `${d.sku}||${d.device}`;
+      opt.textContent = `${d.deviceName} [${d.sku}]`;
+      if (d.sku === selectedSku && d.device === selectedDevice) opt.selected = true;
+      selDevice.appendChild(opt);
+    });
+  }
+
+  function renderEventSceneDropdowns(eventScenes = {}) {
+    const scenes = goveeCachedScenes.length ? goveeCachedScenes : DEFAULT_COLOR_SCENES;
+    GOVEE_EVENT_KEYS.forEach((evKey) => {
+      const sel = document.getElementById(`selGovee_${evKey}`);
+      if (!sel) return;
+      const curVal = eventScenes[evKey] !== undefined ? eventScenes[evKey] : sel.value;
+      sel.innerHTML = '';
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = '— Keine Aktion / Aus —';
+      sel.appendChild(noneOpt);
+      scenes.forEach((sc) => {
+        const opt = document.createElement('option');
+        opt.value = sc.id;
+        opt.textContent = sc.name;
+        if (sc.id === curVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    });
+  }
+
+  window.__populateGoveeUI = (gov = {}) => {
+    renderDeviceDropdown(gov.sku, gov.device);
+    renderEventSceneDropdowns(gov.eventScenes || {});
+  };
+
+  renderEventSceneDropdowns({});
+
+  btnOpenUrl?.addEventListener('click', () => {
+    window.omnichat.openExternalUrl?.('https://developer.govee.com/');
+  });
+
+  [chkEnabled, inpApiKey, numRevert].forEach((el) => {
+    el?.addEventListener('change', saveGoveeConfig);
+  });
+
+  GOVEE_EVENT_KEYS.forEach((evKey) => {
+    document.getElementById(`selGovee_${evKey}`)?.addEventListener('change', saveGoveeConfig);
+  });
+
+  async function loadScenesForCurrentDevice() {
+    const [sku, device] = String(selDevice?.value || '').split('||');
+    const apiKey = inpApiKey?.value.trim() || '';
+    if (!apiKey || !sku || !device) return;
+    setStatus(`⏳ Lade Govee-Szenen für ${sku}...`, '#38bdf8');
+    const currentSelections = {};
+    GOVEE_EVENT_KEYS.forEach((k) => {
+      currentSelections[k] = document.getElementById(`selGovee_${k}`)?.value || '';
+    });
+    const scRes = await window.omnichat.goveeListScenes?.({ apiKey, sku, device });
+    if (scRes?.scenes) {
+      goveeCachedScenes = scRes.scenes;
+      renderEventSceneDropdowns(currentSelections);
+      saveGoveeConfig();
+      setStatus(`✅ ${goveeCachedScenes.length} Szenen & Licht-Aktionen für ${sku} geladen!`, '#4ade80');
+    } else {
+      setStatus(`⚠️ ${scRes?.error || 'Szenen konnten nicht geladen werden.'}`, '#fbbf24');
+    }
+  }
+
+  selDevice?.addEventListener('change', async () => {
+    saveGoveeConfig();
+    await loadScenesForCurrentDevice();
+  });
+
+  btnLoad?.addEventListener('click', async () => {
+    const apiKey = inpApiKey?.value.trim() || '';
+    if (!apiKey) {
+      setStatus('⚠️ Bitte zuerst deinen Govee API-Key eintragen.', '#fbbf24');
+      return;
+    }
+    btnLoad.disabled = true;
+    setStatus('⏳ Lade Govee-Geräte von Govee OpenAPI...', '#38bdf8');
+    try {
+      const res = await window.omnichat.goveeListDevices?.({ apiKey });
+      if (!res?.ok) {
+        setStatus(`❌ ${res?.error || 'Fehler beim Abrufen der Govee-Geräte.'}`, '#f87171');
+        return;
+      }
+      goveeCachedDevices = res.devices || [];
+      if (!goveeCachedDevices.length) {
+        setStatus('⚠️ Keine Govee-Geräte auf diesem API-Key gefunden.', '#fbbf24');
+        return;
+      }
+      const first = goveeCachedDevices[0];
+      renderDeviceDropdown(first.sku, first.device);
+      saveGoveeConfig();
+      await loadScenesForCurrentDevice();
+    } finally {
+      btnLoad.disabled = false;
+    }
+  });
+
+  document.querySelectorAll('.govee-test-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const evKey = btn.getAttribute('data-govee-test');
+      const actionId = document.getElementById(`selGovee_${evKey}`)?.value || '';
+      const [sku, device] = String(selDevice?.value || '').split('||');
+      const apiKey = inpApiKey?.value.trim() || '';
+      if (!apiKey || !sku || !device) {
+        setStatus('⚠️ Bitte zuerst API-Key eingeben und ein Govee-Gerät auswählen.', '#fbbf24');
+        return;
+      }
+      if (!actionId) {
+        setStatus('⚠️ Bitte zuerst eine Szene oder Farbe für dieses Event auswählen.', '#fbbf24');
+        return;
+      }
+      setStatus(`⏳ Teste Govee-Szene für "${evKey}"...`, '#38bdf8');
+      const res = await window.omnichat.goveeApplyAction?.({ apiKey, sku, device, actionId });
+      if (res?.ok) {
+        setStatus(`✅ Govee-Szene für "${evKey}" gesendet!`, '#4ade80');
+      } else {
+        setStatus(`❌ ${res?.error || 'Govee-Steuerung fehlgeschlagen.'}`, '#f87171');
+      }
+    });
+  });
+})();
+
 
 
