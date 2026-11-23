@@ -4766,9 +4766,25 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  function isAudioOnlyItem(it) {
+    if (!it) return false;
+    const k = String(it.inputKind || '').toLowerCase();
+    if (k.includes('audio') || k === 'sck_audio_capture') return true;
+    const tr = it.transform || {};
+    const hasNoVideoSize =
+      Number(tr.sourceWidth || 0) === 0 &&
+      Number(tr.sourceHeight || 0) === 0 &&
+      Number(tr.width || 0) === 0 &&
+      Number(tr.height || 0) === 0;
+    if (hasNoVideoSize && !/screen|window|display|browser|image|ffmpeg|color|text|avcapture|av_capture|dshow|game/i.test(k)) {
+      return true;
+    }
+    return false;
+  }
+
   function selectSourceItem(item) {
     selectedItem = item;
-    const disabled = !item;
+    const disabled = !item || isAudioOnlyItem(item);
     [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen].forEach((el) => {
       if (el) el.disabled = disabled;
     });
@@ -4800,7 +4816,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     // Render bottom-to-top (reverse of top-to-bottom list) so top OBS layer sits on top
     const drawOrder = sceneItems.slice().reverse();
     drawOrder.forEach((it) => {
-      if (!it.sceneItemEnabled) return;
+      if (!it.sceneItemEnabled || isAudioOnlyItem(it)) return;
       const { x, y, w, h } = getItemBoxPx(it);
       const isSel = selectedItem?.sceneItemId === it.sceneItemId;
 
