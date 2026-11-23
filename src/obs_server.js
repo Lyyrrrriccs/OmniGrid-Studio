@@ -798,7 +798,7 @@ const OBS_SPOTIFY_HTML = `<!DOCTYPE html>
       card.classList.toggle('paused', !t.playing);
       const srcLabel = (t.source || 'SPOTIFY').toUpperCase();
       tag.textContent = t.playing ? srcLabel + ' • NOW PLAYING' : srcLabel + ' • PAUSIERT';
-      tag.style.color = t.source === 'Apple Music' ? '#fb7185' : '#1ed760';
+      tag.style.color = t.source === 'Amazon Music' ? '#00a8e1' : t.source === 'Apple Music' ? '#fb7185' : '#1ed760';
       title.textContent = t.title;
       artist.textContent = t.artist || t.source || 'Music';
       if (t.artworkUrl) {

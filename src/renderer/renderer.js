@@ -2268,7 +2268,7 @@ function updateSpotifyUI(track) {
   if (!spSidebarTitle || !spSidebarArtist) return;
   if (!track || !track.running || !track.title) {
     spSidebarTitle.textContent = 'Musik nicht aktiv';
-    spSidebarArtist.textContent = 'Starte Spotify oder Apple Music auf deinem PC/Mac';
+    spSidebarArtist.textContent = 'Starte Amazon Music, Spotify oder Apple Music';
     return;
   }
   const icon = track.playing ? '▶️' : '⏸️';

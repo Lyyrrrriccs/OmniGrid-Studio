@@ -44,8 +44,8 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
   - Interaktive 16:9-Leinwand mit Maus-Drag & Resize, **VirtualCam Live-Vorschau (30 FPS)** inkl. Auto-Start/Stopp, **OBS WebSocket Connect-Button direkt im Editor**, Quellen-Erstellung, Audio-Mixer sowie dynamische Auswahl für **Aufnahme-Modus**, **Bildschirm**, **Fenster**, **Anwendung**, **Gerät** und **Browser-URL**.
 - **GitHub Releases Auto-Updater & CI-Workflow:**
   - Automatische Update-Prüfung beim Start + manueller Button (**🔄 Nach Updates suchen**), automatischer Download des Plattform-Releases, Update-Banner mit 1-Klick-Installation & Neustart sowie `.github/workflows/release.yml` für automatische macOS/Windows-Releases bei `v*`-Tags.
-- **Apple Music Support (macOS & Windows):**
-  - Die lokale Musik-Bridge unterstützt neben **Spotify** jetzt auch **Apple Music** (`Music.app` / `iTunes`) ohne API-Key — inklusive Play/Pause/Skip-Steuerung, `!song`-Chat-Bot, automatischem Album-Cover-Lookup und dynamischem `APPLE MUSIC • NOW PLAYING` Badge im OBS-Widget (`/spotify`).
+- **Apple Music & Amazon Music Support (macOS & Windows):**
+  - Die lokale Musik-Bridge unterstützt neben **Spotify** jetzt auch **Amazon Music** (über macOS `MediaRemote` & Windows) und **Apple Music** (`Music.app` / `iTunes`) ohne API-Key — inklusive Play/Pause/Skip-Steuerung, `!song`-Chat-Bot, automatischem Album-Cover-Lookup und dynamischem `AMAZON MUSIC` (`#00a8e1`) / `APPLE MUSIC` (`#fb7185`) / `SPOTIFY` (`#1ed760`) Badge im OBS-Widget (`/spotify`).
 - **UI-Verbesserung:** Kommagetrennte Tag-/Keyword-Listen (Keyword-Alarme, Poll-Optionen, Stream-Tags, Auto-Mod-Blacklist, Hype-Keywords) nutzen jetzt mehrzeilige, vertikal vergrößerbare `<textarea>`-Felder.
 - **Tablet Companion (`/tablet`) & App-Icons:**
   - WLAN/Tailscale-Netzwerk-Umschalter mit QR-Code + `NSLocalNetworkUsageDescription` für macOS.
