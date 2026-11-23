@@ -796,9 +796,11 @@ const OBS_SPOTIFY_HTML = `<!DOCTYPE html>
       }
       card.classList.remove('hidden');
       card.classList.toggle('paused', !t.playing);
-      tag.textContent = t.playing ? 'SPOTIFY • NOW PLAYING' : 'SPOTIFY • PAUSIERT';
+      const srcLabel = (t.source || 'SPOTIFY').toUpperCase();
+      tag.textContent = t.playing ? srcLabel + ' • NOW PLAYING' : srcLabel + ' • PAUSIERT';
+      tag.style.color = t.source === 'Apple Music' ? '#fb7185' : '#1ed760';
       title.textContent = t.title;
-      artist.textContent = t.artist || 'Spotify';
+      artist.textContent = t.artist || t.source || 'Music';
       if (t.artworkUrl) {
         cover.src = t.artworkUrl;
         cover.style.display = 'block';

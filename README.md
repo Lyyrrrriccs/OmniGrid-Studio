@@ -49,7 +49,7 @@ Normally, multistreamers have to stitch together **4–6 separate tools and paid
 | **Quick User & Message Menu** | Click or right-click any message for user overview (avatar, roles, Twitch account age), copy text/username, reply, open profile, delete, timeout (`10s`, `1m`, `10m`, `1h`), 2-step ban, and unban with strict platform permission checks. |
 | **Stream Deck & Tablet Companion** | Built-in local REST API (`http://127.0.0.1:4588/api/streamdeck/*`) + **Tablet & iPad Companion** (`http://<LAN-IP>:4588/tablet` or Tailscale VPN via QR code) for touch chat, quick-reply, clips, markers, OBS controls & polls without installing an app. |
 | **Peripherals & Global Hotkeys** | Dedicated **2nd Keyboard / Macro Pad & 2nd Mouse** support via **WebHID** (type/send chat or scroll feed without alt-tabbing out of games) + system-wide **Global Hotkeys**. |
-| **Spotify Live & `!song` Bot** | Zero-config local Spotify Desktop bridge (no API key needed): live Now Playing controls, automatic Twitch/YouTube `!song` / `!music` replies, and transparent **OBS Spotify Widget** (`http://127.0.0.1:4588/spotify`). |
+| **Spotify & Apple Music Live & `!song` Bot** | Zero-config local **Spotify** & **Apple Music** desktop bridge (no API key needed, with automatic iTunes album artwork lookup): live Now Playing controls, automatic Twitch/YouTube `!song` / `!music` replies, and transparent **OBS Music Widget** (`http://127.0.0.1:4588/spotify`). |
 | **Chat Search, Export & Diagnostics** | Live **Chat Search (`⌘/Ctrl+F`)** with platform & author filter, **Chat-Log Export (`💾 Export`)** as `.txt` or `.json`, 60fps `requestAnimationFrame` batch rendering, configurable DOM/RAM limits, JSON config backup, **Live Statistics & Logs**, bot filter, and spam collapsing (`×N`). |
 
 ---

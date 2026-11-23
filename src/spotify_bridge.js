@@ -1,10 +1,11 @@
 const { exec } = require('child_process');
 const { EventEmitter } = require('events');
+const https = require('https');
 
 /**
- * Zero-Config Local Spotify Desktop Bridge (macOS & Windows)
- * Reads the currently playing track directly from the local Spotify desktop app
- * without requiring any Spotify Developer API keys or OAuth setup.
+ * Zero-Config Local Spotify & Apple Music Desktop Bridge (macOS & Windows)
+ * Reads the currently playing track directly from Spotify or Apple Music (Music.app / iTunes)
+ * without requiring any Developer API keys or OAuth setup.
  */
 class SpotifyBridge extends EventEmitter {
   constructor() {
@@ -14,11 +15,13 @@ class SpotifyBridge extends EventEmitter {
     this.currentTrack = {
       running: false,
       playing: false,
+      source: '',
       artist: '',
       title: '',
       artworkUrl: ''
     };
     this._lastKey = '';
+    this._artworkCache = new Map();
   }
 
   start(enabled = true) {
@@ -36,64 +39,137 @@ class SpotifyBridge extends EventEmitter {
     }
   }
 
+  _lookupArtwork(artist, title) {
+    const queryKey = `${artist}|${title}`.toLowerCase();
+    if (!title) return Promise.resolve('');
+    if (this._artworkCache.has(queryKey)) {
+      return Promise.resolve(this._artworkCache.get(queryKey));
+    }
+    const term = encodeURIComponent(`${artist ? artist + ' ' : ''}${title}`.trim());
+    const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+    return new Promise((resolve) => {
+      const req = https.get(url, { timeout: 2500 }, (res) => {
+        let body = '';
+        res.on('data', (c) => { body += c; });
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(body);
+            const rawUrl = json?.results?.[0]?.artworkUrl100 || '';
+            const art = rawUrl ? rawUrl.replace('100x100bb', '300x300bb') : '';
+            this._artworkCache.set(queryKey, art);
+            resolve(art);
+          } catch (e) {
+            resolve('');
+          }
+        });
+      });
+      req.on('error', () => resolve(''));
+      req.on('timeout', () => {
+        req.destroy();
+        resolve('');
+      });
+    });
+  }
+
   pollNow() {
     if (!this.enabled) return;
     if (process.platform === 'darwin') {
       const script = [
-        'tell application "System Events" to set isRunning to (name of processes) contains "Spotify"',
-        'if not isRunning then return "OFF||"',
-        'tell application "Spotify"',
-        '  try',
-        '    set pState to (player state as text)',
-        '    set tName to (name of current track)',
-        '    set tArtist to (artist of current track)',
-        '    set tArtwork to (artwork url of current track)',
-        '    return pState & "||" & tArtist & "||" & tName & "||" & tArtwork',
-        '  on error',
-        '    return "paused||||||"',
-        '  end try',
-        'end tell'
+        'tell application "System Events"',
+        '  set procNames to (name of processes)',
+        '  set spRun to procNames contains "Spotify"',
+        '  set amRun to procNames contains "Music"',
+        'end tell',
+        'if not spRun and not amRun then return "OFF||||||"',
+        'set spData to ""',
+        'if spRun then',
+        '  tell application "Spotify"',
+        '    try',
+        '      set pState to (player state as text)',
+        '      set tName to (name of current track)',
+        '      set tArtist to (artist of current track)',
+        '      set tArt to (artwork url of current track)',
+        '      set spData to pState & "||Spotify||" & tArtist & "||" & tName & "||" & tArt',
+        '    end try',
+        '  end tell',
+        'end if',
+        'if spData starts with "playing||" then return spData',
+        'set amData to ""',
+        'if amRun then',
+        '  tell application "Music"',
+        '    try',
+        '      set pState to (player state as text)',
+        '      set tName to (name of current track)',
+        '      set tArtist to (artist of current track)',
+        '      set amData to pState & "||Apple Music||" & tArtist & "||" & tName & "||"',
+        '    end try',
+        '  end tell',
+        'end if',
+        'if amData starts with "playing||" then return amData',
+        'if spData is not "" then return spData',
+        'if amData is not "" then return amData',
+        'return "paused||||||"'
       ].join('\n');
-      exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 2500 }, (err, stdout) => {
+
+      exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 2500 }, async (err, stdout) => {
         if (err || !stdout) return;
         const parts = stdout.trim().split('||');
         if (parts[0] === 'OFF') {
-          this._updateTrack({ running: false, playing: false, artist: '', title: '', artworkUrl: '' });
+          this._updateTrack({ running: false, playing: false, source: '', artist: '', title: '', artworkUrl: '' });
           return;
         }
         const playing = parts[0] === 'playing';
+        const source = parts[1] || 'Spotify';
+        const artist = parts[2] || '';
+        const title = parts[3] || '';
+        let artworkUrl = parts[4] || '';
+        if (!artworkUrl && title) {
+          artworkUrl = await this._lookupArtwork(artist, title);
+        }
         this._updateTrack({
           running: true,
           playing,
-          artist: parts[1] || '',
-          title: parts[2] || '',
-          artworkUrl: parts[3] || ''
+          source,
+          artist,
+          title,
+          artworkUrl
         });
       });
     } else if (process.platform === 'win32') {
+      const psCmd = [
+        '$sp = Get-Process Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -First 1;',
+        '$am = Get-Process AppleMusic, iTunes -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -First 1;',
+        'if ($sp -and $sp.MainWindowTitle -notmatch "^Spotify( Free| Premium)?$") { "Spotify||" + $sp.MainWindowTitle }',
+        'elseif ($am -and $am.MainWindowTitle -notmatch "^(Apple Music|iTunes)$") { "Apple Music||" + $am.MainWindowTitle }',
+        'elseif ($sp) { "Spotify||PAUSED" }',
+        'elseif ($am) { "Apple Music||PAUSED" }',
+        'else { "OFF||" }'
+      ].join(' ');
       exec(
-        'powershell -NoProfile -Command "$p = Get-Process Spotify -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle } | Select-Object -First 1; if ($p) { $p.MainWindowTitle } else { \'OFF\' }"',
+        `powershell -NoProfile -Command "${psCmd}"`,
         { timeout: 2500 },
-        (err, stdout) => {
+        async (err, stdout) => {
           if (err || !stdout) return;
-          const raw = stdout.trim();
-          if (raw === 'OFF') {
-            this._updateTrack({ running: false, playing: false, artist: '', title: '', artworkUrl: '' });
+          const [source, rawTitle] = stdout.trim().split('||');
+          if (source === 'OFF' || !source) {
+            this._updateTrack({ running: false, playing: false, source: '', artist: '', title: '', artworkUrl: '' });
             return;
           }
-          if (raw === 'Spotify' || raw === 'Spotify Free' || raw === 'Spotify Premium') {
-            this._updateTrack({ ...this.currentTrack, running: true, playing: false });
+          if (rawTitle === 'PAUSED' || !rawTitle) {
+            this._updateTrack({ ...this.currentTrack, running: true, playing: false, source });
             return;
           }
-          const sepIdx = raw.indexOf(' - ');
-          const artist = sepIdx !== -1 ? raw.slice(0, sepIdx).trim() : '';
-          const title = sepIdx !== -1 ? raw.slice(sepIdx + 3).trim() : raw;
+          const sepIdx = rawTitle.indexOf(' - ');
+          const artist = sepIdx !== -1 ? rawTitle.slice(0, sepIdx).trim() : '';
+          const title = sepIdx !== -1 ? rawTitle.slice(sepIdx + 3).trim() : rawTitle;
+          const artworkUrl = title ? await this._lookupArtwork(artist, title) : '';
           this._updateTrack({
             running: true,
             playing: true,
+            source,
             artist,
             title,
-            artworkUrl: ''
+            artworkUrl
           });
         }
       );
@@ -101,7 +177,7 @@ class SpotifyBridge extends EventEmitter {
   }
 
   _updateTrack(next) {
-    const key = `${next.running}|${next.playing}|${next.artist}|${next.title}|${next.artworkUrl}`;
+    const key = `${next.running}|${next.playing}|${next.source}|${next.artist}|${next.title}|${next.artworkUrl}`;
     this.currentTrack = next;
     if (key !== this._lastKey) {
       this._lastKey = key;
@@ -119,7 +195,17 @@ class SpotifyBridge extends EventEmitter {
         };
         const appleCmd = cmdMap[action];
         if (!appleCmd) return resolve({ ok: false });
-        exec(`osascript -e 'tell application "Spotify" to ${appleCmd}'`, { timeout: 2500 }, (err) => {
+        const targetApp = this.currentTrack?.source === 'Apple Music' ? 'Music' : 'Spotify';
+        const script = [
+          `tell application "System Events" to set tRun to (name of processes) contains "${targetApp}"`,
+          `if tRun then`,
+          `  tell application "${targetApp}" to ${appleCmd}`,
+          `else`,
+          `  tell application "System Events" to set mRun to (name of processes) contains "Music"`,
+          `  if mRun then tell application "Music" to ${appleCmd}`,
+          `end if`
+        ].join('\n');
+        exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 2500 }, (err) => {
           setTimeout(() => this.pollNow(), 350);
           resolve({ ok: !err });
         });

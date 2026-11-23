@@ -2267,13 +2267,14 @@ const chkSpotifyAutoCmd = document.getElementById('chkSpotifyAutoCmd');
 function updateSpotifyUI(track) {
   if (!spSidebarTitle || !spSidebarArtist) return;
   if (!track || !track.running || !track.title) {
-    spSidebarTitle.textContent = 'Spotify nicht aktiv';
-    spSidebarArtist.textContent = 'Starte Spotify auf deinem PC/Mac';
+    spSidebarTitle.textContent = 'Musik nicht aktiv';
+    spSidebarArtist.textContent = 'Starte Spotify oder Apple Music auf deinem PC/Mac';
     return;
   }
   const icon = track.playing ? '▶️' : '⏸️';
+  const src = track.source || 'Spotify';
   spSidebarTitle.textContent = `${icon} ${track.title}`;
-  spSidebarArtist.textContent = track.artist || 'Spotify';
+  spSidebarArtist.textContent = track.artist ? `${track.artist} • ${src}` : src;
 }
 
 document.getElementById('btnSpPrev')?.addEventListener('click', () => window.omnichat.spotifyControl('previous'));
