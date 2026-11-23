@@ -46,6 +46,8 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
   - Automatische Update-Prüfung beim Start + manueller Button (**🔄 Nach Updates suchen**), automatischer Download des Plattform-Releases, Update-Banner mit 1-Klick-Installation & Neustart sowie `.github/workflows/release.yml` für automatische macOS/Windows-Releases bei `v*`-Tags.
 - **Apple Music & Amazon Music Support (macOS & Windows):**
   - Die lokale Musik-Bridge unterstützt neben **Spotify** jetzt auch **Amazon Music** (über macOS `MediaRemote` & Windows) und **Apple Music** (`Music.app` / `iTunes`) ohne API-Key — inklusive Play/Pause/Skip-Steuerung, `!song`-Chat-Bot, automatischem Album-Cover-Lookup und dynamischem `AMAZON MUSIC` (`#00a8e1`) / `APPLE MUSIC` (`#fb7185`) / `SPOTIFY` (`#1ed760`) Badge im OBS-Widget (`/spotify`).
+- **Elgato Key Light & Stream-Licht (`💡 Elgato Key Light`):**
+  - Lokale WLAN-Steuerung (Port `9123`) für Elgato Key Light / Key Light Air / Ring Light / Light Strip inkl. 1-Klick-WLAN-Suche (`🔍 Suchen`), Live-Slidern für Helligkeit (`3–100%`) & Farbtemperatur (`2900–7000K`) sowie **automatischem Einschalten bei OBS-Stream-Start** (und optionalem Ausschalten bei Stream-Ende).
 - **UI-Verbesserung:** Kommagetrennte Tag-/Keyword-Listen (Keyword-Alarme, Poll-Optionen, Stream-Tags, Auto-Mod-Blacklist, Hype-Keywords) nutzen jetzt mehrzeilige, vertikal vergrößerbare `<textarea>`-Felder.
 - **Tablet Companion (`/tablet`) & App-Icons:**
   - WLAN/Tailscale-Netzwerk-Umschalter mit QR-Code + `NSLocalNetworkUsageDescription` für macOS.

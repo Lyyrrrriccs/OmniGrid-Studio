@@ -12,6 +12,7 @@ const clipStudio = require('./clip_studio');
 const socialSchedule = require('./social_schedule');
 const gameAddons = require('./game_addons');
 const { GitHubAutoUpdater } = require('./auto_updater');
+const elgatoLights = require('./elgato_lights');
 
 const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
 
@@ -410,6 +411,13 @@ function getDefaultConfig() {
       password: '',
       micName: '',
       sceneEditorEnabled: false
+    },
+    elgatoLights: {
+      ips: '',
+      autoOnLive: true,
+      autoOffStop: false,
+      brightness: 60,
+      temperatureK: 4500
     },
     chatTimers: {
       enabled: false,
@@ -1286,9 +1294,23 @@ obsWs.on('state', (st) => {
 
   const isStreaming = Boolean(st?.streaming);
   if (isStreaming && !lastObsStreaming) {
+    const cfg = loadConfig();
+    if (cfg.elgatoLights?.autoOnLive !== false && cfg.elgatoLights?.ips) {
+      elgatoLights
+        .setElgatoLights({
+          ips: cfg.elgatoLights.ips,
+          on: true,
+          brightness: cfg.elgatoLights.brightness ?? 60,
+          temperatureK: cfg.elgatoLights.temperatureK ?? 4500
+        })
+        .then((res) => {
+          if (res.ok) appendDiagLog('system', 'info', '💡 Elgato Beleuchtung automatisch zum Stream-Start eingeschaltet.');
+          else if (res.error) appendDiagLog('system', 'warn', `Elgato Licht Fehler: ${res.error}`);
+        })
+        .catch(() => {});
+    }
     const now = Date.now();
     if (now - lastAutoGoLiveAt > 15 * 60 * 1000) {
-      const cfg = loadConfig();
       const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
       const targets = {
         discord: Boolean(ss.discord.enabled && ss.discord.autoPostOnObsLive && ss.discord.webhookUrl),
@@ -1310,6 +1332,16 @@ obsWs.on('state', (st) => {
           })
           .catch((err) => appendDiagLog('system', 'error', `Auto-Go-Live Fehler: ${err.message}`));
       }
+    }
+  } else if (!isStreaming && lastObsStreaming) {
+    const cfg = loadConfig();
+    if (cfg.elgatoLights?.autoOffStop && cfg.elgatoLights?.ips) {
+      elgatoLights
+        .setElgatoLights({ ips: cfg.elgatoLights.ips, on: false })
+        .then((res) => {
+          if (res.ok) appendDiagLog('system', 'info', '🌑 Elgato Beleuchtung zum Stream-Ende ausgeschaltet.');
+        })
+        .catch(() => {});
     }
   }
   lastObsStreaming = isStreaming;
@@ -3447,6 +3479,34 @@ app.whenReady().then(async () => {
   ipcMain.handle('updater-get-state', () => autoUpdater.getState());
   ipcMain.handle('updater-check', (_ev, opts = {}) => autoUpdater.checkForUpdates({ autoDownload: opts.autoDownload !== false }));
   ipcMain.handle('updater-install', () => autoUpdater.installDownloadedUpdate());
+
+  ipcMain.handle('elgato-lights-discover', async () => {
+    const lights = await elgatoLights.discoverElgatoLights();
+    return { ok: true, lights };
+  });
+
+  ipcMain.handle('elgato-lights-set', async (_ev, payload = {}) => {
+    const cfg = loadConfig();
+    const elCfg = cfg.elgatoLights || {};
+    const ips = payload.ips !== undefined ? payload.ips : elCfg.ips;
+    return await elgatoLights.setElgatoLights({
+      ips,
+      on: payload.on,
+      brightness: payload.brightness ?? elCfg.brightness ?? 60,
+      temperatureK: payload.temperatureK ?? elCfg.temperatureK ?? 4500
+    });
+  });
+
+  ipcMain.handle('elgato-lights-toggle', async (_ev, payload = {}) => {
+    const cfg = loadConfig();
+    const elCfg = cfg.elgatoLights || {};
+    const ips = payload.ips !== undefined ? payload.ips : elCfg.ips;
+    return await elgatoLights.toggleElgatoLights({
+      ips,
+      brightness: payload.brightness ?? elCfg.brightness ?? 60,
+      temperatureK: payload.temperatureK ?? elCfg.temperatureK ?? 4500
+    });
+  });
 
   setTimeout(() => {
     if (!demoActive) {

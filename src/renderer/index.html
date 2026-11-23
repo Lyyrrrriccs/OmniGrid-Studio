@@ -500,6 +500,46 @@
           <div id="obsWsConfigStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Nicht verbunden</div>
         </div>
 
+        <!-- ELGATO KEY LIGHT / STREAM LIGHTING -->
+        <div class="sidebar-section elgato-lights-box">
+          <h3>💡 Elgato Key Light &amp; Stream-Licht</h3>
+          <p class="section-hint">
+            Steuert lokale Elgato Key Lights / Light Strips im WLAN (Port 9123) und schaltet sie automatisch ein, sobald dein Stream in OBS live geht.
+          </p>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="text" id="inputElgatoIps" placeholder="IP-Adresse(n), z. B. 192.168.178.45" style="flex: 1;" />
+            <button class="btn-sm" id="btnElgatoDiscover" title="Sucht im lokalen WLAN automatisch nach Elgato Key Lights">🔍 Suchen</button>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnElgatoOn" style="flex: 1;">💡 Einschalten</button>
+            <button class="btn-sm" id="btnElgatoOff" style="flex: 1;">🌑 Ausschalten</button>
+            <button class="btn-sm" id="btnElgatoToggle" title="Ein-/Ausschalten umschalten">🔄</button>
+          </div>
+          <div class="setting-row" style="margin-top: 8px;">
+            <div class="slider-header">
+              <label>Helligkeit</label>
+              <span class="slider-val" id="valElgatoBrightness">60%</span>
+            </div>
+            <input type="range" id="rngElgatoBrightness" min="3" max="100" step="1" value="60" />
+          </div>
+          <div class="setting-row" style="margin-top: 4px;">
+            <div class="slider-header">
+              <label>Farbtemperatur (Warm ↔ Kalt)</label>
+              <span class="slider-val" id="valElgatoTemp">4500K</span>
+            </div>
+            <input type="range" id="rngElgatoTemp" min="2900" max="7000" step="50" value="4500" />
+          </div>
+          <label class="checkbox-row" style="margin-top: 6px;">
+            <input type="checkbox" id="chkElgatoAutoOnLive" checked />
+            <span>🟢 Automatisch einschalten wenn Stream LIVE geht (OBS)</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkElgatoAutoOffStop" />
+            <span>⏹️ Automatisch ausschalten wenn Stream endet</span>
+          </label>
+          <div id="elgatoLightsStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Bereit</div>
+        </div>
+
         <!-- SPOTIFY, APPLE MUSIC & AMAZON MUSIC DESKTOP BRIDGE & OBS NOW-PLAYING WIDGET -->
         <div class="sidebar-section spotify-box">
           <h3>🎵 Spotify / Apple / Amazon Music &amp; !song</h3>

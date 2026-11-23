@@ -95,5 +95,8 @@ contextBridge.exposeInMainWorld('omnichat', {
   onUpdaterState: (cb) => ipcRenderer.on('updater-state', (_ev, st) => cb(st)),
   updaterGetState: () => ipcRenderer.invoke('updater-get-state'),
   updaterCheck: (opts) => ipcRenderer.invoke('updater-check', opts),
-  updaterInstall: () => ipcRenderer.invoke('updater-install')
+  updaterInstall: () => ipcRenderer.invoke('updater-install'),
+  elgatoLightsDiscover: () => ipcRenderer.invoke('elgato-lights-discover'),
+  elgatoLightsSet: (payload) => ipcRenderer.invoke('elgato-lights-set', payload),
+  elgatoLightsToggle: (payload) => ipcRenderer.invoke('elgato-lights-toggle', payload)
 });

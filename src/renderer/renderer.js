@@ -513,6 +513,16 @@ function getCustomCommandsSettings() {
   };
 }
 
+function getElgatoLightsSettings() {
+  return {
+    ips: document.getElementById('inputElgatoIps')?.value.trim() || '',
+    autoOnLive: document.getElementById('chkElgatoAutoOnLive')?.checked !== false,
+    autoOffStop: Boolean(document.getElementById('chkElgatoAutoOffStop')?.checked),
+    brightness: parseInt(document.getElementById('rngElgatoBrightness')?.value || '60', 10) || 60,
+    temperatureK: parseInt(document.getElementById('rngElgatoTemp')?.value || '4500', 10) || 4500
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -529,6 +539,7 @@ function getFormConfig() {
     chatTimers: getChatTimerSettings(),
     autoMod: getAutoModSettings(),
     customCommands: getCustomCommandsSettings(),
+    elgatoLights: getElgatoLightsSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1831,6 +1842,22 @@ function applyConfigToForm(cfg) {
   if (elCcEn) elCcEn.checked = Boolean(cc.enabled);
   if (elCcCd) elCcCd.value = cc.cooldownSec ?? 10;
   if (elCcRules) elCcRules.value = Array.isArray(cc.rules) ? cc.rules.join('\n') : '';
+
+  const elg = cfg.elgatoLights || {};
+  const inpElgIps = document.getElementById('inputElgatoIps');
+  const chkElgOn = document.getElementById('chkElgatoAutoOnLive');
+  const chkElgOff = document.getElementById('chkElgatoAutoOffStop');
+  const rngElgBr = document.getElementById('rngElgatoBrightness');
+  const valElgBr = document.getElementById('valElgatoBrightness');
+  const rngElgTp = document.getElementById('rngElgatoTemp');
+  const valElgTp = document.getElementById('valElgatoTemp');
+  if (inpElgIps) inpElgIps.value = elg.ips || '';
+  if (chkElgOn) chkElgOn.checked = elg.autoOnLive !== false;
+  if (chkElgOff) chkElgOff.checked = Boolean(elg.autoOffStop);
+  if (rngElgBr) rngElgBr.value = String(elg.brightness ?? 60);
+  if (valElgBr) valElgBr.textContent = `${elg.brightness ?? 60}%`;
+  if (rngElgTp) rngElgTp.value = String(elg.temperatureK ?? 4500);
+  if (valElgTp) valElgTp.textContent = `${elg.temperatureK ?? 4500}K`;
 
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
@@ -5453,4 +5480,129 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (banner) banner.style.display = 'none';
   });
 })();
+
+// ======================================================
+// ELGATO KEY LIGHT & STREAM LIGHTING UI
+// ======================================================
+(function initElgatoLightsUI() {
+  const inpIps = document.getElementById('inputElgatoIps');
+  const btnDiscover = document.getElementById('btnElgatoDiscover');
+  const btnOn = document.getElementById('btnElgatoOn');
+  const btnOff = document.getElementById('btnElgatoOff');
+  const btnToggle = document.getElementById('btnElgatoToggle');
+  const rngBr = document.getElementById('rngElgatoBrightness');
+  const valBr = document.getElementById('valElgatoBrightness');
+  const rngTp = document.getElementById('rngElgatoTemp');
+  const valTp = document.getElementById('valElgatoTemp');
+  const chkOn = document.getElementById('chkElgatoAutoOnLive');
+  const chkOff = document.getElementById('chkElgatoAutoOffStop');
+  const statusEl = document.getElementById('elgatoLightsStatus');
+
+  function setStatus(msg, color = '#94a3b8') {
+    if (!statusEl) return;
+    statusEl.style.color = color;
+    statusEl.textContent = msg;
+  }
+
+  function saveElgatoConfig() {
+    window.omnichat.saveProfile(getFormConfig());
+  }
+
+  [inpIps, chkOn, chkOff].forEach((el) => {
+    el?.addEventListener('change', saveElgatoConfig);
+  });
+
+  let sliderDebounce = null;
+  function scheduleLiveApply() {
+    saveElgatoConfig();
+    if (!inpIps?.value.trim()) return;
+    clearTimeout(sliderDebounce);
+    sliderDebounce = setTimeout(async () => {
+      const res = await window.omnichat.elgatoLightsSet?.({
+        ips: inpIps.value.trim(),
+        brightness: parseInt(rngBr?.value || '60', 10) || 60,
+        temperatureK: parseInt(rngTp?.value || '4500', 10) || 4500
+      });
+      if (res?.ok) setStatus(`✅ ${res.updated.length} Licht(er) aktualisiert`, '#4ade80');
+    }, 180);
+  }
+
+  rngBr?.addEventListener('input', () => {
+    if (valBr) valBr.textContent = `${rngBr.value}%`;
+    scheduleLiveApply();
+  });
+
+  rngTp?.addEventListener('input', () => {
+    if (valTp) valTp.textContent = `${rngTp.value}K`;
+    scheduleLiveApply();
+  });
+
+  btnDiscover?.addEventListener('click', async () => {
+    btnDiscover.disabled = true;
+    setStatus('🔍 Suche Elgato Lichter im lokalen WLAN (Port 9123)...', '#38bdf8');
+    try {
+      const res = await window.omnichat.elgatoLightsDiscover?.();
+      const found = res?.lights || [];
+      if (!found.length) {
+        setStatus('⚠️ Keine Elgato Lichter gefunden. Bitte IP manuell eintragen.', '#fbbf24');
+      } else {
+        const ips = found.map((l) => l.ip).join(', ');
+        if (inpIps) inpIps.value = ips;
+        saveElgatoConfig();
+        const names = found.map((l) => `${l.name} (${l.ip})`).join(', ');
+        setStatus(`✅ Gefunden: ${names}`, '#4ade80');
+      }
+    } catch (e) {
+      setStatus(`❌ Suche fehlgeschlagen: ${e.message}`, '#f87171');
+    } finally {
+      btnDiscover.disabled = false;
+    }
+  });
+
+  btnOn?.addEventListener('click', async () => {
+    saveElgatoConfig();
+    setStatus('⏳ Schalte Elgato Licht(er) ein...', '#38bdf8');
+    const res = await window.omnichat.elgatoLightsSet?.({
+      ips: inpIps?.value.trim() || '',
+      on: true,
+      brightness: parseInt(rngBr?.value || '60', 10) || 60,
+      temperatureK: parseInt(rngTp?.value || '4500', 10) || 4500
+    });
+    if (res?.ok) {
+      setStatus(`💡 Eingeschaltet (${res.updated.length} Gerät(e))`, '#4ade80');
+    } else {
+      setStatus(`❌ ${res?.error || 'Konnte Licht nicht erreichen.'}`, '#f87171');
+    }
+  });
+
+  btnOff?.addEventListener('click', async () => {
+    saveElgatoConfig();
+    setStatus('⏳ Schalte Elgato Licht(er) aus...', '#38bdf8');
+    const res = await window.omnichat.elgatoLightsSet?.({
+      ips: inpIps?.value.trim() || '',
+      on: false
+    });
+    if (res?.ok) {
+      setStatus(`🌑 Ausgeschaltet (${res.updated.length} Gerät(e))`, '#94a3b8');
+    } else {
+      setStatus(`❌ ${res?.error || 'Konnte Licht nicht erreichen.'}`, '#f87171');
+    }
+  });
+
+  btnToggle?.addEventListener('click', async () => {
+    saveElgatoConfig();
+    const res = await window.omnichat.elgatoLightsToggle?.({
+      ips: inpIps?.value.trim() || '',
+      brightness: parseInt(rngBr?.value || '60', 10) || 60,
+      temperatureK: parseInt(rngTp?.value || '4500', 10) || 4500
+    });
+    if (res?.ok) {
+      const isOn = res.updated?.[0]?.on;
+      setStatus(isOn ? '💡 Eingeschaltet' : '🌑 Ausgeschaltet', isOn ? '#4ade80' : '#94a3b8');
+    } else {
+      setStatus(`❌ ${res?.error || 'Konnte Licht nicht erreichen.'}`, '#f87171');
+    }
+  });
+})();
+
 
