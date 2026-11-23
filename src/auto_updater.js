@@ -155,6 +155,26 @@ class GitHubAutoUpdater {
     return { ...this.state };
   }
 
+  getLocalBuildTimestamp() {
+    try {
+      const markerPath = path.join(app.getPath('userData'), 'updates', 'last_installed.json');
+      if (fs.existsSync(markerPath)) {
+        const data = JSON.parse(fs.readFileSync(markerPath, 'utf8'));
+        if (data?.assetUpdatedAt) {
+          const ts = Date.parse(data.assetUpdatedAt);
+          if (!Number.isNaN(ts)) return ts;
+        }
+      }
+    } catch (e) {}
+    try {
+      const pkgPath = path.join(__dirname, '..', 'package.json');
+      const st = fs.statSync(pkgPath);
+      return st.mtimeMs || 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   async checkForUpdates({ autoDownload = true } = {}) {
     if (this._checking) return this.getState();
     this._checking = true;
@@ -167,19 +187,37 @@ class GitHubAutoUpdater {
       if (rel?.notFound) {
         return this.emit({ status: 'up-to-date', latestVersion: currentVersion, error: '' });
       }
-      const latestVersion = String(rel.tag_name || rel.name || '').replace(/^v/i, '');
+      const rawTag = String(rel.tag_name || rel.name || '');
+      const cleanSemver = rawTag.replace(/^v/i, '');
+      const isSemverTag = /^\d+\.\d+\.\d+/.test(cleanSemver);
       const releaseUrl = rel.html_url || this.state.releaseUrl;
       const releaseNotes = String(rel.body || '').slice(0, 600);
+      const asset = pickPlatformAsset(rel.assets);
 
-      if (!latestVersion || !isNewerVersion(latestVersion, currentVersion)) {
-        return this.emit({ status: 'up-to-date', latestVersion: latestVersion || currentVersion, releaseUrl, error: '' });
+      let hasUpdate = false;
+      let latestVersionLabel = isSemverTag ? cleanSemver : currentVersion;
+
+      if (isSemverTag) {
+        hasUpdate = isNewerVersion(cleanSemver, currentVersion);
+      } else if (asset && (asset.updated_at || rel.published_at)) {
+        const remoteTs = Date.parse(asset.updated_at || rel.published_at);
+        const localTs = this.getLocalBuildTimestamp();
+        // Consider remote rolling build newer if published > 2 minutes after local build timestamp
+        if (!Number.isNaN(remoteTs) && remoteTs > localTs + 120 * 1000) {
+          hasUpdate = true;
+          const dateStr = new Date(remoteTs).toISOString().slice(0, 16).replace('T', ' ');
+          latestVersionLabel = `${currentVersion} (${dateStr})`;
+        }
       }
 
-      const asset = pickPlatformAsset(rel.assets);
+      if (!hasUpdate) {
+        return this.emit({ status: 'up-to-date', latestVersion: latestVersionLabel, releaseUrl, error: '' });
+      }
+
       if (!asset || !autoDownload) {
         return this.emit({
           status: 'available',
-          latestVersion,
+          latestVersion: latestVersionLabel,
           releaseUrl,
           releaseNotes,
           assetName: asset ? asset.name : '',
@@ -190,10 +228,11 @@ class GitHubAutoUpdater {
       const updatesDir = path.join(app.getPath('userData'), 'updates');
       fs.mkdirSync(updatesDir, { recursive: true });
       const destPath = path.join(updatesDir, asset.name);
+      this._latestAssetUpdatedAt = asset.updated_at || rel.published_at || new Date().toISOString();
 
       this.emit({
         status: 'downloading',
-        latestVersion,
+        latestVersion: latestVersionLabel,
         releaseUrl,
         releaseNotes,
         assetName: asset.name,
@@ -207,7 +246,7 @@ class GitHubAutoUpdater {
 
       return this.emit({
         status: 'downloaded',
-        latestVersion,
+        latestVersion: latestVersionLabel,
         releaseUrl,
         releaseNotes,
         assetName: asset.name,
@@ -228,6 +267,15 @@ class GitHubAutoUpdater {
       if (this.state.releaseUrl) await shell.openExternal(this.state.releaseUrl);
       return { ok: false, error: 'Keine heruntergeladene Update-Datei gefunden.' };
     }
+
+    try {
+      const markerPath = path.join(app.getPath('userData'), 'updates', 'last_installed.json');
+      fs.writeFileSync(
+        markerPath,
+        JSON.stringify({ assetUpdatedAt: this._latestAssetUpdatedAt || new Date().toISOString() }),
+        'utf8'
+      );
+    } catch (e) {}
 
     // macOS: if running inside a packaged .app and asset is a .zip, replace bundle & relaunch
     const execMarker = '.app/Contents/MacOS/';
