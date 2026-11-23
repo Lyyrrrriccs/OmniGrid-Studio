@@ -1897,13 +1897,14 @@
         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
           <label class="checkbox-row"><input type="checkbox" id="hdAutoMarker" checked /><span>🚩 Automatisch Twitch Stream-Marker setzen</span></label>
           <label class="checkbox-row"><input type="checkbox" id="hdAutoObsReplay" /><span>💾 Automatisch OBS Replay-Buffer speichern (falls OBS WS aktiv)</span></label>
-          <label class="checkbox-row"><input type="checkbox" id="hdAutoClip" /><span>🎬 Automatisch Twitch-Clip erstellen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="hdAutoClip" checked /><span>🎬 Automatisch Twitch-Clip erstellen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="hdPostClipToChat" checked /><span>💬 Erstellten Clip-Link automatisch in den Chat posten</span></label>
         </div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
           <button class="btn-sm" id="btnSaveHype" style="flex: 1; padding: 9px; font-weight: 700;">💾 Hype-Detektor speichern</button>
           <button class="btn-sm" id="btnTriggerHypeNow" style="flex: 1; padding: 9px; font-weight: 700; background: rgba(249,115,22,0.28); border-color: rgba(249,115,22,0.55); color: #fed7aa;">🔥 Hype jetzt auslösen</button>
         </div>
-        <div id="hdStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8;"></div>
+        <div id="hdStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8; word-break: break-word;"></div>
       </div>
     </div>
   </div>

@@ -4447,7 +4447,9 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       document.getElementById('hdKeywords').value = hd.keywords || '';
       document.getElementById('hdAutoMarker').checked = hd.autoMarker !== false;
       document.getElementById('hdAutoObsReplay').checked = Boolean(hd.autoObsReplay);
-      document.getElementById('hdAutoClip').checked = Boolean(hd.autoClip);
+      document.getElementById('hdAutoClip').checked = hd.autoClip !== false;
+      const elPostChat = document.getElementById('hdPostClipToChat');
+      if (elPostChat) elPostChat.checked = hd.postClipToChat !== false;
     }
   });
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
@@ -4462,11 +4464,12 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       keywords: document.getElementById('hdKeywords')?.value.trim() || '',
       autoMarker: Boolean(document.getElementById('hdAutoMarker')?.checked),
       autoObsReplay: Boolean(document.getElementById('hdAutoObsReplay')?.checked),
-      autoClip: Boolean(document.getElementById('hdAutoClip')?.checked)
+      autoClip: Boolean(document.getElementById('hdAutoClip')?.checked),
+      postClipToChat: document.getElementById('hdPostClipToChat')?.checked !== false
     };
   }
 
-  ['hdEnabled', 'hdWindowSec', 'hdMinMsgs', 'hdCooldownSec', 'hdKeywords', 'hdAutoMarker', 'hdAutoObsReplay', 'hdAutoClip'].forEach((id) => {
+  ['hdEnabled', 'hdWindowSec', 'hdMinMsgs', 'hdCooldownSec', 'hdKeywords', 'hdAutoMarker', 'hdAutoObsReplay', 'hdAutoClip', 'hdPostClipToChat'].forEach((id) => {
     document.getElementById(id)?.addEventListener('change', async () => {
       const res = await window.omnichat.hypeSave(readHypeForm());
       if (res?.ok && statusEl) {
@@ -4484,13 +4487,22 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
 
+  function renderHypeResult(ev) {
+    if (!statusEl || !ev) return;
+    const acts = Array.isArray(ev.actions) && ev.actions.length ? `✅ ${ev.actions.join(' • ')}` : '';
+    const errs = Array.isArray(ev.errors) && ev.errors.length ? `⚠️ ${ev.errors.join(' | ')}` : '';
+    const clipPart = ev.clipUrl ? ` 🎬 Clip: ${ev.clipUrl}` : '';
+    statusEl.style.color = errs && !acts ? '#f87171' : errs ? '#fbbf24' : '#4ade80';
+    statusEl.textContent = [acts || `🔥 ${ev.desc || 'Hype ausgelöst'}`, clipPart, errs].filter(Boolean).join(' — ');
+  }
+
   document.getElementById('btnTriggerHypeNow')?.addEventListener('click', async () => {
-    const res = await window.omnichat.hypeTriggerNow?.(readHypeForm());
-    if (res?.ok && statusEl) {
-      const acts = res.actions?.length ? ` (${res.actions.join(', ')})` : '';
-      statusEl.style.color = '#fb923c';
-      statusEl.textContent = `🔥 Hype manuell ausgelöst!${acts}`;
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = '⏳ Löse Hype aus (erstelle Clip / Marker / Replay)...';
     }
+    const res = await window.omnichat.hypeTriggerNow?.(readHypeForm());
+    renderHypeResult(res);
   });
 
   window.omnichat.onHypeTriggered((ev) => {
@@ -4498,10 +4510,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       btnOpen.style.boxShadow = '0 0 12px #f97316';
       setTimeout(() => { btnOpen.style.boxShadow = ''; }, 5000);
     }
-    if (statusEl && ev?.desc) {
-      statusEl.style.color = '#fb923c';
-      statusEl.textContent = `🔥 Zuletzt ausgelöst: ${ev.desc}`;
-    }
+    renderHypeResult(ev);
   });
 })();
 

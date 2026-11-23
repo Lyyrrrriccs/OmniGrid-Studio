@@ -477,7 +477,8 @@ function getDefaultConfig() {
       cooldownSec: 90,
       autoMarker: true,
       autoObsReplay: false,
-      autoClip: false,
+      autoClip: true,
+      postClipToChat: true,
       keywords: 'pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype'
     },
     gameAddons: gameAddons.DEFAULT_GAME_ADDONS_CONFIG,
@@ -1140,25 +1141,118 @@ function forwardChatMessage(msg) {
         const cooldownMs = Math.max(15, Number(hd.cooldownSec || 90)) * 1000;
 
         if (score >= minMsgs && now - lastHypeTriggerAt > cooldownMs) {
-          lastHypeTriggerAt = now;
           const desc = `🔥 Chat-Hype (${score} Punkte / ${Math.round(winMs / 1000)}s)`;
-          appendDiagLog('system', 'info', `${desc} erkannt!`);
-          broadcastToWindows('hype-triggered', { score, desc, at: now });
-
-          if (hd.autoMarker && twitch.connected) {
-            twitch.createMarker(desc).catch(() => {});
-          }
-          if (hd.autoObsReplay && obsWs.getState()?.connected) {
-            obsWs.saveReplayBuffer().catch(() => {});
-          }
-          if (hd.autoClip && twitch.connected) {
-            twitch.createClip().catch(() => {});
-          }
-          goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'hype').catch(() => {});
+          executeHypeTrigger(cfg, desc).catch(() => {});
         }
       }
     }
   } catch (e) {}
+}
+
+async function executeHypeTrigger(cfg, desc = '🔥 Chat-Hype!') {
+  const hd = { ...getDefaultConfig().hypeDetector, ...(cfg?.hypeDetector || {}) };
+  const now = Date.now();
+  lastHypeTriggerAt = now;
+  appendDiagLog('system', 'info', `${desc} erkannt!`);
+
+  const actions = [];
+  const errors = [];
+  let clipUrl = '';
+
+  if (hd.autoClip) {
+    if (demoActive) {
+      clipUrl = `https://clips.twitch.tv/DemoHypeClip_${now.toString(36)}`;
+      actions.push(`Demo-Clip erstellt (${clipUrl})`);
+    } else if (!twitch.connected) {
+      errors.push('Twitch-Clip: Twitch ist nicht verbunden');
+    } else {
+      try {
+        const clipRes = await twitch.createClip();
+        clipUrl = clipRes?.url || '';
+        if (clipUrl) {
+          actions.push('Twitch-Clip erstellt');
+          appendDiagLog('twitch', 'info', `🎬 Hype-Clip erstellt: ${clipUrl}`);
+        }
+      } catch (err) {
+        errors.push(`Twitch-Clip: ${err.message}`);
+        appendDiagLog('twitch', 'warn', `Hype-Clip fehlgeschlagen: ${err.message}`);
+      }
+    }
+
+    if (clipUrl) {
+      if (hd.postClipToChat !== false) {
+        if (twitch.connected && twitch.canWrite) {
+          try {
+            twitch.sendMessage(`🔥 HYPE-CLIP: ${clipUrl}`);
+            actions.push('Clip-Link in Twitch-Chat gepostet');
+          } catch (err) {
+            errors.push(`Chat-Post: ${err.message}`);
+          }
+        }
+        if (youtube.connected && youtube.canWrite) {
+          try {
+            await youtube.sendMessage(`🔥 HYPE-CLIP: ${clipUrl}`);
+            actions.push('Clip-Link in YouTube-Chat gepostet');
+          } catch (e) {}
+        }
+      }
+      // Show clickable clip message directly in the local OmniGrid chat feed as well
+      const sysMsg = {
+        id: `hype_clip_${now}`,
+        platform: 'twitch',
+        author: '🔥 Hype-Detektor',
+        text: `🎬 Hype-Clip erstellt: ${clipUrl}`,
+        tokens: [{ type: 'text', text: `🎬 Hype-Clip erstellt: ${clipUrl}` }],
+        badges: ['broadcaster'],
+        color: '#f97316',
+        isHighlight: true,
+        eventType: 'sub',
+        timestamp: now
+      };
+      broadcastToWindows('chat-message', sysMsg);
+    }
+  }
+
+  if (hd.autoMarker) {
+    if (demoActive) {
+      actions.push('Demo-Marker gesetzt');
+    } else if (!twitch.connected) {
+      errors.push('Twitch-Marker: Twitch nicht verbunden');
+    } else {
+      try {
+        await twitch.createStreamMarker(desc);
+        actions.push('Twitch-Marker gesetzt');
+      } catch (err) {
+        errors.push(`Twitch-Marker: ${err.message}`);
+      }
+    }
+  }
+
+  if (hd.autoObsReplay) {
+    if (!obsWs.getState()?.connected) {
+      errors.push('OBS-Replay: OBS WebSocket nicht verbunden');
+    } else {
+      try {
+        await obsWs.saveReplayBuffer();
+        actions.push('OBS-Replay gespeichert');
+      } catch (err) {
+        errors.push(`OBS-Replay: ${err.message}`);
+      }
+    }
+  }
+
+  if (cfg?.goveeLights?.enabled && cfg?.goveeLights?.eventScenes?.hype) {
+    try {
+      const gRes = await goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'hype');
+      if (gRes?.ok) actions.push('Govee-Lichtszene');
+    } catch (err) {
+      errors.push(`Govee: ${err.message}`);
+    }
+  }
+
+  const payload = { score: 100, desc, at: now, clipUrl, actions, errors };
+  broadcastToWindows('hype-triggered', payload);
+  return { ok: true, ...payload };
 }
 
 const OBS_ALERT_TYPE_MAP = {
@@ -3436,31 +3530,7 @@ app.whenReady().then(async () => {
       cfg.hypeDetector = { ...getDefaultConfig().hypeDetector, ...(cfg.hypeDetector || {}), ...nextHd };
       saveConfig(cfg);
     }
-    const hd = cfg.hypeDetector || getDefaultConfig().hypeDetector;
-    const now = Date.now();
-    lastHypeTriggerAt = now;
-    const desc = '🔥 Manuell ausgelöster Chat-Hype!';
-    appendDiagLog('system', 'info', `${desc}`);
-    broadcastToWindows('hype-triggered', { score: 100, desc, at: now });
-
-    const actions = [];
-    if (hd.autoMarker && twitch.connected) {
-      twitch.createMarker(desc).catch(() => {});
-      actions.push('Twitch-Marker');
-    }
-    if (hd.autoObsReplay && obsWs.getState()?.connected) {
-      obsWs.saveReplayBuffer().catch(() => {});
-      actions.push('OBS-Replay');
-    }
-    if (hd.autoClip && twitch.connected) {
-      twitch.createClip().catch(() => {});
-      actions.push('Twitch-Clip');
-    }
-    if (cfg.goveeLights?.enabled && cfg.goveeLights?.eventScenes?.hype) {
-      goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'hype').catch(() => {});
-      actions.push('Govee-Lichtszene');
-    }
-    return { ok: true, desc, actions };
+    return await executeHypeTrigger(cfg, '🔥 Manuell ausgelöster Chat-Hype!');
   });
 
   ipcMain.handle('game-addons-get', () => {
