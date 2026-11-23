@@ -36,6 +36,7 @@ Normally, multistreamers have to stitch together **4–6 separate tools and paid
 
 | Category | Highlights |
 |---|---|
+| **Local Multi-Platform Streaming Relay (`📡 Multi-Stream`)** | **OBS renders & encodes only once (`1×`)** to `rtmp://127.0.0.1:1935/live/omnigrid` (with 1-click **OBS Auto-Config** via WebSocket v5) while OmniGrid Studio's built-in **FFmpeg Tee-Muxer (`-c copy`, 0% extra GPU/CPU encoding load)** distributes your stream simultaneously to **Twitch**, **YouTube Live**, **TikTok Live**, and **Kick / Custom RTMP** (`onfail=ignore` fault isolation + live bitrate/FPS telemetry). |
 | **Multi-Platform Chat** | Simultaneous **Twitch** (IRC WebSocket + Helix Clip/Marker), **YouTube Live** (no API key for reading, auto stream discovery, plus optional Google OAuth2 PKCE for sending chat), and **TikTok Live** (Webcast) feeds merged chronologically with per-platform enable/disable, auto-reconnect, error isolation, and 3-layer deduplication. |
 | **Animated Emotes** | **7TV** (global & channel), **BTTV**, and **FFZ** (global & channel) plus native **Twitch**, **YouTube**, and **TikTok** emotes — animated WebP/GIF support, individual provider toggles, and zero line-height inflation. |
 | **Clean Cockpit, Stream-Manager & Help** | Slim live-control sidebar (Spotify, Live-Poll, TTS, Twitch Clip & Marker, OBS WebSocket v5, **Stream-Manager** for updating Twitch & YouTube Title, Game/Category & Tags simultaneously) paired with a tabbed **Central Config (`⚙️ Config`)** and an integrated **Help Window (`📖 Anleitung`)**. |

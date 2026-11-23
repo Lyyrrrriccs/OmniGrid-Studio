@@ -439,6 +439,44 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, inputKind, inputSettings, properties, errors };
   }
 
+  async configureCustomRtmpService(serverUrl = 'rtmp://127.0.0.1:1935/live', streamKey = 'omnigrid') {
+    await this.call('SetStreamServiceSettings', {
+      streamServiceType: 'rtmp_custom',
+      streamServiceSettings: {
+        server: String(serverUrl || 'rtmp://127.0.0.1:1935/live').trim(),
+        key: String(streamKey || 'omnigrid').trim(),
+        use_auth: false
+      }
+    });
+    return { ok: true, server: serverUrl, key: streamKey };
+  }
+
+  async startStream() {
+    try {
+      const st = await this.call('GetStreamStatus');
+      if (!st.outputActive) {
+        await this.call('StartStream');
+      }
+      this._updateState({ streamActive: true, streaming: true });
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  async stopStream() {
+    try {
+      const st = await this.call('GetStreamStatus');
+      if (st.outputActive) {
+        await this.call('StopStream');
+      }
+      this._updateState({ streamActive: false, streaming: false });
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  }
+
   disconnect(emitUpdate = true) {
     for (const entry of this.pending.values()) {
       clearTimeout(entry.timer);

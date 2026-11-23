@@ -101,5 +101,10 @@ contextBridge.exposeInMainWorld('omnichat', {
   elgatoLightsToggle: (payload) => ipcRenderer.invoke('elgato-lights-toggle', payload),
   goveeListDevices: (payload) => ipcRenderer.invoke('govee-list-devices', payload),
   goveeListScenes: (payload) => ipcRenderer.invoke('govee-list-scenes', payload),
-  goveeApplyAction: (payload) => ipcRenderer.invoke('govee-apply-action', payload)
+  goveeApplyAction: (payload) => ipcRenderer.invoke('govee-apply-action', payload),
+  onMultiStreamState: (cb) => ipcRenderer.on('multistream-state', (_ev, st) => cb(st)),
+  multiStreamGetState: () => ipcRenderer.invoke('multistream-get-state'),
+  multiStreamStart: (payload) => ipcRenderer.invoke('multistream-start', payload),
+  multiStreamStop: () => ipcRenderer.invoke('multistream-stop'),
+  multiStreamConfigureObs: (payload) => ipcRenderer.invoke('multistream-configure-obs', payload)
 });

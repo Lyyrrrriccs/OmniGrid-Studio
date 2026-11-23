@@ -40,6 +40,8 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
   - **Twitch Clip & Stream-Marker** auf Knopfdruck (`/clip`, `/marker`, `/clip-and-marker`).
 - **YouTube Chat-Schreiben (OAuth2 PKCE):**
   - Optionaler Google-OAuth2-Login in der YouTube-Karte zum Senden von Chat-Nachrichten, `!song`-Antworten und Video-Uploads.
+- **Lokales Multi-Plattform-Streaming Relay (`📡 Multi-Plattform-Stream`):**
+  - OBS rendert und enkodiert nur noch `1×` lokal an `rtmp://127.0.0.1:1935/live/omnigrid` (inkl. 1-Klick-Auto-Konfiguration in OBS via `SetStreamServiceSettings`), während OmniGrid Studio den Stream per FFmpeg Tee-Muxer (`-c copy`, 0 % zusätzliche GPU-/CPU-Enkodierlast, `onfail=ignore`) gleichzeitig an **Twitch**, **YouTube Live**, **TikTok Live** und **Kick / Custom RTMP** verteilt — mit Live-Bitrate/FPS-Anzeige und Auto-Start/Stopp von OBS.
 - **OBS Szenen- & Quellen-Editor (`🎛️ Szenen-Editor`):**
   - Interaktive 16:9-Leinwand mit Maus-Drag & Resize, scharfer **1080p HD-Standbild-Vorschau** (aktualisiert bei Änderungen, ohne Audio-Geräte-Boxen im Vorschaubild), **OBS WebSocket Connect-Button direkt im Editor**, Quellen-Erstellung, Audio-Mixer sowie crash-sicherer Auswahl für **Aufnahme-Modus**, **Bildschirm**, **Fenster**, **Anwendung**, **Gerät** und **Browser-URL**.
 - **GitHub Releases Auto-Updater & CI-Workflow:**

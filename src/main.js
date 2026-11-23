@@ -14,8 +14,11 @@ const gameAddons = require('./game_addons');
 const { GitHubAutoUpdater } = require('./auto_updater');
 const elgatoLights = require('./elgato_lights');
 const goveeLights = require('./govee_lights');
+const { MultiStreamRelay, normalizeRelayConfig } = require('./multistream_relay');
 
 const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
+const multiRelay = new MultiStreamRelay();
+multiRelay.on('state', (st) => broadcastToWindows('multistream-state', st));
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -442,6 +445,7 @@ function getDefaultConfig() {
         hype: ''
       }
     },
+    multiStream: normalizeRelayConfig({}),
     chatTimers: {
       enabled: false,
       intervalMin: 15,
@@ -3571,6 +3575,56 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('multistream-get-state', () => multiRelay.getState());
+
+  ipcMain.handle('multistream-configure-obs', async (_ev, payload = {}) => {
+    try {
+      const cfg = loadConfig();
+      const ms = normalizeRelayConfig(payload.multiStream || cfg.multiStream || {});
+      const serverUrl = `rtmp://127.0.0.1:${ms.port}/live`;
+      const res = await obsWs.configureCustomRtmpService(serverUrl, ms.streamKey);
+      return res;
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('multistream-start', async (_ev, payload = {}) => {
+    const cfg = loadConfig();
+    const ms = normalizeRelayConfig(payload.multiStream || cfg.multiStream || {});
+    cfg.multiStream = ms;
+    saveConfig(cfg);
+
+    const startRes = multiRelay.start(ms);
+    if (!startRes.ok) return startRes;
+
+    const serverUrl = `rtmp://127.0.0.1:${ms.port}/live`;
+    if (obsWs.getState()?.connected) {
+      if (ms.autoConfigureObs !== false) {
+        try {
+          await obsWs.configureCustomRtmpService(serverUrl, ms.streamKey);
+        } catch (e) {}
+      }
+      if (ms.autoStartObsStream !== false) {
+        setTimeout(() => {
+          obsWs.startStream().catch(() => {});
+        }, 650);
+      }
+    }
+    return startRes;
+  });
+
+  ipcMain.handle('multistream-stop', async () => {
+    const cfg = loadConfig();
+    const ms = normalizeRelayConfig(cfg.multiStream || {});
+    if (obsWs.getState()?.connected && ms.autoStartObsStream !== false) {
+      try {
+        await obsWs.stopStream();
+      } catch (e) {}
+    }
+    return multiRelay.stop(true);
+  });
+
   setTimeout(() => {
     if (!demoActive) {
       autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});
@@ -3579,6 +3633,9 @@ app.whenReady().then(async () => {
 });
 
 app.on('will-quit', () => {
+  try {
+    multiRelay.stop(false);
+  } catch (e) {}
   try {
     require('electron').globalShortcut.unregisterAll();
   } catch (e) {}

@@ -556,6 +556,38 @@ function getGoveeLightsSettings() {
   };
 }
 
+function getMultiStreamSettings() {
+  return {
+    port: Math.max(1024, Math.min(65535, parseInt(document.getElementById('numMsPort')?.value || '1935', 10) || 1935)),
+    streamKey: document.getElementById('inputMsLocalKey')?.value.trim() || 'omnigrid',
+    autoConfigureObs: document.getElementById('chkMsAutoConfigObs')?.checked !== false,
+    autoStartObsStream: document.getElementById('chkMsAutoStartObs')?.checked !== false,
+    targets: {
+      twitch: {
+        enabled: Boolean(document.getElementById('chkMsTwitch')?.checked),
+        serverUrl: document.getElementById('inputMsTwitchUrl')?.value.trim() || 'rtmp://fra02.contribute.live-video.net/app',
+        streamKey: document.getElementById('inputMsTwitchKey')?.value.trim() || ''
+      },
+      youtube: {
+        enabled: Boolean(document.getElementById('chkMsYoutube')?.checked),
+        serverUrl: document.getElementById('inputMsYoutubeUrl')?.value.trim() || 'rtmp://a.rtmp.youtube.com/live2',
+        streamKey: document.getElementById('inputMsYoutubeKey')?.value.trim() || ''
+      },
+      tiktok: {
+        enabled: Boolean(document.getElementById('chkMsTiktok')?.checked),
+        serverUrl: document.getElementById('inputMsTiktokUrl')?.value.trim() || '',
+        streamKey: document.getElementById('inputMsTiktokKey')?.value.trim() || ''
+      },
+      custom: {
+        enabled: Boolean(document.getElementById('chkMsCustom')?.checked),
+        name: document.getElementById('inputMsCustomName')?.value.trim() || 'Kick / Custom',
+        serverUrl: document.getElementById('inputMsCustomUrl')?.value.trim() || '',
+        streamKey: document.getElementById('inputMsCustomKey')?.value.trim() || ''
+      }
+    }
+  };
+}
+
 function getFormConfig() {
   return {
     streamerName: inputStreamerName.value.trim(),
@@ -574,6 +606,7 @@ function getFormConfig() {
     customCommands: getCustomCommandsSettings(),
     elgatoLights: getElgatoLightsSettings(),
     goveeLights: getGoveeLightsSettings(),
+    multiStream: getMultiStreamSettings(),
     hideBots: hideBotsEnabled,
     collapseSpam: collapseSpamEnabled,
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
@@ -1906,6 +1939,37 @@ function applyConfigToForm(cfg) {
     window.__populateGoveeUI(gov);
   }
 
+  const ms = cfg.multiStream || {};
+  const msT = ms.targets || {};
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = String(v); };
+  const setChk = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.checked = Boolean(v); };
+  setVal('numMsPort', ms.port ?? 1935);
+  setVal('inputMsLocalKey', ms.streamKey || 'omnigrid');
+  setVal('inputMsIngestPreview', `rtmp://127.0.0.1:${ms.port ?? 1935}/live`);
+  setChk('chkMsAutoConfigObs', ms.autoConfigureObs !== false);
+  setChk('chkMsAutoStartObs', ms.autoStartObsStream !== false);
+  if (msT.twitch) {
+    setChk('chkMsTwitch', msT.twitch.enabled ?? true);
+    setVal('inputMsTwitchUrl', msT.twitch.serverUrl || 'rtmp://fra02.contribute.live-video.net/app');
+    setVal('inputMsTwitchKey', msT.twitch.streamKey || '');
+  }
+  if (msT.youtube) {
+    setChk('chkMsYoutube', msT.youtube.enabled);
+    setVal('inputMsYoutubeUrl', msT.youtube.serverUrl || 'rtmp://a.rtmp.youtube.com/live2');
+    setVal('inputMsYoutubeKey', msT.youtube.streamKey || '');
+  }
+  if (msT.tiktok) {
+    setChk('chkMsTiktok', msT.tiktok.enabled);
+    setVal('inputMsTiktokUrl', msT.tiktok.serverUrl || '');
+    setVal('inputMsTiktokKey', msT.tiktok.streamKey || '');
+  }
+  if (msT.custom) {
+    setChk('chkMsCustom', msT.custom.enabled);
+    setVal('inputMsCustomName', msT.custom.name || 'Kick / Custom');
+    setVal('inputMsCustomUrl', msT.custom.serverUrl || '');
+    setVal('inputMsCustomKey', msT.custom.streamKey || '');
+  }
+
   hideBotsEnabled = Boolean(cfg.hideBots);
   collapseSpamEnabled = cfg.collapseSpam !== false;
   btnHideBots?.classList.toggle('active', hideBotsEnabled);
@@ -2957,6 +3021,7 @@ window.omnichat.onChatMessage((msg) => {
   }
 
   const moveMap = [
+    ['.multistream-relay-box', 'cfgTab_platforms'],
     ['.event-settings-box', 'cfgTab_profile'],
     ['.design-settings-box', 'cfgTab_design'],
     ['.emote-settings-box', 'cfgTab_design'],
@@ -5921,6 +5986,162 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     });
   });
 })();
+
+// ======================================================
+// MULTI-PLATFORM RTMP RESTREAMING RELAY UI
+// ======================================================
+(function initMultiStreamRelayUI() {
+  const badgeLive = document.getElementById('msLiveBadge');
+  const telemetryLive = document.getElementById('msLiveTelemetry');
+  const btnLiveStart = document.getElementById('btnMsLiveStart');
+  const btnLiveStop = document.getElementById('btnMsLiveStop');
+  const btnOpenCfg = document.getElementById('btnMsOpenCfg');
+
+  const numPort = document.getElementById('numMsPort');
+  const inpLocalKey = document.getElementById('inputMsLocalKey');
+  const inpIngestPreview = document.getElementById('inputMsIngestPreview');
+  const btnConfigObs = document.getElementById('btnMsConfigureObs');
+  const btnCfgStart = document.getElementById('btnMsCfgStart');
+  const btnCfgStop = document.getElementById('btnMsCfgStop');
+  const statusCfg = document.getElementById('msCfgStatus');
+
+  const inputIds = [
+    'numMsPort', 'inputMsLocalKey', 'chkMsAutoConfigObs', 'chkMsAutoStartObs',
+    'chkMsTwitch', 'inputMsTwitchUrl', 'inputMsTwitchKey',
+    'chkMsYoutube', 'inputMsYoutubeUrl', 'inputMsYoutubeKey',
+    'chkMsTiktok', 'inputMsTiktokUrl', 'inputMsTiktokKey',
+    'chkMsCustom', 'inputMsCustomName', 'inputMsCustomUrl', 'inputMsCustomKey'
+  ];
+
+  function saveMsConfig() {
+    if (inpIngestPreview && numPort) {
+      inpIngestPreview.value = `rtmp://127.0.0.1:${numPort.value || 1935}/live`;
+    }
+    window.omnichat.saveProfile(getFormConfig());
+  }
+
+  inputIds.forEach((id) => {
+    document.getElementById(id)?.addEventListener('change', saveMsConfig);
+  });
+
+  function renderRelayState(st) {
+    if (!st) return;
+    const isRunning = Boolean(st.active);
+    btnLiveStart?.classList.toggle('hidden', isRunning);
+    btnLiveStop?.classList.toggle('hidden', !isRunning);
+    btnCfgStart?.classList.toggle('hidden', isRunning);
+    btnCfgStop?.classList.toggle('hidden', !isRunning);
+
+    const targetsStr = (st.activeTargets || []).join(' + ') || 'Keine Ziele';
+    if (st.status === 'streaming') {
+      if (badgeLive) {
+        badgeLive.textContent = '(🔴 LIVE)';
+        badgeLive.style.color = '#4ade80';
+      }
+      const statLine = `🔴 LIVE → ${targetsStr} • ${st.bitrateKbps || 0} kbps • ${st.fps || 0} FPS (${st.uptime || '00:00:00'})`;
+      if (telemetryLive) {
+        telemetryLive.style.color = '#4ade80';
+        telemetryLive.textContent = statLine;
+      }
+      if (statusCfg) {
+        statusCfg.style.color = '#4ade80';
+        statusCfg.textContent = statLine;
+      }
+    } else if (st.status === 'waiting') {
+      if (badgeLive) {
+        badgeLive.textContent = '(⏳ Wartet auf OBS)';
+        badgeLive.style.color = '#38bdf8';
+      }
+      const waitLine = `⏳ Relay bereit (${st.ingestServer}/${st.ingestKey}) → Wartet auf OBS-Stream (${targetsStr})...`;
+      if (telemetryLive) {
+        telemetryLive.style.color = '#38bdf8';
+        telemetryLive.textContent = waitLine;
+      }
+      if (statusCfg) {
+        statusCfg.style.color = '#38bdf8';
+        statusCfg.textContent = waitLine;
+      }
+    } else if (st.status === 'error') {
+      if (badgeLive) {
+        badgeLive.textContent = '(❌ Fehler)';
+        badgeLive.style.color = '#f87171';
+      }
+      if (telemetryLive) {
+        telemetryLive.style.color = '#f87171';
+        telemetryLive.textContent = `❌ ${st.error || 'Relay-Fehler'}`;
+      }
+      if (statusCfg) {
+        statusCfg.style.color = '#f87171';
+        statusCfg.textContent = `❌ ${st.error || 'Relay-Fehler'}`;
+      }
+    } else {
+      if (badgeLive) {
+        badgeLive.textContent = '(Aus)';
+        badgeLive.style.color = '#94a3b8';
+      }
+      if (telemetryLive) {
+        telemetryLive.style.color = '#94a3b8';
+        telemetryLive.textContent = 'OBS rendert 1× → OmniGrid verteilt';
+      }
+      if (statusCfg) {
+        statusCfg.style.color = '#94a3b8';
+        statusCfg.textContent = 'Bereit';
+      }
+    }
+  }
+
+  window.omnichat.onMultiStreamState?.(renderRelayState);
+  window.omnichat.multiStreamGetState?.().then(renderRelayState).catch(() => {});
+
+  async function handleStart() {
+    saveMsConfig();
+    const multiStream = getMultiStreamSettings();
+    const res = await window.omnichat.multiStreamStart?.({ multiStream });
+    if (res?.state) renderRelayState(res.state);
+    if (!res?.ok && res?.error) {
+      if (statusCfg) {
+        statusCfg.style.color = '#f87171';
+        statusCfg.textContent = `❌ ${res.error}`;
+      }
+      if (telemetryLive) {
+        telemetryLive.style.color = '#f87171';
+        telemetryLive.textContent = `❌ ${res.error}`;
+      }
+    }
+  }
+
+  async function handleStop() {
+    const res = await window.omnichat.multiStreamStop?.();
+    if (res?.state) renderRelayState(res.state);
+  }
+
+  btnLiveStart?.addEventListener('click', handleStart);
+  btnCfgStart?.addEventListener('click', handleStart);
+  btnLiveStop?.addEventListener('click', handleStop);
+  btnCfgStop?.addEventListener('click', handleStop);
+
+  btnConfigObs?.addEventListener('click', async () => {
+    saveMsConfig();
+    const multiStream = getMultiStreamSettings();
+    const res = await window.omnichat.multiStreamConfigureObs?.({ multiStream });
+    if (res?.ok) {
+      if (statusCfg) {
+        statusCfg.style.color = '#4ade80';
+        statusCfg.textContent = `✅ OBS Stream-Server automatisch auf ${res.server} (Key: ${res.key}) gesetzt!`;
+      }
+    } else if (statusCfg) {
+      statusCfg.style.color = '#f87171';
+      statusCfg.textContent = `❌ ${res?.error || 'Bitte zuerst OBS WebSocket v5 verbinden.'}`;
+    }
+  });
+
+  btnOpenCfg?.addEventListener('click', () => {
+    document.getElementById('configPageModal')?.classList.remove('hidden');
+    const tabBtn = document.querySelector('.config-tab-btn[data-cfg-tab="platforms"]');
+    tabBtn?.click();
+  });
+})();
+
 
 
 

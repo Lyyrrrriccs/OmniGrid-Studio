@@ -261,3 +261,11 @@ Notify your community automatically when you go live and share your stream sched
 - **Single or Multi-Lamp Selection:** After clicking **🔄 Geräte & Szenen laden**, check **a single lamp** (**Nur 1 Lampe**) or multiple lamps (**Alle**) in the lamp checklist.
 - **Event Coupling & Per-Event Single-Lamp Override:** Assign any dynamic Govee scene, DIY scene, or RGB color preset to **🏠 Default Scene**, **🟢 Stream Start**, **💙 Follow**, **💜 Sub**, **🔮 Resub**, **🎁 Sub-Gift**, **🪙 Bits/Gift**, **🚀 Raid**, **🔥 Chat-Hype**, and **⏹️ Stream Stop** — either across your checked lamps (`🎯 Gewählte Lampe(n)`) or targeted to **a specific single lamp (`💡 Nur: <Lamp>`)** per event! Automatically reverts to your default scene after X seconds.
 
+## 22. Local Multi-Platform Streaming Relay (`📡 Multi-Stream`)
+
+OBS only handles **rendering & encoding once (`1×`)**, while OmniGrid Studio distributes the stream locally with **0% extra GPU/CPU encoding load (`-c copy`)** simultaneously to **Twitch**, **YouTube Live**, **TikTok Live**, and **Kick / Custom RTMP**:
+1. **Configure Targets & Stream Keys:** Open **⚙️ Config → 📡 Plattformen** (or click **⚙️ Ziele** in the *Multi-Plattform-Stream* sidebar card). Enable your target platforms and enter your stream keys.
+2. **1-Click OBS Auto-Config:** Click **⚡ OBS automatisch auf OmniGrid-Relay einstellen** to automatically configure OBS (`rtmp://127.0.0.1:1935/live`, key `omnigrid`) via OBS WebSocket v5.
+3. **1-Click Multi-Stream Start:** Click **📡 Multi-Stream Start** in the sidebar — OmniGrid Studio launches the local RTMP relay and automatically starts your OBS stream, showing live bitrate (`kbps`), `FPS`, and active targets.
+
+
