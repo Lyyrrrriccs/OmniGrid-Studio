@@ -106,5 +106,6 @@ contextBridge.exposeInMainWorld('omnichat', {
   multiStreamGetState: () => ipcRenderer.invoke('multistream-get-state'),
   multiStreamStart: (payload) => ipcRenderer.invoke('multistream-start', payload),
   multiStreamStop: () => ipcRenderer.invoke('multistream-stop'),
-  multiStreamConfigureObs: (payload) => ipcRenderer.invoke('multistream-configure-obs', payload)
+  multiStreamConfigureObs: (payload) => ipcRenderer.invoke('multistream-configure-obs', payload),
+  submitGithubFeedback: (payload) => ipcRenderer.invoke('submit-github-feedback', payload)
 });

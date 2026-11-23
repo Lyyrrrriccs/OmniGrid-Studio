@@ -58,8 +58,9 @@
       <button class="btn-chip" id="btnOpenHype" title="Chat-Hype-Detektor (Auto-Marker &amp; Auto-Replay)">🔥 Hype</button>
       <button class="btn-chip" id="btnOpenGameAddons" title="Game-Addons, OBS Game-Stats-Overlay (/game-stats) &amp; Auto-Switch">🎮 Game-Addons</button>
       <button class="btn-chip" id="btnOpenSceneEditor" title="OBS Szenen-, Quellen- &amp; Audio-Editor">🎛️ Szenen-Editor</button>
-      <button class="btn-chip" id="btnOpenHelp" title="Anleitung & Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
-      <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken & Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik & Logs</button>
+      <button class="btn-chip" id="btnOpenHelp" title="Anleitung &amp; Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
+      <button class="btn-chip" id="btnOpenFeedback" title="Feedback, Feature-Wünsche oder Bugs als GitHub Discussion einreichen">💬 Feedback</button>
+      <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken &amp; Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik &amp; Logs</button>
       <button class="btn-chip" id="btnPopoutChat" title="Eigenständiges, vollhohes Chatfenster links neben OBS öffnen">🪟 Separates Chatfenster</button>
       <button class="btn-chip" id="btnSlimDock" title="Dieses Fenster als schmale Spalte (320px, volle Höhe) links neben OBS andocken">📐 Links neben OBS</button>
       <button class="btn-chip" id="btnCompactMode" title="Kompakt-Abstände umschalten">↕️ Kompakt</button>
@@ -2050,6 +2051,48 @@
           </div>
         </div>
         <div id="seStatus" style="margin-top: 8px; font-size: 11px; color: #94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GITHUB DISCUSSION & FEEDBACK MODAL -->
+  <div class="config-modal-backdrop hidden" id="feedbackModal">
+    <div class="config-modal-card" style="max-width: 560px; width: 92vw;">
+      <div class="config-modal-header">
+        <div>
+          <h2>💬 Feedback, Ideen &amp; Bug-Report (GitHub Discussions)</h2>
+          <p class="config-modal-sub">Erstellt direkt eine neue Diskussion (oder ein Issue) auf GitHub inkl. App-Version &amp; System-Info.</p>
+        </div>
+        <button class="btn-chip" id="btnCloseFeedback" style="padding: 6px 12px;">✕ Schließen</button>
+      </div>
+      <div class="config-modal-body">
+        <label style="font-size: 11px; display: block;">Kategorie</label>
+        <select id="selFeedbackCategory" style="width: 100%; margin-top: 3px;">
+          <option value="ideas">💡 Feature-Wunsch / Idee (Ideas)</option>
+          <option value="general">💬 Allgemeines Feedback (General)</option>
+          <option value="q-a">🙋 Frage / Hilfe (Q&amp;A)</option>
+          <option value="polls">📊 Abstimmung / Wunschliste</option>
+        </select>
+
+        <label style="font-size: 11px; margin-top: 8px; display: block;">Titel</label>
+        <input type="text" id="inputFeedbackTitle" placeholder="Kurzer Titel, z. B. Wunsch: Philips Hue Support..." style="margin-top: 3px;" />
+
+        <label style="font-size: 11px; margin-top: 8px; display: block;">Nachricht / Beschreibung</label>
+        <textarea id="txtFeedbackBody" class="tag-textarea" rows="5" placeholder="Beschreibe deine Idee, dein Feedback oder den Fehler..." style="margin-top: 3px; min-height: 95px;"></textarea>
+
+        <details class="auth-details" style="margin-top: 8px;">
+          <summary>🔑 Optional: Eigener GitHub Token für Direkt-Erstellung per GraphQL API</summary>
+          <p style="font-size: 10.5px; color: #94a3b8; margin: 4px 0;">
+            Ohne Token öffnet sich das vorausgefüllte GitHub-Discussion-Formular direkt im Browser (1 Klick auf „Start discussion“). Mit einem persönlichen GitHub-Token (Scope <code>public_repo</code> / <code>discussion</code>) legt die App die Diskussion sofort vollautomatisch per API an.
+          </p>
+          <input type="password" id="inputFeedbackGhToken" placeholder="ghp_... (optional)" />
+        </details>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+          <button class="btn-sm" id="btnSubmitFeedbackDiscussion" style="flex: 2; padding: 9px; background: #0284c7; color: #fff; font-weight: 700;">🚀 GitHub Discussion anlegen</button>
+          <button class="btn-sm" id="btnSubmitFeedbackIssue" style="flex: 1; padding: 9px;">🐛 Als GitHub Issue</button>
+        </div>
+        <div id="feedbackStatus" style="margin-top: 8px; font-size: 11px; color: #94a3b8;"></div>
       </div>
     </div>
   </div>

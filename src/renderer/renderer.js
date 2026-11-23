@@ -6142,6 +6142,93 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   });
 })();
 
+// ======================================================
+// GITHUB DISCUSSIONS & FEEDBACK MODAL UI
+// ======================================================
+(function initFeedbackModalUI() {
+  const modal = document.getElementById('feedbackModal');
+  const btnOpen = document.getElementById('btnOpenFeedback');
+  const btnClose = document.getElementById('btnCloseFeedback');
+  const selCategory = document.getElementById('selFeedbackCategory');
+  const inpTitle = document.getElementById('inputFeedbackTitle');
+  const txtBody = document.getElementById('txtFeedbackBody');
+  const inpToken = document.getElementById('inputFeedbackGhToken');
+  const btnDiscussion = document.getElementById('btnSubmitFeedbackDiscussion');
+  const btnIssue = document.getElementById('btnSubmitFeedbackIssue');
+  const statusEl = document.getElementById('feedbackStatus');
+
+  if (!modal) return;
+
+  try {
+    const savedTok = localStorage.getItem('omnigrid_gh_feedback_token') || '';
+    if (inpToken && savedTok) inpToken.value = savedTok;
+  } catch (e) {}
+
+  function setStatus(msg, color = '#94a3b8') {
+    if (!statusEl) return;
+    statusEl.style.color = color;
+    statusEl.textContent = msg;
+  }
+
+  btnOpen?.addEventListener('click', () => {
+    setStatus('');
+    modal.classList.remove('hidden');
+    inpTitle?.focus();
+  });
+
+  function closeModal() {
+    modal.classList.add('hidden');
+  }
+
+  btnClose?.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  async function submitFeedback(targetType) {
+    const title = inpTitle?.value.trim() || '';
+    const body = txtBody?.value.trim() || '';
+    const category = selCategory?.value || 'ideas';
+    const githubToken = inpToken?.value.trim() || '';
+
+    if (!title) {
+      setStatus('⚠️ Bitte gib einen kurzen Titel ein.', '#fbbf24');
+      inpTitle?.focus();
+      return;
+    }
+
+    try {
+      if (githubToken) localStorage.setItem('omnigrid_gh_feedback_token', githubToken);
+      else localStorage.removeItem('omnigrid_gh_feedback_token');
+    } catch (e) {}
+
+    setStatus('⏳ Übermittle Feedback zu GitHub...', '#38bdf8');
+    const res = await window.omnichat.submitGithubFeedback?.({
+      category,
+      title,
+      body,
+      targetType,
+      githubToken
+    });
+
+    if (res?.ok) {
+      if (inpTitle) inpTitle.value = '';
+      if (txtBody) txtBody.value = '';
+      if (res.mode === 'api') {
+        setStatus('✅ GitHub Discussion direkt per API angelegt & im Browser geöffnet!', '#4ade80');
+      } else {
+        setStatus('✅ Vorausgefüllte GitHub Discussion im Browser geöffnet!', '#4ade80');
+      }
+    } else {
+      setStatus(`❌ ${res?.error || 'Konnte Feedback nicht öffnen.'}`, '#f87171');
+    }
+  }
+
+  btnDiscussion?.addEventListener('click', () => submitFeedback('discussion'));
+  btnIssue?.addEventListener('click', () => submitFeedback('issue'));
+})();
+
+
 
 
 

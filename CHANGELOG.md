@@ -44,8 +44,9 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
   - OBS rendert und enkodiert nur noch `1×` lokal an `rtmp://127.0.0.1:1935/live/omnigrid` (inkl. 1-Klick-Auto-Konfiguration in OBS via `SetStreamServiceSettings`), während OmniGrid Studio den Stream per FFmpeg Tee-Muxer (`-c copy`, 0 % zusätzliche GPU-/CPU-Enkodierlast, `onfail=ignore`) gleichzeitig an **Twitch**, **YouTube Live**, **TikTok Live** und **Kick / Custom RTMP** verteilt — mit Live-Bitrate/FPS-Anzeige und Auto-Start/Stopp von OBS.
 - **OBS Szenen- & Quellen-Editor (`🎛️ Szenen-Editor`):**
   - Interaktive 16:9-Leinwand mit Maus-Drag & Resize, scharfer **1080p HD-Standbild-Vorschau** (aktualisiert bei Änderungen, ohne Audio-Geräte-Boxen im Vorschaubild), **OBS WebSocket Connect-Button direkt im Editor**, Quellen-Erstellung, Audio-Mixer sowie crash-sicherer Auswahl für **Aufnahme-Modus**, **Bildschirm**, **Fenster**, **Anwendung**, **Gerät** und **Browser-URL**.
-- **GitHub Releases Auto-Updater & CI-Workflow:**
+- **GitHub Releases Auto-Updater, Feedback-Dialog (`💬 Feedback`) & CI-Workflow:**
   - Automatische Update-Prüfung beim Start + manueller Button (**🔄 Nach Updates suchen**), automatischer Download des Plattform-Releases, Update-Banner mit 1-Klick-Installation & Neustart sowie `.github/workflows/release.yml` für automatische macOS/Windows-Releases bei `v*`-Tags.
+  - Integrierter **💬 Feedback**-Button in der Topbar zum Anlegen von **GitHub Discussions** (direkt per GitHub GraphQL API `createDiscussion` oder als vorausgefülltes Browser-Formular) und GitHub Issues inkl. automatischer Versions- & System-Info.
 - **Apple Music & Amazon Music Support (macOS & Windows):**
   - Die lokale Musik-Bridge unterstützt neben **Spotify** jetzt auch **Amazon Music** (über macOS `MediaRemote` & Windows) und **Apple Music** (`Music.app` / `iTunes`) ohne API-Key — inklusive Play/Pause/Skip-Steuerung, `!song`-Chat-Bot, automatischem Album-Cover-Lookup und dynamischem `AMAZON MUSIC` (`#00a8e1`) / `APPLE MUSIC` (`#fb7185`) / `SPOTIFY` (`#1ed760`) Badge im OBS-Widget (`/spotify`).
 - **Elgato Key Light & Stream-Licht (`💡 Elgato Key Light`):**

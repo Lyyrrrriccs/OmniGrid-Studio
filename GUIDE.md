@@ -268,4 +268,11 @@ OBS only handles **rendering & encoding once (`1×`)**, while OmniGrid Studio di
 2. **1-Click OBS Auto-Config:** Click **⚡ OBS automatisch auf OmniGrid-Relay einstellen** to automatically configure OBS (`rtmp://127.0.0.1:1935/live`, key `omnigrid`) via OBS WebSocket v5.
 3. **1-Click Multi-Stream Start:** Click **📡 Multi-Stream Start** in the sidebar — OmniGrid Studio launches the local RTMP relay and automatically starts your OBS stream, showing live bitrate (`kbps`), `FPS`, and active targets.
 
+## 23. Feedback, Feature Requests & GitHub Discussions (`💬 Feedback`)
+
+- Click **💬 Feedback** in the top cockpit bar to submit feature ideas, questions, or bug reports directly from the app.
+- **Category, Title & Description:** Automatically appends your OmniGrid Studio version (`v1.1.0`) and OS/architecture.
+- **Direct GraphQL API or Pre-Filled Browser Flow:** With an optional personal GitHub token, OmniGrid Studio creates the GitHub Discussion directly via the GitHub GraphQL API (`createDiscussion`); without a token, it opens the pre-filled **GitHub Discussion** or **GitHub Issue** page in your browser.
+
+
 

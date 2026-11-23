@@ -266,6 +266,13 @@ Informiere deine Community automatisch über Stream-Starts und kommende Streams:
 OBS übernimmt nur noch das **einmalige Rendern & Enkodieren (`1×`)**, während OmniGrid Studio den Stream lokal mit **0 % zusätzlicher GPU-/CPU-Enkodierlast (`-c copy`)** gleichzeitig an **Twitch**, **YouTube Live**, **TikTok Live** und **Kick / Custom RTMP** verteilt:
 1. **Ziele & Stream-Keys eintragen:** Öffne **⚙️ Config → 📡 Plattformen** (oder klicke in der Live-Sidebar bei *Multi-Plattform-Stream* auf **⚙️ Ziele**). Aktiviere die gewünschten Plattformen (Twitch, YouTube, TikTok, Kick/Custom) und trage deine jeweiligen Stream-Schlüssel ein.
 2. **OBS automatisch einstellen:** Klicke auf **⚡ OBS automatisch auf OmniGrid-Relay einstellen** (setzt in OBS per WebSocket v5 automatisch `rtmp://127.0.0.1:1935/live` mit Schlüssel `omnigrid`).
-3. **1-Klick Multi-Stream Start:** Klicke in der Live-Sidebar auf **📡 Multi-Stream Start** — OmniGrid Studio startet den lokalen RTMP- Verteiler und startet automatisch den OBS-Stream mit. Bitrate (`kbps`), `FPS` und aktive Ziele siehst du live im Cockpit.
+3. **1-Klick Multi-Stream Start:** Klicke in der Live-Sidebar auf **📡 Multi-Stream Start** — OmniGrid Studio startet den lokalen RTMP-Verteiler und startet automatisch den OBS-Stream mit. Bitrate (`kbps`), `FPS` und aktive Ziele siehst du live im Cockpit.
+
+## 23. Feedback, Feature-Wünsche & GitHub Discussions (`💬 Feedback`)
+
+- Über den Button **💬 Feedback** oben in der Cockpit-Leiste können Nutzer direkt aus der App heraus Ideen, Fragen oder Bug-Reports einreichen.
+- **Kategorie, Titel & Beschreibung:** App-Version (`v1.1.0`) und Betriebssystem (`macOS` / `Windows`) werden automatisch angehängt.
+- **Direkt-API oder Browser:** Mit optionalem persönlichem GitHub-Token legt OmniGrid Studio die Diskussion sofort per GitHub GraphQL API (`createDiscussion`) an; ohne Token öffnet sich das fertig vorausgefüllte **GitHub Discussion**- bzw. **GitHub Issue**-Formular im Browser.
+
 
 

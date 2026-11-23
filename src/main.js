@@ -3625,6 +3625,81 @@ app.whenReady().then(async () => {
     return multiRelay.stop(true);
   });
 
+  ipcMain.handle('submit-github-feedback', async (_ev, payload = {}) => {
+    const { shell } = require('electron');
+    const https = require('https');
+    const category = String(payload.category || 'ideas').trim();
+    const title = String(payload.title || '').trim();
+    const body = String(payload.body || '').trim();
+    const targetType = String(payload.targetType || 'discussion').trim();
+    const token = String(payload.githubToken || '').trim();
+
+    if (!title) return { ok: false, error: 'Bitte einen kurzen Titel eingeben.' };
+    const fullBody = `${body || '(Keine weitere Beschreibung)'}\n\n---\n*Gesendet aus OmniGrid Studio v${app.getVersion()} (${process.platform} / ${process.arch})*`;
+
+    if (token && targetType === 'discussion') {
+      try {
+        const gqlCall = (query, variables = {}) =>
+          new Promise((resolve, reject) => {
+            const data = Buffer.from(JSON.stringify({ query, variables }), 'utf8');
+            const req = https.request(
+              {
+                host: 'api.github.com',
+                port: 443,
+                path: '/graphql',
+                method: 'POST',
+                headers: {
+                  'User-Agent': 'OmniGrid-Studio',
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Content-Length': data.length
+                }
+              },
+              (res) => {
+                let raw = '';
+                res.on('data', (c) => { raw += c; });
+                res.on('end', () => {
+                  try { resolve(JSON.parse(raw)); } catch (e) { reject(e); }
+                });
+              }
+            );
+            req.on('error', reject);
+            req.write(data);
+            req.end();
+          });
+
+        const repoRes = await gqlCall(
+          `query { repository(owner: "Lyyrrrriccs", name: "omni-stream-chat") { id discussionCategories(first: 20) { nodes { id slug name } } } }`
+        );
+        const repo = repoRes?.data?.repository;
+        const cats = repo?.discussionCategories?.nodes || [];
+        if (repo?.id && cats.length) {
+          const matchedCat =
+            cats.find((c) => c.slug.toLowerCase() === category.toLowerCase()) ||
+            cats.find((c) => c.name.toLowerCase().includes(category.toLowerCase())) ||
+            cats[0];
+          const mutRes = await gqlCall(
+            `mutation($repoId: ID!, $catId: ID!, $title: String!, $body: String!) { createDiscussion(input: { repositoryId: $repoId, categoryId: $catId, title: $title, body: $body }) { discussion { url } } }`,
+            { repoId: repo.id, catId: matchedCat.id, title, body: fullBody }
+          );
+          const createdUrl = mutRes?.data?.createDiscussion?.discussion?.url;
+          if (createdUrl) {
+            await shell.openExternal(createdUrl);
+            return { ok: true, mode: 'api', url: createdUrl };
+          }
+        }
+      } catch (e) {}
+    }
+
+    const baseUrl = 'https://github.com/Lyyrrrriccs/omni-stream-chat';
+    const url =
+      targetType === 'issue'
+        ? `${baseUrl}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(fullBody)}`
+        : `${baseUrl}/discussions/new?category=${encodeURIComponent(category)}&title=${encodeURIComponent(title)}&body=${encodeURIComponent(fullBody)}`;
+    await shell.openExternal(url);
+    return { ok: true, mode: 'browser', url };
+  });
+
   setTimeout(() => {
     if (!demoActive) {
       autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});
