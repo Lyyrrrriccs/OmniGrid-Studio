@@ -3830,6 +3830,12 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     document.getElementById('ssDiscordRole').value = d.mentionRole || '';
     document.getElementById('ssDiscordColor').value = d.embedColor || '#9146ff';
     document.getElementById('ssDiscordAutoObs').checked = Boolean(d.autoPostOnObsLive);
+    const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+    setChk('ssDiscordAutoTwitch', Boolean(d.autoPostOnTwitchLive));
+    setChk('ssDiscordLiveUpdate', d.liveUpdate !== false);
+    setChk('ssDiscordEditOnEnd', d.editOnEnd !== false);
+    setChk('ssDiscordPreview', d.showPreview !== false);
+    window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)).catch(() => {});
 
     document.getElementById('ssBskyEnabled').checked = Boolean(b.enabled);
     document.getElementById('ssBskyHandle').value = b.handle || '';
@@ -3885,6 +3891,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       mentionRole: document.getElementById('ssDiscordRole').value.trim(),
       embedColor: document.getElementById('ssDiscordColor').value || '#9146ff',
       autoPostOnObsLive: document.getElementById('ssDiscordAutoObs').checked,
+      autoPostOnTwitchLive: Boolean(document.getElementById('ssDiscordAutoTwitch')?.checked),
+      liveUpdate: document.getElementById('ssDiscordLiveUpdate')?.checked !== false,
+      editOnEnd: document.getElementById('ssDiscordEditOnEnd')?.checked !== false,
+      showPreview: document.getElementById('ssDiscordPreview')?.checked !== false,
       goLiveMessage: document.getElementById('ssGoLiveMessage').value.trim() || '🔴 **{channel} ist jetzt LIVE!** Komm vorbei!'
     };
     ssState.bluesky = {
@@ -3953,6 +3963,32 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     } else {
       setStatus('❌ Speichern fehlgeschlagen.', '#f87171');
     }
+  });
+
+  ['ssDiscordEnabled', 'ssDiscordAutoObs', 'ssDiscordAutoTwitch', 'ssDiscordLiveUpdate', 'ssDiscordEditOnEnd', 'ssDiscordPreview'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('change', async () => {
+      if (!ssState) return;
+      readConnectionsIntoState();
+      const res = await window.omnichat.socialScheduleSave(ssState);
+      if (res?.ok) {
+        ssState = res.socialSchedule;
+        setStatus('✅ Discord Live-Announcer automatisch gespeichert!', '#4ade80');
+      }
+    });
+  });
+
+  document.getElementById('btnDiscordLiveRefresh')?.addEventListener('click', async () => {
+    const res = await window.omnichat.discordLiveRefresh?.();
+    if (res?.ok && res.state?.active) setStatus('🔄 Discord Live-Nachricht aktualisiert.', '#4ade80');
+    else if (res?.ok) setStatus('ℹ️ Kein aktiver Live-Post zum Aktualisieren.', '#94a3b8');
+    else setStatus(`❌ ${res?.error || 'Aktualisieren fehlgeschlagen.'}`, '#f87171');
+  });
+
+  document.getElementById('btnDiscordLiveEnd')?.addEventListener('click', async () => {
+    const res = await window.omnichat.discordLiveEnd?.();
+    if (res?.skipped) setStatus('ℹ️ Kein aktiver Live-Post.', '#94a3b8');
+    else if (res?.ok) setStatus('⚫ Discord Live-Nachricht als beendet markiert.', '#94a3b8');
+    else setStatus(`❌ ${res?.error || 'Fehlgeschlagen.'}`, '#f87171');
   });
 
   document.getElementById('btnSsAddEntry')?.addEventListener('click', async () => {
@@ -6393,3 +6429,24 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
 
 
+
+// ======================================================
+// DISCORD LIVE-ANNOUNCER STATUS
+// ======================================================
+function renderDiscordLiveStatus(state) {
+  const el = document.getElementById('ssDiscordLiveStatus');
+  if (!el) return;
+  if (!state || !state.active) {
+    el.style.color = '#94a3b8';
+    el.textContent = 'Kein aktiver Live-Post.';
+    return;
+  }
+  const since = new Date(state.startedAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const src = { obs: 'OBS', twitch: 'Twitch', manual: 'manuell' }[state.source] || state.source || '';
+  el.style.color = '#f87171';
+  el.textContent = `🔴 Live-Post aktiv seit ${since} (${src})${state.game ? ` • ${state.game}` : ''}${state.peakViewers ? ` • Peak ${state.peakViewers}` : ''}`;
+}
+
+window.omnichat.onDiscordLiveState?.((state) => renderDiscordLiveStatus(state));
+// Beim Start: laufende Live-Session (z. B. nach App-Neustart) wieder aufnehmen
+window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)).catch(() => {});

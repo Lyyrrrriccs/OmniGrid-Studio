@@ -1713,6 +1713,31 @@
               <input type="checkbox" id="ssDiscordAutoObs" />
               <span>🚀 Automatisch auf Discord posten, wenn OBS-Stream startet</span>
             </label>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(148,163,184,0.16);">
+              <strong style="font-size: 12px;">📢 Live-Announcer</strong>
+              <label class="checkbox-row" style="margin-top: 4px;">
+                <input type="checkbox" id="ssDiscordAutoTwitch" />
+                <span>🟣 Auch posten, wenn Twitch „live“ meldet (funktioniert ohne OBS WebSocket, z. B. Konsole/Streamlabs)</span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="ssDiscordLiveUpdate" checked />
+                <span>🔄 Nachricht alle 5 Min. aktualisieren (Titel, Spiel, Zuschauer, Vorschaubild)</span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="ssDiscordEditOnEnd" checked />
+                <span>⚫ Nach Stream-Ende auf „Stream beendet“ umstellen (Dauer &amp; Zuschauer-Peak)</span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="ssDiscordPreview" checked />
+                <span>🖼️ Twitch-Stream-Vorschaubild im Embed anzeigen</span>
+              </label>
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px;">
+                <span id="ssDiscordLiveStatus" style="flex: 1; min-width: 180px; font-size: 11px; color: #94a3b8;">Kein aktiver Live-Post.</span>
+                <button class="btn-sm" id="btnDiscordLiveRefresh" title="Live-Nachricht jetzt aktualisieren">🔄 Jetzt aktualisieren</button>
+                <button class="btn-sm warn" id="btnDiscordLiveEnd" title="Live-Nachricht manuell als beendet markieren">⚫ Als beendet markieren</button>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Pro Stream wird nur <strong>eine</strong> Nachricht gepostet — auch wenn OBS und Twitch beide „live“ melden. Platzhalter in der Nachricht: <code>{channel}</code>, <code>{title}</code>, <code>{game}</code>.</div>
+            </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">

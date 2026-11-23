@@ -7,6 +7,10 @@ const DEFAULT_SOCIAL_SCHEDULE = {
     scheduleWebhookUrl: '',
     mentionRole: '', // '', 'everyone', 'here', or numeric Role ID
     autoPostOnObsLive: false,
+    autoPostOnTwitchLive: false, // Live-Announcer: postet auch, wenn Twitch "live" meldet (ohne OBS WebSocket)
+    liveUpdate: true, // Embed alle 5 Min. mit Titel/Spiel/Zuschauern/Laufzeit aktualisieren
+    editOnEnd: true, // Nach Stream-Ende Embed auf "Stream beendet" (Dauer, Peak) umstellen
+    showPreview: true, // Twitch-Stream-Vorschaubild im Embed
     goLiveMessage: '🔴 **{channel} ist jetzt LIVE!** Komm vorbei!',
     embedColor: '#9146ff'
   },
@@ -224,13 +228,37 @@ function buildDiscordMention(mentionRole) {
   return '';
 }
 
-async function postDiscordWebhook(webhookUrl, payload) {
-  const url = String(webhookUrl || '').trim();
+function validateDiscordWebhookUrl(webhookUrl) {
+  const url = String(webhookUrl || '').trim().replace(/\?.*$/, '');
   if (!/^https:\/\/(discord\.com|discordapp\.com|ptb\.discord\.com|canary\.discord\.com)\/api\/webhooks\//i.test(url)) {
     throw new Error('Ungültige Discord Webhook-URL.');
   }
-  const resp = await fetch(url, {
+  return url;
+}
+
+async function postDiscordWebhook(webhookUrl, payload, opts = {}) {
+  const url = validateDiscordWebhookUrl(webhookUrl);
+  const resp = await fetch(opts.wait ? `${url}?wait=true` : url, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!resp.ok) {
+    const txt = await resp.text().catch(() => '');
+    throw new Error(`Discord HTTP ${resp.status}: ${txt.slice(0, 180)}`);
+  }
+  if (opts.wait) {
+    const json = await resp.json().catch(() => ({}));
+    return { ok: true, messageId: json?.id || '' };
+  }
+  return true;
+}
+
+async function editDiscordWebhookMessage(webhookUrl, messageId, payload) {
+  const url = validateDiscordWebhookUrl(webhookUrl);
+  if (!/^\d{10,25}$/.test(String(messageId || ''))) throw new Error('Ungültige Discord Message-ID.');
+  const resp = await fetch(`${url}/messages/${messageId}`, {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
@@ -241,14 +269,35 @@ async function postDiscordWebhook(webhookUrl, payload) {
   return true;
 }
 
-async function postDiscordGoLive(cfg = {}, meta = {}) {
+function formatDurationDe(ms) {
+  const totalMin = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h} Std. ${m} Min.` : `${m} Min.`;
+}
+
+function twitchLoginFromCfg(cfg = {}) {
+  return String(cfg.twitchChannel || '')
+    .trim()
+    .replace(/^https?:\/\/(www\.)?twitch\.tv\//i, '')
+    .replace(/[/?#].*$/, '')
+    .toLowerCase();
+}
+
+/**
+ * Baut die Live-Announcer-Nachricht.
+ * state: { phase: 'live' | 'ended', startedAt, endedAt, viewers, peakViewers }
+ */
+function buildDiscordLivePayload(cfg = {}, meta = {}, state = {}) {
   const ss = normalizeSocialScheduleConfig(cfg.socialSchedule);
-  const webhookUrl = ss.discord.webhookUrl;
   const links = buildPlatformLinks(cfg);
   const channel = meta.channel || cfg.streamerName || cfg.twitchChannel || 'Stream';
   const title = String(meta.title || '').trim() || 'Live-Stream gestartet!';
   const game = String(meta.game || '').trim() || 'Just Chatting';
   const tags = Array.isArray(meta.tags) ? meta.tags.filter(Boolean) : [];
+  const ended = state.phase === 'ended';
+  const now = Date.now();
+  const startedAt = Number(state.startedAt || now);
 
   const mentionPrefix = buildDiscordMention(ss.discord.mentionRole);
   const msgTemplate = String(meta.message || ss.discord.goLiveMessage || '🔴 **{channel} ist jetzt LIVE!**')
@@ -262,35 +311,56 @@ async function postDiscordGoLive(cfg = {}, meta = {}) {
   if (links.tiktokUrl) linkLines.push(`🎵 **TikTok:** ${links.tiktokUrl}`);
   if (links.kickUrl) linkLines.push(`🟢 **Kick:** ${links.kickUrl}`);
 
-  const fields = [
-    { name: '🎮 Kategorie / Spiel', value: game, inline: true }
-  ];
-  if (tags.length) {
-    fields.push({ name: '🏷️ Tags', value: tags.slice(0, 8).join(', '), inline: true });
+  const fields = [{ name: '🎮 Kategorie / Spiel', value: game, inline: true }];
+  const unix = Math.floor(startedAt / 1000);
+  if (ended) {
+    fields.push({ name: '⏱️ Dauer', value: formatDurationDe(Number(state.endedAt || now) - startedAt), inline: true });
+    if (Number(state.peakViewers) > 0) fields.push({ name: '👥 Zuschauer-Peak', value: String(state.peakViewers), inline: true });
+  } else {
+    fields.push({ name: '⏱️ Live seit', value: `<t:${unix}:R>`, inline: true });
+    if (Number(state.viewers) > 0) fields.push({ name: '👥 Zuschauer', value: String(state.viewers), inline: true });
   }
+  if (tags.length && !ended) fields.push({ name: '🏷️ Tags', value: tags.slice(0, 8).join(', '), inline: false });
   if (linkLines.length) {
-    fields.push({ name: '📺 Jetzt zuschauen', value: linkLines.join('\n'), inline: false });
+    fields.push({ name: ended ? '📼 Kanal / VODs' : '📺 Jetzt zuschauen', value: linkLines.join('\n'), inline: false });
   }
 
   const primaryUrl = links.twitchUrl || links.youtubeUrl || links.tiktokUrl || undefined;
-
-  const payload = {
-    username: `${channel} • OmniGrid`,
-    content: `${mentionPrefix}${msgTemplate}`.trim(),
-    allowed_mentions: { parse: ['everyone', 'roles'] },
-    embeds: [
-      {
-        title: `🔴 ${title}`,
-        url: primaryUrl,
-        color: hexToIntColor(ss.discord.embedColor),
-        fields,
-        footer: { text: 'OmniGrid Studio • Go-Live Benachrichtigung' },
-        timestamp: new Date().toISOString()
-      }
-    ]
+  const login = twitchLoginFromCfg(cfg);
+  const embed = {
+    title: ended ? `⚫ Stream beendet — ${title}` : `🔴 ${title}`,
+    url: primaryUrl,
+    color: ended ? 0x4b5563 : hexToIntColor(ss.discord.embedColor),
+    fields,
+    footer: { text: ended ? 'OmniGrid Studio • Live-Announcer • Danke fürs Zuschauen!' : 'OmniGrid Studio • Live-Announcer' },
+    timestamp: new Date(ended ? Number(state.endedAt || now) : startedAt).toISOString()
   };
+  if (!ended && ss.discord.showPreview !== false && login) {
+    // Cache-Buster, damit Discord bei jedem Update ein frisches Vorschaubild lädt
+    embed.image = { url: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login}-1280x720.jpg?t=${Math.floor(now / 60000)}` };
+  }
 
-  await postDiscordWebhook(webhookUrl, payload);
+  return {
+    username: `${channel} • OmniGrid`,
+    content: ended ? `⚫ ${channel} war live — danke an alle fürs Vorbeischauen!` : `${mentionPrefix}${msgTemplate}`.trim(),
+    allowed_mentions: ended ? { parse: [] } : { parse: ['everyone', 'roles'] },
+    embeds: [embed]
+  };
+}
+
+async function postDiscordGoLive(cfg = {}, meta = {}, state = {}) {
+  const ss = normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const payload = buildDiscordLivePayload(cfg, meta, { phase: 'live', startedAt: Date.now(), ...state });
+  const res = await postDiscordWebhook(ss.discord.webhookUrl, payload, { wait: true });
+  return { ok: true, messageId: res.messageId || '' };
+}
+
+async function updateDiscordLiveMessage(cfg = {}, webhookUrl, messageId, meta = {}, state = {}) {
+  const payload = buildDiscordLivePayload(cfg, meta, state);
+  // Beim Update keinen erneuten Rollen-Ping auslösen
+  payload.allowed_mentions = { parse: [] };
+  delete payload.username;
+  await editDiscordWebhookMessage(webhookUrl, messageId, payload);
   return { ok: true };
 }
 
@@ -661,6 +731,8 @@ module.exports = {
   formatScheduleChatReply,
   formatInstagramCaption,
   postDiscordGoLive,
+  updateDiscordLiveMessage,
+  buildDiscordLivePayload,
   postDiscordSchedule,
   postBluesky,
   postMastodon,

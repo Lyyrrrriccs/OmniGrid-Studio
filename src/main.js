@@ -161,6 +161,196 @@ function broadcastScheduleToObs(cfg) {
   obsServer.broadcastSchedule({ channel, entries });
 }
 
+// ======================================================
+// DISCORD LIVE-ANNOUNCER
+// Eine Nachricht pro Stream (kein Doppel-Post bei OBS + Twitch), die während
+// des Streams live aktualisiert und am Ende auf "Stream beendet" umgestellt wird.
+// ======================================================
+const DISCORD_LIVE_UPDATE_MS = 5 * 60 * 1000;
+const DISCORD_LIVE_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+let discordLiveTimer = null;
+let discordLivePeak = 0;
+let twitchLiveState = null; // null = unbekannt, true/false = letzter bekannter Twitch-Status
+let twitchOfflineStrikes = 0;
+
+function getDiscordLiveSession(cfg) {
+  const s = cfg?.discordLiveSession;
+  if (!s || !s.messageId || !s.webhookUrl || s.phase !== 'live') return null;
+  if (Date.now() - Number(s.startedAt || 0) > DISCORD_LIVE_MAX_AGE_MS) return null;
+  return s;
+}
+
+function saveDiscordLiveSession(session) {
+  const cfg = loadConfig();
+  cfg.discordLiveSession = session || null;
+  saveConfig(cfg);
+  broadcastToWindows('discord-live-state', publicDiscordLiveState(session));
+}
+
+function publicDiscordLiveState(session) {
+  if (!session) return { active: false };
+  return {
+    active: true,
+    startedAt: session.startedAt,
+    source: session.source,
+    title: session.meta?.title || '',
+    game: session.meta?.game || '',
+    peakViewers: Math.max(Number(session.peakViewers || 0), discordLivePeak)
+  };
+}
+
+function currentTotalViewers() {
+  return ['twitch', 'youtube', 'tiktok', 'kick'].reduce((acc, p) => acc + (Number(platformStatus?.[p]?.viewers) || 0), 0);
+}
+
+async function fetchLiveMeta(cfg, base = {}) {
+  const meta = {
+    channel: cfg.streamerName || cfg.twitchChannel || 'Stream',
+    title: base.title || '',
+    game: base.game || '',
+    tags: Array.isArray(base.tags) ? base.tags : [],
+    message: base.message || ''
+  };
+  if (twitch.connected && (!meta.title || !meta.game)) {
+    try {
+      const info = await twitch.getChannelInfo();
+      meta.title = meta.title || info.title || '';
+      meta.game = meta.game || info.gameName || '';
+      if (!meta.tags.length && Array.isArray(info.tags)) meta.tags = info.tags;
+    } catch (e) {}
+  }
+  return meta;
+}
+
+function ensureDiscordLiveTimer() {
+  if (discordLiveTimer) return;
+  discordLiveTimer = setInterval(() => {
+    refreshDiscordLiveAnnouncement().catch((err) => appendDiagLog('system', 'warn', `Discord Live-Update Fehler: ${err.message}`));
+  }, DISCORD_LIVE_UPDATE_MS);
+}
+
+function stopDiscordLiveTimer() {
+  if (discordLiveTimer) clearInterval(discordLiveTimer);
+  discordLiveTimer = null;
+}
+
+async function startDiscordLiveAnnouncement(cfg, opts = {}) {
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+  if (!ss.discord.webhookUrl) throw new Error('Keine Discord Go-Live Webhook-URL eingetragen.');
+  const existing = getDiscordLiveSession(cfg);
+  if (existing && !opts.force) {
+    ensureDiscordLiveTimer();
+    return { ok: true, skipped: true, messageId: existing.messageId };
+  }
+  const meta = opts.meta ? { ...opts.meta } : await fetchLiveMeta(cfg);
+  const startedAt = Date.now();
+  const viewers = currentTotalViewers();
+  const res = await socialSchedule.postDiscordGoLive(cfg, meta, { startedAt, viewers });
+  discordLivePeak = viewers;
+  if (res.messageId) {
+    saveDiscordLiveSession({
+      messageId: res.messageId,
+      webhookUrl: ss.discord.webhookUrl,
+      startedAt,
+      peakViewers: viewers,
+      phase: 'live',
+      source: opts.source || 'manual',
+      meta
+    });
+    ensureDiscordLiveTimer();
+  }
+  appendDiagLog('system', 'info', `📢 Discord Live-Announcer: Go-Live gepostet (${opts.source || 'manuell'}).`);
+  return { ok: true, messageId: res.messageId };
+}
+
+async function refreshDiscordLiveAnnouncement() {
+  const cfg = loadConfig();
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const s = getDiscordLiveSession(cfg);
+  if (!s) {
+    stopDiscordLiveTimer();
+    return;
+  }
+  const viewers = currentTotalViewers();
+  discordLivePeak = Math.max(discordLivePeak, viewers, Number(s.peakViewers || 0));
+  s.peakViewers = discordLivePeak;
+  if (ss.discord.liveUpdate !== false) {
+    const fresh = await fetchLiveMeta(cfg);
+    s.meta = {
+      ...(s.meta || {}),
+      title: fresh.title || s.meta?.title || '',
+      game: fresh.game || s.meta?.game || '',
+      tags: fresh.tags?.length ? fresh.tags : s.meta?.tags || []
+    };
+    await socialSchedule.updateDiscordLiveMessage(cfg, s.webhookUrl, s.messageId, s.meta, {
+      phase: 'live',
+      startedAt: s.startedAt,
+      viewers
+    });
+  }
+  saveDiscordLiveSession(s);
+}
+
+async function endDiscordLiveAnnouncement(reason = 'manual') {
+  stopDiscordLiveTimer();
+  const cfg = loadConfig();
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const s = getDiscordLiveSession(cfg);
+  if (!s) return { ok: true, skipped: true };
+  const peak = Math.max(discordLivePeak, Number(s.peakViewers || 0), currentTotalViewers());
+  let error = '';
+  if (ss.discord.editOnEnd !== false) {
+    try {
+      await socialSchedule.updateDiscordLiveMessage(cfg, s.webhookUrl, s.messageId, s.meta || {}, {
+        phase: 'ended',
+        startedAt: s.startedAt,
+        endedAt: Date.now(),
+        peakViewers: peak
+      });
+    } catch (err) {
+      error = err.message;
+      appendDiagLog('system', 'warn', `Discord Live-Announcer: Stream-Ende konnte nicht eingetragen werden: ${err.message}`);
+    }
+  }
+  discordLivePeak = 0;
+  saveDiscordLiveSession(null);
+  appendDiagLog('system', 'info', `⚫ Discord Live-Announcer: Stream als beendet markiert (${reason}).`);
+  return { ok: !error, error };
+}
+
+function handleTwitchLiveTransition(isLive) {
+  const cfg = loadConfig();
+  const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+  const autoTwitch = Boolean(ss.discord.enabled && ss.discord.autoPostOnTwitchLive && ss.discord.webhookUrl);
+  if (isLive) {
+    twitchOfflineStrikes = 0;
+    if (twitchLiveState !== true) {
+      twitchLiveState = true;
+      if (autoTwitch) {
+        startDiscordLiveAnnouncement(cfg, { source: 'twitch' }).catch((err) =>
+          appendDiagLog('system', 'warn', `Discord Live-Announcer Fehler: ${err.message}`)
+        );
+      }
+    }
+    return;
+  }
+  const session = getDiscordLiveSession(cfg);
+  if (twitchLiveState === true) {
+    twitchOfflineStrikes += 1;
+    // 2 Offline-Meldungen in Folge (~60 s), damit kurze Twitch-Aussetzer nichts beenden
+    if (twitchOfflineStrikes >= 2) {
+      twitchLiveState = false;
+      if (session && (session.source === 'twitch' || autoTwitch)) {
+        endDiscordLiveAnnouncement('Twitch offline').catch(() => {});
+      }
+    }
+  } else if (twitchLiveState === null) {
+    twitchLiveState = false;
+    // App wurde nach Stream-Ende neu gestartet → alte Live-Nachricht abschließen
+    if (session && session.source === 'twitch') endDiscordLiveAnnouncement('Twitch offline (nach Neustart)').catch(() => {});
+  }
+}
+
 async function executeGoLivePost(cfg, payload = {}) {
   const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
   const targets = payload.targets || {};
@@ -185,8 +375,12 @@ async function executeGoLivePost(cfg, payload = {}) {
 
   if (targets.discord ?? ss.discord.enabled) {
     try {
-      await socialSchedule.postDiscordGoLive(cfg, meta);
-      posted.push('Discord');
+      const dRes = await startDiscordLiveAnnouncement(cfg, {
+        meta,
+        force: payload.force !== false,
+        source: payload.source || 'manual'
+      });
+      posted.push(dRes.skipped ? 'Discord (bereits angekündigt)' : 'Discord');
     } catch (e) {
       errors.push(`Discord: ${e.message}`);
     }
@@ -1424,6 +1618,10 @@ function forwardStats(stats) {
   };
   obsServer.broadcastStatus(platformStatus);
   broadcastToWindows('platform-status', platformStatus);
+  if (discordLiveTimer) discordLivePeak = Math.max(discordLivePeak, currentTotalViewers());
+  if (stats.platform === 'twitch' && typeof stats.isLive === 'boolean' && !demoActive) {
+    handleTwitchLiveTransition(stats.isLive);
+  }
 }
 
 twitch.on('room-id', (roomId) => {
@@ -1466,10 +1664,18 @@ obsWs.on('state', (st) => {
     }
     goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'streamStart').catch(() => {});
     const now = Date.now();
+    {
+      const ssD = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
+      if (ssD.discord.enabled && ssD.discord.autoPostOnObsLive && ssD.discord.webhookUrl) {
+        startDiscordLiveAnnouncement(cfg, { source: 'obs' }).catch((err) =>
+          appendDiagLog('system', 'warn', `Discord Live-Announcer Fehler: ${err.message}`)
+        );
+      }
+    }
     if (now - lastAutoGoLiveAt > 15 * 60 * 1000) {
       const ss = socialSchedule.normalizeSocialScheduleConfig(cfg.socialSchedule);
       const targets = {
-        discord: Boolean(ss.discord.enabled && ss.discord.autoPostOnObsLive && ss.discord.webhookUrl),
+        discord: false, // läuft über den Discord Live-Announcer (oben)
         bluesky: Boolean(ss.bluesky.enabled && ss.bluesky.autoPostOnLive),
         mastodon: Boolean(ss.mastodon.enabled && ss.mastodon.autoPostOnLive),
         x: Boolean(ss.x.enabled && ss.x.autoPostOnLive),
@@ -1500,6 +1706,7 @@ obsWs.on('state', (st) => {
         .catch(() => {});
     }
     goveeLights.triggerGoveeForEvent(cfg.goveeLights, 'streamStop').catch(() => {});
+    endDiscordLiveAnnouncement('OBS-Stream gestoppt').catch(() => {});
   }
   lastObsStreaming = isStreaming;
 });
@@ -3384,6 +3591,23 @@ app.whenReady().then(async () => {
       links: socialSchedule.buildPlatformLinks(cfg),
       upcoming: socialSchedule.getUpcomingEntries(cfg.socialSchedule.schedule, 12)
     };
+  });
+
+  ipcMain.handle('discord-live-get', () => {
+    const s = getDiscordLiveSession(loadConfig());
+    if (s) ensureDiscordLiveTimer();
+    return { ok: true, state: publicDiscordLiveState(s) };
+  });
+
+  ipcMain.handle('discord-live-end', async () => endDiscordLiveAnnouncement('manuell'));
+
+  ipcMain.handle('discord-live-refresh', async () => {
+    try {
+      await refreshDiscordLiveAnnouncement();
+      return { ok: true, state: publicDiscordLiveState(getDiscordLiveSession(loadConfig())) };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   });
 
   ipcMain.handle('social-post-golive', async (_ev, payload) => {
