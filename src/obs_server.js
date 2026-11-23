@@ -1954,6 +1954,8 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
 
     function renderStats(data) {
       if (!data) return;
+      card.style.display = data.overlayEnabled === false ? 'none' : '';
+      if (data.overlayEnabled === false) return;
       const isLol = data.addonId === 'lol';
       card.classList.toggle('theme-lol', isLol);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
@@ -2087,7 +2089,7 @@ const OBS_LOL_MAP_HTML = `<!DOCTYPE html>
 
     function renderMapCover(data) {
       if (!data) return;
-      const show = Boolean(data.mapCoverEnabled);
+      const show = Boolean(data.mapCoverEnabled) && data.overlayEnabled !== false;
       coverEl.classList.toggle('hidden', !show);
       subEl.textContent = data.mapCoverText || 'Minimap verdeckt • Kein Ghosting';
       const iconUrl = data.skinIconUrl || data.championIconUrl;

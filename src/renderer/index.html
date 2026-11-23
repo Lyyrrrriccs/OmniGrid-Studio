@@ -1878,7 +1878,7 @@
           <input type="checkbox" id="hdEnabled" />
           <span><strong>Chat-Hype-Detektor aktivieren</strong></span>
         </label>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 10px;">
           <div>
             <label style="font-size: 11px;">Zeitfenster (Sek.)</label>
             <input type="number" id="hdWindowSec" min="5" max="60" value="10" />
@@ -1888,12 +1888,17 @@
             <input type="number" id="hdMinMsgs" min="4" max="100" value="12" />
           </div>
           <div>
+            <label style="font-size: 11px;" title="So viele Keyword-Nachrichten im Zeitfenster lösen sofort aus">Keyword-Treffer</label>
+            <input type="number" id="hdKeywordHits" min="1" max="50" value="3" />
+          </div>
+          <div>
             <label style="font-size: 11px;">Cooldown (Sek.)</label>
             <input type="number" id="hdCooldownSec" min="15" max="600" value="90" />
           </div>
         </div>
-        <label style="font-size: 11px; margin-top: 8px; display: block;">Hype-Keywords (zählen doppelt, kommagetrennt)</label>
+        <label style="font-size: 11px; margin-top: 8px; display: block;">Hype-Keywords (kommagetrennt — jede Keyword-Nachricht zählt 3 Punkte; X Keyword-Treffer im Zeitfenster lösen sofort aus)</label>
         <textarea id="hdKeywords" class="tag-textarea" rows="2">pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype</textarea>
+        <div id="hdMeter" style="margin-top: 6px; font-size: 11px; color: #94a3b8;">📊 Hype-Meter: wartet auf Chat-Nachrichten…</div>
         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
           <label class="checkbox-row"><input type="checkbox" id="hdAutoMarker" checked /><span>🚩 Automatisch Twitch Stream-Marker setzen</span></label>
           <label class="checkbox-row"><input type="checkbox" id="hdAutoObsReplay" /><span>💾 Automatisch OBS Replay-Buffer speichern (falls OBS WS aktiv)</span></label>
@@ -1960,12 +1965,15 @@
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
+          <label class="checkbox-row"><input type="checkbox" id="gaOverlayEnabled" checked /><span>👁️ <strong>OBS Game-Stats-Overlay anzeigen</strong> (aus = <code>/game-stats</code> &amp; <code>/lol-map</code> werden in OBS ausgeblendet)</span></label>
           <label class="checkbox-row"><input type="checkbox" id="gaLolPolling" /><span>⚔️ League of Legends Live Client API (<code>127.0.0.1:2999</code>) automatisch pollen</span></label>
           <label class="checkbox-row"><input type="checkbox" id="gaAutoTrigger" checked /><span>⚡ Spiel-Events automatisch auslösen (z. B. CS2 3K/Ace → Twitch Stream-Marker)</span></label>
+          <div style="font-size: 11px; color: #94a3b8;">🔒 Vorgefertigte Addons sind schreibgeschützt: Name, Felder &amp; Commands bleiben unverändert — nur die Live-Werte pro Addon werden gespeichert und können jederzeit auf Standard zurückgesetzt werden.</div>
         </div>
 
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
           <button class="btn-sm" id="btnGaSave" style="flex: 1; padding: 9px; font-weight: 700; background: #2563eb; color: #fff;">💾 Stats &amp; Addon auf OBS anwenden</button>
+          <button class="btn-sm warn" id="btnGaReset" title="Setzt nur die Werte des aktiven Addons auf die Standardwerte zurück">↺ Werte zurücksetzen</button>
           <button class="btn-sm" id="btnGaExportCs2">📄 CS2 GSI Config exportieren</button>
           <button class="btn-sm" id="btnGaCopyUrl">🔗 OBS /game-stats URL</button>
         </div>

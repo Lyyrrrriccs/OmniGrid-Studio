@@ -79,15 +79,16 @@ function handleIncomingGameWebhook(kind, body = {}) {
 
     const roundKills = Number(body?.player?.state?.round_kills || 0);
     if (ga.autoTriggerEvents && roundKills >= 3 && cur.kills > prevKills && twitch.connected) {
-      twitch.createMarker(`🎯 CS2 ${roundKills}K Highlight!`).catch(() => {});
+      twitch.createStreamMarker(`🎯 CS2 ${roundKills}K Highlight!`).catch(() => {});
     }
     return;
   }
 
   // Generic custom game webhook: { addonId?, stats?: { ... }, eventText?: string }
   const targetId = String(body.addonId || gameAddons.resolveActiveAddon(cfg).addon.id);
+  if (!gameAddons.PRESET_ADDON_IDS.includes(targetId)) return;
   if (body.stats && typeof body.stats === 'object') {
-    ga.perAddonStats[targetId] = { ...(ga.perAddonStats[targetId] || {}), ...body.stats };
+    ga.perAddonStats[targetId] = gameAddons.sanitizeAddonStats(targetId, { ...(ga.perAddonStats[targetId] || {}), ...body.stats });
     cfg.gameAddons = ga;
     saveConfig(cfg);
     broadcastGameAddonsState(cfg);
@@ -479,9 +480,10 @@ function getDefaultConfig() {
       autoObsReplay: false,
       autoClip: true,
       postClipToChat: true,
+      keywordHits: 3,
       keywords: 'pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype'
     },
-    gameAddons: gameAddons.DEFAULT_GAME_ADDONS_CONFIG,
+    gameAddons: gameAddons.normalizeGameAddonsConfig({}),
     soundboard: {
       volume: 0.8,
       playLocally: true,
@@ -1005,6 +1007,7 @@ function forwardChatMessage(msg) {
 
     obsServer.broadcastChat(enriched);
     broadcastToWindows('chat-message', enriched);
+    processHypeMessage(enriched, cfg);
     handlePollVote(enriched);
     handleCustomChatCommand(enriched, cfg);
 
@@ -1117,36 +1120,65 @@ function forwardChatMessage(msg) {
         }
       }
     }
-
-    // Chat-Hype-Detektor (Auto-Marker / Auto-OBS-Replay / Auto-Clip)
-    {
-      const cfg = loadConfig();
-      const hd = cfg.hypeDetector || {};
-      if (hd.enabled) {
-        const now = Date.now();
-        const winMs = Math.max(5, Number(hd.windowSec || 10)) * 1000;
-        const kwList = String(hd.keywords || '')
-          .split(',')
-          .map((s) => s.trim().toLowerCase())
-          .filter(Boolean);
-        const lower = String(msg.text || '').toLowerCase();
-        const hasHypeKw = kwList.some((k) => lower.includes(k));
-        hypeTimestamps.push({ ts: now, weight: hasHypeKw ? 2 : 1 });
-
-        while (hypeTimestamps.length && now - hypeTimestamps[0].ts > winMs) {
-          hypeTimestamps.shift();
-        }
-        const score = hypeTimestamps.reduce((acc, x) => acc + x.weight, 0);
-        const minMsgs = Math.max(4, Number(hd.minMessages || 12));
-        const cooldownMs = Math.max(15, Number(hd.cooldownSec || 90)) * 1000;
-
-        if (score >= minMsgs && now - lastHypeTriggerAt > cooldownMs) {
-          const desc = `🔥 Chat-Hype (${score} Punkte / ${Math.round(winMs / 1000)}s)`;
-          executeHypeTrigger(cfg, desc).catch(() => {});
-        }
-      }
-    }
   } catch (e) {}
+}
+
+// Chat-Hype-Detektor (Auto-Marker / Auto-OBS-Replay / Auto-Clip)
+// Löst aus, wenn ENTWEDER genug Hype-Punkte im Zeitfenster zusammenkommen
+// ODER genug Keyword-Nachrichten (z. B. 3× "pog") im Zeitfenster eintreffen.
+const hypeKeywordHits = [];
+let lastHypeMeterBroadcastAt = 0;
+
+function escapeRegexHype(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function processHypeMessage(msg, cfg) {
+  try {
+    const hd = { ...getDefaultConfig().hypeDetector, ...(cfg?.hypeDetector || {}) };
+    if (!hd.enabled) return;
+    if (msg?.isDemoBot || String(msg?.id || '').startsWith('hype_clip_')) return;
+
+    const now = Date.now();
+    const winMs = Math.max(5, Number(hd.windowSec || 10)) * 1000;
+    const kwList = String(hd.keywords || '')
+      .split(/[,\n]/)
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const lower = String(msg.text || '').toLowerCase();
+    // Wortgrenzen-Match (auch Emote-Namen wie "PogChamp" → "pog" am Wortanfang)
+    const matchedKw = kwList.find((k) => new RegExp(`(^|[^a-z0-9äöüß])${escapeRegexHype(k)}`, 'i').test(lower));
+
+    hypeTimestamps.push({ ts: now, weight: matchedKw ? 3 : 1 });
+    if (matchedKw) hypeKeywordHits.push(now);
+    while (hypeTimestamps.length && now - hypeTimestamps[0].ts > winMs) hypeTimestamps.shift();
+    while (hypeKeywordHits.length && now - hypeKeywordHits[0] > winMs) hypeKeywordHits.shift();
+
+    const score = hypeTimestamps.reduce((acc, x) => acc + x.weight, 0);
+    const minMsgs = Math.max(4, Number(hd.minMessages || 12));
+    const kwNeeded = Math.max(1, Number(hd.keywordHits || 3));
+    const kwCount = hypeKeywordHits.length;
+    const cooldownMs = Math.max(15, Number(hd.cooldownSec || 90)) * 1000;
+    const cooldownLeft = Math.max(0, Math.ceil((cooldownMs - (now - lastHypeTriggerAt)) / 1000));
+
+    if (matchedKw) {
+      appendDiagLog('system', 'info', `🔥 Hype-Keyword "${matchedKw}" (${kwCount}/${kwNeeded}, ${score}/${minMsgs} Punkte)`);
+    }
+    if (matchedKw || now - lastHypeMeterBroadcastAt > 1000) {
+      lastHypeMeterBroadcastAt = now;
+      broadcastToWindows('hype-meter', { score, minMsgs, kwCount, kwNeeded, matchedKw: matchedKw || '', cooldownLeft });
+    }
+
+    if ((score >= minMsgs || kwCount >= kwNeeded) && cooldownLeft === 0) {
+      const reason = kwCount >= kwNeeded ? `${kwCount}× Keyword` : `${score} Punkte`;
+      const desc = `🔥 Chat-Hype (${reason} / ${Math.round(winMs / 1000)}s)`;
+      hypeTimestamps.length = 0;
+      hypeKeywordHits.length = 0;
+      executeHypeTrigger(cfg, desc).catch((err) => appendDiagLog('system', 'warn', `Hype-Trigger fehlgeschlagen: ${err.message}`));
+    }
+  } catch (e) {
+    appendDiagLog('system', 'warn', `Hype-Detektor Fehler: ${e.message}`);
+  }
 }
 
 async function executeHypeTrigger(cfg, desc = '🔥 Chat-Hype!') {
@@ -1847,6 +1879,9 @@ app.whenReady().then(async () => {
 
     if (act === 'game-addon') {
       const id = String(params.id || body.id || 'auto').trim();
+      if (id !== 'auto' && !gameAddons.PRESET_ADDON_IDS.includes(id)) {
+        return { ok: false, error: `Unbekanntes Game-Addon: ${id}` };
+      }
       const cfg = loadConfig();
       const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
       ga.selectedMode = id;
@@ -1854,6 +1889,17 @@ app.whenReady().then(async () => {
       saveConfig(cfg);
       broadcastGameAddonsState(cfg);
       return { ok: true, selectedMode: id };
+    }
+
+    if (act === 'game-overlay') {
+      const cfg = loadConfig();
+      const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+      const raw = String(params.state || body.state || 'toggle').toLowerCase();
+      ga.overlayEnabled = raw === 'on' ? true : raw === 'off' ? false : !ga.overlayEnabled;
+      cfg.gameAddons = ga;
+      saveConfig(cfg);
+      broadcastGameAddonsState(cfg);
+      return { ok: true, overlayEnabled: ga.overlayEnabled };
     }
 
     if (act === 'game-stat') {
@@ -3567,6 +3613,15 @@ app.whenReady().then(async () => {
       activeObsPayload: gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga }),
       addons: gameAddons.GAME_ADDONS
     };
+  });
+
+  ipcMain.handle('game-addons-reset', (_ev, addonId) => {
+    const cfg = loadConfig();
+    const ga = gameAddons.resetAddonStats(cfg.gameAddons, String(addonId || ''));
+    cfg.gameAddons = ga;
+    saveConfig(cfg);
+    broadcastGameAddonsState(cfg);
+    return { ok: true, gameAddons: ga, addons: gameAddons.GAME_ADDONS };
   });
 
   ipcMain.handle('game-addons-export-cs2-gsi', async () => {

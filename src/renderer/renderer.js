@@ -4441,9 +4441,16 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (res?.ok && res.hypeDetector) {
       const hd = res.hypeDetector;
       document.getElementById('hdEnabled').checked = Boolean(hd.enabled);
+      const meterInit = document.getElementById('hdMeter');
+      if (meterInit && !hd.enabled) {
+        meterInit.style.color = '#fbbf24';
+        meterInit.textContent = '⚠️ Detektor ist deaktiviert — oben „Chat-Hype-Detektor aktivieren“ anhaken, sonst reagieren Keywords nicht.';
+      }
       document.getElementById('hdWindowSec').value = hd.windowSec || 10;
       document.getElementById('hdMinMsgs').value = hd.minMessages || 12;
       document.getElementById('hdCooldownSec').value = hd.cooldownSec || 90;
+      const elKwHits = document.getElementById('hdKeywordHits');
+      if (elKwHits) elKwHits.value = hd.keywordHits || 3;
       document.getElementById('hdKeywords').value = hd.keywords || '';
       document.getElementById('hdAutoMarker').checked = hd.autoMarker !== false;
       document.getElementById('hdAutoObsReplay').checked = Boolean(hd.autoObsReplay);
@@ -4461,6 +4468,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       windowSec: parseInt(document.getElementById('hdWindowSec')?.value || '10', 10) || 10,
       minMessages: parseInt(document.getElementById('hdMinMsgs')?.value || '12', 10) || 12,
       cooldownSec: parseInt(document.getElementById('hdCooldownSec')?.value || '90', 10) || 90,
+      keywordHits: parseInt(document.getElementById('hdKeywordHits')?.value || '3', 10) || 3,
       keywords: document.getElementById('hdKeywords')?.value.trim() || '',
       autoMarker: Boolean(document.getElementById('hdAutoMarker')?.checked),
       autoObsReplay: Boolean(document.getElementById('hdAutoObsReplay')?.checked),
@@ -4469,7 +4477,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     };
   }
 
-  ['hdEnabled', 'hdWindowSec', 'hdMinMsgs', 'hdCooldownSec', 'hdKeywords', 'hdAutoMarker', 'hdAutoObsReplay', 'hdAutoClip', 'hdPostClipToChat'].forEach((id) => {
+  ['hdEnabled', 'hdWindowSec', 'hdMinMsgs', 'hdKeywordHits', 'hdCooldownSec', 'hdKeywords', 'hdAutoMarker', 'hdAutoObsReplay', 'hdAutoClip', 'hdPostClipToChat'].forEach((id) => {
     document.getElementById(id)?.addEventListener('change', async () => {
       const res = await window.omnichat.hypeSave(readHypeForm());
       if (res?.ok && statusEl) {
@@ -4511,6 +4519,15 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       setTimeout(() => { btnOpen.style.boxShadow = ''; }, 5000);
     }
     renderHypeResult(ev);
+  });
+
+  window.omnichat.onHypeMeter?.((m) => {
+    const meterEl = document.getElementById('hdMeter');
+    if (!meterEl || !m) return;
+    const kwPart = m.matchedKw ? ` • zuletzt erkannt: „${m.matchedKw}“` : '';
+    const cdPart = m.cooldownLeft > 0 ? ` • ⏳ Cooldown noch ${m.cooldownLeft}s` : '';
+    meterEl.style.color = m.matchedKw ? '#fb923c' : '#94a3b8';
+    meterEl.textContent = `📊 Hype-Meter: ${m.score}/${m.minMsgs} Punkte • Keywords ${m.kwCount}/${m.kwNeeded}${kwPart}${cdPart}`;
   });
 })();
 
@@ -4605,6 +4622,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     gaState.currentGameName = gameInput?.value.trim() || '';
     gaState.lolPollingEnabled = Boolean(chkLol?.checked);
     gaState.autoTriggerEvents = Boolean(chkTrigger?.checked);
+    gaState.overlayEnabled = document.getElementById('gaOverlayEnabled')?.checked !== false;
 
     if (addon && fieldsEl) {
       const nextAddonStats = { ...(gaState.perAddonStats?.[addon.id] || {}) };
@@ -4647,6 +4665,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (gameInput) gameInput.value = gaState.currentGameName || document.getElementById('inputStreamGame')?.value || '';
       if (chkLol) chkLol.checked = Boolean(gaState.lolPollingEnabled);
       if (chkTrigger) chkTrigger.checked = gaState.autoTriggerEvents !== false;
+      const chkOverlay = document.getElementById('gaOverlayEnabled');
+      if (chkOverlay) chkOverlay.checked = gaState.overlayEnabled !== false;
       renderFields();
     }
   });
@@ -4654,6 +4674,24 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
   document.getElementById('btnGaSave')?.addEventListener('click', saveFromForm);
+  document.getElementById('gaOverlayEnabled')?.addEventListener('change', async (e) => {
+    await saveFromForm();
+    if (statusEl) {
+      statusEl.style.color = e.target.checked ? '#4ade80' : '#fbbf24';
+      statusEl.textContent = e.target.checked ? '👁️ Game-Stats-Overlay in OBS wieder eingeblendet.' : '🙈 Game-Stats-Overlay in OBS ausgeblendet.';
+    }
+  });
+  document.getElementById('btnGaReset')?.addEventListener('click', async () => {
+    const addon = resolveAddonInRenderer();
+    if (!addon) return;
+    if (!confirm(`Werte von "${addon.name}" auf Standard zurücksetzen?`)) return;
+    const res = await window.omnichat.gameAddonsReset?.(addon.id);
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      renderFields();
+      if (statusEl) { statusEl.style.color = '#94a3b8'; statusEl.textContent = `↺ ${addon.name}: Standardwerte wiederhergestellt.`; }
+    }
+  });
   document.getElementById('gaLolMapCover')?.addEventListener('change', saveFromForm);
   document.getElementById('btnGaCopyMapUrl')?.addEventListener('click', async () => {
     await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-map');

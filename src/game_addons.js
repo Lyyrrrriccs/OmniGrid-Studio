@@ -113,23 +113,71 @@ const GAME_ADDONS = [
   }
 ];
 
+function deepFreeze(obj) {
+  if (obj && typeof obj === 'object' && !Object.isFrozen(obj)) {
+    Object.freeze(obj);
+    for (const v of Object.values(obj)) deepFreeze(v);
+  }
+  return obj;
+}
+
+// Vorgefertigte Addons (Definitionen + Standardwerte) sind schreibgeschützt:
+// Laufzeit-Code, Webhooks oder gespeicherte Configs können sie nicht verändern.
+deepFreeze(GAME_ADDONS);
+deepFreeze(DEFAULT_GAME_ADDONS_CONFIG);
+
+const PRESET_ADDON_IDS = GAME_ADDONS.map((a) => a.id);
+// Zusätzliche (nicht im Formular sichtbare) Felder, die pro Addon erlaubt sind
+const EXTRA_STAT_KEYS = {
+  lol: ['skinName', 'championIconUrl', 'skinIconUrl', 'skinSplashUrl', 'recentMatches', 'mapCoverEnabled', 'mapCoverText']
+};
+
+function sanitizeAddonStats(addonId, rawStats = {}) {
+  const defaults = DEFAULT_GAME_ADDONS_CONFIG.perAddonStats[addonId] || {};
+  const addon = GAME_ADDONS.find((a) => a.id === addonId);
+  const allowed = new Set([
+    ...Object.keys(defaults),
+    ...((addon && addon.fields) || []).map((f) => f.key),
+    ...(EXTRA_STAT_KEYS[addonId] || [])
+  ]);
+  const out = JSON.parse(JSON.stringify(defaults)); // tiefe Kopie, Preset bleibt unberührt
+  const src = rawStats && typeof rawStats === 'object' ? rawStats : {};
+  for (const key of Object.keys(src)) {
+    if (!allowed.has(key)) continue;
+    const def = defaults[key];
+    const val = src[key];
+    if (typeof def === 'number') out[key] = Number.isFinite(Number(val)) ? Number(val) : def;
+    else if (typeof def === 'boolean') out[key] = Boolean(val);
+    else if (Array.isArray(def)) out[key] = Array.isArray(val) ? val.slice(0, 20) : [];
+    else out[key] = val === undefined || val === null ? def : String(val).slice(0, 200);
+  }
+  return out;
+}
+
 function normalizeGameAddonsConfig(raw = {}) {
   const src = raw && typeof raw === 'object' ? raw : {};
   const mergedStats = {};
   for (const addon of GAME_ADDONS) {
-    mergedStats[addon.id] = {
-      ...(DEFAULT_GAME_ADDONS_CONFIG.perAddonStats[addon.id] || {}),
-      ...((src.perAddonStats && src.perAddonStats[addon.id]) || {})
-    };
+    mergedStats[addon.id] = sanitizeAddonStats(addon.id, src.perAddonStats && src.perAddonStats[addon.id]);
   }
+  const mode = String(src.selectedMode || 'auto');
   return {
-    selectedMode: String(src.selectedMode || 'auto'),
+    selectedMode: mode === 'auto' || PRESET_ADDON_IDS.includes(mode) ? mode : 'auto',
     currentGameName: String(src.currentGameName || ''),
+    overlayEnabled: src.overlayEnabled !== false,
     autoSwitchByGame: src.autoSwitchByGame !== false,
     lolPollingEnabled: Boolean(src.lolPollingEnabled),
     autoTriggerEvents: src.autoTriggerEvents !== false,
     perAddonStats: mergedStats
   };
+}
+
+function resetAddonStats(ga, addonId) {
+  const next = normalizeGameAddonsConfig(ga);
+  if (PRESET_ADDON_IDS.includes(addonId)) {
+    next.perAddonStats[addonId] = sanitizeAddonStats(addonId, {});
+  }
+  return next;
 }
 
 function getAddonById(id) {
@@ -189,6 +237,7 @@ function buildObsGameStatsPayload(cfg = {}) {
     icon: addon.icon,
     accent: addon.accent,
     selectedMode: ga.selectedMode,
+    overlayEnabled: ga.overlayEnabled !== false,
     currentGameName: ga.currentGameName,
     champion: stats.champion || '',
     skinId: Number(stats.skinId || 0),
@@ -343,6 +392,9 @@ module.exports = {
   DEFAULT_GAME_ADDONS_CONFIG,
   GAME_ADDONS,
   normalizeGameAddonsConfig,
+  sanitizeAddonStats,
+  resetAddonStats,
+  PRESET_ADDON_IDS,
   getAddonById,
   matchAddonByGameName,
   resolveActiveAddon,
