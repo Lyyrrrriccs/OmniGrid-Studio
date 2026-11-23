@@ -2915,6 +2915,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.emote-settings-box', 'cfgTab_design'],
     ['.obs-box', 'cfgTab_obs'],
     ['.obs-ws-config-box', 'cfgTab_obs'],
+    ['.elgato-lights-box', 'cfgTab_obs'],
     ['.obs-alerts-box', 'cfgTab_obs'],
     ['.tts-box', 'cfgTab_obs'],
     ['.tablet-box', 'cfgTab_companion'],
