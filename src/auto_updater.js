@@ -5,7 +5,7 @@ const { spawn } = require('child_process');
 const { app, shell } = require('electron');
 
 const GITHUB_OWNER = 'Lyyrrrriccs';
-const GITHUB_REPO = 'omni-stream-chat';
+const GITHUB_REPO = 'OmniGrid-Studio';
 
 function parseSemver(ver) {
   const clean = String(ver || '').trim().replace(/^v/i, '').split('-')[0];
@@ -298,14 +298,11 @@ class GitHubAutoUpdater {
       }
 
       const newAppPath = path.join(extractDir, appName);
-      const script = [
-        'sleep 1',
-        `rm -rf "${appBundlePath.replace(/"/g, '\\"')}"`,
-        `mv "${newAppPath.replace(/"/g, '\\"')}" "${appBundlePath.replace(/"/g, '\\"')}"`,
-        `open "${appBundlePath.replace(/"/g, '\\"')}"`
-      ].join(' && ');
-
-      const child = spawn('/bin/sh', ['-c', script], { detached: true, stdio: 'ignore' });
+      const child = spawn(
+        '/bin/sh',
+        ['-c', 'sleep 1 && rm -rf -- "$1" && mv -- "$2" "$1" && open "$1"', 'sh', appBundlePath, newAppPath],
+        { detached: true, stdio: 'ignore' }
+      );
       child.unref();
       app.quit();
       return { ok: true, mode: 'relaunch' };

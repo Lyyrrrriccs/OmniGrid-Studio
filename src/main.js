@@ -4674,7 +4674,7 @@ app.whenReady().then(async () => {
           });
 
         const repoRes = await gqlCall(
-          `query { repository(owner: "Lyyrrrriccs", name: "omni-stream-chat") { id discussionCategories(first: 20) { nodes { id slug name } } } }`
+          `query { repository(owner: "Lyyrrrriccs", name: "OmniGrid-Studio") { id discussionCategories(first: 20) { nodes { id slug name } } } }`
         );
         const repo = repoRes?.data?.repository;
         const cats = repo?.discussionCategories?.nodes || [];
@@ -4696,7 +4696,7 @@ app.whenReady().then(async () => {
       } catch (e) {}
     }
 
-    const baseUrl = 'https://github.com/Lyyrrrriccs/omni-stream-chat';
+    const baseUrl = 'https://github.com/Lyyrrrriccs/OmniGrid-Studio';
     const url =
       targetType === 'issue'
         ? `${baseUrl}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(fullBody)}`

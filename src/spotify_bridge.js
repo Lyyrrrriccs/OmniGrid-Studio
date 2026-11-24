@@ -248,7 +248,7 @@ class SpotifyBridge extends EventEmitter {
         'return "paused||||||"'
       ].join('\n');
 
-      exec(`osascript -e '${script.replace(/'/g, "'\\''")}'`, { timeout: 2500 }, async (err, stdout) => {
+      execFile('osascript', ['-e', script], { timeout: 2500 }, async (err, stdout) => {
         if (!err && stdout) {
           const parts = stdout.trim().split('||');
           if (parts[0] !== 'OFF' && parts[3]) {
