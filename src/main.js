@@ -2878,6 +2878,9 @@ app.whenReady().then(async () => {
       if (act === 'set-scene-item-transform') {
         return await obsWs.setSceneItemTransform(payload.sceneName, payload.sceneItemId, payload.transform || {});
       }
+      if (act === 'reorder-scene-item') {
+        return await obsWs.reorderSceneItem(payload.sceneName, payload.sceneItemId, payload.mode, payload.sceneItemIndex);
+      }
       if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
       if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
       if (act === 'set-input-volume') return await obsWs.setInputVolume(payload.inputName, payload.volumeMul);

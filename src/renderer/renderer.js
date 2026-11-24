@@ -4816,6 +4816,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const btnApplyTransform = document.getElementById('btnSeApplyTransform');
   const btnCenter = document.getElementById('btnSeCenter');
   const btnFullscreen = document.getElementById('btnSeFullscreen');
+  const btnLayerFront = document.getElementById('btnSeLayerFront');
+  const btnLayerUp = document.getElementById('btnSeLayerUp');
+  const btnLayerDown = document.getElementById('btnSeLayerDown');
+  const btnLayerBack = document.getElementById('btnSeLayerBack');
 
   let currentSceneName = '';
   let baseWidth = 1920;
@@ -5000,12 +5004,49 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     return false;
   }
 
+  function updateLayerButtonsState(item) {
+    const uiIdx = item ? sceneItems.findIndex((x) => x.sceneItemId === item.sceneItemId) : -1;
+    const hasItem = uiIdx >= 0 && sceneItems.length > 1;
+    const isTop = uiIdx === 0;
+    const isBottom = uiIdx === sceneItems.length - 1;
+    if (btnLayerFront) btnLayerFront.disabled = !hasItem || isTop;
+    if (btnLayerUp) btnLayerUp.disabled = !hasItem || isTop;
+    if (btnLayerDown) btnLayerDown.disabled = !hasItem || isBottom;
+    if (btnLayerBack) btnLayerBack.disabled = !hasItem || isBottom;
+  }
+
+  async function moveItemLayer(item, mode, explicitObsIndex = null) {
+    if (!item || !currentSceneName) return;
+    const res = await window.omnichat.obsWsAction({
+      action: 'reorder-scene-item',
+      sceneName: currentSceneName,
+      sceneItemId: item.sceneItemId,
+      mode,
+      sceneItemIndex: explicitObsIndex
+    });
+    if (res?.ok) {
+      const labels = {
+        front: 'ganz in den Vordergrund geholt',
+        up: 'eine Ebene nach vorne geschoben',
+        down: 'eine Ebene nach hinten geschoben',
+        back: 'ganz in den Hintergrund geschoben',
+        index: 'neu angeordnet'
+      };
+      setStatus(`✅ "${item.sourceName}" ${labels[mode] || 'verschoben'}.`, '#4ade80');
+      await loadSceneItems(currentSceneName);
+      refreshPreview();
+    } else {
+      setStatus(`❌ ${res?.error || 'Ebenen-Reihenfolge konnte nicht geändert werden.'}`, '#f87171');
+    }
+  }
+
   function selectSourceItem(item) {
     selectedItem = item;
     const disabled = !item || isAudioOnlyItem(item);
     [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen].forEach((el) => {
       if (el) el.disabled = disabled;
     });
+    updateLayerButtonsState(item);
     if (!item) {
       if (lblSelSource) lblSelSource.textContent = '— Quelle anklicken —';
       loadInputConfig(null);
@@ -5213,12 +5254,22 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  let draggedSourceItemId = null;
+
   function renderSourcesList() {
     if (!sourcesList) return;
     sourcesList.innerHTML = '';
-    sceneItems.forEach((it) => {
+    const total = sceneItems.length;
+    sceneItems.forEach((it, uiIdx) => {
       const row = document.createElement('div');
-      row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:6px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.8); border:1px solid ${selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)'}; font-size:12px; cursor:pointer;`;
+      row.draggable = total > 1;
+      row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:4px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.8); border:1px solid ${selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)'}; font-size:12px; cursor:pointer;`;
+
+      const grip = document.createElement('span');
+      grip.textContent = '⠿';
+      grip.title = 'Ziehen zum Sortieren (oben = Vordergrund, unten = Hintergrund)';
+      grip.style.cssText = 'color:#64748b; font-size:12px; cursor:grab; user-select:none; padding-right:2px;';
+
       const nameSpan = document.createElement('span');
       nameSpan.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
       nameSpan.textContent = it.sourceName;
@@ -5226,6 +5277,62 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         selectSourceItem(it);
         renderSourcesList();
         renderCanvasOverlay();
+      });
+
+      row.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        selectSourceItem(it);
+        renderSourcesList();
+        renderCanvasOverlay();
+      });
+
+      row.addEventListener('dragstart', (e) => {
+        draggedSourceItemId = it.sceneItemId;
+        row.style.opacity = '0.5';
+        if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', () => {
+        draggedSourceItemId = null;
+        row.style.opacity = '1';
+      });
+      row.addEventListener('dragover', (e) => {
+        if (draggedSourceItemId === null || draggedSourceItemId === it.sceneItemId) return;
+        e.preventDefault();
+        row.style.borderColor = '#38bdf8';
+      });
+      row.addEventListener('dragleave', () => {
+        row.style.borderColor = selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)';
+      });
+      row.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const srcItem = sceneItems.find((x) => x.sceneItemId === draggedSourceItemId);
+        draggedSourceItemId = null;
+        if (!srcItem || srcItem.sceneItemId === it.sceneItemId) return;
+        // UI index 0 = top/foreground = OBS index (total - 1)
+        const targetObsIdx = Math.max(0, total - 1 - uiIdx);
+        await moveItemLayer(srcItem, 'index', targetObsIdx);
+      });
+
+      const upBtn = document.createElement('button');
+      upBtn.className = 'btn-sm';
+      upBtn.style.padding = '2px 5px';
+      upBtn.textContent = '🔼';
+      upBtn.disabled = uiIdx === 0;
+      upBtn.title = 'Eine Ebene nach vorne (Klick mit Shift = ganz nach vorne)';
+      upBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await moveItemLayer(it, e.shiftKey ? 'front' : 'up');
+      });
+
+      const downBtn = document.createElement('button');
+      downBtn.className = 'btn-sm';
+      downBtn.style.padding = '2px 5px';
+      downBtn.textContent = '🔽';
+      downBtn.disabled = uiIdx === total - 1;
+      downBtn.title = 'Eine Ebene nach hinten (Klick mit Shift = ganz nach hinten)';
+      downBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await moveItemLayer(it, e.shiftKey ? 'back' : 'down');
       });
 
       const eyeBtn = document.createElement('button');
@@ -5262,7 +5369,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         refreshPreview();
       });
 
+      row.appendChild(grip);
       row.appendChild(nameSpan);
+      row.appendChild(upBtn);
+      row.appendChild(downBtn);
       row.appendChild(eyeBtn);
       row.appendChild(delBtn);
       sourcesList.appendChild(row);
@@ -5493,6 +5603,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       setStatus(`❌ ${res?.error || 'Transform fehlgeschlagen'}`, '#f87171');
     }
   });
+
+  btnLayerFront?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'front'));
+  btnLayerUp?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'up'));
+  btnLayerDown?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'down'));
+  btnLayerBack?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'back'));
 
   btnCenter?.addEventListener('click', async () => {
     if (!selectedItem || !currentSceneName) return;

@@ -268,8 +268,11 @@ class ObsWsClient extends EventEmitter {
     } catch (e) {}
 
     const res = await this.call('GetSceneItemList', { sceneName: target });
-    const items = (Array.isArray(res.sceneItems) ? res.sceneItems : []).map((it) => ({
+    const rawItems = Array.isArray(res.sceneItems) ? res.sceneItems : [];
+    const items = rawItems.map((it, idx) => ({
       sceneItemId: it.sceneItemId,
+      sceneItemIndex: typeof it.sceneItemIndex === 'number' ? it.sceneItemIndex : idx,
+      totalItems: rawItems.length,
       sourceName: it.sourceName,
       inputKind: it.inputKind || '',
       sceneItemEnabled: Boolean(it.sceneItemEnabled),
@@ -277,6 +280,41 @@ class ObsWsClient extends EventEmitter {
       transform: it.sceneItemTransform || {}
     }));
     return { ok: true, sceneName: target, baseWidth, baseHeight, items: items.reverse() };
+  }
+
+  async reorderSceneItem(sceneName, sceneItemId, mode = 'up', explicitIndex = null) {
+    const target = String(sceneName || this.state.currentScene || '').trim();
+    const id = Number(sceneItemId);
+    if (!target || !Number.isFinite(id)) throw new Error('Szene und Quelle erforderlich.');
+
+    const res = await this.call('GetSceneItemList', { sceneName: target });
+    const list = Array.isArray(res.sceneItems) ? res.sceneItems : [];
+    const count = list.length;
+    if (count <= 1) return { ok: true, sceneItemIndex: 0 };
+
+    const pos = list.findIndex((it) => Number(it.sceneItemId) === id);
+    if (pos < 0) throw new Error('Quelle nicht in dieser Szene gefunden.');
+    const curIdx = typeof list[pos].sceneItemIndex === 'number' ? list[pos].sceneItemIndex : pos;
+    const maxIdx = count - 1;
+
+    // OBS WebSocket v5: Index 0 = ganz hinten (Hintergrund), maxIdx = ganz vorne (Vordergrund)
+    let nextIdx = curIdx;
+    if (mode === 'front') nextIdx = maxIdx;
+    else if (mode === 'up') nextIdx = Math.min(maxIdx, curIdx + 1);
+    else if (mode === 'down') nextIdx = Math.max(0, curIdx - 1);
+    else if (mode === 'back') nextIdx = 0;
+    else if (mode === 'index' && Number.isFinite(Number(explicitIndex))) {
+      nextIdx = Math.max(0, Math.min(maxIdx, Math.round(Number(explicitIndex))));
+    }
+
+    if (nextIdx !== curIdx) {
+      await this.call('SetSceneItemIndex', {
+        sceneName: target,
+        sceneItemId: id,
+        sceneItemIndex: nextIdx
+      });
+    }
+    return { ok: true, sceneItemIndex: nextIdx, maxIndex: maxIdx };
   }
 
   async setSceneItemEnabled(sceneName, sceneItemId, enabled) {
