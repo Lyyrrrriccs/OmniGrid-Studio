@@ -559,6 +559,8 @@ const platformStatus = {
 
 let chatDockWindow = null;
 let helpWindow = null;
+let preHelpMainBounds = null;
+let isAppShuttingDown = false;
 let boundsSaveTimer = null;
 
 function broadcastToWindows(channel, payload) {
@@ -865,10 +867,10 @@ function saveConfig(cfg) {
 }
 
 function persistWindowBounds(key, win) {
-  if (!win || win.isDestroyed()) return;
+  if (isAppShuttingDown || !win || win.isDestroyed()) return;
   clearTimeout(boundsSaveTimer);
   boundsSaveTimer = setTimeout(() => {
-    if (!win || win.isDestroyed()) return;
+    if (isAppShuttingDown || !win || win.isDestroyed()) return;
     const cfg = loadConfig();
     cfg[key] = win.getBounds();
     saveConfig(cfg);
@@ -913,8 +915,32 @@ function createMainWindow() {
   mainWindow.on('resize', () => persistWindowBounds('mainWindowBounds', mainWindow));
   mainWindow.on('move', () => persistWindowBounds('mainWindowBounds', mainWindow));
 
+  mainWindow.on('close', () => {
+    isAppShuttingDown = true;
+    clearTimeout(boundsSaveTimer);
+    if (preHelpMainBounds) {
+      const cfg = loadConfig();
+      cfg.mainWindowBounds = preHelpMainBounds;
+      saveConfig(cfg);
+      preHelpMainBounds = null;
+    }
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (win !== mainWindow && !win.isDestroyed()) {
+        try {
+          win.destroy();
+        } catch (e) {}
+      }
+    }
+    helpWindow = null;
+    chatDockWindow = null;
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
+    try {
+      obsServer.stop();
+    } catch (e) {}
+    app.quit();
   });
 }
 
@@ -988,9 +1014,11 @@ function openStandaloneChatWindow(snapLeftFullHeight = false) {
 
   chatDockWindow.on('closed', () => {
     chatDockWindow = null;
-    const cfg = loadConfig();
-    cfg.chatDockOpen = false;
-    saveConfig(cfg);
+    if (!isAppShuttingDown) {
+      const cfg = loadConfig();
+      cfg.chatDockOpen = false;
+      saveConfig(cfg);
+    }
   });
 
   saved.chatDockOpen = true;
@@ -2587,7 +2615,7 @@ app.whenReady().then(async () => {
       syncLcuIntoConfig(false).catch(() => {});
       try {
         const https = require('https');
-        const agent = new https.Agent({ rejectUnauthorized: false });
+        const agent = gameAddons.createRiotLocalHttpsAgent();
         const data = await new Promise((resolve, reject) => {
           const req = https.get('https://127.0.0.1:2999/liveclientdata/allgamedata', { agent, timeout: 1500 }, (res) => {
             let raw = '';
@@ -2744,7 +2772,6 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('run-chat-timer-now', () => runChatTimerTick(true));
 
-  let preHelpMainBounds = null;
   let helpWindowLoaded = false;
   let pendingHelpTarget = null;
 
@@ -2847,7 +2874,7 @@ app.whenReady().then(async () => {
     helpWindow.on('closed', () => {
       helpWindow = null;
       helpWindowLoaded = false;
-      if (preHelpMainBounds && mainWindow && !mainWindow.isDestroyed()) {
+      if (!isAppShuttingDown && preHelpMainBounds && mainWindow && !mainWindow.isDestroyed()) {
         try {
           mainWindow.setBounds(preHelpMainBounds, true);
           persistWindowBounds('mainWindowBounds', mainWindow);
@@ -4802,6 +4829,16 @@ app.whenReady().then(async () => {
       autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});
     }
   }, 4000);
+});
+
+app.on('before-quit', () => {
+  isAppShuttingDown = true;
+  if (preHelpMainBounds) {
+    const cfg = loadConfig();
+    cfg.mainWindowBounds = preHelpMainBounds;
+    saveConfig(cfg);
+    preHelpMainBounds = null;
+  }
 });
 
 app.on('will-quit', () => {

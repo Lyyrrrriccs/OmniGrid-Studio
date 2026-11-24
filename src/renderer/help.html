@@ -243,7 +243,9 @@
       return String(s || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function slugifyHeading(raw) {
@@ -407,15 +409,51 @@
       });
     }
 
+    function highlightTextNodes(rootEl, query) {
+      if (!query || query.length < 2) return;
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(escaped, 'gi');
+      const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+      const textNodes = [];
+      let current;
+      while ((current = walker.nextNode())) {
+        if (current.nodeValue && re.test(current.nodeValue)) {
+          textNodes.push(current);
+        }
+        re.lastIndex = 0;
+      }
+      for (const node of textNodes) {
+        const text = node.nodeValue || '';
+        const frag = document.createDocumentFragment();
+        let lastIdx = 0;
+        let match;
+        re.lastIndex = 0;
+        while ((match = re.exec(text)) !== null) {
+          if (match.index > lastIdx) {
+            frag.appendChild(document.createTextNode(text.slice(lastIdx, match.index)));
+          }
+          const mark = document.createElement('mark');
+          mark.className = 'hl';
+          mark.textContent = match[0];
+          frag.appendChild(mark);
+          lastIdx = match.index + match[0].length;
+          if (match[0].length === 0) break;
+        }
+        if (lastIdx < text.length) {
+          frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+        }
+        if (node.parentNode) {
+          node.parentNode.replaceChild(frag, node);
+        }
+      }
+    }
+
     function applyFilterAndRender() {
       const q = searchEl.value.trim();
-      let html = renderMarkdown(currentRawMd);
+      contentEl.innerHTML = renderMarkdown(currentRawMd);
       if (q.length >= 2) {
-        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const re = new RegExp(`(${escaped})(?![^<]*>)`, 'gi');
-        html = html.replace(re, '<mark class="hl">$1</mark>');
+        highlightTextNodes(contentEl, q);
       }
-      contentEl.innerHTML = html;
       rebuildTocDropdown();
       if (q.length >= 2) {
         const firstMark = contentEl.querySelector('mark.hl');

@@ -3,6 +3,15 @@ const http = require('http');
 const crypto = require('crypto');
 const { EventEmitter } = require('events');
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Connects to YouTube Live Chat without requiring an API key or login!
  * Features:
@@ -660,7 +669,7 @@ class YouTubeConnector extends EventEmitter {
 
           if (errParam) {
             res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(`<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Anmeldung abgebrochen</h2><p>${errParam}</p></body></html>`);
+            res.end(`<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Anmeldung abgebrochen</h2><p>${escapeHtml(errParam)}</p></body></html>`);
             return finish(new Error(`Google OAuth Fehler: ${errParam}`));
           }
           if (!code || returnedState !== state) {
@@ -691,7 +700,7 @@ class YouTubeConnector extends EventEmitter {
           if (tokenResp.statusCode >= 400 || !tokenResp.json?.access_token) {
             const msg = tokenResp.json?.error_description || tokenResp.json?.error || `HTTP ${tokenResp.statusCode}`;
             res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(`<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Token-Austausch fehlgeschlagen</h2><p>${msg}</p></body></html>`);
+            res.end(`<html><body style="font-family:sans-serif;background:#111;color:#fff;padding:30px;"><h2>❌ Token-Austausch fehlgeschlagen</h2><p>${escapeHtml(msg)}</p></body></html>`);
             return finish(new Error(`Token-Austausch fehlgeschlagen: ${msg}`));
           }
 
@@ -720,7 +729,7 @@ class YouTubeConnector extends EventEmitter {
           res.end(
             `<html><body style="font-family:sans-serif;background:#0f172a;color:#fff;padding:36px;text-align:center;">` +
             `<h2>✅ YouTube-Konto verbunden!</h2>` +
-            `<p>${accountName ? `Angemeldet als <strong>${accountName}</strong>.` : 'Schreibrechte für YouTube Live Chat sind aktiv.'} Du kannst dieses Tab jetzt schließen.</p>` +
+            `<p>${accountName ? `Angemeldet als <strong>${escapeHtml(accountName)}</strong>.` : 'Schreibrechte für YouTube Live Chat sind aktiv.'} Du kannst dieses Tab jetzt schließen.</p>` +
             `</body></html>`
           );
           finish(null, { ok: true, oauth: nextOAuth });
