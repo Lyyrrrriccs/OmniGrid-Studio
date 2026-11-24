@@ -1,0 +1,18 @@
+# Dependencies & Build Artifacts
+node_modules/
+dist/
+.electron-cache/
+OmniStreamChat.app
+OmniGridStudio.app
+*.vbs
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# Local User Config / Secrets (never commit tokens)
+omnichat-config.json
+*.env

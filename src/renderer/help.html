@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniGrid Studio — Anleitung &amp; Hilfe</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0b0f19;
+      color: #e2e8f0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    .help-header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #0f172a;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    .help-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .help-tabs {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .help-tab {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #cbd5e1;
+      border-radius: 7px;
+      padding: 5px 9px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .help-tab:hover {
+      background: rgba(255,255,255,0.11);
+    }
+    .help-tab.active {
+      background: rgba(145, 70, 255, 0.28);
+      border-color: #9146ff;
+      color: #ffffff;
+    }
+    .help-nav-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .help-toc-select {
+      flex: 1;
+      min-width: 170px;
+      background: #020617;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #f8fafc;
+      border-radius: 7px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+    .help-search {
+      flex: 1;
+      min-width: 150px;
+      background: #020617;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #f8fafc;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+    .help-search:focus, .help-toc-select:focus {
+      border-color: #38bdf8;
+    }
+    .help-btn-tile {
+      background: rgba(14, 165, 233, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #bae6fd;
+      border-radius: 7px;
+      padding: 5px 9px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .help-btn-tile:hover {
+      background: rgba(14, 165, 233, 0.3);
+      color: #fff;
+    }
+    .help-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px 56px;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+      line-height: 1.65;
+      font-size: 13.8px;
+      scroll-behavior: smooth;
+    }
+    .help-body h1 {
+      font-size: 21px;
+      margin: 0 0 12px;
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding-bottom: 8px;
+    }
+    .help-body h2 {
+      font-size: 17px;
+      margin: 24px 0 9px;
+      color: #c4b5fd;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 6px 8px;
+      border-radius: 8px;
+      scroll-margin-top: 14px;
+      transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+    }
+    .help-body h3 {
+      font-size: 14.5px;
+      margin: 16px 0 7px;
+      color: #7dd3fc;
+      padding: 4px 6px;
+      border-radius: 6px;
+      scroll-margin-top: 14px;
+      transition: background 0.35s ease, box-shadow 0.35s ease;
+    }
+    .help-body h2.sec-pulse, .help-body h3.sec-pulse {
+      background: linear-gradient(90deg, rgba(145, 70, 255, 0.32), rgba(56, 189, 248, 0.18));
+      border-left: 4px solid #38bdf8;
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45), 0 6px 18px rgba(14, 165, 233, 0.22);
+      color: #ffffff;
+    }
+    .help-body p { margin: 8px 0; overflow-wrap: anywhere; }
+    .help-body ul, .help-body ol { margin: 8px 0; padding-left: 20px; }
+    .help-body li { margin: 4px 0; overflow-wrap: anywhere; }
+    .help-body code {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: #a5f3fc;
+      word-break: break-word;
+    }
+    .help-body pre {
+      background: #020617;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 11px 13px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    .help-body pre code { border: none; padding: 0; background: transparent; color: #e2e8f0; word-break: normal; }
+    .help-body blockquote {
+      margin: 10px 0;
+      padding: 8px 12px;
+      border-left: 3px solid #9146ff;
+      background: rgba(145, 70, 255, 0.1);
+      border-radius: 0 8px 8px 0;
+      color: #e2e8f0;
+    }
+    .help-body hr {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      margin: 20px 0;
+    }
+    .help-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 12.5px;
+      display: block;
+      overflow-x: auto;
+    }
+    .help-body th, .help-body td {
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 6px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .help-body th {
+      background: rgba(15, 23, 42, 0.9);
+      color: #f8fafc;
+    }
+    .help-body a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    .help-body a:hover { text-decoration: underline; }
+    mark.hl { background: #f59e0b; color: #020617; padding: 0 2px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header class="help-header">
+    <div class="help-top-row">
+      <div class="help-tabs" id="helpTabs">
+        <button class="help-tab active" data-doc="ANLEITUNG.md">📖 Anleitung (DE)</button>
+        <button class="help-tab" data-doc="GUIDE.md">📘 Guide (EN)</button>
+        <button class="help-tab" data-doc="README.de.md">⚡ Übersicht</button>
+        <button class="help-tab" data-doc="PRIVACY.md">🔒 Datenschutz</button>
+        <button class="help-tab" data-doc="CHANGELOG.md">📋 Changelog</button>
+      </div>
+      <button class="help-btn-tile" id="btnRetileHelp" title="Hauptfenster links (größter Platz) &amp; Anleitung rechts daneben anordnen">📐 Nebeneinander</button>
+    </div>
+    <div class="help-nav-row">
+      <select class="help-toc-select" id="helpTocSelect" aria-label="Kapitel auswählen">
+        <option value="">📑 Kapitel direkt wählen…</option>
+      </select>
+      <input type="search" class="help-search" id="helpSearch" placeholder="🔍 In Anleitung suchen..." />
+    </div>
+  </header>
+  <main class="help-body" id="helpContent">Lade Anleitung...</main>
+
+  <script>
+    const contentEl = document.getElementById('helpContent');
+    const searchEl = document.getElementById('helpSearch');
+    const tocSelectEl = document.getElementById('helpTocSelect');
+    const btnRetileEl = document.getElementById('btnRetileHelp');
+    let currentDocName = 'ANLEITUNG.md';
+    let currentRawMd = '';
+    let currentLang = 'de';
+    let pulseTimer = null;
+
+    function escHtml(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function slugifyHeading(raw) {
+      return String(raw || '')
+        .toLowerCase()
+        .replace(/[`*_~]/g, '')
+        .replace(/[^\p{L}\p{N}]+/gu, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 64);
+    }
+
+    function inlineMd(text) {
+      let s = escHtml(text);
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      s = s.replace(/\[([^\]]+)\]\(\.\/([A-Za-z0-9._-]+\.md)\)/g, '<a href="#" data-internal-doc="$2">$1</a>');
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<strong>$1</strong>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      return s;
+    }
+
+    function renderMarkdown(md) {
+      const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+      const out = [];
+      let inCode = false;
+      let codeLines = [];
+      let listMode = null;
+      let tableRows = [];
+
+      const flushList = () => {
+        if (listMode) {
+          out.push(listMode === 'ul' ? '</ul>' : '</ol>');
+          listMode = null;
+        }
+      };
+      const flushTable = () => {
+        if (tableRows.length === 0) return;
+        let html = '<table><thead><tr>';
+        tableRows[0].forEach((c) => { html += `<th>${inlineMd(c)}</th>`; });
+        html += '</tr></thead><tbody>';
+        for (let i = 1; i < tableRows.length; i++) {
+          if (tableRows[i].every((c) => /^:?-+:?$/.test(c.trim()))) continue;
+          html += '<tr>';
+          tableRows[i].forEach((c) => { html += `<td>${inlineMd(c)}</td>`; });
+          html += '</tr>';
+        }
+        html += '</tbody></table>';
+        out.push(html);
+        tableRows = [];
+      };
+
+      for (const line of lines) {
+        if (line.trim().startsWith('```')) {
+          flushList();
+          flushTable();
+          if (inCode) {
+            out.push(`<pre><code>${escHtml(codeLines.join('\n'))}</code></pre>`);
+            codeLines = [];
+            inCode = false;
+          } else {
+            inCode = true;
+          }
+          continue;
+        }
+        if (inCode) {
+          codeLines.push(line);
+          continue;
+        }
+
+        const trimmed = line.trim();
+        if (!trimmed) {
+          flushList();
+          flushTable();
+          continue;
+        }
+        if (trimmed.startsWith('<div') || trimmed.startsWith('</div') || trimmed.startsWith('[![')) {
+          continue;
+        }
+        if (/^---+$/.test(trimmed)) {
+          flushList();
+          flushTable();
+          out.push('<hr />');
+          continue;
+        }
+        if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+          flushList();
+          const cells = trimmed.slice(1, -1).split('|').map((c) => c.trim());
+          tableRows.push(cells);
+          continue;
+        } else {
+          flushTable();
+        }
+
+        const hMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
+        if (hMatch) {
+          flushList();
+          const lvl = hMatch[1].length;
+          const rawTitle = hMatch[2];
+          let idAttr = '';
+          if (lvl === 2) {
+            const numMatch = rawTitle.match(/^(\d+)\.\s+/);
+            const secId = numMatch ? `sec-${numMatch[1]}` : `h2-${slugifyHeading(rawTitle)}`;
+            idAttr = ` id="${secId}"`;
+          } else if (lvl === 3) {
+            const subId = `sub-${slugifyHeading(rawTitle)}`;
+            idAttr = ` id="${subId}"`;
+          }
+          out.push(`<h${lvl}${idAttr}>${inlineMd(rawTitle)}</h${lvl}>`);
+          continue;
+        }
+        if (trimmed.startsWith('>')) {
+          flushList();
+          out.push(`<blockquote>${inlineMd(trimmed.replace(/^>\s*/, ''))}</blockquote>`);
+          continue;
+        }
+        const ulMatch = trimmed.match(/^[-*]\s+(.+)$/);
+        if (ulMatch) {
+          if (listMode !== 'ul') {
+            flushList();
+            out.push('<ul>');
+            listMode = 'ul';
+          }
+          out.push(`<li>${inlineMd(ulMatch[1])}</li>`);
+          continue;
+        }
+        const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+        if (olMatch) {
+          if (listMode !== 'ol') {
+            flushList();
+            out.push('<ol>');
+            listMode = 'ol';
+          }
+          out.push(`<li>${inlineMd(olMatch[1])}</li>`);
+          continue;
+        }
+
+        flushList();
+        out.push(`<p>${inlineMd(trimmed)}</p>`);
+      }
+
+      flushList();
+      flushTable();
+      return out.join('\n');
+    }
+
+    function rebuildTocDropdown() {
+      if (!tocSelectEl) return;
+      const placeholder = currentLang === 'en' ? '📑 Jump directly to section…' : '📑 Kapitel direkt wählen…';
+      tocSelectEl.innerHTML = '';
+      const defOpt = document.createElement('option');
+      defOpt.value = '';
+      defOpt.textContent = placeholder;
+      tocSelectEl.appendChild(defOpt);
+
+      contentEl.querySelectorAll('h2[id]').forEach((h2) => {
+        const opt = document.createElement('option');
+        opt.value = h2.id;
+        opt.textContent = h2.textContent.trim();
+        tocSelectEl.appendChild(opt);
+      });
+    }
+
+    function applyFilterAndRender() {
+      const q = searchEl.value.trim();
+      let html = renderMarkdown(currentRawMd);
+      if (q.length >= 2) {
+        const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(`(${escaped})(?![^<]*>)`, 'gi');
+        html = html.replace(re, '<mark class="hl">$1</mark>');
+      }
+      contentEl.innerHTML = html;
+      rebuildTocDropdown();
+      if (q.length >= 2) {
+        const firstMark = contentEl.querySelector('mark.hl');
+        if (firstMark) firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function scrollToTargetSection(sectionOrId, anchorHint = '') {
+      if (!sectionOrId && !anchorHint) return;
+      let targetEl = null;
+
+      if (anchorHint) {
+        const needle = slugifyHeading(anchorHint);
+        const allSub = Array.from(contentEl.querySelectorAll('h3[id], h2[id]'));
+        targetEl = allSub.find((el) => el.id.includes(needle) || slugifyHeading(el.textContent).includes(needle)) || null;
+      }
+
+      if (!targetEl && sectionOrId) {
+        const cleanId = String(sectionOrId).startsWith('sec-') ? String(sectionOrId) : `sec-${sectionOrId}`;
+        targetEl = document.getElementById(cleanId) || document.getElementById(String(sectionOrId));
+      }
+
+      if (!targetEl) return;
+
+      contentEl.querySelectorAll('.sec-pulse').forEach((el) => el.classList.remove('sec-pulse'));
+      targetEl.classList.add('sec-pulse');
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      if (tocSelectEl) {
+        const parentH2 = targetEl.tagName === 'H2' ? targetEl : null;
+        if (parentH2 && parentH2.id) tocSelectEl.value = parentH2.id;
+      }
+
+      clearTimeout(pulseTimer);
+      pulseTimer = setTimeout(() => {
+        targetEl.classList.remove('sec-pulse');
+      }, 3200);
+    }
+
+    async function loadDoc(docName, afterScrollTarget = null) {
+      currentDocName = docName;
+      contentEl.textContent = currentLang === 'en' ? 'Loading guide...' : 'Lade Anleitung...';
+      const res = await window.omnichat.getHelpDoc(docName);
+      if (res?.ok) {
+        currentRawMd = res.content;
+        applyFilterAndRender();
+        if (afterScrollTarget && (afterScrollTarget.section || afterScrollTarget.anchor)) {
+          requestAnimationFrame(() => {
+            scrollToTargetSection(afterScrollTarget.section, afterScrollTarget.anchor);
+          });
+        } else {
+          contentEl.scrollTop = 0;
+        }
+      } else {
+        contentEl.textContent = res?.error || 'Anleitung konnte nicht geladen werden.';
+      }
+    }
+
+    function applyHelpUiLanguage(langCode) {
+      currentLang = langCode === 'en' ? 'en' : 'de';
+      const isEn = currentLang === 'en';
+      document.documentElement.lang = currentLang;
+      document.title = isEn ? 'OmniGrid Studio — User Guide & Help' : 'OmniGrid Studio — Anleitung & Hilfe';
+      searchEl.placeholder = isEn ? '🔍 Search guide...' : '🔍 In Anleitung suchen...';
+      if (btnRetileEl) {
+        btnRetileEl.textContent = isEn ? '📐 Side-by-Side' : '📐 Nebeneinander';
+        btnRetileEl.title = isEn
+          ? 'Arrange Main Window (left, largest area) and Guide (right) side-by-side'
+          : 'Hauptfenster links (größter Platz) & Anleitung rechts daneben anordnen';
+      }
+      const overviewBtn = document.querySelector('.help-tab[data-doc="README.de.md"], .help-tab[data-doc="README.md"]');
+      if (overviewBtn) {
+        overviewBtn.dataset.doc = isEn ? 'README.md' : 'README.de.md';
+        overviewBtn.textContent = isEn ? '🌐 Overview' : '⚡ Übersicht';
+      }
+      const privBtn = document.querySelector('.help-tab[data-doc="PRIVACY.md"]');
+      if (privBtn) {
+        privBtn.textContent = isEn ? '🔒 Privacy' : '🔒 Datenschutz';
+      }
+      rebuildTocDropdown();
+    }
+
+    function activateDocTab(docName, afterScrollTarget = null) {
+      document.querySelectorAll('.help-tab').forEach((b) => b.classList.toggle('active', b.dataset.doc === docName));
+      return loadDoc(docName, afterScrollTarget);
+    }
+
+    document.querySelectorAll('.help-tab').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        searchEl.value = '';
+        activateDocTab(btn.dataset.doc);
+      });
+    });
+
+    tocSelectEl?.addEventListener('change', () => {
+      if (!tocSelectEl.value) return;
+      if (searchEl.value.trim()) {
+        searchEl.value = '';
+        applyFilterAndRender();
+      }
+      scrollToTargetSection(tocSelectEl.value);
+    });
+
+    btnRetileEl?.addEventListener('click', () => {
+      window.omnichat.retileHelpLayout?.();
+    });
+
+    contentEl.addEventListener('click', (e) => {
+      const internalLink = e.target.closest('[data-internal-doc]');
+      if (internalLink) {
+        e.preventDefault();
+        searchEl.value = '';
+        activateDocTab(internalLink.dataset.internalDoc);
+      }
+    });
+
+    searchEl.addEventListener('input', applyFilterAndRender);
+
+    window.omnichat?.onHelpNavigate?.((payload) => {
+      if (!payload) return;
+      if (payload.lang) applyHelpUiLanguage(payload.lang);
+      if (searchEl.value.trim()) searchEl.value = '';
+      const targetDoc = payload.doc || (currentLang === 'en' ? 'GUIDE.md' : 'ANLEITUNG.md');
+      if (currentDocName === targetDoc && currentRawMd) {
+        applyFilterAndRender();
+        if (payload.section || payload.anchor) {
+          requestAnimationFrame(() => scrollToTargetSection(payload.section, payload.anchor));
+        }
+      } else {
+        activateDocTab(targetDoc, { section: payload.section, anchor: payload.anchor });
+      }
+    });
+
+    if (window.omnichat?.i18nGet) {
+      window.omnichat.i18nGet().then((b) => {
+        applyHelpUiLanguage(b?.lang || 'de');
+        if (!currentRawMd) {
+          activateDocTab(currentLang === 'en' ? 'GUIDE.md' : 'ANLEITUNG.md');
+        }
+      }).catch(() => {
+        if (!currentRawMd) activateDocTab('ANLEITUNG.md');
+      });
+      window.omnichat.onI18nChanged?.((b) => {
+        const prevSec = tocSelectEl?.value || '';
+        applyHelpUiLanguage(b?.lang || 'de');
+        if (currentDocName === 'ANLEITUNG.md' || currentDocName === 'GUIDE.md') {
+          activateDocTab(currentLang === 'en' ? 'GUIDE.md' : 'ANLEITUNG.md', { section: prevSec });
+        }
+      });
+    } else {
+      activateDocTab('ANLEITUNG.md');
+    }
+  </script>
+</body>
+</html>

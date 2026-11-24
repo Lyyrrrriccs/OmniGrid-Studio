@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniGrid Studio — Dein Streamer Cockpit</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="updateBanner" style="display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 14px; background: linear-gradient(90deg, rgba(14,165,233,0.22), rgba(168,85,247,0.22)); border-bottom: 1px solid rgba(56,189,248,0.45); font-size: 12px; color: #f8fafc;">
+    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+      <span id="updateBannerText">⬇️ Update verfügbar</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+      <button class="btn-sm hidden" id="btnUpdateInstall" style="background: #0284c7; color: #fff; font-weight: 700;">🚀 Jetzt installieren &amp; neu starten</button>
+      <button class="btn-sm hidden" id="btnUpdateReleaseUrl">🔗 Release öffnen</button>
+      <button class="btn-sm" id="btnUpdateDismiss" title="Ausblenden">✕</button>
+    </div>
+  </div>
+  <!-- TOP STREAMER COCKPIT BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <button class="btn-icon" id="btnToggleSidebar" title="Einstellungen / Seitenleiste ein-/ausblenden">☰</button>
+      <span class="brand-logo">⚡</span>
+      <span class="brand-title">Streamer Cockpit</span>
+      <div class="total-viewers-badge" title="Gesamte Live-Zuschauer über Twitch + YouTube + TikTok">
+        👁️ <strong id="totalViewersCount">0</strong>
+      </div>
+    </div>
+
+    <div class="status-pills">
+      <div class="plat-pill twitch" id="statusPill_twitch" title="Twitch Status">
+        <span class="dot"></span>
+        <span class="pill-label">TW:</span>
+        <strong id="statusText_twitch">Aus</strong>
+        <span class="viewer-sub" id="viewers_twitch"></span>
+      </div>
+      <div class="plat-pill youtube" id="statusPill_youtube" title="YouTube Status">
+        <span class="dot"></span>
+        <span class="pill-label">YT:</span>
+        <strong id="statusText_youtube">Aus</strong>
+        <span class="viewer-sub" id="viewers_youtube"></span>
+      </div>
+      <div class="plat-pill tiktok" id="statusPill_tiktok" title="TikTok Status">
+        <span class="dot"></span>
+        <span class="pill-label">TT:</span>
+        <strong id="statusText_tiktok">Aus</strong>
+        <span class="viewer-sub" id="viewers_tiktok"></span>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <select id="selAppLanguage" class="btn-chip" style="padding: 4px 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;" title="App-Sprache wechseln / Change language" aria-label="Language">
+        <option value="de">🇩🇪 DE</option>
+        <option value="en">🇬🇧 EN</option>
+      </select>
+      <button class="btn-chip" id="btnOpenConfig" title="Zentrale Konfiguration öffnen (Design, OBS, Alerts, TTS, Stream Deck, System)">⚙️ Config</button>
+      <button class="btn-chip" id="btnOpenClipStudio" title="Clip- &amp; Replay-Studio (9:16 Shorts Export)">🎞️ Clip-Studio</button>
+      <button class="btn-chip" id="btnOpenSocialSchedule" title="Discord Go-Live, Sendeplan (Schedule) &amp; Social-Plattformen">📅 Schedule &amp; Go-Live</button>
+      <button class="btn-chip" id="btnOpenGiveaway" title="Live-Giveaway &amp; Verlosungs-Rad (/giveaway)">🎁 Giveaway</button>
+      <button class="btn-chip" id="btnOpenSoundboard" title="Integriertes Soundboard inkl. OBS-Routing">🔊 Sounds</button>
+      <button class="btn-chip" id="btnOpenHype" title="Chat-Hype-Detektor (Auto-Marker &amp; Auto-Replay)">🔥 Hype</button>
+      <button class="btn-chip" id="btnOpenGameAddons" title="Game-Addons, OBS Game-Stats-Overlay (/game-stats) &amp; Auto-Switch">🎮 Game-Addons</button>
+      <button class="btn-chip" id="btnOpenSceneEditor" title="OBS Szenen-, Quellen- &amp; Audio-Editor">🎛️ Szenen-Editor</button>
+      <button class="btn-chip" id="btnOpenHelp" title="Anleitung &amp; Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
+      <button class="btn-chip" id="btnOpenFeedback" title="Feedback, Feature-Wünsche oder Bugs als GitHub Discussion einreichen">💬 Feedback</button>
+      <button class="btn-chip" id="btnOpenPrivacyAudit" title="Datenschutz-, Sicherheits- &amp; Zero-Telemetry-Nachweis (Live Quellcode-Scanner)">🔒 Datenschutz</button>
+      <button class="btn-chip" id="btnToggleStatsTab" title="Live-Statistiken &amp; Verbindungs-/Diagnose-Protokoll ein-/ausblenden">📊 Statistik &amp; Logs</button>
+      <button class="btn-chip" id="btnPopoutChat" title="Eigenständiges, vollhohes Chatfenster links neben OBS öffnen">🪟 Separates Chatfenster</button>
+      <button class="btn-chip" id="btnSlimDock" title="Dieses Fenster als schmale Spalte (320px, volle Höhe) links neben OBS andocken">📐 Links neben OBS</button>
+      <button class="btn-chip" id="btnCompactMode" title="Kompakt-Abstände umschalten">↕️ Kompakt</button>
+      <button class="btn-chip active" id="btnSoundToggle" title="Sound-Ping bei @Mentions, Subs, Gifts & SuperChats">🔔 Sound</button>
+      <button class="btn-chip" id="btnDemo" title="Simuliere deinen Multistream mit 7TV Emotes, Subs, Gifts & @Mentions">▶ Demo</button>
+      <button class="btn-chip" id="btnPinWindow" title="Fenster immer im Vordergrund halten (Always-On-Top)">📌 Pin</button>
+      <button class="btn-chip" id="btnClearChat" title="Chat-Verlauf leeren">🗑️</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- LEFT STREAMER PROFILE & APPEARANCE SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-scroll">
+        <div class="sidebar-section">
+          <h3>📡 Plattformen verbinden</h3>
+          <p class="section-hint">Jede Plattform läuft isoliert mit Auto-Reconnect & Duplikat-Schutz und lässt sich einzeln aktivieren oder neu verbinden.</p>
+
+          <div class="profile-meta-box">
+            <label>Dein Streamer-Name (für @Mention-Alarm)</label>
+            <input type="text" id="inputStreamerName" placeholder="z.B. DeinName" />
+
+            <label style="margin-top: 6px;">🔍 Eigene Keyword-Alarme (kommagetrennt)</label>
+            <div class="setting-row-inline" style="margin-top: 2px; align-items: flex-start;">
+              <textarea id="inputKeywordAlerts" class="tag-textarea" rows="2" placeholder="z.B. frage, lobby, mikrofon, bug" style="flex: 1;"></textarea>
+              <input type="color" id="clrKeywordHighlight" value="#f97316" title="Highlight-Farbe für Keyword-Treffer" />
+            </div>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkKeywordSound" checked />
+              <span>🔔 Sound-Ping bei Keyword-Treffer</span>
+            </label>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoConnect" checked />
+              <span>Beim App-Start automatisch verbinden & auf Live-Start warten</span>
+            </label>
+          </div>
+
+          <!-- TWITCH CARD -->
+          <div class="channel-card twitch-card" id="card_twitch">
+            <div class="card-header">
+              <label class="plat-enable-toggle" title="Twitch im Feed aktivieren / deaktivieren">
+                <input type="checkbox" id="chkEnableTwitch" checked />
+                <span class="plat-badge twitch">🟣 TWITCH (+7TV)</span>
+              </label>
+              <div class="card-btn-group">
+                <button class="btn-sm btn-icon-sm" id="btnReconnectTwitch" title="Twitch erneut verbinden (Reconnect)">↻</button>
+                <button class="btn-sm" id="btnConnectTwitch">Verbinden</button>
+              </div>
+            </div>
+            <label>Dein Twitch-Kanalname (Name oder URL)</label>
+            <input type="text" id="inputTwitchChannel" placeholder="z.B. deinkanal" />
+
+            <details class="auth-details" open>
+              <summary>🔑 Chat-Antwort & Mod Token (Zum Selberschreiben)</summary>
+              <label>Dein Twitch-Accountname</label>
+              <input type="text" id="inputTwitchUser" placeholder="z.B. deinkanal" />
+              <label>Chat OAuth-Token (NICHT der OBS Stream-Key "live_...")</label>
+              <div class="select-with-btn">
+                <input type="password" id="inputTwitchToken" placeholder="oauth:xxxxxxxxxxxxxx" />
+                <button class="btn-sm" id="btnGetTwitchToken" title="Kostenlosen Twitch Chat-OAuth-Token im Browser generieren">🔗 Token holen</button>
+              </div>
+            </details>
+            <div class="cap-info" id="cap_twitch">ℹ️ Ohne Token: Chat/Subs/7TV live lesen • Zum Schreiben: Bei „🔗 Token holen" auf <strong>„Bot Chat Token"</strong> klicken (Rechte: <code>chat:read</code> + <code>chat:edit</code>)</div>
+            <small class="error-hint" id="err_twitch"></small>
+          </div>
+
+          <!-- YOUTUBE CARD -->
+          <div class="channel-card youtube-card" id="card_youtube">
+            <div class="card-header">
+              <label class="plat-enable-toggle" title="YouTube Live im Feed aktivieren / deaktivieren">
+                <input type="checkbox" id="chkEnableYoutube" checked />
+                <span class="plat-badge youtube">🔴 YOUTUBE LIVE</span>
+              </label>
+              <div class="card-btn-group">
+                <button class="btn-sm btn-icon-sm" id="btnReconnectYoutube" title="YouTube erneut verbinden (Reconnect)">↻</button>
+                <button class="btn-sm" id="btnConnectYoutube">Start / Standby</button>
+              </div>
+            </div>
+            <label>Dein YouTube-@Handle oder Live-URL</label>
+            <input type="text" id="inputYoutubeChannel" placeholder="z.B. @DeinKanal" />
+
+            <div class="stream-select-row">
+              <label>Stream-Auswahl (Automatisch oder Manuell)</label>
+              <div class="select-with-btn">
+                <select id="selectYoutubeStream">
+                  <option value="">✨ Aktiven Livestream automatisch erkennen</option>
+                </select>
+                <button class="btn-sm btn-icon-sm" id="btnScanYoutube" title="Kanal nach aktiven/geplanten Livestreams scannen">🔍</button>
+              </div>
+              <input type="text" id="inputYoutubeVideoId" placeholder="Oder manuelle Video-ID / URL (optional)" style="margin-top: 4px;" />
+            </div>
+            <div class="cap-info">ℹ️ Ohne API-Key: Live-Chat, Custom-Emotes, SuperChats &amp; Members lesen • Zum Schreiben: Google OAuth2</div>
+            <details class="yt-oauth-details" style="margin-top: 6px; font-size: 11px;">
+              <summary style="cursor: pointer; user-select: none; color: #cbd5e1; font-weight: 600;">
+                🔑 YouTube Schreiben (OAuth2) — <span id="ytOAuthStatus">Nur-Lesen</span>
+              </summary>
+              <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;">
+                <input type="text" id="inputYtClientId" placeholder="Google OAuth2 Client-ID (Desktop-App)" />
+                <input type="password" id="inputYtClientSecret" placeholder="Client-Secret (optional)" />
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn-sm" id="btnYtOAuthLogin" style="flex: 1;">🔐 Mit Google anmelden</button>
+                  <button class="btn-sm hidden" id="btnYtOAuthLogout">Abmelden</button>
+                </div>
+              </div>
+            </details>
+            <small class="error-hint" id="err_youtube"></small>
+          </div>
+
+          <!-- TIKTOK CARD -->
+          <div class="channel-card tiktok-card" id="card_tiktok">
+            <div class="card-header">
+              <label class="plat-enable-toggle" title="TikTok Live im Feed aktivieren / deaktivieren">
+                <input type="checkbox" id="chkEnableTiktok" checked />
+                <span class="plat-badge tiktok">🎵 TIKTOK LIVE</span>
+              </label>
+              <div class="card-btn-group">
+                <button class="btn-sm btn-icon-sm" id="btnReconnectTiktok" title="TikTok erneut verbinden (Reconnect)">↻</button>
+                <button class="btn-sm" id="btnConnectTiktok">Start / Standby</button>
+              </div>
+            </div>
+            <label>Dein TikTok-@Benutzername</label>
+            <input type="text" id="inputTiktokChannel" placeholder="z.B. @dein_tiktok" />
+
+            <details class="auth-details">
+              <summary>🎯 Stream-Auswahl: Auto oder manuelle Room-ID</summary>
+              <label>Manuelle TikTok Room-ID (leer lassen für Auto-Erkennung)</label>
+              <input type="text" id="inputTiktokRoomId" placeholder="Automatisch über @Benutzername erkennen" />
+            </details>
+            <div class="cap-info">ℹ️ Webcast-API: Live-Chat, Sub-Emotes, Gifts 🎁, Follows ❤️ & Likes lesen • Nur-Lesen (TikTok erlaubt kein Senden per Dritt-API)</div>
+            <small class="error-hint" id="err_tiktok"></small>
+          </div>
+
+          <button class="btn-primary-full" id="btnConnectAll">💾 Profil speichern & Alle aktiven Kanäle verbinden</button>
+        </div>
+
+        <!-- SECTION 4: COMPACT CHAT DESIGN, DIVIDERS & APPEARANCE SETTINGS (NO CSS NEEDED!) -->
+        <div class="sidebar-section design-settings-box">
+          <h3>🎨 Kompaktes Chatdesign & Darstellung</h3>
+          <p class="section-hint">Alle Änderungen wirken sofort live in der App <strong>und</strong> in deinem OBS-Overlay (ohne CSS oder URL-Parameter):</p>
+
+          <!-- 4.1 Layout & Fonts -->
+          <div class="setting-row">
+            <label>Darstellungs-Modus</label>
+            <select id="selLayoutMode">
+              <option value="inline">Inline / Kompakt (Standard – volle Breite)</option>
+              <option value="bubbles">Nachrichtenblasen / Cards (Optional)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>Schriftgröße Nutzernamen</label>
+              <span class="slider-val" id="valNameSize">13 px</span>
+            </div>
+            <input type="range" id="rngNameSize" min="10" max="20" step="0.5" value="13" />
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>Schriftgröße Nachrichtentext</label>
+              <span class="slider-val" id="valMsgSize">13.5 px</span>
+            </div>
+            <input type="range" id="rngMsgSize" min="10" max="20" step="0.5" value="13.5" />
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>Max. Länge Nutzernamen (Abkürzen)</label>
+              <span class="slider-val" id="valMaxNameLen">16 Zeichen</span>
+            </div>
+            <input type="range" id="rngMaxNameLen" min="6" max="32" step="1" value="16" />
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>Vertikaler Nachrichten-Abstand (Padding)</label>
+              <span class="slider-val" id="valMsgPadding">5 px</span>
+            </div>
+            <input type="range" id="rngMsgPadding" min="1" max="14" step="1" value="5" />
+          </div>
+
+          <div class="emote-toggles-grid" style="margin-top: 6px;">
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkShowPlatIcons" checked />
+              <span>Plattform-Icons zeigen</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkShowTimestamps" checked />
+              <span>Zeitstempel zeigen</span>
+            </label>
+          </div>
+
+          <div class="setting-row" style="margin-top: 6px;">
+            <label>Plattform-Kennzeichnungs-Stil</label>
+            <select id="selPlatStyle">
+              <option value="icon_only">Nur kompaktes Icon (🟣 / 🔴 / 🎵)</option>
+              <option value="icon_badge">Icon + Kurz-Badge</option>
+              <option value="subtle_border">Dezent (Farbpunkt)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <label>Farben der Benutzernamen</label>
+            <select id="selUserColorMode">
+              <option value="user">Unterschiedliche Nutzerfarben (Bunt)</option>
+              <option value="platform">Nach Herkunftsplattform (Lila / Rot / Cyan)</option>
+              <option value="mono">Einheitlich Dezent</option>
+            </select>
+          </div>
+
+          <!-- 4.2 Message Divider Lines -->
+          <div class="sub-divider-title">4.2 Trennlinien zwischen Nachrichten</div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkShowSeparator" checked />
+            <span>Dünne Trennlinie zwischen Nachrichten anzeigen</span>
+          </label>
+
+          <div class="setting-row-inline">
+            <div>
+              <label>Linienfarbe</label>
+              <input type="color" id="clrSeparator" value="#ffffff" />
+            </div>
+            <div style="flex: 1;">
+              <div class="slider-header">
+                <label>Deckkraft</label>
+                <span class="slider-val" id="valSepOpacity">8%</span>
+              </div>
+              <input type="range" id="rngSepOpacity" min="2" max="50" step="1" value="8" />
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>Linien-Abstand</label>
+              <span class="slider-val" id="valSepSpacing">0 px</span>
+            </div>
+            <input type="range" id="rngSepSpacing" min="0" max="10" step="1" value="0" />
+          </div>
+
+          <!-- 4.3 Background Customization -->
+          <div class="sub-divider-title">4.3 Hintergrund & Dark Mode</div>
+          <div class="setting-row-inline">
+            <div>
+              <label>Hintergrund</label>
+              <input type="color" id="clrChatBg" value="#0b0f19" />
+            </div>
+            <div style="flex: 1;">
+              <div class="slider-header">
+                <label>App-Deckkraft</label>
+                <span class="slider-val" id="valBgOpacity">100%</span>
+              </div>
+              <input type="range" id="rngBgOpacity" min="20" max="100" step="5" value="100" />
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>OBS-Overlay Hintergrund-Deckkraft</label>
+              <span class="slider-val" id="valObsBgOpacity">60%</span>
+            </div>
+            <input type="range" id="rngObsBgOpacity" min="0" max="100" step="5" value="60" />
+          </div>
+        </div>
+
+        <!-- SECTION 6: FOLLOW, SUB & EVENT HIGHLIGHTING SETTINGS -->
+        <div class="sidebar-section event-settings-box">
+          <h3>🌟 6. Event-Hervorhebung im Chatfeed</h3>
+          <p class="section-hint">
+            Normale Nachrichten von Abonnenten/Followern werden <strong>nicht</strong> pauschal hervorgehoben – nur echte Events. Jeder Typ ist einzeln steuerbar:
+          </p>
+
+          <div class="setting-row">
+            <label>Hervorhebungs-Stil</label>
+            <select id="selEventStyle">
+              <option value="bar">Kompakt-Balken + Farbton (Platzsparend)</option>
+              <option value="banner">Kräftiges Voll-Banner</option>
+              <option value="outline">Dezenter Farb-Rahmen</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <div class="slider-header">
+              <label>Intensität / Hintergrund-Deckkraft</label>
+              <span class="slider-val" id="valEventIntensity">18%</span>
+            </div>
+            <input type="range" id="rngEventIntensity" min="5" max="60" step="1" value="18" />
+          </div>
+
+          <div class="event-types-list">
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_follow" checked />
+                <span>❤️ <strong>Neuer Follow</strong></span>
+              </label>
+              <input type="color" id="clrEv_follow" value="#10b981" title="Farbe für Neuer Follow" />
+            </div>
+
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_sub" checked />
+                <span>⭐ <strong>Neues Sub / Member</strong></span>
+              </label>
+              <input type="color" id="clrEv_sub" value="#f59e0b" title="Farbe für Neues Sub" />
+            </div>
+
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_resub" checked />
+                <span>🌟 <strong>Resub (mit Laufzeit)</strong></span>
+              </label>
+              <input type="color" id="clrEv_resub" value="#a855f7" title="Farbe für Resub" />
+            </div>
+
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_subgift" checked />
+                <span>🎁 <strong>Gifted Subs (Anzahl)</strong></span>
+              </label>
+              <input type="color" id="clrEv_subgift" value="#ec4899" title="Farbe für Gifted Subs" />
+            </div>
+
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_bits" checked />
+                <span>💎 <strong>Bits / Cheers / Gifts / Spenden</strong></span>
+              </label>
+              <input type="color" id="clrEv_bits" value="#06b6d4" title="Farbe für Bits & Gifts" />
+            </div>
+
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_raid" checked />
+                <span>🚨 <strong>Raid (Kanal & Zuschauer)</strong></span>
+              </label>
+              <input type="color" id="clrEv_raid" value="#ef4444" title="Farbe für Raid" />
+            </div>
+
+            <div class="ev-type-row">
+              <label class="checkbox-row">
+                <input type="checkbox" id="chkEv_highlighted_msg" checked />
+                <span>✨ <strong>Hervorgehobene Nachricht</strong></span>
+              </label>
+              <input type="color" id="clrEv_highlighted_msg" value="#3b82f6" title="Farbe für Hervorgehobene Nachricht" />
+            </div>
+          </div>
+
+          <div class="cap-info" style="margin-top: 6px;">
+            <strong>Plattform-Verfügbarkeit:</strong><br />
+            • <strong>Twitch IRC:</strong> Sub, Resub, Gifted Subs, Bits, Raid & Highlight-Msg sofort ohne Login (Follows benötigen Twitch EventSub OAuth).<br />
+            • <strong>YouTube:</strong> Neues Mitglied, Resub, Gifted Members & SuperChat sofort.<br />
+            • <strong>TikTok:</strong> Neuer Follow ❤️, Neues Sub ⭐ & Gifts 💎 sofort.
+          </div>
+        </div>
+
+        <!-- EMOTE PROVIDERS & ANIMATIONS SECTION -->
+        <div class="sidebar-section emote-settings-box">
+          <h3>🎭 Emote-Anbieter & Animationen</h3>
+          <p class="section-hint">Einzelne Emote-Anbieter ein-/ausschalten:</p>
+          <div class="emote-toggles-grid">
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkEmote7tv" checked />
+              <span><strong>7TV</strong> (Global & Kanal)</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkEmoteBttv" checked />
+              <span><strong>BTTV</strong> (Global & Kanal)</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkEmoteFfz" checked />
+              <span><strong>FFZ</strong> (Global & Kanal)</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkEmoteTwitch" checked />
+              <span><strong>Twitch Nativ</strong></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkEmoteYoutube" checked />
+              <span><strong>YouTube Nativ</strong></span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkEmoteTiktok" checked />
+              <span><strong>TikTok Nativ</strong></span>
+            </label>
+          </div>
+          <label class="checkbox-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <input type="checkbox" id="chkAnimateEmotes" checked />
+            <span>✨ <strong>Animierte Emotes animiert abspielen</strong> (WebP / GIF)</span>
+          </label>
+        </div>
+
+        <!-- SECTION 5: OBS CUSTOM BROWSER DOCK, STREAM OVERLAY & STANDALONE WINDOW -->
+        <div class="sidebar-section obs-box">
+          <h3>🎥 5. OBS-Integration & Desktopfenster</h3>
+          <p class="section-hint">
+            <strong>Option A — OBS Custom Browser Dock (Szenenunabhängig):</strong><br />
+            Füge diesen Link in OBS unter <em>Docks → Benutzerdefinierte Browser-Docks</em> ein. Der Chat läuft dauerhaft unabhängig von deiner gewählten OBS-Szene!
+          </p>
+          <div class="obs-url-row" style="margin-bottom: 10px;">
+            <input type="text" id="inputObsDockUrl" readonly value="http://127.0.0.1:4588/dock" />
+            <button class="btn-sm" id="btnCopyObsDock">Dock-Link kopieren</button>
+          </div>
+
+          <p class="section-hint">
+            <strong>Option B — Eigenständiges Vollhöhen-Fenster links neben OBS:</strong><br />
+            Öffnet ein separates, frei verschiebbares & skalierbares Chatfenster über die gesamte Bildschirmhöhe links neben OBS (Position & Größe werden dauerhaft gespeichert!):
+          </p>
+          <button class="btn-primary-full" id="btnOpenStandaloneFull" style="margin-bottom: 10px;">
+            🪟 Eigenständiges Chatfenster (Volle Höhe links neben OBS) öffnen
+          </button>
+
+          <p class="section-hint">
+            <strong>Option C — OBS Stream-Overlay (Browser-Quelle für Zuschauer):</strong>
+          </p>
+          <div class="obs-url-row">
+            <input type="text" id="inputObsUrl" readonly value="http://127.0.0.1:4588" />
+            <button class="btn-sm" id="btnCopyObs">Overlay-URL kopieren</button>
+          </div>
+        </div>
+
+        <!-- OBS WEBSOCKET V5 CONFIG -->
+        <div class="sidebar-section obs-ws-config-box">
+          <h3>🎛️ OBS WebSocket v5 Verbindung</h3>
+          <p class="section-hint">
+            Aktiviere in OBS Studio unter <strong>Werkzeuge → WebSocket-Servereinstellungen</strong> den WebSocket-Server (Standard-Port <code>4455</code>).
+          </p>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="inputObsWsHost" placeholder="Host (127.0.0.1)" value="127.0.0.1" style="flex: 2;" />
+            <input type="number" id="inputObsWsPort" placeholder="4455" value="4455" style="flex: 1;" />
+          </div>
+          <input type="password" id="inputObsWsPass" placeholder="OBS WebSocket-Passwort (falls gesetzt)" style="margin-top: 5px;" />
+          <input type="text" id="inputObsWsMic" placeholder="Mikrofon-Quellname (optional, z. B. Mic/Aux)" style="margin-top: 5px;" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnObsWsConnect" style="flex: 1;">🔌 Mit OBS verbinden</button>
+            <button class="btn-sm hidden" id="btnObsWsDisconnect">Trennen</button>
+          </div>
+          <div id="obsWsConfigStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Nicht verbunden</div>
+        </div>
+
+        <!-- ELGATO KEY LIGHT / STREAM LIGHTING -->
+        <div class="sidebar-section elgato-lights-box">
+          <h3>💡 Elgato Key Light &amp; Stream-Licht</h3>
+          <p class="section-hint">
+            Steuert lokale Elgato Key Lights / Light Strips im WLAN (Port 9123) und schaltet sie automatisch ein, sobald dein Stream in OBS live geht.
+          </p>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="text" id="inputElgatoIps" placeholder="IP-Adresse(n), z. B. 192.168.178.45" style="flex: 1;" />
+            <button class="btn-sm" id="btnElgatoDiscover" title="Sucht im lokalen WLAN automatisch nach Elgato Key Lights">🔍 Suchen</button>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnElgatoOn" style="flex: 1;">💡 Einschalten</button>
+            <button class="btn-sm" id="btnElgatoOff" style="flex: 1;">🌑 Ausschalten</button>
+            <button class="btn-sm" id="btnElgatoToggle" title="Ein-/Ausschalten umschalten">🔄</button>
+          </div>
+          <div class="setting-row" style="margin-top: 8px;">
+            <div class="slider-header">
+              <label>Helligkeit</label>
+              <span class="slider-val" id="valElgatoBrightness">60%</span>
+            </div>
+            <input type="range" id="rngElgatoBrightness" min="3" max="100" step="1" value="60" />
+          </div>
+          <div class="setting-row" style="margin-top: 4px;">
+            <div class="slider-header">
+              <label>Farbtemperatur (Warm ↔ Kalt)</label>
+              <span class="slider-val" id="valElgatoTemp">4500K</span>
+            </div>
+            <input type="range" id="rngElgatoTemp" min="2900" max="7000" step="50" value="4500" />
+          </div>
+          <label class="checkbox-row" style="margin-top: 6px;">
+            <input type="checkbox" id="chkElgatoAutoOnLive" checked />
+            <span>🟢 Automatisch einschalten wenn Stream LIVE geht (OBS)</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkElgatoAutoOffStop" />
+            <span>⏹️ Automatisch ausschalten wenn Stream endet</span>
+          </label>
+          <div id="elgatoLightsStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Bereit</div>
+        </div>
+
+        <!-- GOVEE SMART-LIGHT & EVENT SCENES -->
+        <div class="sidebar-section govee-lights-box">
+          <h3>🌈 Govee Smart-Light &amp; Event-Szenen</h3>
+          <p class="section-hint">
+            Koppelt Govee-Lichtszenen, DIY-Szenen oder Farben an deine Stream-Events (Follow, Sub, Resub, Sub-Gift, Bits/Gifts, Raid, Chat-Hype &amp; Stream-Start/Ende).
+          </p>
+
+          <label class="checkbox-row" style="margin-bottom: 6px;">
+            <input type="checkbox" id="chkGoveeEnabled" />
+            <span><strong>Govee Szenen- &amp; Event-Steuerung aktivieren</strong> (jederzeit abschaltbar)</span>
+          </label>
+
+          <div style="padding: 8px; border-radius: 7px; background: rgba(14,165,233,0.1); border: 1px solid rgba(56,189,248,0.28); font-size: 11px; color: #cbd5e1; margin-bottom: 8px;">
+            <div>🔑 <strong>Eigener Govee API-Key erforderlich:</strong> Aus Lizenz- &amp; Rate-Limit-Gründen beantragt jeder Streamer kostenlos seinen eigenen Key (in der <em>Govee Home App → Profil → Einstellungen ⚙️ → API-Schlüssel anfordern</em> oder im Govee Developer-Portal).</div>
+            <button class="btn-sm" id="btnGoveeOpenKeyUrl" style="margin-top: 6px; width: 100%; background: rgba(2,132,199,0.35); border-color: rgba(56,189,248,0.45);">🌐 Govee API-Key beantragen / Developer-Portal öffnen</button>
+          </div>
+
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="password" id="inputGoveeApiKey" placeholder="Dein Govee API-Key..." style="flex: 1;" />
+            <button class="btn-sm" id="btnGoveeLoadDevices" title="Lädt deine Govee-Geräte und verfügbaren Lichtszenen">🔄 Geräte &amp; Szenen laden</button>
+          </div>
+
+          <div style="margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label style="font-size: 11px; font-weight: 700;">💡 Aktive Govee-Lampe(n) auswählen (einzeln oder mehrere)</label>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn-sm" id="btnGoveeSelectOnlyFirst" style="padding: 1px 6px; font-size: 10px;" title="Nur die erste/gewählte einzelne Lampe aktivieren">Nur 1 Lampe</button>
+                <button class="btn-sm" id="btnGoveeSelectAll" style="padding: 1px 6px; font-size: 10px;" title="Alle gefundenen Govee-Lampen aktivieren">Alle</button>
+              </div>
+            </div>
+            <div id="goveeDevicesChecklist" style="margin-top: 4px; padding: 6px 8px; border-radius: 6px; background: rgba(15,23,42,0.65); border: 1px solid rgba(148,163,184,0.18); max-height: 110px; overflow-y: auto; font-size: 11px; color: #94a3b8;">
+              Zuerst API-Key eingeben &amp; auf „🔄 Geräte &amp; Szenen laden“ klicken.
+            </div>
+          </div>
+
+          <div style="margin-top: 6px;">
+            <label style="font-size: 11px;">Szenen-Katalog laden von Lampe:</label>
+            <select id="selGoveeDevice" style="width: 100%; margin-top: 2px;">
+              <option value="">— Zuerst API-Key eingeben &amp; Geräte laden —</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px;">
+            <label style="font-size: 11px;">Nach Event zurück zur Standard-Szene nach (Sek., 0 = aus):</label>
+            <input type="number" id="numGoveeRevertSec" min="0" max="120" value="8" style="width: 64px;" />
+          </div>
+
+          <div class="sub-divider-title" style="margin-top: 8px;">Szenen- &amp; Lampen-Zuordnung pro Event (optional einzelne Lampe pro Event)</div>
+          <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 4px;" id="goveeEventRows">
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🏠 Standard-Szene</span>
+              <select class="govee-dev-sel" id="selGoveeDev_defaultScene" data-govee-dev-ev="defaultScene"></select>
+              <select class="govee-scene-sel" id="selGovee_defaultScene" data-govee-ev="defaultScene"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="defaultScene" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🟢 Stream-Start</span>
+              <select class="govee-dev-sel" id="selGoveeDev_streamStart" data-govee-dev-ev="streamStart"></select>
+              <select class="govee-scene-sel" id="selGovee_streamStart" data-govee-ev="streamStart"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="streamStart" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">💙 Neuer Follow</span>
+              <select class="govee-dev-sel" id="selGoveeDev_follow" data-govee-dev-ev="follow"></select>
+              <select class="govee-scene-sel" id="selGovee_follow" data-govee-ev="follow"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="follow" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">💜 Neuer Sub</span>
+              <select class="govee-dev-sel" id="selGoveeDev_sub" data-govee-dev-ev="sub"></select>
+              <select class="govee-scene-sel" id="selGovee_sub" data-govee-ev="sub"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="sub" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🔮 Resub</span>
+              <select class="govee-dev-sel" id="selGoveeDev_resub" data-govee-dev-ev="resub"></select>
+              <select class="govee-scene-sel" id="selGovee_resub" data-govee-ev="resub"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="resub" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🎁 Sub-Gift</span>
+              <select class="govee-dev-sel" id="selGoveeDev_subgift" data-govee-dev-ev="subgift"></select>
+              <select class="govee-scene-sel" id="selGovee_subgift" data-govee-ev="subgift"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="subgift" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🪙 Bits / Gift</span>
+              <select class="govee-dev-sel" id="selGoveeDev_bits" data-govee-dev-ev="bits"></select>
+              <select class="govee-scene-sel" id="selGovee_bits" data-govee-ev="bits"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="bits" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🚀 Raid</span>
+              <select class="govee-dev-sel" id="selGoveeDev_raid" data-govee-dev-ev="raid"></select>
+              <select class="govee-scene-sel" id="selGovee_raid" data-govee-ev="raid"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="raid" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">🔥 Chat-Hype</span>
+              <select class="govee-dev-sel" id="selGoveeDev_hype" data-govee-dev-ev="hype"></select>
+              <select class="govee-scene-sel" id="selGovee_hype" data-govee-ev="hype"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="hype" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 135px 1fr auto; gap: 5px; align-items: center;">
+              <span style="font-size: 11px;">⏹️ Stream-Ende</span>
+              <select class="govee-dev-sel" id="selGoveeDev_streamStop" data-govee-dev-ev="streamStop"></select>
+              <select class="govee-scene-sel" id="selGovee_streamStop" data-govee-ev="streamStop"></select>
+              <button class="btn-sm govee-test-btn" data-govee-test="streamStop" title="Szene auf gewählter Lampe testen">▶</button>
+            </div>
+          </div>
+          <div id="goveeLightsStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8;">Bereit</div>
+        </div>
+
+        <!-- PHILIPS HUE (100% LOCAL LAN BRIDGE — NO CLOUD) -->
+        <div class="sidebar-section hue-lights-box">
+          <h3>💡 Philips Hue (100% Lokal im WLAN — ohne Cloud)</h3>
+          <p class="section-hint">
+            Steuert deine lokale Philips Hue Bridge direkt im Heimnetzwerk (ohne Hue-Cloud, ohne Account) und koppelt Lampen &amp; Hue-Szenen an deine Stream-Events.
+          </p>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkHueEnabled" />
+            <span><strong>Philips Hue Steuerung &amp; Event-Szenen aktivieren</strong></span>
+          </label>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+            <input type="text" id="inputHueBridgeIp" placeholder="Bridge-IP, z. B. 192.168.178.30" style="flex: 1; min-width: 155px;" />
+            <button class="btn-sm" id="btnHueDiscover" title="Sucht im lokalen WLAN automatisch nach deiner Philips Hue Bridge">🔍 Bridge suchen</button>
+            <button class="btn-sm" id="btnHuePair" style="background: #0284c7; color: #fff; font-weight: 700;" title="Drücke zuerst den runden Knopf auf der Hue Bridge und klicke dann hier">🔗 Koppeln (Bridge-Knopf)</button>
+            <button class="btn-sm" id="btnHueLoad" title="Lampen &amp; gespeicherte Hue-Szenen von der Bridge laden">🔄 Lampen &amp; Szenen laden</button>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+            <button class="btn-sm" id="btnHueOn">💡 Einschalten</button>
+            <button class="btn-sm" id="btnHueOff">🌑 Ausschalten</button>
+            <input type="color" id="clrHueQuick" value="#9146ff" title="Direktfarbe an gewählte Hue-Lampen senden" />
+            <span style="font-size: 11px; color: #94a3b8;">Helligkeit:</span>
+            <input type="range" id="rngHueBrightness" min="5" max="100" value="80" style="flex: 1; min-width: 90px;" />
+            <span id="lblHueBrightness" style="font-size: 11px; width: 34px;">80%</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkHueAutoOnLive" /><span>🟢 Automatisch einschalten wenn Stream LIVE geht (OBS)</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkHueAutoOffStop" /><span>⏹️ Automatisch ausschalten wenn Stream endet</span></label>
+          </div>
+          <div id="hueLightsList" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>
+          <details class="auth-details" style="margin-top: 8px;">
+            <summary>🎭 Hue Event-Szenen &amp; Farben pro Stream-Event</summary>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+              <label style="font-size: 11px;">Nach Event zurück zur Standard-Szene nach (Sek., 0 = aus):</label>
+              <input type="number" id="numHueRevertSec" min="0" max="120" value="8" style="width: 64px;" />
+            </div>
+            <div id="hueEventRows" style="display: flex; flex-direction: column; gap: 5px; margin-top: 6px;"></div>
+          </details>
+          <div id="hueStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8;">Bereit (100% lokal im Heimnetz)</div>
+        </div>
+
+        <!-- NANOLEAF (100% LOCAL LAN OPENAPI PORT 16021 — NO CLOUD) -->
+        <div class="sidebar-section nanoleaf-lights-box">
+          <h3>🔺 Nanoleaf Shapes / Lines / Canvas (100% Lokal — ohne Cloud)</h3>
+          <p class="section-hint">
+            Steuert Nanoleaf-Panels lokal über die offizielle LAN-Schnittstelle (Port <code>16021</code>, ohne Cloud) inkl. deiner gespeicherten Nanoleaf-Effekte &amp; Stream-Events.
+          </p>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkNlEnabled" />
+            <span><strong>Nanoleaf Steuerung &amp; Event-Effekte aktivieren</strong></span>
+          </label>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+            <input type="text" id="inputNlIp" placeholder="Nanoleaf-IP, z. B. 192.168.178.42" style="flex: 1; min-width: 155px;" />
+            <button class="btn-sm" id="btnNlDiscover" title="Sucht im lokalen WLAN automatisch nach Nanoleaf-Controllern (Port 16021)">🔍 Nanoleaf suchen</button>
+            <button class="btn-sm" id="btnNlPair" style="background: #0284c7; color: #fff; font-weight: 700;" title="Halte am Nanoleaf die Power-Taste 5–7 Sek. gedrückt (bis LEDs blinken) und klicke dann hier">🔗 Koppeln (5–7s Power)</button>
+            <button class="btn-sm" id="btnNlLoad" title="Gespeicherte Effekte vom Nanoleaf laden">🔄 Effekte laden</button>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+            <button class="btn-sm" id="btnNlOn">💡 Einschalten</button>
+            <button class="btn-sm" id="btnNlOff">🌑 Ausschalten</button>
+            <input type="color" id="clrNlQuick" value="#0ac8b9" title="Direktfarbe an Nanoleaf senden" />
+            <select id="selNlQuickEffect" style="min-width: 145px; font-size: 11px;"><option value="">— Effekt wählen —</option></select>
+            <input type="range" id="rngNlBrightness" min="5" max="100" value="75" style="flex: 1; min-width: 80px;" />
+            <span id="lblNlBrightness" style="font-size: 11px; width: 34px;">75%</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkNlAutoOnLive" /><span>🟢 Automatisch einschalten wenn Stream LIVE geht (OBS)</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkNlAutoOffStop" /><span>⏹️ Automatisch ausschalten wenn Stream endet</span></label>
+          </div>
+          <details class="auth-details" style="margin-top: 8px;">
+            <summary>🎭 Nanoleaf Event-Effekte &amp; Farben pro Stream-Event</summary>
+            <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+              <label style="font-size: 11px;">Nach Event zurück zum Standard-Effekt nach (Sek., 0 = aus):</label>
+              <input type="number" id="numNlRevertSec" min="0" max="120" value="8" style="width: 64px;" />
+            </div>
+            <div id="nlEventRows" style="display: flex; flex-direction: column; gap: 5px; margin-top: 6px;"></div>
+          </details>
+          <div id="nlStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8;">Bereit (100% lokal im Heimnetz)</div>
+        </div>
+
+        <!-- SPOTIFY, APPLE MUSIC & AMAZON MUSIC DESKTOP BRIDGE & OBS NOW-PLAYING WIDGET -->
+        <div class="sidebar-section spotify-box">
+          <h3>🎵 Spotify / Apple / Amazon Music &amp; !song</h3>
+          <p class="section-hint">
+            Liest den aktuellen Song direkt aus Spotify, Apple Music oder Amazon Music (ohne API-Key!).
+          </p>
+
+          <div class="sp-now-playing-card" id="spSidebarCard">
+            <div class="sp-np-info">
+              <strong id="spSidebarTitle">Musik nicht aktiv</strong>
+              <span id="spSidebarArtist">Starte Amazon Music, Spotify oder Apple Music</span>
+            </div>
+            <div class="sp-np-controls">
+              <button class="btn-sm btn-icon-sm" id="btnSpPrev" title="Vorheriger Song">⏮</button>
+              <button class="btn-sm btn-icon-sm" id="btnSpPlayPause" title="Play / Pause">⏯</button>
+              <button class="btn-sm btn-icon-sm" id="btnSpNext" title="Nächster Song">⏭</button>
+              <button class="btn-sm" id="btnSpAnnounce" title="Aktuellen Song in den Twitch-Chat posten">📢</button>
+            </div>
+          </div>
+
+          <label class="checkbox-row" style="margin-top: 6px;">
+            <input type="checkbox" id="chkSpotifyAutoCmd" checked />
+            <span>🤖 <code>!song</code> / <code>!music</code> im Twitch-Chat automatisch beantworten</span>
+          </label>
+
+          <label style="margin-top: 6px;">OBS Spotify-Widget (Browser-Quelle)</label>
+          <div class="obs-url-row">
+            <input type="text" id="inputSpotifyObsUrl" readonly value="http://127.0.0.1:4588/spotify" />
+            <button class="btn-sm" id="btnCopySpotifyObs">Widget-URL kopieren</button>
+          </div>
+        </div>
+
+        <!-- OBS ALERT-BOX OVERLAY -->
+        <div class="sidebar-section obs-alerts-box">
+          <h3>🚨 OBS Alert-Box Overlay</h3>
+          <p class="section-hint">
+            Zeige Follows, Subs, Bits &amp; Raids als animierte Alerts im Stream. Füge die URL in OBS als <strong>Browser-Quelle</strong> hinzu.
+          </p>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkObsAlertsEnabled" checked />
+            <span>Alert-Overlay aktivieren</span>
+          </label>
+          <div class="obs-url-row" style="margin-top: 6px;">
+            <input type="text" id="inputObsAlertsUrl" readonly value="http://127.0.0.1:4588/alerts" />
+            <button class="btn-sm" id="btnCopyObsAlerts">Alert-URL kopieren</button>
+          </div>
+
+          <label style="margin-top: 8px; display: block; font-weight: 600;">Welche Events im Stream anzeigen?</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 4px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_follow" checked /><span>💙 Follow</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_sub" checked /><span>⭐ Sub / Member</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_resub" checked /><span>💜 Resub</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_subgift" checked /><span>🎁 Sub-Gift</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_bits" checked /><span>💎 Bits / SuperChat</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkAlert_raid" checked /><span>🚀 Raid</span></label>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+            <div style="flex: 1;">
+              <label for="selObsAlertAnim" style="font-size: 11px;">Animation</label>
+              <select id="selObsAlertAnim" style="width: 100%; margin-top: 2px;">
+                <option value="pop">Pop-In</option>
+                <option value="slide">Slide-Up</option>
+                <option value="glow">Neon-Glow</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <label for="rngObsAlertDuration" style="font-size: 11px;">Dauer: <strong id="valObsAlertDuration">5s</strong></label>
+              <input type="range" id="rngObsAlertDuration" min="2" max="12" step="1" value="5" style="width: 100%; margin-top: 4px;" />
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px;">
+            <label class="checkbox-row" style="margin: 0;">
+              <input type="checkbox" id="chkObsAlertSound" checked />
+              <span>🔊 Alert-Sound im OBS</span>
+            </label>
+            <button class="btn-sm" id="btnTestObsAlert">▶ Test-Alert</button>
+          </div>
+
+          <details style="margin-top: 8px; font-size: 11px;">
+            <summary style="cursor: pointer; user-select: none; color: #cbd5e1; font-weight: 600;">🖼️ Eigene Alert-Medien (Bild / GIF &amp; Sound)</summary>
+            <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;">
+              <select id="selAlertMediaType">
+                <option value="follow">💙 Follow</option>
+                <option value="sub">⭐ Sub / Member</option>
+                <option value="resub">💜 Resub</option>
+                <option value="subgift">🎁 Sub-Gift</option>
+                <option value="bits">💎 Bits / SuperChat</option>
+                <option value="raid">🚀 Raid</option>
+              </select>
+              <div class="file-picker-row">
+                <button type="button" class="btn-sm" id="btnPickAlertImage" style="white-space: nowrap;">🖼️ Bild / GIF wählen…</button>
+                <span class="file-picker-badge" id="lblAlertImageFile">Keine Bilddatei gewählt</span>
+                <button type="button" class="btn-sm warn hidden" id="btnClearAlertImage" title="Ausgewählte Datei entfernen" style="padding: 3px 7px;">✕</button>
+              </div>
+              <div class="file-picker-row">
+                <button type="button" class="btn-sm" id="btnPickAlertAudio" style="white-space: nowrap;">🔊 Sound wählen…</button>
+                <span class="file-picker-badge" id="lblAlertAudioFile">Kein eigener Sound (Standard-Chime)</span>
+                <button type="button" class="btn-sm warn hidden" id="btnClearAlertAudio" title="Ausgewählte Datei entfernen" style="padding: 3px 7px;">✕</button>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- OBS GOAL-BAR & MULTISTREAM POLL -->
+        <div class="sidebar-section obs-goals-poll-box">
+          <h3>📊 OBS Goal-Bar &amp; Live-Poll</h3>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkObsGoalEnabled" checked />
+            <span>Goal-Bar Overlay aktivieren</span>
+          </label>
+          <div class="obs-url-row" style="margin-top: 4px;">
+            <input type="text" id="inputObsGoalsUrl" readonly value="http://127.0.0.1:4588/goals" />
+            <button class="btn-sm" id="btnCopyObsGoals">Goal-URL</button>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <input type="text" id="inputGoalTitle" placeholder="Titel (z. B. Sub-Goal)" value="Sub-Goal" style="flex: 2;" />
+            <input type="color" id="clrGoalBar" value="#9146ff" title="Balkenfarbe" style="width: 34px; height: 28px; padding: 1px;" />
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 5px;">
+            <input type="number" id="inputGoalCurrent" min="0" value="0" title="Aktuell" style="flex: 1;" />
+            <span style="align-self: center; font-size: 12px;">/</span>
+            <input type="number" id="inputGoalTarget" min="1" value="50" title="Ziel" style="flex: 1;" />
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkGoalAutoFollow" /><span>Auto +1 Follow</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoalAutoSub" checked /><span>Auto +1 Sub</span></label>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0;" />
+
+          <label style="font-weight: 600;">🗳️ Multistream-Poll (Chat: <code>!vote 1..N</code>)</label>
+          <div class="obs-url-row" style="margin-top: 4px;">
+            <input type="text" id="inputObsPollUrl" readonly value="http://127.0.0.1:4588/poll" />
+            <button class="btn-sm" id="btnCopyObsPoll">Poll-URL</button>
+          </div>
+          <input type="text" id="inputPollQuestion" placeholder="Frage (z. B. Nächstes Spiel?)" style="margin-top: 6px;" />
+          <textarea id="inputPollOptions" class="tag-textarea" rows="2" placeholder="Optionen kommagetrennt (z. B. Valorant, Minecraft)" style="margin-top: 4px;"></textarea>
+          <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnPollStart" style="flex: 1;">▶ Start</button>
+            <button class="btn-sm" id="btnPollStop">⏹ Stopp</button>
+            <button class="btn-sm" id="btnPollToggleVis">👁️ Ausblenden</button>
+            <button class="btn-sm" id="btnPollReset">🔄 Reset</button>
+          </div>
+          <div id="pollPreviewStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Keine aktive Umfrage</div>
+        </div>
+
+        <!-- TEXT-TO-SPEECH (TTS) -->
+        <div class="sidebar-section tts-box">
+          <h3>🗣️ Text-to-Speech (TTS)</h3>
+          <label class="checkbox-row">
+            <input type="checkbox" id="chkTtsEnabled" />
+            <span>TTS-Vorlesen aktivieren</span>
+          </label>
+          <div style="display: flex; gap: 10px; margin-top: 4px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkTtsAlerts" checked /><span>Events / Alerts</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkTtsChatCmd" checked /><span><code>!tts</code> im Chat</span></label>
+          </div>
+          <select id="selTtsVoice" style="width: 100%; margin-top: 6px;">
+            <option value="">System-Standardstimme</option>
+          </select>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <div style="flex: 1;">
+              <label style="font-size: 11px;">Tempo: <strong id="valTtsRate">1.0x</strong></label>
+              <input type="range" id="rngTtsRate" min="0.6" max="1.6" step="0.1" value="1.0" style="width: 100%;" />
+            </div>
+            <div style="flex: 1;">
+              <label style="font-size: 11px;">Lautstärke: <strong id="valTtsVol">90%</strong></label>
+              <input type="range" id="rngTtsVol" min="0.1" max="1.0" step="0.1" value="0.9" style="width: 100%;" />
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnTtsTest" style="flex: 1;">▶ Test</button>
+            <button class="btn-sm" id="btnTtsSkip">⏭ Skip</button>
+            <button class="btn-sm" id="btnTtsClear">🗑 Leeren</button>
+          </div>
+        </div>
+
+        <!-- TABLET & IPAD COMPANION MODE -->
+        <div class="sidebar-section tablet-box">
+          <h3>📱 Tablet &amp; iPad Companion</h3>
+          <p class="section-hint">
+            Scanne den QR-Code mit deinem <strong>iPad / Android-Tablet</strong> im selben WLAN — sofortiges Touch-Chat- &amp; Stream-Deck-Dashboard ohne App-Installation!
+          </p>
+          <div class="tablet-qr-row">
+            <img id="imgTabletQr" class="tablet-qr-img hidden" src="" alt="Tablet QR-Code" />
+            <div class="tablet-qr-meta">
+              <select id="selTabletNet" class="hidden" style="width: 100%; margin-bottom: 5px;"></select>
+              <input type="text" id="inputTabletUrl" readonly value="http://127.0.0.1:4588/tablet" />
+              <button class="btn-sm" id="btnCopyTabletUrl" style="margin-top: 5px; width: 100%;">📋 Tablet-Link kopieren</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STREAM DECK & BITFOCUS COMPANION INTEGRATION -->
+        <div class="sidebar-section streamdeck-box">
+          <h3>🎛️ Stream Deck Integration</h3>
+          <p class="section-hint">
+            In der <strong>Elgato Stream Deck App</strong>: Aktion <em>System → Website</em> auf eine Taste ziehen, URL einfügen &amp; <strong>„Anfrage im Hintergrund senden“</strong> aktivieren (funktioniert auch mit Bitfocus Companion):
+          </p>
+
+          <div class="sd-actions-list" id="sdActionsList">
+            <div class="sd-row" data-sd-path="/pin-last">
+              <span class="sd-label">📌 Letzte Nachricht in OBS pinnen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/unpin">
+              <span class="sd-label">❌ OBS-Pin ausblenden</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-poll">
+              <span class="sd-label">🗳️ Poll ein-/ausblenden</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/clip">
+              <span class="sd-label">🎬 Twitch Clip erstellen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/marker?description=Highlight">
+              <span class="sd-label">🚩 Stream-Marker setzen</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/clip-and-marker?description=Highlight">
+              <span class="sd-label">🎬🚩 Clip + Marker (Kombi)</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-replay">
+              <span class="sd-label">💾 OBS Replay speichern</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-mic">
+              <span class="sd-label">🎙️ OBS Mikrofon Mute</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/obs-record">
+              <span class="sd-label">🔴 OBS Aufnahme Toggle</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/clear-chat">
+              <span class="sd-label">🗑️ Chat-Verlauf leeren</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-compact">
+              <span class="sd-label">↕️ Kompakt-Modus umschalten</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-sound">
+              <span class="sd-label">🔔 Sound-Alarm stumm/an</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/toggle-always-on-top">
+              <span class="sd-label">📌 Always-on-Top umschalten</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+            <div class="sd-row" data-sd-path="/reconnect?platform=all">
+              <span class="sd-label">↻ Alle Plattformen Reconnect</span>
+              <div class="sd-btns">
+                <button class="btn-sm sd-copy" title="Stream-Deck-URL kopieren">📋 URL</button>
+                <button class="btn-sm sd-test" title="Aktion direkt testen">▶ Test</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sub-divider-title">💬 Eigene Quick-Chat-Taste generieren</div>
+          <input type="text" id="inputSdCustomText" placeholder="z.B. !discord oder Bin kurz AFK!" />
+          <div class="obs-url-row" style="margin-top: 5px;">
+            <input type="text" id="inputSdCustomUrl" readonly value="http://127.0.0.1:4588/api/streamdeck/send?text=GG!" />
+            <button class="btn-sm" id="btnCopySdCustom">Kopieren</button>
+          </div>
+        </div>
+
+        <!-- PERIPHERAL SELECTION: DEDICATED 2ND KEYBOARD & MOUSE + GLOBAL HOTKEYS -->
+        <div class="sidebar-section peripherals-box">
+          <div class="card-header" style="margin-bottom: 6px;">
+            <h3 style="margin: 0;">⌨️ Peripherie-Auswahl (Zweitgeräte)</h3>
+            <button class="btn-sm" id="btnScanPeripherals" title="Angeschlossene USB-Tastaturen & Mäuse neu einlesen">🔍 Scannen</button>
+          </div>
+          <p class="section-hint">
+            Nutze eine <strong>separate Zweittastatur / ein Makro-Pad oder eine Zweitmaus</strong> exklusiv für OmniGrid Studio – auch ohne Fokuswechsel beim Zocken!
+          </p>
+
+          <div class="setting-row">
+            <label>Separate Tastatur / Makro-Pad (WebHID)</label>
+            <div class="select-with-btn">
+              <select id="selPerifKeyboard">
+                <option value="">-- Tastatur auswählen --</option>
+              </select>
+              <button class="btn-sm" id="btnConnectHidKeyboard" title="Ausgewählte Zweittastatur per WebHID verbinden">🔌 Verbinden</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label>Zweittastatur-Modus</label>
+            <select id="selPerifKeyboardMode">
+              <option value="chat_and_macros">✍️ Chat tippen + F1–F4 Makros</option>
+              <option value="macros_only">🎛️ Nur Makros (1–4 / F1–F4)</option>
+            </select>
+          </div>
+
+          <div class="setting-row">
+            <label>Separate Maus / Trackball (WebHID)</label>
+            <div class="select-with-btn">
+              <select id="selPerifMouse">
+                <option value="">-- Maus auswählen --</option>
+              </select>
+              <button class="btn-sm" id="btnConnectHidMouse" title="Ausgewählte Zweitmaus per WebHID verbinden (Scrollrad = Chat scrollen, Linksklick = Pin, Rechtsklick = Unpin)">🖱️ Verbinden</button>
+            </div>
+          </div>
+
+          <div class="cap-info" id="perifLiveStatus">
+            ℹ️ Bereit. Hinweis: Manche Betriebssysteme sperren die primäre Systemtastatur für WebHID – nutze dann einfach ein USB-Numpad, eine Zweittastatur oder die globalen Hotkeys darunter.
+          </div>
+
+          <div class="sub-divider-title">🌐 Globale Hotkeys (Für jede Tastatur / im Spiel)</div>
+          <div class="hotkeys-grid">
+            <div class="hk-row">
+              <span>📌 Pin Letzte:</span>
+              <input type="text" id="hkPinLast" value="CommandOrControl+Alt+P" />
+            </div>
+            <div class="hk-row">
+              <span>❌ Unpin:</span>
+              <input type="text" id="hkUnpin" value="CommandOrControl+Alt+U" />
+            </div>
+            <div class="hk-row">
+              <span>🗑️ Chat leeren:</span>
+              <input type="text" id="hkClearChat" value="CommandOrControl+Alt+C" />
+            </div>
+            <div class="hk-row">
+              <span>↕️ Kompakt:</span>
+              <input type="text" id="hkToggleCompact" value="CommandOrControl+Alt+K" />
+            </div>
+          </div>
+          <button class="btn-sm" id="btnSaveHotkeys" style="width: 100%; margin-top: 6px;">💾 Globale Hotkeys aktivieren</button>
+        </div>
+
+        <!-- SECTION 8: APP SETTINGS, STABILITY & HIGH-FREQUENCY PERFORMANCE -->
+        <div class="sidebar-section perf-settings-box">
+          <h3>⚡ 8. Stabilität, Performance & Backup</h3>
+          <p class="section-hint">
+            Optimiert für minimalen CPU-/RAM-Verbrauch (60fps RAF-Batching, GPU-Layer-Isolation für animierte 7TV-Emotes & In-Memory-Konfiguration).
+          </p>
+
+          <div class="perf-metrics-grid">
+            <div class="perf-metric-card">
+              <span class="pm-label">RAM-Verbrauch</span>
+              <strong class="pm-val" id="perfRamVal">-- MB</strong>
+            </div>
+            <div class="perf-metric-card">
+              <span class="pm-label">DOM-Nachrichten</span>
+              <strong class="pm-val" id="perfDomVal">0 / 150</strong>
+            </div>
+            <div class="perf-metric-card">
+              <span class="pm-label">Emotes im Cache</span>
+              <strong class="pm-val" id="perfEmoteVal">0</strong>
+            </div>
+            <div class="perf-metric-card">
+              <span class="pm-label">Frequenz</span>
+              <strong class="pm-val" id="perfRateVal">0 /s</strong>
+            </div>
+          </div>
+
+          <div class="setting-row" style="margin-top: 8px;">
+            <div class="slider-header">
+              <label>Max. sichtbare Nachrichten im Feed (RAM-Limit)</label>
+              <span class="slider-val" id="valMaxDomMsgs">150</span>
+            </div>
+            <input type="range" id="rngMaxDomMsgs" min="50" max="300" step="25" value="150" />
+          </div>
+
+          <div class="sub-divider-title">Profil-Sicherung & Zurücksetzen</div>
+          <div class="perf-actions-row">
+            <button class="btn-sm" id="btnExportConfig" title="Alle Einstellungen als JSON-Datei sichern">📤 Exportieren</button>
+            <button class="btn-sm" id="btnImportConfig" title="Gesicherte Einstellungen wiederherstellen">📥 Importieren</button>
+            <button class="btn-sm warn" id="btnResetDefaults" title="Design-, Emote- & Event-Einstellungen auf Standardwerte zurücksetzen">↺ Standard</button>
+          </div>
+
+          <div class="sub-divider-title" style="margin-top: 8px;">App-Updates (GitHub Releases)</div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+            <button class="btn-sm" id="btnCheckUpdates" title="Prüft auf GitHub Releases nach einer neueren Version">🔄 Nach Updates suchen</button>
+            <span id="updaterStatusText" style="font-size: 11px; color: #94a3b8;">v1.1.0</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section stream-manager-box">
+          <h3>📝 Stream-Manager</h3>
+          <input type="text" id="inputStreamTitle" placeholder="Stream-Titel..." />
+          <input type="text" id="inputStreamGame" list="dlStreamGames" placeholder="Spiel / Kategorie (z. B. Just Chatting)" style="margin-top: 5px;" />
+          <datalist id="dlStreamGames"></datalist>
+          <textarea id="inputStreamTags" class="tag-textarea" rows="2" placeholder="Tags kommagetrennt (z. B. Deutsch, Chill)" style="margin-top: 5px;"></textarea>
+          <label class="checkbox-row" style="margin-top: 5px;">
+            <input type="checkbox" id="chkSyncYtTitle" checked />
+            <span>Auch YouTube-Titel aktualisieren (falls OAuth2 aktiv)</span>
+          </label>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnLoadStreamInfo">🔄 Laden</button>
+            <button class="btn-sm" id="btnSaveStreamInfo" style="flex: 1;">💾 Übernehmen</button>
+          </div>
+          <button class="btn-sm" id="btnSidebarSocialSchedule" style="width: 100%; margin-top: 6px;">📢 Go-Live &amp; Schedule Studio</button>
+          <div id="streamInfoStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;"></div>
+        </div>
+
+        <div class="sidebar-section twitch-clip-box">
+          <h3>🎬 Twitch Clip &amp; Marker</h3>
+          <input type="text" id="inputMarkerDesc" placeholder="Marker-Notiz (optional, z. B. Bosskill)" />
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnCreateClip" style="flex: 1;">🎬 Clip erstellen</button>
+            <button class="btn-sm" id="btnCreateMarker" style="flex: 1;">🚩 Marker setzen</button>
+          </div>
+          <div id="clipMarkerResult" style="margin-top: 6px; font-size: 11px; color: #94a3b8; word-break: break-all;"></div>
+        </div>
+
+        <div class="sidebar-section obs-ws-live-box">
+          <h3>🎥 OBS Live-Steuerung <span id="obsWsLiveBadge" style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Aus)</span></h3>
+          <select id="selObsScene" disabled style="width: 100%;">
+            <option value="">— OBS in Config verbinden —</option>
+          </select>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+            <button class="btn-sm" id="btnObsReplay" disabled>💾 Replay</button>
+            <button class="btn-sm" id="btnObsMic" disabled>🎙️ Mic</button>
+            <button class="btn-sm" id="btnObsRec" disabled>🔴 Rec</button>
+            <button class="btn-sm" id="btnObsStream" disabled>📡 Stream</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section multistream-live-box">
+          <h3>📡 Multi-Plattform-Stream <span id="msLiveBadge" style="font-size: 10px; color: #94a3b8; font-weight: 600;">(Aus)</span></h3>
+          <div id="msLiveTelemetry" style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">OBS rendert 1× → OmniGrid verteilt</div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-sm" id="btnMsLiveStart" style="flex: 1; background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.45); font-weight: 700;">📡 Multi-Stream Start</button>
+            <button class="btn-sm warn hidden" id="btnMsLiveStop" style="flex: 1;">⏹️ Stopp</button>
+            <button class="btn-sm" id="btnMsOpenCfg" title="Stream-Keys & Zielplattformen konfigurieren">⚙️ Ziele</button>
+          </div>
+        </div>
+
+        <!-- MULTI-PLATFORM RTMP RESTREAMING RELAY CONFIG (MOVED TO CENTRAL CONFIG -> PLATFORMS) -->
+        <div class="sidebar-section multistream-relay-box" style="grid-column: 1 / -1;">
+          <h3>📡 Multi-Plattform-Streaming Relay (OBS rendert 1× → OmniGrid verteilt)</h3>
+          <p class="section-hint">
+            OBS enkodiert deinen Stream nur ein einziges Mal und sendet ihn lokal an OmniGrid Studio (<code>rtmp://127.0.0.1:1935/live/omnigrid</code>). OmniGrid verteilt den Stream mit <strong>0% zusätzlicher GPU-/CPU-Enkodierlast (<code>-c copy</code>)</strong> gleichzeitig an Twitch, YouTube, TikTok &amp; Kick/Custom RTMP.
+          </p>
+
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: end; padding: 8px 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25);">
+            <div>
+              <label style="font-size: 10px;">Lokaler RTMP-Port</label>
+              <input type="number" id="numMsPort" value="1935" min="1024" max="65535" style="width: 85px;" />
+            </div>
+            <div>
+              <label style="font-size: 10px;">Lokaler Relay-Key</label>
+              <input type="text" id="inputMsLocalKey" value="omnigrid" style="width: 120px;" />
+            </div>
+            <div style="flex: 1; min-width: 210px;">
+              <label style="font-size: 10px;">OBS Server-URL (automatisch oder manuell in OBS)</label>
+              <input type="text" id="inputMsIngestPreview" readonly value="rtmp://127.0.0.1:1935/live" />
+            </div>
+            <button class="btn-sm" id="btnMsConfigureObs" style="background: rgba(2,132,199,0.35); border-color: rgba(56,189,248,0.5); font-weight: 700;">⚡ OBS automatisch auf OmniGrid-Relay einstellen</button>
+          </div>
+
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px;">
+            <label class="checkbox-row"><input type="checkbox" id="chkMsAutoConfigObs" checked /><span>OBS beim Start automatisch auf lokales Relay setzen</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkMsAutoStartObs" checked /><span>OBS-Stream beim Klick auf „Multi-Stream Start“ automatisch mitstarten &amp; stoppen</span></label>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 10px;">
+            <!-- TWITCH TARGET -->
+            <div style="padding: 9px; border-radius: 8px; background: rgba(145,70,255,0.1); border: 1px solid rgba(145,70,255,0.35);">
+              <label class="checkbox-row" style="font-weight: 700; color: #c4b5fd;"><input type="checkbox" id="chkMsTwitch" checked /><span>🟣 Twitch Simulcast</span></label>
+              <label style="font-size: 10px; margin-top: 5px; display: block;">Twitch RTMP Ingest-Server</label>
+              <input type="text" id="inputMsTwitchUrl" value="rtmp://fra02.contribute.live-video.net/app" placeholder="rtmp://fra02.contribute.live-video.net/app" />
+              <label style="font-size: 10px; margin-top: 5px; display: block;">Twitch Stream-Schlüssel</label>
+              <input type="password" id="inputMsTwitchKey" placeholder="live_123456789_..." />
+            </div>
+
+            <!-- YOUTUBE TARGET -->
+            <div style="padding: 9px; border-radius: 8px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.35);">
+              <label class="checkbox-row" style="font-weight: 700; color: #fca5a5;"><input type="checkbox" id="chkMsYoutube" /><span>🔴 YouTube Live Simulcast</span></label>
+              <label style="font-size: 10px; margin-top: 5px; display: block;">YouTube RTMP Server-URL</label>
+              <input type="text" id="inputMsYoutubeUrl" value="rtmp://a.rtmp.youtube.com/live2" placeholder="rtmp://a.rtmp.youtube.com/live2" />
+              <label style="font-size: 10px; margin-top: 5px; display: block;">YouTube Stream-Schlüssel</label>
+              <input type="password" id="inputMsYoutubeKey" placeholder="xxxx-xxxx-xxxx-xxxx-xxxx" />
+            </div>
+
+            <!-- TIKTOK TARGET -->
+            <div style="padding: 9px; border-radius: 8px; background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.35);">
+              <label class="checkbox-row" style="font-weight: 700; color: #67e8f9;"><input type="checkbox" id="chkMsTiktok" /><span>🎵 TikTok Live Simulcast</span></label>
+              <label style="font-size: 10px; margin-top: 5px; display: block;">TikTok RTMP Server-URL</label>
+              <input type="text" id="inputMsTiktokUrl" placeholder="rtmp://push-rtmp-l11-..." />
+              <label style="font-size: 10px; margin-top: 5px; display: block;">TikTok Stream-Schlüssel</label>
+              <input type="password" id="inputMsTiktokKey" placeholder="stream-..." />
+            </div>
+
+            <!-- CUSTOM / KICK TARGET -->
+            <div style="padding: 9px; border-radius: 8px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.35);">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label class="checkbox-row" style="font-weight: 700; color: #6ee7b7;"><input type="checkbox" id="chkMsCustom" /><span>🌐</span></label>
+                <input type="text" id="inputMsCustomName" value="Kick / Custom" placeholder="Plattform-Name" style="flex: 1; padding: 3px 6px; font-size: 11px;" />
+              </div>
+              <label style="font-size: 10px; margin-top: 5px; display: block;">RTMP / RTMPS Server-URL</label>
+              <input type="text" id="inputMsCustomUrl" placeholder="rtmps://fa723fc1b171.global-contribute.live-video.net/app" />
+              <label style="font-size: 10px; margin-top: 5px; display: block;">Stream-Schlüssel</label>
+              <input type="password" id="inputMsCustomKey" placeholder="sk_..." />
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnMsCfgStart" style="padding: 8px 14px; background: rgba(16,185,129,0.28); border-color: rgba(16,185,129,0.55); font-weight: 700;">📡 Multi-Stream Relay starten (+ OBS Start)</button>
+            <button class="btn-sm warn hidden" id="btnMsCfgStop" style="padding: 8px 14px;">⏹️ Multi-Stream stoppen</button>
+            <span id="msCfgStatus" style="font-size: 11px; color: #94a3b8;">Bereit</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section config-launcher-box">
+          <h3>⚙️ Konfiguration</h3>
+          <p class="section-hint">Plattformen (Twitch, YouTube, TikTok), Design, Emotes, OBS-Overlays, Alerts, Tablet, Stream Deck &amp; System-Einstellungen befinden sich zentral auf der Config-Seite.</p>
+          <button class="btn-sm" id="btnOpenConfigSidebar" style="width: 100%; padding: 8px; font-weight: 700;">⚙️ Zentrale Konfiguration öffnen</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN STREAMER DASHBOARD & UNIFIED CHAT -->
+    <main class="chat-panel" id="chatPanel">
+      <!-- LIVE STREAMER EVENT TICKER (Collapsible: shows last 3 events by default, expands on click) -->
+      <div class="event-ticker-bar" id="eventTickerBar">
+        <button class="ticker-title" id="btnToggleEventsTitle" title="Alle Events ausklappen / einklappen">🎉 EVENTS</button>
+        <div class="event-pills-row" id="eventTickerRow">
+          <span class="ticker-empty">Subs, TikTok Gifts, Follows & SuperChats erscheinen hier</span>
+        </div>
+        <button class="btn-ticker-toggle hidden" id="btnToggleEvents" title="Alle Events ausklappen / einklappen">▾ Alle (0)</button>
+      </div>
+
+      <!-- Filter & Search Bar (Section 9: Filter by Platform, Event, Role, Bot Filter, Spam Collapse, Search) -->
+      <div class="chat-toolbar">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Alle (<span id="count_all">0</span>)</button>
+          <button class="filter-tab mention-tab" data-filter="mentions">🔔 @Mich (<span id="count_mentions">0</span>)</button>
+          <button class="filter-tab" data-filter="highlights">⭐ Events (<span id="count_highlights">0</span>)</button>
+          <button class="filter-tab" data-filter="twitch">TW (<span id="count_twitch">0</span>)</button>
+          <button class="filter-tab" data-filter="youtube">YT (<span id="count_youtube">0</span>)</button>
+          <button class="filter-tab" data-filter="tiktok">TT (<span id="count_tiktok">0</span>)</button>
+        </div>
+
+        <div class="toolbar-right-controls">
+          <select id="selRoleFilter" class="toolbar-select" title="Nach Benutzerrolle oder Eventtyp filtern">
+            <option value="all">👥 Alle Rollen</option>
+            <option value="mod_vip">🛡️ Nur Mods & VIPs</option>
+            <option value="sub">⭐ Nur Subs / Members</option>
+          </select>
+
+          <button class="btn-toolbar-toggle" id="btnHideBots" title="Bekannte Chat-Bots (Nightbot, StreamElements, Moobot, etc.) & Systemnachrichten ausblenden">
+            🤖 Bots aus
+          </button>
+
+          <button class="btn-toolbar-toggle active" id="btnCollapseSpam" title="Identische / wiederholte Nachrichten automatisch mit Zähler (×2, ×3) zusammenfassen">
+            🔁 Spam ×N
+          </button>
+
+          <div class="search-wrap">
+            <input type="text" id="inputSearch" placeholder="🔍 Suchen (⌘/Ctrl+F)..." />
+          </div>
+          <button class="btn-toolbar-toggle" id="btnExportChatLog" title="Aktuellen Chat-Verlauf als .txt oder .json speichern">💾 Export</button>
+        </div>
+      </div>
+
+      <!-- SECTION 9: COLLAPSIBLE STATISTICS & DIAGNOSTICS / CONNECTION LOGS TAB -->
+      <section class="stats-diag-drawer hidden" id="statsDiagDrawer">
+        <div class="sdd-header">
+          <div class="sdd-tabs">
+            <button class="sdd-tab active" data-sdd-tab="stats">📊 Live-Statistiken & Top-Aktivitäten</button>
+            <button class="sdd-tab" data-sdd-tab="logs">🩺 Verbindungs- & Diagnose-Protokoll (<span id="diagLogCount">0</span>)</button>
+          </div>
+          <button class="btn-sdd-close" id="btnCloseStatsTab" title="Statistik-Tab schließen">✕</button>
+        </div>
+
+        <!-- TAB 1: LIVE STREAM STATISTICS -->
+        <div class="sdd-body" id="sddTab_stats">
+          <div class="stats-kpi-row">
+            <div class="sdd-kpi-card">
+              <span class="kpi-title">Gesamt-Nachrichten</span>
+              <strong class="kpi-value" id="statTotalMsgs">0</strong>
+              <small class="kpi-sub" id="statMsgsPerMin">0.0 / Min</small>
+            </div>
+            <div class="sdd-kpi-card">
+              <span class="kpi-title">Plattform-Split (TW / YT / TT)</span>
+              <div class="plat-split-bar">
+                <div class="ps-seg twitch" id="statBarTw" style="width: 34%"></div>
+                <div class="ps-seg youtube" id="statBarYt" style="width: 33%"></div>
+                <div class="ps-seg tiktok" id="statBarTt" style="width: 33%"></div>
+              </div>
+              <small class="kpi-sub" id="statSplitText">TW 0% • YT 0% • TT 0%</small>
+            </div>
+            <div class="sdd-kpi-card">
+              <span class="kpi-title">Top Chatter (Aktivste Nutzer)</span>
+              <div class="kpi-tag-list" id="statTopChatters">
+                <span class="kpi-empty">Noch keine Daten</span>
+              </div>
+            </div>
+            <div class="sdd-kpi-card">
+              <span class="kpi-title">Top Emotes (7TV / BTTV / Nativ)</span>
+              <div class="kpi-tag-list" id="statTopEmotes">
+                <span class="kpi-empty">Noch keine Emotes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: CONNECTION & DIAGNOSTIC LOGS -->
+        <div class="sdd-body hidden" id="sddTab_logs">
+          <div class="diag-log-toolbar">
+            <span class="diag-hint">Echtzeit-Protokoll aller Plattform-Verbindungen, Reconnects, 7TV-Ladevorgänge & Events:</span>
+            <button class="btn-sm" id="btnClearDiagLogs">Protokoll leeren</button>
+          </div>
+          <div class="diag-log-list" id="diagLogList"></div>
+        </div>
+      </section>
+
+      <!-- Active Pinned Message Banner (Synced with OBS!) -->
+      <div class="pinned-banner hidden" id="pinnedBanner">
+        <div class="pinned-left">
+          <span class="pinned-tag">📌 LIVE IN OBS ANGEPINNT</span>
+          <div class="pinned-body" id="pinnedBody"></div>
+        </div>
+        <button class="btn-unpin" id="btnUnpin" title="Aus OBS-Overlay ausblenden">✕</button>
+      </div>
+
+      <!-- Live Messages Feed -->
+      <div class="chat-feed-wrap">
+        <div class="chat-feed" id="chatFeed">
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon">🎙️</div>
+            <h2>Dein Multistream-Cockpit ist bereit!</h2>
+            <p>Optimiert für ein <strong>schmales, hohes Fenster links neben OBS</strong> (klicke oben auf <strong>📐 Links neben OBS</strong> oder öffne mit <strong>📊 Statistik & Logs</strong> den ausklappbaren Statistik-Tab).</p>
+          </div>
+        </div>
+        <!-- Floating Auto-Scroll Resume Pill when user scrolls up to read older messages -->
+        <button class="scroll-resume-pill hidden" id="btnResumeScroll">
+          ⬇️ Auto-Scroll pausiert — Zur neuesten Nachricht springen
+        </button>
+      </div>
+
+      <!-- Bottom Reply Bar (Section 9: Send messages directly to selected platforms) -->
+      <footer class="reply-bar">
+        <div class="send-targets-group" title="Zielplattformen zum Senden auswählen">
+          <label class="send-target-pill twitch active" title="An Twitch Chat senden (IRC / OAuth)">
+            <input type="checkbox" id="chkSendTwitch" checked />
+            <span>🟣 TW</span>
+          </label>
+          <label class="send-target-pill youtube" title="An YouTube senden (im Demo-Modus aktiv; Live erfordert YouTube OAuth2)">
+            <input type="checkbox" id="chkSendYoutube" />
+            <span>🔴 YT</span>
+          </label>
+          <label class="send-target-pill tiktok disabled" title="TikTok Webcast erlaubt technisch kein Senden über Drittanbieter-APIs">
+            <input type="checkbox" id="chkSendTiktok" disabled />
+            <span>🎵 TT 🔒</span>
+          </label>
+        </div>
+        <input
+          type="text"
+          id="inputReply"
+          placeholder="Nachricht an ausgewählte Plattformen senden (Enter)..."
+        />
+        <button class="btn-send" id="btnSendReply">Senden ↵</button>
+      </footer>
+    </main>
+  </div>
+
+  <!-- SECTION 7: COMPACT USER & MESSAGE QUICK-ACTION CONTEXT MENU POPOVER -->
+  <div class="quick-menu hidden" id="quickMenu">
+    <!-- 7.1 Nutzerübersicht (Avatar, Username, Plattform, Rollen-Badges, Account-Alter) -->
+    <div class="qm-user-card">
+      <div class="qm-avatar-wrap">
+        <img class="qm-avatar" id="qmAvatar" src="" alt="" />
+        <span class="qm-avatar-fallback" id="qmAvatarFallback">👤</span>
+      </div>
+      <div class="qm-user-meta">
+        <div class="qm-user-top">
+          <span class="qm-plat" id="qmPlat">TWITCH</span>
+          <strong class="qm-user" id="qmUser">Username</strong>
+        </div>
+        <div class="qm-roles-row" id="qmRolesRow"></div>
+        <div class="qm-account-age" id="qmAccountAge">Lade Nutzerdaten...</div>
+      </div>
+    </div>
+
+    <!-- 7.2 Allgemeine Schnellaktionen -->
+    <button class="qm-item" id="qmReply">💬 Auf Nachricht antworten</button>
+    <div class="qm-split-row">
+      <button class="qm-item-half" id="qmCopyMsg" title="Nachrichtentext in Zwischenablage kopieren">📋 Text kopieren</button>
+      <button class="qm-item-half" id="qmCopyUser" title="Benutzernamen in Zwischenablage kopieren">👤 Name kopieren</button>
+    </div>
+    <div class="qm-split-row">
+      <button class="qm-item-half" id="qmPin" title="Nachricht im OBS-Overlay anpinnen">📌 In OBS pinnen</button>
+      <button class="qm-item-half" id="qmOpenProfile" title="Nutzerprofil im Browser öffnen">🌐 Profil öffnen</button>
+    </div>
+
+    <div class="qm-divider"></div>
+
+    <!-- Lokale Feed- & OBS-Steuerung (Immer verfügbar) -->
+    <div class="qm-section-label">LOKAL (FEED & OBS)</div>
+    <div class="qm-split-row">
+      <button class="qm-item-half warn" id="qmDeleteLocal">🗑️ Lokal löschen</button>
+      <button class="qm-item-half warn" id="qmMuteLocal">🔇 Lokal stumm</button>
+    </div>
+
+    <div class="qm-divider"></div>
+
+    <!-- 7.2 & 7.3 Plattform-Moderation (Nur aktiv bei Berechtigung auf Ursprungsplattform!) -->
+    <div class="qm-section-label">
+      <span>PLATTFORM-MODERATION</span>
+      <span class="qm-perm-badge" id="qmPermBadge">Prüfe...</span>
+    </div>
+    <div class="qm-perm-hint" id="qmPermHint"></div>
+
+    <button class="qm-item warn" id="qmServerDelete">🗑️ Nachricht auf Plattform löschen</button>
+
+    <div class="qm-timeout-box" id="qmTimeoutBox">
+      <span class="qm-timeout-label">⏳ Timeout:</span>
+      <div class="qm-timeout-btns">
+        <button class="qm-to-btn" data-sec="10">10s</button>
+        <button class="qm-to-btn" data-sec="60">1m</button>
+        <button class="qm-to-btn" data-sec="600">10m</button>
+        <button class="qm-to-btn" data-sec="3600">1h</button>
+      </div>
+    </div>
+
+    <div class="qm-split-row">
+      <button class="qm-item-half danger" id="qmBanUser">🚫 Dauerhaft bannen</button>
+      <button class="qm-item-half" id="qmUnbanUser">🔓 Ban/Timeout aufheben</button>
+    </div>
+  </div>
+
+  <!-- CENTRAL CONFIG PAGE MODAL -->
+  <div class="config-modal-backdrop hidden" id="configPageModal">
+    <div class="config-modal-shell" role="dialog" aria-modal="true" aria-label="Zentrale Konfiguration">
+      <div class="config-modal-header">
+        <div>
+          <h2>⚙️ Zentrale Konfiguration</h2>
+          <p class="config-modal-sub">Alle Einstellungen werden automatisch gespeichert.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" id="btnHelpConfigTab" title="Anleitung passend zum aktuellen Tab rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseConfig">✕ Zurück zum Chat</button>
+        </div>
+      </div>
+      <div class="config-tabs-bar" id="configTabsBar">
+        <button class="config-tab-btn active" data-cfg-tab="platforms">📡 Plattformen</button>
+        <button class="config-tab-btn" data-cfg-tab="profile">👤 Profil &amp; Events</button>
+        <button class="config-tab-btn" data-cfg-tab="design">🎨 Design &amp; Emotes</button>
+        <button class="config-tab-btn" data-cfg-tab="obs">🎥 OBS, Licht &amp; Alerts</button>
+        <button class="config-tab-btn" data-cfg-tab="bot">🤖 Bot &amp; Auto-Mod</button>
+        <button class="config-tab-btn" data-cfg-tab="companion">📱 Tablet &amp; Stream Deck</button>
+        <button class="config-tab-btn" data-cfg-tab="system">⌨️ Peripherie &amp; System</button>
+      </div>
+      <div class="config-modal-body">
+        <div class="config-tab-panel active" id="cfgTab_platforms"></div>
+        <div class="config-tab-panel" id="cfgTab_profile"></div>
+        <div class="config-tab-panel" id="cfgTab_design"></div>
+        <div class="config-tab-panel" id="cfgTab_obs"></div>
+        <div class="config-tab-panel" id="cfgTab_bot">
+          <div class="sidebar-section chat-timer-box">
+            <h3>⏱️ Chat-Timer (Auto-Nachrichten)</h3>
+            <p class="section-hint">Postet automatisch alle X Minuten abwechselnd deine Info-Nachrichten in aktive Schreib-Chats (Twitch / YouTube).</p>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkTimerEnabled" />
+              <span>Chat-Timer aktivieren</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <label for="numTimerInterval" style="font-size: 12px;">Intervall (Minuten):</label>
+              <input type="number" id="numTimerInterval" min="1" max="180" value="15" style="width: 72px;" />
+            </div>
+            <label style="margin-top: 8px; display: block;">Nachrichten (eine pro Zeile — rotiert automatisch)</label>
+            <textarea id="txtTimerMessages" rows="4" style="width: 100%; margin-top: 4px; resize: vertical; background: rgba(15,23,42,0.85); color: #f8fafc; border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 6px;" placeholder="Schaut gerne auf unserem Discord vorbei!&#10;Folgt rein für tägliche Streams!"></textarea>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <button class="btn-sm" id="btnTimerSendNow">▶ Jetzt senden</button>
+              <span id="timerSendStatus" style="font-size: 11px; color: #94a3b8;"></span>
+            </div>
+          </div>
+
+          <div class="sidebar-section automod-box">
+            <h3>🛡️ Auto-Mod-Regeln</h3>
+            <p class="section-hint">Filtert Spam &amp; unerwünschte Inhalte automatisch aus Feed &amp; OBS (auf Twitch mit optionalem Server-Timeout/Löschen).</p>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModEnabled" />
+              <span>Auto-Mod aktivieren</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModLinks" checked />
+              <span>🔗 Links automatisch blockieren / löschen</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModCaps" />
+              <span>🔠 Caps-Spam filtern (≥75% Großbuchstaben)</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModSymbols" />
+              <span>🔣 Symbol-Spam filtern</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkAutoModExemptMods" checked />
+              <span>🛡️ Streamer, Mods &amp; VIPs ausnehmen</span>
+            </label>
+            <label style="margin-top: 6px; display: block;">Wort-Blacklist (kommagetrennt)</label>
+            <textarea id="inputAutoModBlacklist" class="tag-textarea" rows="2" placeholder="z. B. scamword, werbung, beleidigung" style="margin-top: 3px;"></textarea>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+              <label for="selAutoModTimeout" style="font-size: 12px;">Aktion auf Twitch:</label>
+              <select id="selAutoModTimeout" style="flex: 1;">
+                <option value="0">Nur Nachricht löschen</option>
+                <option value="10">10s Timeout</option>
+                <option value="60" selected>1m Timeout</option>
+                <option value="600">10m Timeout</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="sidebar-section custom-commands-box">
+            <h3>💬 Custom Chat-Commands</h3>
+            <p class="section-hint">Antwortet automatisch auf Zuschauer-Befehle (Twitch &amp; YouTube). <code>!commands</code> listet alle Befehle auf. Platzhalter: <code>{user}</code>, <code>{platform}</code>.</p>
+            <label class="checkbox-row">
+              <input type="checkbox" id="chkCustomCmdsEnabled" />
+              <span>Custom Commands aktivieren</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+              <label for="numCustomCmdCooldown" style="font-size: 12px;">Cooldown (Sekunden):</label>
+              <input type="number" id="numCustomCmdCooldown" min="2" max="300" value="10" style="width: 72px;" />
+            </div>
+            <label style="margin-top: 8px; display: block;">Befehle (Format: <code>!befehl | Antworttext</code>)</label>
+            <textarea id="txtCustomCmdRules" rows="5" style="width: 100%; margin-top: 4px; resize: vertical; background: rgba(15,23,42,0.85); color: #f8fafc; border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 6px;" placeholder="!discord | Komm gerne auf unseren Discord!&#10;!lurk | Danke für den Lurk, @{user}!"></textarea>
+          </div>
+        </div>
+        <div class="config-tab-panel" id="cfgTab_companion"></div>
+        <div class="config-tab-panel" id="cfgTab_system"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIP- & REPLAY-STUDIO (9:16 SHORTS PIPELINE) -->
+  <div class="config-modal-backdrop hidden" id="clipStudioModal">
+    <div class="config-modal-shell" role="dialog" aria-modal="true" aria-label="Clip- &amp; Replay-Studio">
+      <div class="config-modal-header">
+        <div>
+          <h2>🎞️ Clip- &amp; Replay-Studio (9:16 Shorts-Pipeline)</h2>
+          <p class="config-modal-sub" id="clipStudioDirLabel">Ordner: —</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-sm" id="btnClipPickFile" style="background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); font-weight: 700;" title="Einzelne Video-Datei per Finder / Explorer direkt zum Schneiden öffnen">🎬 Video-Datei öffnen…</button>
+          <button class="btn-sm" id="btnClipPickDir">📁 Ordner wählen</button>
+          <button class="btn-sm" id="btnClipRefresh">↻ Aktualisieren</button>
+          <button class="btn-help-modal" data-help-sec="16" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseClipStudio">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body" style="display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start;">
+        <div class="sidebar-section" style="margin: 0; max-height: 68vh; overflow-y: auto;">
+          <h3>📂 Replays &amp; Aufnahmen</h3>
+          <div id="clipStudioList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-size: 12px;">
+            <span style="color: #94a3b8;">Lade Aufnahmen...</span>
+          </div>
+        </div>
+        <div class="sidebar-section" style="margin: 0;">
+          <h3>📱 Vorschau &amp; 9:16 Export</h3>
+          <div style="display: flex; gap: 6px; margin-top: 6px; align-items: center;">
+            <input type="text" id="inputClipTitle" placeholder="Clip-Titel (ohne Dateiendung)" disabled style="flex: 1;" />
+            <button class="btn-sm" id="btnClipRename" disabled title="Clip-Titel / Dateiname speichern">✏️ Umbenennen</button>
+            <button class="btn-sm warn" id="btnClipDelete" disabled title="Clip in den Papierkorb verschieben">🗑️ Löschen</button>
+          </div>
+          <video id="clipStudioVideo" controls style="width: 100%; max-height: 280px; border-radius: 10px; background: #020617; margin-top: 8px;"></video>
+
+          <div class="clip-timeline-wrap" id="clipTimelineWrap" title="Start- (lila) & End-Regler (blau) zum Schneiden ziehen">
+            <div class="clip-timeline-track">
+              <div class="clip-timeline-selection" id="clipTimelineSel"></div>
+              <div class="clip-timeline-playhead" id="clipTimelinePlayhead"></div>
+            </div>
+            <input type="range" class="clip-range-input start" id="rngClipStart" min="0" max="30" step="0.1" value="0" disabled />
+            <input type="range" class="clip-range-input end" id="rngClipEnd" min="0" max="30" step="0.1" value="30" disabled />
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 10px; align-items: end;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label for="numClipStart" style="font-size: 11px;">📍 Start (Sek.)</label>
+                <button class="btn-sm" id="btnMarkStart" disabled style="padding: 2px 6px; font-size: 10px;">= Jetzt</button>
+              </div>
+              <input type="number" id="numClipStart" min="0" step="0.1" value="0" style="width: 100%; margin-top: 3px;" />
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label for="numClipEnd" style="font-size: 11px;">🏁 Ende (Sek.)</label>
+                <button class="btn-sm" id="btnMarkEnd" disabled style="padding: 2px 6px; font-size: 10px;">= Jetzt</button>
+              </div>
+              <input type="number" id="numClipEnd" min="0.5" step="0.1" value="30" style="width: 100%; margin-top: 3px;" />
+            </div>
+            <div>
+              <div id="clipRangeDuration" style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Dauer: 30.0s</div>
+              <button class="btn-sm" id="btnClipPlayRange" disabled>▶ Auswahl testen</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 8px;">
+            <label for="selClipLayout" style="font-size: 11px;">9:16 Layout (für Shorts/TikTok)</label>
+            <select id="selClipLayout" style="width: 100%; margin-top: 2px;">
+              <option value="blur_bg">Blur-Hintergrund (16:9 komplett)</option>
+              <option value="center_crop">Center-Crop (Vollbild 9:16)</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnClipTrimOriginal" disabled style="flex: 1; padding: 9px; font-weight: 700;">✂️ 16:9 schneiden</button>
+            <button class="btn-sm" id="btnClipExportShort" disabled style="flex: 1; padding: 9px; font-weight: 700;">📱 Als 9:16 Short</button>
+            <button class="btn-sm hidden" id="btnClipRevealOut">📂 Im Ordner zeigen</button>
+          </div>
+          <div id="clipStudioStatus" style="margin-top: 8px; font-size: 12px; color: #94a3b8; word-break: break-word;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOCIAL, DISCORD & SCHEDULE STUDIO MODAL -->
+  <div class="config-modal-backdrop hidden" id="socialScheduleModal">
+    <div class="config-modal-card" style="max-width: 820px; width: 94vw; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="config-modal-header">
+        <div>
+          <h2>📅 Discord, Go-Live &amp; Sendeplan-Studio</h2>
+          <p class="config-modal-sub">Poste Stream-Start &amp; Sendeplan automatisch auf Discord, Bluesky, Mastodon, Twitch Schedule &amp; mehr.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="17" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseSocialSchedule" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+
+      <div class="config-tabs" style="margin-bottom: 10px;">
+        <button class="config-tab-btn active" data-ss-tab="golive">🚀 Go-Live posten</button>
+        <button class="config-tab-btn" data-ss-tab="schedule">📅 Sendeplan (Schedule)</button>
+        <button class="config-tab-btn" data-ss-tab="connections">🔗 Discord &amp; Plattformen</button>
+      </div>
+
+      <div class="config-modal-body" style="flex: 1; overflow-y: auto; padding-right: 4px;">
+        <!-- TAB 1: GO-LIVE -->
+        <div class="ss-tab-pane" id="ssPane_golive">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label style="font-size: 11px;">Stream-Titel</label>
+              <input type="text" id="ssGoLiveTitle" placeholder="Wird aus Stream-Manager übernommen..." />
+            </div>
+            <div>
+              <label style="font-size: 11px;">Spiel / Kategorie</label>
+              <input type="text" id="ssGoLiveGame" placeholder="z. B. Just Chatting" />
+            </div>
+          </div>
+          <label style="font-size: 11px; margin-top: 8px; display: block;">Ankündigungstext (Platzhalter: <code>{channel}</code>, <code>{title}</code>, <code>{game}</code>)</label>
+          <textarea id="ssGoLiveMessage" rows="2" style="width: 100%; margin-top: 3px;" placeholder="🔴 **{channel} ist jetzt LIVE!** Komm vorbei!"></textarea>
+
+          <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; color: #cbd5e1;">Direkt posten an:</span>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoLiveDiscord" checked /><span>🟣 Discord</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoLiveBluesky" /><span>🦋 Bluesky</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoLiveMastodon" /><span>🐘 Mastodon</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoLiveX" /><span>𝕏 X (API)</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="chkGoLiveInstagram" /><span>📸 Instagram (API)</span></label>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnPostGoLiveNow" style="flex: 1; padding: 10px; font-weight: 700; background: #7c3aed; color: #fff;">🚀 Go-Live jetzt posten</button>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
+            <div style="font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">🌐 Weitere Plattformen (1-Klick-Share, Grafik-Generator &amp; Zwischenablage):</div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn-sm" id="btnIgQuickPostGoLive" title="Erstellt 1080×1350 Go-Live PNG, kopiert Caption+Hashtags &amp; öffnet Instagram">📸 Instagram Grafik + Quick-Post</button>
+              <button class="btn-sm" id="btnShareX">𝕏 Auf X (Browser)</button>
+              <button class="btn-sm" id="btnShareThreads">🧵 Auf Threads teilen</button>
+              <button class="btn-sm" id="btnShareYtCommunity">▶️ YouTube Community</button>
+              <button class="btn-sm" id="btnCopyGoLiveText">📋 Text kopieren</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: SCHEDULE -->
+        <div class="ss-tab-pane hidden" id="ssPane_schedule">
+          <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px;">
+            <div style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">➕ Neuen Stream-Termin hinzufügen</div>
+            <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px;">
+              <input type="text" id="ssAddTitle" placeholder="Stream-Titel (z. B. Community-Abend)" />
+              <input type="text" id="ssAddGame" placeholder="Spiel / Kategorie" />
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 0.8fr 0.7fr; gap: 8px; margin-top: 6px;">
+              <input type="date" id="ssAddDate" />
+              <input type="time" id="ssAddTime" value="19:00" />
+              <input type="number" id="ssAddDuration" min="30" max="720" step="15" value="180" title="Dauer in Minuten" placeholder="Min." />
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 8px;">
+              <label class="checkbox-row"><input type="checkbox" id="ssAddPlatTwitch" checked /><span>🟣 Twitch</span></label>
+              <label class="checkbox-row"><input type="checkbox" id="ssAddPlatYoutube" checked /><span>🔴 YouTube</span></label>
+              <label class="checkbox-row"><input type="checkbox" id="ssAddPlatTiktok" /><span>🎵 TikTok</span></label>
+              <label class="checkbox-row"><input type="checkbox" id="ssAddRecurring" /><span>🔁 Wöchentlich</span></label>
+              <button class="btn-sm" id="btnSsAddEntry" style="margin-left: auto; font-weight: 700;">➕ Termin hinzufügen</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #cbd5e1;">Geplante Streams:</div>
+          <div id="ssScheduleList" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; max-height: 190px; overflow-y: auto;"></div>
+
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
+            <button class="btn-sm" id="btnPostScheduleNow" style="font-weight: 700; background: #2563eb; color: #fff;">📢 Sendeplan auf Discord/Socials posten</button>
+            <button class="btn-sm" id="btnIgQuickPostSchedule" title="Erstellt 1080×1350 Sendeplan-PNG, kopiert Caption &amp; öffnet Instagram">📸 Instagram Sendeplan-Grafik</button>
+            <button class="btn-sm" id="btnSyncTwitchSchedule" title="Überträgt kommende Termine in deinen Twitch-Kanal-Zeitplan">🟣 Auf Twitch Schedule syncen</button>
+            <button class="btn-sm" id="btnExportIcs" title="Kalenderdatei (.ics) für Google/Apple/Outlook Kalender">📆 .ics Kalender</button>
+            <button class="btn-sm" id="btnCopyObsScheduleUrl" title="OBS Browser-Quelle /schedule kopieren">🔗 OBS /schedule URL</button>
+          </div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">💡 Chat-Bot: Zuschauer können im Twitch/YouTube-Chat jederzeit <code>!schedule</code> oder <code>!plan</code> schreiben!</div>
+        </div>
+
+        <!-- TAB 3: CONNECTIONS -->
+        <div class="ss-tab-pane hidden" id="ssPane_connections">
+          <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong style="font-size: 13px;">🟣 Discord Webhook Add-on</strong>
+              <label class="checkbox-row"><input type="checkbox" id="ssDiscordEnabled" /><span>Aktiv</span></label>
+            </div>
+            <label style="font-size: 11px; margin-top: 6px; display: block;">Go-Live Webhook-URL</label>
+            <input type="password" id="ssDiscordWebhook" placeholder="https://discord.com/api/webhooks/..." />
+            <label style="font-size: 11px; margin-top: 6px; display: block;">Optional: Separater Schedule-Webhook (leer = Go-Live Webhook)</label>
+            <input type="password" id="ssDiscordScheduleWebhook" placeholder="https://discord.com/api/webhooks/..." />
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+              <div>
+                <label style="font-size: 11px;">Rollen-Ping</label>
+                <input type="text" id="ssDiscordRole" placeholder="leer, everyone, here oder Role-ID" />
+              </div>
+              <div>
+                <label style="font-size: 11px;">Embed-Farbe</label>
+                <input type="color" id="ssDiscordColor" value="#9146ff" style="width: 100%; height: 32px;" />
+              </div>
+            </div>
+            <label class="checkbox-row" style="margin-top: 6px;">
+              <input type="checkbox" id="ssDiscordAutoObs" />
+              <span>🚀 Automatisch auf Discord posten, wenn OBS-Stream startet</span>
+            </label>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(148,163,184,0.16);">
+              <strong style="font-size: 12px;">📢 Live-Announcer</strong>
+              <label class="checkbox-row" style="margin-top: 4px;">
+                <input type="checkbox" id="ssDiscordAutoTwitch" />
+                <span>🟣 Auch posten, wenn Twitch „live“ meldet (funktioniert ohne OBS WebSocket, z. B. Konsole/Streamlabs)</span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="ssDiscordLiveUpdate" checked />
+                <span>🔄 Nachricht alle 5 Min. aktualisieren (Titel, Spiel, Zuschauer, Vorschaubild)</span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="ssDiscordEditOnEnd" checked />
+                <span>⚫ Nach Stream-Ende auf „Stream beendet“ umstellen (Dauer &amp; Zuschauer-Peak)</span>
+              </label>
+              <label class="checkbox-row">
+                <input type="checkbox" id="ssDiscordPreview" checked />
+                <span>🖼️ Twitch-Stream-Vorschaubild im Embed anzeigen</span>
+              </label>
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px;">
+                <span id="ssDiscordLiveStatus" style="flex: 1; min-width: 180px; font-size: 11px; color: #94a3b8;">Kein aktiver Live-Post.</span>
+                <button class="btn-sm" id="btnDiscordLiveRefresh" title="Live-Nachricht jetzt aktualisieren">🔄 Jetzt aktualisieren</button>
+                <button class="btn-sm warn" id="btnDiscordLiveEnd" title="Live-Nachricht manuell als beendet markieren">⚫ Als beendet markieren</button>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Pro Stream wird nur <strong>eine</strong> Nachricht gepostet — auch wenn OBS und Twitch beide „live“ melden. Platzhalter in der Nachricht: <code>{channel}</code>, <code>{title}</code>, <code>{game}</code>.</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+            <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 12px;">🦋 Bluesky (ATProto)</strong>
+                <label class="checkbox-row"><input type="checkbox" id="ssBskyEnabled" /><span>Aktiv</span></label>
+              </div>
+              <input type="text" id="ssBskyHandle" placeholder="name.bsky.social" style="margin-top: 6px;" />
+              <input type="password" id="ssBskyAppPass" placeholder="App-Passwort (xxxx-xxxx-xxxx-xxxx)" style="margin-top: 5px;" />
+              <label class="checkbox-row" style="margin-top: 5px;"><input type="checkbox" id="ssBskyAutoLive" /><span>Auto-Post bei OBS Live</span></label>
+            </div>
+
+            <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 12px;">🐘 Mastodon</strong>
+                <label class="checkbox-row"><input type="checkbox" id="ssMastoEnabled" /><span>Aktiv</span></label>
+              </div>
+              <input type="text" id="ssMastoInstance" placeholder="https://mastodon.social" style="margin-top: 6px;" />
+              <input type="password" id="ssMastoToken" placeholder="Access Token" style="margin-top: 5px;" />
+              <label class="checkbox-row" style="margin-top: 5px;"><input type="checkbox" id="ssMastoAutoLive" /><span>Auto-Post bei OBS Live</span></label>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+            <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 12px;">𝕏 X / Twitter API v2 (OAuth 1.0a)</strong>
+                <label class="checkbox-row"><input type="checkbox" id="ssXEnabled" /><span>Aktiv</span></label>
+              </div>
+              <input type="password" id="ssXApiKey" placeholder="API Key (Consumer Key)" style="margin-top: 6px;" />
+              <input type="password" id="ssXApiSecret" placeholder="API Secret (Consumer Secret)" style="margin-top: 5px;" />
+              <input type="password" id="ssXAccessToken" placeholder="Access Token" style="margin-top: 5px;" />
+              <input type="password" id="ssXAccessSecret" placeholder="Access Token Secret" style="margin-top: 5px;" />
+              <label class="checkbox-row" style="margin-top: 5px;"><input type="checkbox" id="ssXAutoLive" /><span>Auto-Post bei OBS Live</span></label>
+            </div>
+
+            <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 12px;">📸 Instagram Graph API (Business)</strong>
+                <label class="checkbox-row"><input type="checkbox" id="ssIgEnabled" /><span>Aktiv</span></label>
+              </div>
+              <input type="text" id="ssIgUserId" placeholder="IG Business User-ID" style="margin-top: 6px;" />
+              <input type="password" id="ssIgAccessToken" placeholder="Meta Access Token (instagram_content_publish)" style="margin-top: 5px;" />
+              <div class="file-picker-row" style="margin-top: 5px;">
+                <button type="button" class="btn-sm" id="btnPickIgDefaultImg" style="white-space: nowrap;">📂 Standard-Bild wählen…</button>
+                <span class="file-picker-badge" id="lblIgDefaultImg">Kein Standard-Bild gewählt</span>
+                <button type="button" class="btn-sm warn hidden" id="btnClearIgDefaultImg" title="Ausgewählte Datei entfernen" style="padding: 3px 7px;">✕</button>
+              </div>
+              <input type="password" id="ssIgImgbbKey" placeholder="ImgBB API-Key (lädt generierte Grafik auto-hoch)" style="margin-top: 5px;" />
+              <label class="checkbox-row" style="margin-top: 5px;"><input type="checkbox" id="ssIgAutoLive" /><span>Auto-Post bei OBS Live</span></label>
+            </div>
+          </div>
+
+          <div style="background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.16); border-radius: 10px; padding: 10px; margin-top: 10px;">
+            <strong style="font-size: 12px;">🔗 Öffentliche Kanal-Links (für Zuschauer in Posts &amp; Sendeplan)</strong>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+              <input type="text" id="ssLinkTwitch" placeholder="Twitch URL (auto wenn leer)" />
+              <input type="text" id="ssLinkYoutube" placeholder="YouTube URL (z. B. https://youtube.com/@...)" />
+              <input type="text" id="ssLinkTiktok" placeholder="TikTok URL (auto wenn leer)" />
+              <input type="text" id="ssLinkKick" placeholder="Kick URL (optional)" />
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button class="btn-sm" id="btnSaveSocialConfig" style="flex: 1; padding: 9px; font-weight: 700;">💾 Discord &amp; Plattform-Einstellungen speichern</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="socialScheduleStatus" style="margin-top: 8px; font-size: 12px; color: #94a3b8; word-break: break-word;"></div>
+    </div>
+  </div>
+
+  <!-- LIVE-GIVEAWAY MODAL -->
+  <div class="config-modal-backdrop hidden" id="giveawayModal">
+    <div class="config-modal-card" style="max-width: 620px; width: 92vw;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🎁 Live-Giveaway &amp; Verlosungs-Rad</h2>
+          <p class="config-modal-sub">Zuschauer schreiben das Keyword in den Twitch-, YouTube- oder TikTok-Chat.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="18" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseGiveaway" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body">
+        <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px;">Titel</label>
+            <input type="text" id="gwInputTitle" value="Stream-Verlosung" />
+          </div>
+          <div>
+            <label style="font-size: 11px;">Chat-Keyword</label>
+            <input type="text" id="gwInputKeyword" value="!join" />
+          </div>
+          <div>
+            <label style="font-size: 11px;">Sub/VIP/Mod Chance</label>
+            <select id="gwSelectMult" style="width: 100%;">
+              <option value="1">1× (Normal)</option>
+              <option value="2" selected>2× (Doppelt)</option>
+              <option value="3">3× (Dreifach)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
+          <button class="btn-sm" id="btnGwStart" style="font-weight: 700; background: #10b981; color: #fff;">▶ Starten</button>
+          <button class="btn-sm" id="btnGwStop">⏸ Stoppen</button>
+          <button class="btn-sm" id="btnGwDraw" style="font-weight: 700; background: #8b5cf6; color: #fff;">🎲 Gewinner ziehen!</button>
+          <button class="btn-sm warn" id="btnGwReset">🗑️ Reset</button>
+          <button class="btn-sm" id="btnGwToggleObs">👁️ OBS Overlay</button>
+          <button class="btn-sm" id="btnGwCopyUrl">🔗 /giveaway URL</button>
+        </div>
+
+        <div id="gwWinnerBox" style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,0.75); border: 1px solid rgba(168,85,247,0.35); font-size: 13px;">
+          Status: <strong>Bereit</strong>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #cbd5e1;">Teilnehmer (<span id="gwPartCount">0</span>):</div>
+        <div id="gwPartList" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-height: 150px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOUNDBOARD MODAL -->
+  <div class="config-modal-backdrop hidden" id="soundboardModal">
+    <div class="config-modal-card" style="max-width: 680px; width: 92vw;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🔊 Soundboard (inkl. OBS-Routing)</h2>
+          <p class="config-modal-sub">Sounds per Klick, Stream Deck API (<code>/api/streamdeck/sound?name=...</code>) oder über OBS (<code>/alerts</code> &amp; <code>/soundboard</code>) abspielen.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="18" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseSoundboard" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body">
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 12px;">🔊 Lautstärke:</span>
+            <input type="range" id="sbVolume" min="0" max="1" step="0.05" value="0.8" style="width: 110px;" />
+          </div>
+          <label class="checkbox-row"><input type="checkbox" id="sbPlayLocal" checked /><span>In App abspielen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="sbRouteObs" checked /><span>An OBS (/alerts &amp; /soundboard) routen</span></label>
+        </div>
+
+        <div id="sbGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 8px; margin-top: 12px; max-height: 240px; overflow-y: auto;"></div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
+          <button class="btn-sm" id="btnSbAddFile" style="font-weight: 700;">➕ MP3 / WAV hinzufügen</button>
+          <button class="btn-sm" id="btnSbCopyUrl">🔗 OBS /soundboard URL kopieren</button>
+        </div>
+        <div id="sbStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT-HYPE-DETEKTOR MODAL -->
+  <div class="config-modal-backdrop hidden" id="hypeModal">
+    <div class="config-modal-card" style="max-width: 540px; width: 92vw;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🔥 Chat-Hype-Detektor (Auto-Marker &amp; Replay)</h2>
+          <p class="config-modal-sub">Erkennt Chat-Spikes automatisch und setzt Twitch-Marker oder speichert den OBS Replay-Buffer.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="18" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseHype" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body">
+        <label class="checkbox-row">
+          <input type="checkbox" id="hdEnabled" />
+          <span><strong>Chat-Hype-Detektor aktivieren</strong></span>
+        </label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-top: 10px;">
+          <div>
+            <label style="font-size: 11px;">Zeitfenster (Sek.)</label>
+            <input type="number" id="hdWindowSec" min="5" max="60" value="10" />
+          </div>
+          <div>
+            <label style="font-size: 11px;">Min. Hype-Punkte</label>
+            <input type="number" id="hdMinMsgs" min="4" max="100" value="12" />
+          </div>
+          <div>
+            <label style="font-size: 11px;" title="So viele Keyword-Nachrichten im Zeitfenster lösen sofort aus">Keyword-Treffer</label>
+            <input type="number" id="hdKeywordHits" min="1" max="50" value="3" />
+          </div>
+          <div>
+            <label style="font-size: 11px;">Cooldown (Sek.)</label>
+            <input type="number" id="hdCooldownSec" min="15" max="600" value="90" />
+          </div>
+        </div>
+        <label style="font-size: 11px; margin-top: 8px; display: block;">Hype-Keywords (kommagetrennt — jede Keyword-Nachricht zählt 3 Punkte; X Keyword-Treffer im Zeitfenster lösen sofort aus)</label>
+        <textarea id="hdKeywords" class="tag-textarea" rows="2">pog,poggers,lul,omegalul,kekw,gg,wtf,clip,hype</textarea>
+        <div id="hdMeter" style="margin-top: 6px; font-size: 11px; color: #94a3b8;">📊 Hype-Meter: wartet auf Chat-Nachrichten…</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+          <label class="checkbox-row"><input type="checkbox" id="hdAutoMarker" checked /><span>🚩 Automatisch Twitch Stream-Marker setzen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="hdAutoObsReplay" /><span>💾 Automatisch OBS Replay-Buffer speichern (falls OBS WS aktiv)</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="hdAutoClip" checked /><span>🎬 Automatisch Twitch-Clip erstellen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="hdPostClipToChat" checked /><span>💬 Erstellten Clip-Link automatisch in den Chat posten</span></label>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn-sm" id="btnSaveHype" style="flex: 1; padding: 9px; font-weight: 700;">💾 Hype-Detektor speichern</button>
+          <button class="btn-sm" id="btnTriggerHypeNow" style="flex: 1; padding: 9px; font-weight: 700; background: rgba(249,115,22,0.28); border-color: rgba(249,115,22,0.55); color: #fed7aa;">🔥 Hype jetzt auslösen</button>
+        </div>
+        <div id="hdStatus" style="margin-top: 6px; font-size: 11px; color: #94a3b8; word-break: break-word;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME-ADDONS & OBS STATS OVERLAY MODAL -->
+  <div class="config-modal-backdrop hidden" id="gameAddonsModal">
+    <div class="config-modal-card" style="max-width: 720px; width: 93vw; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🎮 Game-Addons &amp; OBS Stats-Overlay</h2>
+          <p class="config-modal-sub">Tausche die Game-Stats-Anzeige in OBS (<code>/game-stats</code>) per Dropdown aus — Chat-Events &amp; Commands wechseln automatisch mit dem Spiel.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="25" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseGameAddons" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body" style="overflow-y: auto;">
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; align-items: end;">
+          <div>
+            <label style="font-size: 11px; font-weight: 700;">OBS Stats-Overlay &amp; Chat-Addon auswählen (Dropdown)</label>
+            <select id="gaSelectAddon" style="width: 100%; margin-top: 3px; font-weight: 700;">
+              <option value="auto">🤖 Auto (wechselt nach Twitch/Stream-Manager-Spiel)</option>
+              <option value="lol">⚔️ League of Legends — Komplett-Suite</option>
+              <option value="justchatting">💬 Just Chatting &amp; Talk Suite</option>
+              <option value="cs2">🎯 Counter-Strike 2 (GSI)</option>
+              <option value="minecraft">⛏️ Minecraft</option>
+              <option value="souls">💀 Elden Ring / Soulsborne</option>
+              <option value="valorant">🔫 Valorant / Tactical FPS</option>
+              <option value="universal">🏆 Universal Game Counter</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px;">Aktuelles Spiel (für Auto-Switch)</label>
+            <input type="text" id="gaCurrentGameInput" placeholder="z. B. Counter-Strike 2" />
+          </div>
+        </div>
+
+        <div id="gaActiveBanner" style="margin-top: 10px; padding: 8px 11px; border-radius: 9px; background: rgba(15,23,42,0.75); border: 1px solid rgba(56,189,248,0.3); font-size: 12px;">
+          Aktives Addon: <strong>—</strong>
+        </div>
+
+        <div id="gaStatsFields" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 8px; margin-top: 10px;"></div>
+
+        <div id="gaLolMatchControls" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 9px 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(200,170,110,0.35);">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #c8aa6e;">⚔️ Ranked &amp; Session:</span>
+            <button class="btn-sm" id="btnGaLolSyncLcu" style="background: #0284c7; color: #fff; font-weight: 700;" title="Liest deinen echten Rank, aktuelle LP &amp; Riot-ID live aus dem geöffneten League-of-Legends-Client (LCU)">🔄 Rank &amp; LP aus LoL-Client lesen</button>
+            <button class="btn-sm" id="btnGaLolWin" style="background: #0d9488; color: #fff;">🏆 +Sieg (+LP)</button>
+            <button class="btn-sm" id="btnGaLolLoss" style="background: #dc2626; color: #fff;">💀 +Niederlage (-LP)</button>
+            <button class="btn-sm" id="btnGaLolLpPlus">+20 LP</button>
+            <button class="btn-sm" id="btnGaLolLpMinus">-20 LP</button>
+            <button class="btn-sm warn" id="btnGaLolClearMatches">🗑️ Historie leeren</button>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 6px; border-top: 1px solid rgba(200,170,110,0.2);">
+            <label class="checkbox-row"><input type="checkbox" id="gaLolMapCover" /><span>🛡️ <strong>Map Streamer-Modus</strong> (Minimap verdecken)</span></label>
+            <input type="text" id="gaLolMapCoverText" placeholder="Minimap verdeckt • Kein Ghosting" style="flex: 1; min-width: 150px;" />
+            <button class="btn-sm" id="btnGaCopyBuildUrl" title="OBS Browser-Quelle für Live Item-Build &amp; Elo-Bar (550×125)">🔗 /lol-build URL</button>
+            <button class="btn-sm" id="btnGaCopyMapUrl" title="OBS Browser-Quelle für das Minimap-Cover (280×280)">🔗 /lol-map URL</button>
+          </div>
+        </div>
+
+        <div id="gaJcControls" class="hidden" style="display: flex; flex-direction: column; gap: 9px; margin-top: 10px; padding: 10px 11px; border-radius: 8px; background: rgba(15,23,42,0.68); border: 1px solid rgba(236,72,153,0.4);">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-size: 11.5px; font-weight: 700; color: #f9a8d4;">📋 Themen-Agenda / Kapitel (1 Zeile pro Punkt)</span>
+              <div style="display: flex; gap: 5px; align-items: center;">
+                <button class="btn-sm" id="btnGaJcPrevStep">◀ Zurück</button>
+                <span id="gaJcStepBadge" style="font-size: 11px; font-weight: 700; color: #fbcfe8;">Kapitel 1</span>
+                <button class="btn-sm" id="btnGaJcNextStep" style="background: #db2777; color: #fff;">Nächstes Kapitel ▶</button>
+              </div>
+            </div>
+            <textarea id="gaJcAgendaText" class="tag-textarea" rows="3" style="margin-top: 5px;" placeholder="Begrüßung &amp; Kaffeerunde&#10;Community News &amp; Clips&#10;Viewer Q&amp;A (!ask)"></textarea>
+          </div>
+
+          <div style="padding-top: 8px; border-top: 1px solid rgba(236,72,153,0.22); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <label class="checkbox-row"><input type="checkbox" id="gaJcQnaEnabled" checked /><span>❓ <strong>Viewer Q&amp;A aktiv</strong> (Chat tippt <code>!ask Deine Frage</code>)</span></label>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="btn-sm" id="btnGaJcNextQ" style="background: #db2777; color: #fff;">📺 Nächste Frage einblenden</button>
+                <button class="btn-sm" id="btnGaJcHideQ">🙈 Ausblenden</button>
+                <button class="btn-sm warn" id="btnGaJcClearQ">🗑️ Leeren</button>
+              </div>
+            </div>
+            <div id="gaJcActiveQuestionBox" style="font-size: 11px; color: #fbcfe8; padding: 5px 8px; border-radius: 6px; background: rgba(236,72,153,0.14);">Aktuell im Stream eingeblendet: <em>keine Frage</em></div>
+            <div style="display: flex; gap: 5px;">
+              <input type="text" id="gaJcManualQAuthor" placeholder="@Name" style="width: 115px; font-size: 11px;" />
+              <input type="text" id="gaJcManualQText" placeholder="Eigene Frage manuell zur Q&amp;A-Liste hinzufügen..." style="flex: 1; font-size: 11px;" />
+              <button class="btn-sm" id="btnGaJcAddQ">➕ Frage</button>
+            </div>
+            <div id="gaJcQueueList" style="display: flex; flex-direction: column; gap: 4px; max-height: 135px; overflow-y: auto;"></div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; padding-top: 4px;">
+              <button class="btn-sm" id="btnGaCopyJcLtUrl">🔗 OBS /jc-lowerthird (Bauchbinde)</button>
+              <button class="btn-sm" id="btnGaCopyJcQnaUrl">🔗 OBS /jc-qna (Q&amp;A Spotlight)</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
+          <label class="checkbox-row"><input type="checkbox" id="gaOverlayEnabled" checked /><span>👁️ <strong>OBS Game-Stats-Overlay anzeigen</strong> (aus = <code>/game-stats</code> &amp; <code>/lol-map</code> werden in OBS ausgeblendet)</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="gaLolPolling" checked /><span>⚔️ League of Legends Client (LCU Rank/LP) &amp; Live Ingame API (<code>127.0.0.1:2999</code>) automatisch auslesen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="gaAutoTrigger" checked /><span>⚡ Spiel-Events automatisch auslösen (z. B. CS2 3K/Ace → Twitch Stream-Marker)</span></label>
+          <div style="font-size: 11px; color: #94a3b8;">🔒 Vorgefertigte Addons sind schreibgeschützt: Name, Felder &amp; Commands bleiben unverändert — nur die Live-Werte pro Addon werden gespeichert und können jederzeit auf Standard zurückgesetzt werden.</div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+          <button class="btn-sm" id="btnGaSave" style="flex: 1; padding: 9px; font-weight: 700; background: #2563eb; color: #fff;">💾 Stats &amp; Addon auf OBS anwenden</button>
+          <button class="btn-sm warn" id="btnGaReset" title="Setzt nur die Werte des aktiven Addons auf die Standardwerte zurück">↺ Werte zurücksetzen</button>
+          <button class="btn-sm" id="btnGaExportCs2">📄 CS2 GSI Config exportieren</button>
+          <button class="btn-sm" id="btnGaCopyUrl">🔗 OBS /game-stats URL</button>
+        </div>
+        <div id="gaStatus" style="margin-top: 8px; font-size: 11px; color: #94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBS SZENEN- & QUELLEN-EDITOR MODAL -->
+  <div class="config-modal-backdrop hidden" id="obsSceneEditorModal">
+    <div class="config-modal-card" style="max-width: 96vw; width: 96vw; height: 92vh; max-height: 92vh; display: flex; flex-direction: column;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🎛️ OBS Szenen- &amp; Quellen-Editor (WebSocket v5)</h2>
+          <p class="config-modal-sub">Ziehe Quellen direkt mit der Maus auf der Vorschau zum Verschieben oder an den Ecken zum Vergrößern/Verkleinern.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span id="seObsWsBadge" style="font-size: 11px; font-weight: 700; color: #94a3b8;">● OBS: Aus</span>
+          <button class="btn-sm" id="btnSeObsWsConnect">🔌 Mit OBS verbinden</button>
+          <button class="btn-sm hidden" id="btnSeObsWsDisconnect">Trennen</button>
+          <button class="btn-help-modal" data-help-sec="19" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseSceneEditor" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <select id="seSelectScene" style="min-width: 220px; font-weight: 700;"></select>
+          <input type="text" id="seNewSceneName" placeholder="Neue Szene..." style="width: 170px;" />
+          <button class="btn-sm" id="btnSeCreateScene">➕ Szene</button>
+          <button class="btn-sm" id="btnSeRefresh">🔄 Vorschau aktualisieren</button>
+          <span style="margin-left: auto; font-size: 11px; color: #38bdf8; font-weight: 600;">🖼️ 1080p HD-Vorschau (aktualisiert bei Änderungen)</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.65fr 1fr; gap: 14px; margin-top: 12px; flex: 1; min-height: 0;">
+          <!-- LEFT: INTERACTIVE 16:9 CANVAS & TRANSFORM -->
+          <div style="display: flex; flex-direction: column; min-height: 0;">
+            <div id="seCanvasWrap" style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #020617; border: 1.5px solid rgba(56,189,248,0.35); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; user-select: none;">
+              <video id="seVirtualCamVideo" autoplay muted playsinline style="width: 100%; height: 100%; object-fit: fill; display: none; pointer-events: none;"></video>
+              <img id="sePreviewImg" alt="" draggable="false" style="width: 100%; height: 100%; object-fit: fill; display: none; pointer-events: none;" />
+              <span id="sePreviewPlaceholder" style="font-size: 12px; color: #64748b;">OBS verbinden, um 1080p HD-Vorschau zu laden...</span>
+              <div id="seCanvasOverlay" style="position: absolute; inset: 0; z-index: 2;"></div>
+            </div>
+
+            <div style="margin-top: 10px; padding: 10px; border-radius: 9px; background: rgba(15,23,42,0.65); border: 1px solid rgba(148,163,184,0.18);">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div style="font-size: 11px; font-weight: 700; color: #cbd5e1;">📐 Position, Größe &amp; Ebene: <span id="seSelectedSourceName" style="color: #38bdf8;">— Quelle anklicken —</span></div>
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                  <button class="btn-sm" id="btnSeLayerFront" disabled title="Ganz in den Vordergrund holen (oberste Ebene)">⏫ Vordergrund</button>
+                  <button class="btn-sm" id="btnSeLayerUp" disabled title="Eine Ebene nach vorne">🔼 Vor</button>
+                  <button class="btn-sm" id="btnSeLayerDown" disabled title="Eine Ebene nach hinten">🔽 Hinter</button>
+                  <button class="btn-sm" id="btnSeLayerBack" disabled title="Ganz in den Hintergrund schieben (unterste Ebene)">⏬ Hintergrund</button>
+                  <button class="btn-sm" id="btnSeCenter" disabled title="Quelle auf der OBS-Leinwand zentrieren">🎯 Zentrieren</button>
+                  <button class="btn-sm" id="btnSeFullscreen" disabled title="Quelle auf volle Canvas-Größe skalieren">⛶ Vollbild</button>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; margin-top: 6px; align-items: end;">
+                <div><label style="font-size: 10px;">X (px)</label><input type="number" id="sePosX" disabled /></div>
+                <div><label style="font-size: 10px;">Y (px)</label><input type="number" id="sePosY" disabled /></div>
+                <div><label style="font-size: 10px;">Scale (%)</label><input type="number" id="seScalePct" min="5" max="400" disabled /></div>
+                <button class="btn-sm" id="btnSeApplyTransform" disabled>💾 Setzen</button>
+              </div>
+            </div>
+            <div id="seSourceConfigBox" style="display: none; margin-top: 8px; padding: 10px; border-radius: 9px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.28);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px;">
+                <div style="font-size: 11px; font-weight: 700; color: #cbd5e1;">🎯 Quelle konfigurieren (Fenster / Anwendung / Gerät)</div>
+                <button class="btn-sm" id="btnSeRefreshSourceConfig" title="Fenster- & Anwendungsliste neu von OBS laden">🔄 Liste neu laden</button>
+              </div>
+              <div id="seSourceConfigFields" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px;"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: SOURCES & AUDIO MIXER -->
+          <div style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+            <div style="padding: 8px 9px; border-radius: 8px; background: rgba(14,116,144,0.18); border: 1px solid rgba(56,189,248,0.4);">
+              <div style="font-size: 11px; font-weight: 700; color: #7dd3fc; margin-bottom: 5px;">⚡ App-Overlay direkt einfügen (ohne URL):</div>
+              <div style="display: flex; gap: 5px;">
+                <select id="seBuiltinOverlay" style="flex: 1; font-size: 11px; font-weight: 600;"></select>
+                <button class="btn-sm" id="btnSeAddBuiltinOverlay" style="font-weight: 700; background: #0284c7; color: #fff; white-space: nowrap;">➕ Einfügen</button>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px;">
+                <button class="btn-sm" id="btnSeBundleLol" style="font-size: 10.5px; font-weight: 700; background: rgba(10,200,185,0.2); border-color: rgba(200,170,110,0.6); color: #f0e6d2;" title="Fügt Hextech HUD, Live Item-Build, Anti-Ghosting Minimap, Alerts &amp; Chat fertig positioniert ein">⚔️ Komplettes LoL-Set</button>
+                <button class="btn-sm" id="btnSeBundleJc" style="font-size: 10.5px; font-weight: 700; background: rgba(236,72,153,0.22); border-color: rgba(236,72,153,0.6); color: #fbcfe8;" title="Fügt Bauchbinde, Q&amp;A Spotlight, Agenda-Card, Musik, Alerts &amp; Chat fertig positioniert ein">💬 Just-Chatting-Set</button>
+              </div>
+              <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;">Einzeln oder als komplettes Szene-Paket ohne URL-Kopieren einfügen.</div>
+            </div>
+            <div style="padding: 8px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(148,163,184,0.18);">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
+                <div style="font-size: 11px; font-weight: 700; color: #cbd5e1;">➕ Andere OBS-Quelle hinzufügen:</div>
+                <button type="button" class="btn-sm" id="btnSeQuickAddFile" style="font-size: 10.5px; font-weight: 700; background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.55); color: #6ee7b7;" title="Bild, GIF, Video, Audio oder Textdatei per Finder / Explorer auswählen und sofort als passende OBS-Quelle einfügen">📂 Datei direkt einfügen…</button>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <select id="seNewSourceKind" style="font-size: 11px;"></select>
+                <input type="text" id="seNewSourceName" placeholder="Quellenname..." style="font-size: 11px;" />
+              </div>
+              <div style="display: flex; gap: 5px; margin-top: 5px; align-items: center;">
+                <div id="seNewSourceFileRow" class="file-picker-row hidden" style="flex: 1;">
+                  <button type="button" class="btn-sm" id="btnSePickNewSourceFile" style="white-space: nowrap;">📂 Datei wählen…</button>
+                  <span class="file-picker-badge" id="lblSeNewSourceFile">Keine Datei gewählt</span>
+                  <button type="button" class="btn-sm warn hidden" id="btnSeClearNewSourceFile" title="Ausgewählte Datei entfernen" style="padding: 2px 6px;">✕</button>
+                </div>
+                <input type="text" id="seNewSourceValue" placeholder="URL (z. B. https://...)" style="flex: 1; font-size: 11px;" />
+                <button class="btn-sm" id="btnSeAddSource" style="font-weight: 700; white-space: nowrap;">➕ Hinzu</button>
+              </div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; gap: 6px;">
+                <div style="font-size: 12px; font-weight: 700; color: #cbd5e1;">🧩 Quellen in dieser Szene:</div>
+                <span style="font-size: 10px; color: #94a3b8;">oben = Vordergrund • Drag &amp; Drop / 🔼🔽</span>
+              </div>
+              <div id="seSourcesList" style="display: flex; flex-direction: column; gap: 5px; overflow-y: auto; flex: 1;"></div>
+            </div>
+            <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
+              <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">🎚️ OBS Audio-Mixer:</div>
+              <div id="seAudioList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1;"></div>
+            </div>
+          </div>
+        </div>
+        <div id="seStatus" style="margin-top: 8px; font-size: 11px; color: #94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GITHUB DISCUSSION & FEEDBACK MODAL -->
+  <div class="config-modal-backdrop hidden" id="feedbackModal">
+    <div class="config-modal-card" style="max-width: 560px; width: 92vw;">
+      <div class="config-modal-header">
+        <div>
+          <h2>💬 Feedback, Ideen &amp; Bug-Report (GitHub Discussions)</h2>
+          <p class="config-modal-sub">Erstellt direkt eine neue Diskussion (oder ein Issue) auf GitHub inkl. App-Version &amp; System-Info.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="23" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnCloseFeedback" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body">
+        <label style="font-size: 11px; display: block;">Kategorie</label>
+        <select id="selFeedbackCategory" style="width: 100%; margin-top: 3px;">
+          <option value="ideas">💡 Feature-Wunsch / Idee (Ideas)</option>
+          <option value="general">💬 Allgemeines Feedback (General)</option>
+          <option value="q-a">🙋 Frage / Hilfe (Q&amp;A)</option>
+          <option value="polls">📊 Abstimmung / Wunschliste</option>
+        </select>
+
+        <label style="font-size: 11px; margin-top: 8px; display: block;">Titel</label>
+        <input type="text" id="inputFeedbackTitle" placeholder="Kurzer Titel, z. B. Wunsch: Philips Hue Support..." style="margin-top: 3px;" />
+
+        <label style="font-size: 11px; margin-top: 8px; display: block;">Nachricht / Beschreibung</label>
+        <textarea id="txtFeedbackBody" class="tag-textarea" rows="5" placeholder="Beschreibe deine Idee, dein Feedback oder den Fehler..." style="margin-top: 3px; min-height: 95px;"></textarea>
+
+        <details class="auth-details" style="margin-top: 8px;">
+          <summary>🔑 Optional: Eigener GitHub Token für Direkt-Erstellung per GraphQL API</summary>
+          <p style="font-size: 10.5px; color: #94a3b8; margin: 4px 0;">
+            Ohne Token öffnet sich das vorausgefüllte GitHub-Discussion-Formular direkt im Browser (1 Klick auf „Start discussion“). Mit einem persönlichen GitHub-Token (Scope <code>public_repo</code> / <code>discussion</code>) legt die App die Diskussion sofort vollautomatisch per API an.
+          </p>
+          <input type="password" id="inputFeedbackGhToken" placeholder="ghp_... (optional)" />
+        </details>
+
+        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+          <button class="btn-sm" id="btnSubmitFeedbackDiscussion" style="flex: 2; padding: 9px; background: #0284c7; color: #fff; font-weight: 700;">🚀 GitHub Discussion anlegen</button>
+          <button class="btn-sm" id="btnSubmitFeedbackIssue" style="flex: 1; padding: 9px;">🐛 Als GitHub Issue</button>
+        </div>
+        <div id="feedbackStatus" style="margin-top: 8px; font-size: 11px; color: #94a3b8;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIVACY & ZERO-TELEMETRY PROOF MODAL -->
+  <div class="config-modal-backdrop hidden" id="privacyAuditModal">
+    <div class="config-modal-card" style="max-width: 780px; width: 94vw; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🔒 Datenschutz-, Sicherheits- &amp; Zero-Telemetry-Nachweis</h2>
+          <p class="config-modal-sub">Überprüfbarer Beweis: Alle Zugangsdaten bleiben zu 100 % lokal auf deinem PC/Mac — kein OmniGrid-Server, kein Tracking.</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-help-modal" data-help-sec="24" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
+          <button class="btn-chip" id="btnClosePrivacyAudit" style="padding: 6px 12px;">✕ Schließen</button>
+        </div>
+      </div>
+      <div class="config-modal-body" style="overflow-y: auto;">
+        <div id="privacyAuditBanner" style="padding: 10px 12px; border-radius: 9px; background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.45); color: #4ade80; font-size: 12px; font-weight: 700;">
+          ✅ ZERO-TELEMETRY AUDIT: Prüfe laufenden App-Quellcode...
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; margin-top: 10px;">
+          <div style="padding: 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(148,163,184,0.2);">
+            <div style="font-size: 11.5px; font-weight: 700; color: #f8fafc;">📂 1. Lokaler Speicherort deiner Daten</div>
+            <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 6px;">
+              Alle Tokens, Stream-Keys &amp; API-Keys liegen ausschließlich lokal in dieser Datei auf deiner eigenen Festplatte:
+            </p>
+            <input type="text" id="inputPrivacyConfigPath" readonly style="width: 100%; font-size: 10.5px;" />
+            <button class="btn-sm" id="btnPrivacyRevealConfig" style="margin-top: 6px; width: 100%;">📂 Meine lokale Config-Datei im Finder / Explorer zeigen</button>
+          </div>
+
+          <div style="padding: 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(148,163,184,0.2);">
+            <div style="font-size: 11.5px; font-weight: 700; color: #f8fafc;">🔍 2. Offener Klartext-Quellcode (Kein Verstecken)</div>
+            <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 6px;">
+              Diese App ist nicht obfuskiert. Du kannst den laufenden Programmcode (<code>src/</code>) direkt öffnen und jede Zeile selbst einsehen:
+            </p>
+            <input type="text" id="inputPrivacySrcPath" readonly style="width: 100%; font-size: 10.5px;" />
+            <button class="btn-sm" id="btnPrivacyOpenSrc" style="margin-top: 6px; width: 100%;">🔍 Quellcode-Ordner (src/) dieser App öffnen</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; padding: 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25);">
+          <div style="font-size: 11.5px; font-weight: 700; color: #38bdf8;">🧪 3. 10-Sekunden-Selbsttest im eigenen Betriebssystem (Terminal / PowerShell)</div>
+          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 6px;">
+            Kopiere diesen System-Befehl in dein Terminal / PowerShell, um direkt vom Betriebssystem alle offenen Netzwerk-Verbindungen von OmniGrid Studio live aufzulisten:
+          </p>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="inputPrivacyOsCmd" readonly style="flex: 1; font-family: monospace; font-size: 11px;" />
+            <button class="btn-sm" id="btnPrivacyCopyOsCmd">📋 Befehl kopieren</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #cbd5e1;">🛡️ 4. Live-Quellcode-Scan: Alle im Code enthaltenen Ziel-Domains</div>
+            <button class="btn-sm" id="btnPrivacyRescan">🔄 Jetzt live neu scannen</button>
+          </div>
+          <div id="privacyDomainsList" style="display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; padding: 6px; border-radius: 8px; background: rgba(2,6,23,0.6); border: 1px solid rgba(148,163,184,0.16); font-size: 11px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
