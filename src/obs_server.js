@@ -1911,12 +1911,34 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-splash { position: absolute; inset: 0; background-size: cover; background-position: center 20%; opacity: 0.45; pointer-events: none; z-index: 0; border-radius: inherit; filter: saturate(1.2); }
     .gs-splash::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(9,20,40,0.45) 0%, rgba(1,10,19,0.88) 100%); }
     .gs-content { position: relative; z-index: 1; }
-    .gs-lol-hero { display: none; align-items: center; gap: 11px; margin-bottom: 10px; }
+    .gs-lol-hero { display: none; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
     .gs-card.theme-lol .gs-lol-hero.visible { display: flex; }
+    .gs-lol-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
     .gs-champ-icon { width: 56px; height: 56px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 14px rgba(10,200,185,0.42); object-fit: cover; object-position: center 15%; background: #091428; flex-shrink: 0; }
-    .gs-champ-name { font-size: 17px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
-    .gs-skin-name { font-size: 11.5px; color: #0ac8b9; font-weight: 700; margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
-    .gs-elo-sub { font-size: 10.5px; color: #c8aa6e; font-weight: 700; margin-top: 3px; letter-spacing: 0.04em; }
+    .gs-champ-meta { min-width: 0; flex: 1; }
+    .gs-champ-name { font-size: 16px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; text-shadow: 0 2px 6px rgba(0,0,0,0.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gs-skin-name { font-size: 11px; color: #0ac8b9; font-weight: 700; margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gs-elo-sub { font-size: 10px; color: #c8aa6e; font-weight: 700; margin-top: 2px; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gs-rank-box {
+      flex-shrink: 0;
+      min-width: 132px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      background: linear-gradient(160deg, rgba(14, 30, 56, 0.92) 0%, rgba(5, 13, 26, 0.96) 100%);
+      border: 1.5px solid var(--tier-color, #c8aa6e);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.55), 0 0 14px rgba(10,200,185,0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      text-align: right;
+    }
+    .gs-rank-top { display: flex; align-items: center; gap: 5px; }
+    .gs-rank-crest { width: 14px; height: 14px; flex-shrink: 0; filter: drop-shadow(0 0 4px var(--tier-color, #38bdf8)); }
+    .gs-rank-tier { font-family: Georgia, "Times New Roman", serif; font-size: 12.5px; font-weight: 900; color: #f0e6d2; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+    .gs-rank-lp { font-size: 13.5px; font-weight: 900; color: var(--tier-color, #0ac8b9); margin-top: 1px; line-height: 1.1; text-shadow: 0 1px 6px rgba(0,0,0,0.85); }
+    .gs-lp-track { width: 100%; height: 4px; border-radius: 999px; background: rgba(148, 163, 184, 0.22); margin-top: 4px; overflow: hidden; }
+    .gs-lp-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c8aa6e, var(--tier-color, #0ac8b9)); transition: width 0.35s ease; }
 
     /* Just Chatting / Talk-Show Agenda Theme */
     .gs-card.theme-jc {
@@ -1944,11 +1966,24 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         <div class="gs-badge" id="gsBadge">OmniGrid</div>
       </div>
       <div class="gs-lol-hero" id="gsLolHero">
-        <img class="gs-champ-icon" id="gsChampIcon" alt="" />
-        <div>
-          <div class="gs-champ-name" id="gsChampName"></div>
-          <div class="gs-skin-name" id="gsSkinName"></div>
-          <div class="gs-elo-sub" id="gsEloSub"></div>
+        <div class="gs-lol-left">
+          <img class="gs-champ-icon" id="gsChampIcon" alt="" />
+          <div class="gs-champ-meta">
+            <div class="gs-champ-name" id="gsChampName"></div>
+            <div class="gs-skin-name" id="gsSkinName"></div>
+            <div class="gs-elo-sub" id="gsEloSub"></div>
+          </div>
+        </div>
+        <div class="gs-rank-box" id="gsRankBox">
+          <div class="gs-rank-top">
+            <svg class="gs-rank-crest" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L20 7V15L12 22L4 15V7L12 2Z" stroke="currentColor" stroke-width="2" fill="rgba(200,170,110,0.18)"/>
+              <path d="M12 6L16.5 9V14L12 18L7.5 14V9L12 6Z" fill="currentColor"/>
+            </svg>
+            <span class="gs-rank-tier" id="gsRankTier">DIAMOND IV</span>
+          </div>
+          <div class="gs-rank-lp" id="gsRankLp">50 LP</div>
+          <div class="gs-lp-track"><div class="gs-lp-fill" id="gsLpFill" style="width: 50%;"></div></div>
         </div>
       </div>
       <div class="gs-grid" id="gsGrid"></div>
@@ -1969,10 +2004,29 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     const champNameEl = document.getElementById('gsChampName');
     const skinNameEl = document.getElementById('gsSkinName');
     const eloSubEl = document.getElementById('gsEloSub');
+    const rankBoxEl = document.getElementById('gsRankBox');
+    const rankTierEl = document.getElementById('gsRankTier');
+    const rankLpEl = document.getElementById('gsRankLp');
+    const lpFillEl = document.getElementById('gsLpFill');
     const gridEl = document.getElementById('gsGrid');
     const jcAgendaEl = document.getElementById('gsJcAgenda');
     const matchesLblEl = document.getElementById('gsMatchesLbl');
     const matchesRowEl = document.getElementById('gsMatchesRow');
+
+    function resolveTierColor(rankStr) {
+      const r = String(rankStr || '').toLowerCase();
+      if (r.includes('challenger')) return '#facc15';
+      if (r.includes('grandmaster') || r.includes('großmeister')) return '#f43f5e';
+      if (r.includes('master') || r.includes('meister')) return '#c084fc';
+      if (r.includes('diamond') || r.includes('diamant')) return '#38bdf8';
+      if (r.includes('emerald') || r.includes('smaragd')) return '#10b981';
+      if (r.includes('platin')) return '#2dd4bf';
+      if (r.includes('gold')) return '#f59e0b';
+      if (r.includes('silver') || r.includes('silber')) return '#cbd5e1';
+      if (r.includes('bronze')) return '#d97706';
+      if (r.includes('iron') || r.includes('eisen')) return '#94a3b8';
+      return '#0ac8b9';
+    }
 
     function renderStats(data) {
       if (!data) return;
@@ -1986,7 +2040,7 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').replace(/—.*/, '').trim();
       titleEl.textContent = (data.icon || '🎮') + ' ' + cleanTitle;
       if (isLol) {
-        badgeEl.textContent = (data.lolRank || 'LoL') + ' • ' + Number(data.lolLp || 0) + ' LP';
+        badgeEl.textContent = data.riotId || (data.lolRole ? data.lolRole.toUpperCase() : 'RANKED');
       } else if (isJc) {
         badgeEl.textContent = data.jcMood || 'LIVE TALK';
       } else {
@@ -1994,14 +2048,19 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       }
 
       const iconUrl = data.skinIconUrl || data.championIconUrl;
-      if (isLol && iconUrl) {
+      if (isLol) {
         lolHeroEl.classList.add('visible');
-        champIconEl.onerror = () => {
-          if (data.championIconUrl && champIconEl.src !== data.championIconUrl) {
-            champIconEl.src = data.championIconUrl;
-          }
-        };
-        champIconEl.src = iconUrl;
+        if (iconUrl) {
+          champIconEl.style.display = 'block';
+          champIconEl.onerror = () => {
+            if (data.championIconUrl && champIconEl.src !== data.championIconUrl) {
+              champIconEl.src = data.championIconUrl;
+            }
+          };
+          champIconEl.src = iconUrl;
+        } else {
+          champIconEl.style.display = 'none';
+        }
         champNameEl.textContent = (data.champion || 'Champion') + (data.lolRole ? ' • ' + data.lolRole : '');
         skinNameEl.textContent = data.skinName ? '✨ ' + data.skinName : 'Classic';
         const extras = [];
@@ -2009,6 +2068,17 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         if (data.currentGold > 0) extras.push('🪙 ' + data.currentGold + 'g');
         eloSubEl.textContent = extras.join('  •  ');
         splashEl.style.backgroundImage = data.skinSplashUrl ? 'url("' + data.skinSplashUrl + '")' : 'none';
+
+        const rankText = String(data.lolRank || 'Unranked').trim();
+        const lpVal = Number(data.lolLp || 0);
+        const tierCol = resolveTierColor(rankText);
+        if (rankBoxEl) {
+          rankBoxEl.style.setProperty('--tier-color', tierCol);
+          rankBoxEl.style.color = tierCol;
+        }
+        if (rankTierEl) rankTierEl.textContent = rankText;
+        if (rankLpEl) rankLpEl.textContent = lpVal + ' LP';
+        if (lpFillEl) lpFillEl.style.width = Math.max(4, Math.min(100, lpVal % 100 === 0 && lpVal > 0 ? 100 : lpVal % 100)) + '%';
       } else {
         lolHeroEl.classList.remove('visible');
         splashEl.style.backgroundImage = 'none';

@@ -4608,8 +4608,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     const stats = (gaState.perAddonStats && gaState.perAddonStats[addon.id]) || {};
     if (banner) {
       const previewIcon = stats.skinIconUrl || stats.championIconUrl;
-      const lolPreview = addon.id === 'lol' && previewIcon
-        ? `<div style="display:flex; align-items:center; gap:8px; margin-top:6px;"><img src="${escapeHtml(previewIcon)}" style="width:36px; height:36px; object-fit:cover; object-position:center 15%; border-radius:4px; border:1.5px solid #c8aa6e;" /><div><strong style="color:#f0e6d2;">${escapeHtml(stats.champion || '')}</strong><div style="font-size:11px; color:#0ac8b9;">✨ ${escapeHtml(stats.skinName || 'Classic')}</div></div></div>`
+      const lolPreview = addon.id === 'lol'
+        ? `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(200,170,110,0.22);"><div style="display:flex; align-items:center; gap:8px;">${previewIcon ? `<img src="${escapeHtml(previewIcon)}" style="width:38px; height:38px; object-fit:cover; object-position:center 15%; border-radius:4px; border:1.5px solid #c8aa6e;" />` : ''}<div><strong style="color:#f0e6d2;">${escapeHtml(stats.champion || 'Champion')}${stats.role ? ` • ${escapeHtml(stats.role)}` : ''}</strong><div style="font-size:11px; color:#0ac8b9;">✨ ${escapeHtml(stats.skinName || 'Classic')}</div></div></div><div style="padding:4px 9px; border-radius:4px; background:rgba(9,20,40,0.9); border:1px solid #c8aa6e; text-align:right;"><div style="font-size:11px; font-weight:800; color:#f0e6d2; text-transform:uppercase;">${escapeHtml(stats.rank || 'Unranked')}</div><div style="font-size:12px; font-weight:900; color:#0ac8b9;">${Number(stats.lp || 0)} LP</div></div></div>`
         : '';
       banner.innerHTML = `${addon.icon} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${(addon.chatCommands || []).join('</code>, <code>')}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>${lolPreview}`;
     }

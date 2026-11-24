@@ -27,6 +27,7 @@ let demoInterval = null;
 let demoActive = process.env.DEMO_MODE === 'true';
 let lastGameCmdAt = 0;
 
+let resolvingInitialLolIcon = false;
 function broadcastGameAddonsState(cfg) {
   const ga = gameAddons.normalizeGameAddonsConfig(cfg?.gameAddons);
   const obsPayload = gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga });
@@ -36,6 +37,27 @@ function broadcastGameAddonsState(cfg) {
     activeObsPayload: obsPayload,
     addons: gameAddons.GAME_ADDONS
   });
+  if (ga.perAddonStats?.lol?.champion && !ga.perAddonStats.lol.championIconUrl && !resolvingInitialLolIcon) {
+    resolvingInitialLolIcon = true;
+    gameAddons
+      .resolveLolDdragonAssets(ga.perAddonStats.lol.champion, ga.perAddonStats.lol.skinId || 0, '')
+      .then((dd) => {
+        resolvingInitialLolIcon = false;
+        if (!dd?.championIconUrl) return;
+        const freshCfg = loadConfig();
+        const freshGa = gameAddons.normalizeGameAddonsConfig(freshCfg.gameAddons);
+        freshGa.perAddonStats.lol.championIconUrl = dd.championIconUrl;
+        freshGa.perAddonStats.lol.skinIconUrl = dd.skinIconUrl;
+        freshGa.perAddonStats.lol.skinSplashUrl = dd.skinSplashUrl;
+        freshGa.perAddonStats.lol.skinName = dd.skinName;
+        freshCfg.gameAddons = freshGa;
+        saveConfig(freshCfg);
+        broadcastGameAddonsState(freshCfg);
+      })
+      .catch(() => {
+        resolvingInitialLolIcon = false;
+      });
+  }
 }
 
 function syncCurrentGameFromStreamManager(gameName) {
