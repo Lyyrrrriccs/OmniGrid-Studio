@@ -718,7 +718,10 @@
       "fragGoalUrl": "Goal-URL",
       "fragPollUrl": "Poll-URL",
       "fragDuration30": "Dauer: 30.0s",
-      "fragBotTokenQuote": "„Bot Chat Token\""
+      "fragBotTokenQuote": "„Bot Chat Token\"",
+      "lcuSyncBtn": "🔄 Rank & LP aus LoL-Client lesen",
+      "lcuAutoChk1": "⚔️ League of Legends Client (LCU Rank/LP) & Live Ingame API (",
+      "lcuAutoChk2": ") automatisch auslesen"
     }
   },
   "titles": {
@@ -825,7 +828,8 @@
     "t_101": "Fenster- & Anwendungsliste neu von OBS laden",
     "t_102": "Fügt Hextech HUD, Live Item-Build, Anti-Ghosting Minimap, Alerts & Chat fertig positioniert ein",
     "t_103": "Fügt Bauchbinde, Q&A Spotlight, Agenda-Card, Musik, Alerts & Chat fertig positioniert ein",
-    "t_104": "App-Sprache wechseln / Change language"
+    "t_104": "App-Sprache wechseln / Change language",
+    "t_105": "Liest deinen echten Rank, aktuelle LP & Riot-ID live aus dem geöffneten League-of-Legends-Client (LCU)"
   },
   "placeholders": {
     "p_1": "z.B. Tobias",

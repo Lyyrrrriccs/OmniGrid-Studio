@@ -2466,11 +2466,43 @@ app.whenReady().then(async () => {
     obsServer.onGameWebhook = handleIncomingGameWebhook;
     broadcastGameAddonsState(saved);
 
-    // Optional League of Legends Live Client API poller (127.0.0.1:2999)
+    // Optional League of Legends Live Client API (127.0.0.1:2999) + LCU Ranked/LP Poller (lockfile)
+    let lastLcuPollAt = 0;
+    const syncLcuIntoConfig = async (force = false) => {
+      const now = Date.now();
+      if (!force && now - lastLcuPollAt < 12000) return null;
+      lastLcuPollAt = now;
+      const lcu = await gameAddons.readLolLcuRankedStats();
+      if (!lcu?.ok) return lcu;
+      const cfg = loadConfig();
+      const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+      const prev = ga.perAddonStats.lol || {};
+      const changed =
+        prev.rank !== lcu.rank ||
+        Number(prev.lp) !== Number(lcu.lp) ||
+        (lcu.riotId && prev.riotId !== lcu.riotId) ||
+        (lcu.region && prev.region !== lcu.region);
+      if (changed || force) {
+        ga.perAddonStats.lol = {
+          ...prev,
+          rank: lcu.rank,
+          lp: lcu.lp,
+          riotId: lcu.riotId || prev.riotId || '',
+          region: lcu.region || prev.region || 'euw'
+        };
+        cfg.gameAddons = ga;
+        saveConfig(cfg);
+        broadcastGameAddonsState(cfg);
+      }
+      return lcu;
+    };
+    global.__syncLcuRankedNow = () => syncLcuIntoConfig(true);
+
     setInterval(async () => {
       const cfg = loadConfig();
       const { addon, ga } = gameAddons.resolveActiveAddon(cfg);
       if (!ga.lolPollingEnabled || addon.id !== 'lol') return;
+      syncLcuIntoConfig(false).catch(() => {});
       try {
         const https = require('https');
         const agent = new https.Agent({ rejectUnauthorized: false });
@@ -4086,6 +4118,17 @@ app.whenReady().then(async () => {
     saveConfig(cfg);
     broadcastGameAddonsState(cfg);
     return { ok: true, gameAddons: ga, addons: gameAddons.GAME_ADDONS };
+  });
+
+  ipcMain.handle('game-addons-lol-sync-lcu', async () => {
+    try {
+      const lcu = global.__syncLcuRankedNow ? await global.__syncLcuRankedNow() : await gameAddons.readLolLcuRankedStats();
+      const cfg = loadConfig();
+      const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+      return { ...lcu, gameAddons: ga, addons: gameAddons.GAME_ADDONS };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   });
 
   ipcMain.handle('game-addons-lol-record-match', async (_ev, payload = {}) => {

@@ -3,7 +3,7 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
   currentGameName: '',
   overlayEnabled: true,
   autoSwitchByGame: true,
-  lolPollingEnabled: false,
+  lolPollingEnabled: true,
   autoTriggerEvents: true,
   perAddonStats: {
     universal: { kills: 0, deaths: 0, wins: 0, rank: 'Live' },
@@ -256,7 +256,7 @@ function normalizeGameAddonsConfig(raw = {}) {
     currentGameName: String(src.currentGameName || ''),
     overlayEnabled: src.overlayEnabled !== false,
     autoSwitchByGame: src.autoSwitchByGame !== false,
-    lolPollingEnabled: Boolean(src.lolPollingEnabled),
+    lolPollingEnabled: src.lolPollingEnabled !== false,
     autoTriggerEvents: src.autoTriggerEvents !== false,
     perAddonStats: mergedStats
   };
@@ -714,6 +714,184 @@ async function resolveLolItemList(rawItems = []) {
     });
 }
 
+// ======================================================
+// LOCAL LEAGUE CLIENT (LCU) READER — RANK, LP & RIOT-ID
+// Reads directly from local LeagueClientUx (127.0.0.1) via lockfile / process args.
+// Requires NO Riot API key and sends zero external traffic.
+// ======================================================
+function formatLcuTier(entry) {
+  if (!entry || !entry.tier) return { rank: 'Unranked', lp: 0, ranked: false };
+  const rawTier = String(entry.tier || '').toUpperCase();
+  if (!rawTier || rawTier === 'NONE' || rawTier === 'UNRANKED') {
+    return { rank: 'Unranked', lp: 0, ranked: false };
+  }
+  const tierNames = {
+    IRON: 'Iron',
+    BRONZE: 'Bronze',
+    SILVER: 'Silver',
+    GOLD: 'Gold',
+    PLATINUM: 'Platinum',
+    EMERALD: 'Emerald',
+    DIAMOND: 'Diamond',
+    MASTER: 'Master',
+    GRANDMASTER: 'Grandmaster',
+    CHALLENGER: 'Challenger'
+  };
+  const niceTier = tierNames[rawTier] || rawTier;
+  const apex = ['MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(rawTier);
+  const div = String(entry.division || '').toUpperCase();
+  const rank = !apex && div && div !== 'NA' ? `${niceTier} ${div}` : niceTier;
+  return {
+    rank,
+    lp: Math.max(0, Number(entry.leaguePoints || 0)),
+    wins: Number(entry.wins || 0),
+    losses: Number(entry.losses || 0),
+    ranked: true
+  };
+}
+
+async function discoverLcuCredentials() {
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const { execFile } = require('child_process');
+
+  const candidates = [
+    '/Applications/League of Legends.app/Contents/LoL/lockfile',
+    path.join(os.homedir(), 'Applications/League of Legends.app/Contents/LoL/lockfile'),
+    'C:\\Riot Games\\League of Legends\\lockfile',
+    'D:\\Riot Games\\League of Legends\\lockfile',
+    'E:\\Riot Games\\League of Legends\\lockfile'
+  ];
+
+  for (const lf of candidates) {
+    try {
+      if (fs.existsSync(lf)) {
+        const content = fs.readFileSync(lf, 'utf8').trim();
+        const parts = content.split(':');
+        if (parts.length >= 4 && /^\d+$/.test(parts[2]) && parts[3]) {
+          return { port: Number(parts[2]), token: parts[3] };
+        }
+      }
+    } catch (e) {}
+  }
+
+  return await new Promise((resolve) => {
+    if (process.platform === 'win32') {
+      execFile(
+        'powershell.exe',
+        ['-NoProfile', '-Command', "Get-CimInstance Win32_Process -Filter \"name = 'LeagueClientUx.exe'\" | Select-Object -ExpandProperty CommandLine"],
+        { timeout: 2500 },
+        (err, stdout) => {
+          if (err || !stdout) return resolve(null);
+          const p = String(stdout).match(/--app-port=(\d+)/);
+          const t = String(stdout).match(/--remoting-auth-token=([\w-]+)/);
+          resolve(p && t ? { port: Number(p[1]), token: t[1] } : null);
+        }
+      );
+    } else {
+      execFile('ps', ['-ax', '-o', 'args='], { timeout: 2000, maxBuffer: 2 * 1024 * 1024 }, (err, stdout) => {
+        if (err || !stdout) return resolve(null);
+        const line = String(stdout)
+          .split('\n')
+          .find((l) => l.includes('LeagueClientUx') && l.includes('--app-port='));
+        if (!line) return resolve(null);
+        const p = line.match(/--app-port=(\d+)/);
+        const t = line.match(/--remoting-auth-token=([\w-]+)/);
+        resolve(p && t ? { port: Number(p[1]), token: t[1] } : null);
+      });
+    }
+  });
+}
+
+function lcuGetJson(port, token, endpoint) {
+  const https = require('https');
+  const auth = Buffer.from(`riot:${token}`).toString('base64');
+  const agent = new https.Agent({ rejectUnauthorized: false });
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        host: '127.0.0.1',
+        port,
+        path: endpoint,
+        method: 'GET',
+        agent,
+        timeout: 1800,
+        headers: {
+          Authorization: `Basic ${auth}`,
+          Accept: 'application/json'
+        }
+      },
+      (res) => {
+        let raw = '';
+        res.on('data', (c) => { raw += c; });
+        res.on('end', () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            return reject(new Error(`LCU HTTP ${res.statusCode}`));
+          }
+          try { resolve(JSON.parse(raw)); } catch (e) { reject(e); }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('LCU Timeout')); });
+    req.end();
+  });
+}
+
+async function readLolLcuRankedStats() {
+  const creds = await discoverLcuCredentials();
+  if (!creds) {
+    return { ok: false, error: 'League of Legends Client läuft aktuell nicht (keine LCU-Verbindung auf 127.0.0.1 gefunden).' };
+  }
+
+  const [rankedData, summonerData, regionData] = await Promise.all([
+    lcuGetJson(creds.port, creds.token, '/lol-ranked/v1/current-ranked-stats').catch(() => null),
+    lcuGetJson(creds.port, creds.token, '/lol-summoner/v1/current-summoner').catch(() => null),
+    lcuGetJson(creds.port, creds.token, '/riotclient/region-locale').catch(() => null)
+  ]);
+
+  if (!rankedData && !summonerData) {
+    return { ok: false, error: 'LoL-Client gefunden, aber Ranked-Daten noch nicht geladen (bitte bis in die Lobby einloggen).' };
+  }
+
+  const qMap = rankedData?.queueMap || {};
+  let parsed = formatLcuTier(qMap.RANKED_SOLO_5x5);
+  let queueLabel = 'Solo/Duo';
+  if (!parsed.ranked) {
+    const flex = formatLcuTier(qMap.RANKED_FLEX_SR);
+    if (flex.ranked) {
+      parsed = flex;
+      queueLabel = 'Flex';
+    } else if (rankedData?.highestRankedEntry) {
+      const high = formatLcuTier(rankedData.highestRankedEntry);
+      if (high.ranked) parsed = high;
+    }
+  }
+
+  let riotId = '';
+  if (summonerData?.gameName && summonerData?.tagLine) {
+    riotId = `${summonerData.gameName}#${summonerData.tagLine}`;
+  } else if (summonerData?.displayName) {
+    riotId = summonerData.displayName;
+  }
+
+  const rawReg = String(regionData?.region || '').toLowerCase();
+  const regMap = { euw1: 'euw', eun1: 'eune', na1: 'na', kr: 'kr', br1: 'br', oc1: 'oce', tr1: 'tr', jp1: 'jp' };
+  const region = regMap[rawReg] || rawReg || '';
+
+  return {
+    ok: true,
+    rank: parsed.rank,
+    lp: parsed.lp,
+    wins: parsed.wins || 0,
+    losses: parsed.losses || 0,
+    queueLabel,
+    riotId,
+    region
+  };
+}
+
 module.exports = {
   DEFAULT_GAME_ADDONS_CONFIG,
   GAME_ADDONS,
@@ -730,5 +908,6 @@ module.exports = {
   handleGameChatCommand,
   buildCs2GsiConfig,
   resolveLolDdragonAssets,
-  resolveLolItemList
+  resolveLolItemList,
+  readLolLcuRankedStats
 };

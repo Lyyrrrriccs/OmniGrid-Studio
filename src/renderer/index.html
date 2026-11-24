@@ -1983,6 +1983,7 @@
         <div id="gaLolMatchControls" class="hidden" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 9px 10px; border-radius: 8px; background: rgba(15,23,42,0.65); border: 1px solid rgba(200,170,110,0.35);">
           <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
             <span style="font-size: 11px; font-weight: 700; color: #c8aa6e;">⚔️ Ranked &amp; Session:</span>
+            <button class="btn-sm" id="btnGaLolSyncLcu" style="background: #0284c7; color: #fff; font-weight: 700;" title="Liest deinen echten Rank, aktuelle LP &amp; Riot-ID live aus dem geöffneten League-of-Legends-Client (LCU)">🔄 Rank &amp; LP aus LoL-Client lesen</button>
             <button class="btn-sm" id="btnGaLolWin" style="background: #0d9488; color: #fff;">🏆 +Sieg (+LP)</button>
             <button class="btn-sm" id="btnGaLolLoss" style="background: #dc2626; color: #fff;">💀 +Niederlage (-LP)</button>
             <button class="btn-sm" id="btnGaLolLpPlus">+20 LP</button>
@@ -2035,7 +2036,7 @@
 
         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(148,163,184,0.18);">
           <label class="checkbox-row"><input type="checkbox" id="gaOverlayEnabled" checked /><span>👁️ <strong>OBS Game-Stats-Overlay anzeigen</strong> (aus = <code>/game-stats</code> &amp; <code>/lol-map</code> werden in OBS ausgeblendet)</span></label>
-          <label class="checkbox-row"><input type="checkbox" id="gaLolPolling" /><span>⚔️ League of Legends Live Client API (<code>127.0.0.1:2999</code>) automatisch pollen</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="gaLolPolling" checked /><span>⚔️ League of Legends Client (LCU Rank/LP) &amp; Live Ingame API (<code>127.0.0.1:2999</code>) automatisch auslesen</span></label>
           <label class="checkbox-row"><input type="checkbox" id="gaAutoTrigger" checked /><span>⚡ Spiel-Events automatisch auslösen (z. B. CS2 3K/Ace → Twitch Stream-Marker)</span></label>
           <div style="font-size: 11px; color: #94a3b8;">🔒 Vorgefertigte Addons sind schreibgeschützt: Name, Felder &amp; Commands bleiben unverändert — nur die Live-Werte pro Addon werden gespeichert und können jederzeit auf Standard zurückgesetzt werden.</div>
         </div>

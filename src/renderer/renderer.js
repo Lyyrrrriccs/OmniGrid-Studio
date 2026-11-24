@@ -4765,7 +4765,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       allAddons = res.addons || [];
       if (selAddon) selAddon.value = gaState.selectedMode || 'auto';
       if (gameInput) gameInput.value = gaState.currentGameName || document.getElementById('inputStreamGame')?.value || '';
-      if (chkLol) chkLol.checked = Boolean(gaState.lolPollingEnabled);
+      if (chkLol) chkLol.checked = gaState.lolPollingEnabled !== false;
       if (chkTrigger) chkTrigger.checked = gaState.autoTriggerEvents !== false;
       const chkOverlay = document.getElementById('gaOverlayEnabled');
       if (chkOverlay) chkOverlay.checked = gaState.overlayEnabled !== false;
@@ -4814,6 +4814,25 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (statusEl) {
       statusEl.style.color = '#4ade80';
       statusEl.textContent = '🔗 http://127.0.0.1:4588/game-stats kopiert!';
+    }
+  });
+
+  document.getElementById('btnGaLolSyncLcu')?.addEventListener('click', async () => {
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = '⏳ Lese Rank, LP & Riot-ID aus lokalem League-Client (LCU)...';
+    }
+    const res = await window.omnichat.gameAddonsLolSyncLcu?.();
+    if (res?.ok) {
+      gaState = res.gameAddons;
+      renderFields();
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `✅ Aus LoL-Client geladen: ${res.rank} (${res.lp} LP • ${res.queueLabel || 'Ranked'})${res.riotId ? ` • ${res.riotId}` : ''}`;
+      }
+    } else if (statusEl) {
+      statusEl.style.color = '#fbbf24';
+      statusEl.textContent = `⚠️ ${res?.error || 'LoL-Client nicht erreichbar.'}`;
     }
   });
 
