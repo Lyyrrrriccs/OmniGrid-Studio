@@ -44,7 +44,7 @@ const ALLOWED_DOMAINS = [
   { domain: 'graph.facebook.com', purpose: 'Offizielle Meta Instagram Graph API' },
   { domain: 'api.imgbb.com', purpose: 'Optionaler ImgBB Bild-Host (nur mit eigenem Key für IG Graph API)' },
   { domain: 'api.github.com', purpose: 'Offizielle GitHub API (Release Auto-Updater & Feedback Discussions)' },
-  { domain: 'github.com', purpose: 'Offizielles GitHub Repository (Lyyrrrriccs/omni-stream-chat)' },
+  { domain: 'github.com', purpose: 'Offizielles GitHub Repository (Lyyrrrriccs/OmniGrid-Studio)' },
   { domain: 'tailscale.com', purpose: 'Offizielle Tailscale Download-Seite (Info-Link)' },
   { domain: 'www.w3.org', purpose: 'Standard XML/SVG Namespace (kein Netzwerk-Aufruf)' }
 ];

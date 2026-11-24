@@ -1590,9 +1590,10 @@ const OBS_POLL_HTML = `<!DOCTYPE html>
         const pct = total > 0 ? Math.round((opt.votes / total) * 100) : 0;
         const row = document.createElement('div');
         row.className = 'poll-opt';
+        const escPoll = (v) => String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         row.innerHTML =
           '<div class="poll-bar" style="width:' + pct + '%"></div>' +
-          '<span class="poll-lbl">' + (idx + 1) + '. ' + String(opt.label || '').replace(/</g, '&lt;') + '</span>' +
+          '<span class="poll-lbl">' + (idx + 1) + '. ' + escPoll(opt.label) + '</span>' +
           '<span class="poll-val">' + pct + '% (' + (opt.votes || 0) + ')</span>';
         optsEl.appendChild(row);
       });
@@ -1679,10 +1680,11 @@ const OBS_SCHEDULE_HTML = `<!DOCTYPE html>
         const plats = (e.platforms || []).map((p) => p.toUpperCase()).join(' • ');
         const row = document.createElement('div');
         row.className = 'sched-row';
+        const escSched = (v) => String(v || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         row.innerHTML =
-          '<div class="sched-top"><span>' + dateStr + ' • ' + timeStr + '</span><span>' + plats + '</span></div>' +
-          '<div class="sched-name">' + String(e.title || '').replace(/</g, '&lt;') + '</div>' +
-          (e.game ? '<div class="sched-meta"><span>🎮 ' + String(e.game).replace(/</g, '&lt;') + '</span><span>' + e.durationMin + ' Min.</span></div>' : '');
+          '<div class="sched-top"><span>' + escSched(dateStr) + ' • ' + escSched(timeStr) + '</span><span>' + escSched(plats) + '</span></div>' +
+          '<div class="sched-name">' + escSched(e.title) + '</div>' +
+          (e.game ? '<div class="sched-meta"><span>🎮 ' + escSched(e.game) + '</span><span>' + Number(e.durationMin || 0) + ' Min.</span></div>' : '');
         listEl.appendChild(row);
       });
     }
