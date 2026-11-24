@@ -231,7 +231,17 @@ function escapeHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sanitizeHexColor(raw, fallback = '#f97316') {
+  const clean = String(raw || '').trim().replace(/^#/, '');
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return fallback;
+  const num = Number.parseInt(clean, 16);
+  if (!Number.isSafeInteger(num) || num < 0 || num > 0xffffff) return fallback;
+  return '#' + num.toString(16).padStart(6, '0');
 }
 
 function formatTime(ts) {
@@ -265,7 +275,7 @@ function resolveAuthorColor(msg) {
     if (msg.platform === 'youtube') return '#ff4e45';
     return '#00f2fe';
   }
-  return msg.color || '#38bdf8';
+  return sanitizeHexColor(msg.color, '#38bdf8');
 }
 
 function isEmoteProviderEnabled(provider) {
@@ -284,7 +294,7 @@ function renderMessageContentHtml(msg) {
     return msg.tokens
       .map((t) => {
         if (t.type === 'emote' && isEmoteProviderEnabled(t.provider)) {
-          return `<span class="emote-wrap"><img class="chat-emote" src="${t.url}" alt="${escapeHtml(t.name)}" title="${escapeHtml(t.name)} (${t.provider})" decoding="async" loading="eager" onerror="this.outerHTML=this.alt" /></span>`;
+          return `<span class="emote-wrap"><img class="chat-emote" src="${escapeHtml(t.url)}" alt="${escapeHtml(t.name)}" title="${escapeHtml(t.name)} (${escapeHtml(t.provider)})" decoding="async" loading="eager" onerror="this.replaceWith(document.createTextNode(this.alt))" /></span>`;
         }
         return escapeHtml(t.text || t.name || '');
       })
@@ -297,16 +307,18 @@ function renderPlatformIndicatorHtml(platform) {
   if (chkShowPlatIcons && !chkShowPlatIcons.checked) {
     return '';
   }
+  const safePlat = platform === 'twitch' ? 'twitch' : platform === 'youtube' ? 'youtube' : platform === 'tiktok' ? 'tiktok' : 'chat';
+  const upperPlat = safePlat.toUpperCase();
   const style = selPlatStyle?.value || 'icon_only';
-  const icon = PLATFORM_ICONS[platform] || '💬';
+  const icon = PLATFORM_ICONS[safePlat] || '💬';
   if (style === 'subtle_border') {
-    return `<span class="msg-plat-dot ${platform}" title="${platform.toUpperCase()}"></span>`;
+    return `<span class="msg-plat-dot ${safePlat}" title="${upperPlat}"></span>`;
   }
   if (style === 'icon_only') {
-    return `<span class="msg-plat-icon" title="${platform.toUpperCase()}">${icon}</span>`;
+    return `<span class="msg-plat-icon" title="${upperPlat}">${icon}</span>`;
   }
-  const shortLabel = platform === 'twitch' ? 'TW' : platform === 'youtube' ? 'YT' : 'TT';
-  return `<span class="msg-plat ${platform}" title="${platform.toUpperCase()}">${icon} ${shortLabel}</span>`;
+  const shortLabel = safePlat === 'twitch' ? 'TW' : safePlat === 'youtube' ? 'YT' : 'TT';
+  return `<span class="msg-plat ${safePlat}" title="${upperPlat}">${icon} ${shortLabel}</span>`;
 }
 
 function getEventHighlightSettings() {
@@ -1462,7 +1474,7 @@ function renderSessionStatistics() {
       statTopEmotes.innerHTML = sortedEmotes
         .map(
           ([name, info]) =>
-            `<span class="kpi-pill"><img src="${info.url}" class="kpi-emote-img" alt="${escapeHtml(name)}" /> ${escapeHtml(name)} <strong>×${info.count}</strong></span>`
+            `<span class="kpi-pill"><img src="${escapeHtml(info.url)}" class="kpi-emote-img" alt="${escapeHtml(name)}" /> ${escapeHtml(name)} <strong>×${Number(info.count || 0)}</strong></span>`
         )
         .join('');
     }
@@ -1486,7 +1498,7 @@ function renderDiagnosticLogs() {
         second: '2-digit'
       });
       const plat = String(entry.platform || 'system').toUpperCase();
-      return `<div class="diag-row ${entry.level || 'info'}"><span class="diag-time">${t}</span><span class="diag-plat ${entry.platform}">${plat}</span><span class="diag-msg">${escapeHtml(entry.message)}</span></div>`;
+      return `<div class="diag-row ${escapeHtml(entry.level || 'info')}"><span class="diag-time">${escapeHtml(t)}</span><span class="diag-plat ${escapeHtml(entry.platform || 'system')}">${escapeHtml(plat)}</span><span class="diag-msg">${escapeHtml(entry.message)}</span></div>`;
     })
     .join('');
 }
@@ -1540,7 +1552,7 @@ function renderEventTicker() {
       const t = String(ev.type || '').toLowerCase();
       const icon = icons[t] || '✨';
       return `
-        <div class="event-pill ${ev.platform} ${t}">
+        <div class="event-pill ${escapeHtml(ev.platform)} ${escapeHtml(t)}">
           <span class="ev-icon">${icon}</span>
           <strong class="ev-author">${escapeHtml(truncateUsername(ev.author))}</strong>
           <span class="ev-summary">${escapeHtml(ev.summary)}</span>
@@ -1596,10 +1608,10 @@ function createMessageElement(msg) {
     .join('');
 
   const mentionTag = msg.isMention ? `<span class="mention-pill">@MICH</span>` : '';
-  const kwColorVal = clrKeywordHighlight?.value || '#f97316';
+  const kwColorVal = sanitizeHexColor(clrKeywordHighlight?.value, '#f97316');
   const keywordTag =
     msg.isKeywordAlert && msg.matchedKeyword
-      ? `<span class="keyword-pill" style="background:${kwColorVal};" title="Keyword-Alarm: ${escapeHtml(msg.matchedKeyword)}">🔍 ${escapeHtml(msg.matchedKeyword.toUpperCase())}</span>`
+      ? `<span class="keyword-pill" style="background:${escapeHtml(kwColorVal)};" title="Keyword-Alarm: ${escapeHtml(msg.matchedKeyword)}">🔍 ${escapeHtml(msg.matchedKeyword.toUpperCase())}</span>`
       : '';
   const displayAuthor = truncateUsername(msg.author);
   const authorColor = resolveAuthorColor(msg);
@@ -1609,7 +1621,7 @@ function createMessageElement(msg) {
       ? `<span class="msg-repeat-badge" title="Identische Nachricht ${repeatCount}× zusammengefasst">×${repeatCount}</span>`
       : '';
 
-  div.innerHTML = `<div class="msg-inline-flow"><span class="msg-time">${formatTime(msg.timestamp)}</span>${renderPlatformIndicatorHtml(msg.platform)}${mentionTag}${keywordTag}${badgesHtml}<span class="msg-author clickable-user" style="color: ${authorColor}" title="${escapeHtml(msg.author)} — Klick oder Rechtsklick für Schnellmenü">${escapeHtml(displayAuthor)}:</span><span class="msg-text">${renderMessageContentHtml(msg)}</span>${repeatBadgeHtml}</div><div class="msg-actions"><button class="btn-pin-msg" title="In OBS einblenden">📌</button><button class="btn-quick-menu" title="Nutzer- & Nachrichten-Schnellmenü">⋮</button></div>`;
+  div.innerHTML = `<div class="msg-inline-flow"><span class="msg-time">${escapeHtml(formatTime(msg.timestamp))}</span>${renderPlatformIndicatorHtml(msg.platform)}${mentionTag}${keywordTag}${badgesHtml}<span class="msg-author clickable-user" style="color: ${escapeHtml(authorColor)}" title="${escapeHtml(msg.author)} — Klick oder Rechtsklick für Schnellmenü">${escapeHtml(displayAuthor)}:</span><span class="msg-text">${renderMessageContentHtml(msg)}</span>${repeatBadgeHtml}</div><div class="msg-actions"><button class="btn-pin-msg" title="In OBS einblenden">📌</button><button class="btn-quick-menu" title="Nutzer- & Nachrichten-Schnellmenü">⋮</button></div>`;
 
   div.querySelector('.btn-pin-msg').addEventListener('click', (e) => {
     e.stopPropagation();
@@ -4817,7 +4829,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       const lolPreview = addon.id === 'lol'
         ? `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(200,170,110,0.22);"><div style="display:flex; align-items:center; gap:8px;">${previewIcon ? `<img src="${escapeHtml(previewIcon)}" style="width:38px; height:38px; object-fit:cover; object-position:center 15%; border-radius:4px; border:1.5px solid #c8aa6e;" />` : ''}<div><strong style="color:#f0e6d2;">${escapeHtml(stats.champion || 'Champion')}${stats.role ? ` • ${escapeHtml(stats.role)}` : ''}</strong><div style="font-size:11px; color:#0ac8b9;">✨ ${escapeHtml(stats.skinName || 'Classic')}</div></div></div><div style="padding:4px 9px; border-radius:4px; background:rgba(9,20,40,0.9); border:1px solid #c8aa6e; text-align:right;"><div style="font-size:11px; font-weight:800; color:#f0e6d2; text-transform:uppercase;">${escapeHtml(stats.rank || 'Unranked')}</div><div style="font-size:12px; font-weight:900; color:#0ac8b9;">${Number(stats.lp || 0)} LP</div></div></div>`
         : '';
-      banner.innerHTML = `${addon.icon} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${(addon.chatCommands || []).join('</code>, <code>')}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>${lolPreview}`;
+      const safeCmds = (addon.chatCommands || []).map((c) => escapeHtml(c)).join('</code>, <code>');
+      banner.innerHTML = `${escapeHtml(addon.icon)} Aktives Addon: <strong>${escapeHtml(addon.name)}</strong> • Chat-Commands: <code>${safeCmds}</code><div style="font-size:11px; color:#94a3b8; margin-top:3px;">${escapeHtml(addon.eventHint || '')}</div>${lolPreview}`;
     }
     const lolMatchBox = document.getElementById('gaLolMatchControls');
     if (lolMatchBox) lolMatchBox.classList.toggle('hidden', addon.id !== 'lol');
@@ -5949,7 +5962,13 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   async function refreshAll() {
     const sidebarSel = document.getElementById('selObsScene');
     if (selScene && sidebarSel) {
-      selScene.innerHTML = sidebarSel.innerHTML;
+      selScene.textContent = '';
+      Array.from(sidebarSel.options).forEach((srcOpt) => {
+        const opt = document.createElement('option');
+        opt.value = srcOpt.value;
+        opt.textContent = srcOpt.textContent;
+        selScene.appendChild(opt);
+      });
       selScene.value = sidebarSel.value;
       currentSceneName = selScene.value || '';
     }

@@ -2615,7 +2615,7 @@ app.whenReady().then(async () => {
       syncLcuIntoConfig(false).catch(() => {});
       try {
         const https = require('https');
-        const agent = new https.Agent({ rejectUnauthorized: false });
+        const agent = gameAddons.createRiotLocalHttpsAgent();
         const data = await new Promise((resolve, reject) => {
           const req = https.get('https://127.0.0.1:2999/liveclientdata/allgamedata', { agent, timeout: 1500 }, (res) => {
             let raw = '';

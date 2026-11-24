@@ -198,7 +198,9 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
       return String(str || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function truncateName(name) {
@@ -219,12 +221,13 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
     }
 
     function renderPlatBadge(plat) {
+      const safePlat = plat === 'twitch' ? 'twitch' : plat === 'youtube' ? 'youtube' : plat === 'tiktok' ? 'tiktok' : 'chat';
       const icons = { twitch: '🟣', youtube: '🔴', tiktok: '🎵' };
-      const ic = icons[plat] || '💬';
+      const ic = icons[safePlat] || '💬';
       if (appearance.platformIndicatorStyle === 'icon_only') {
         return '<span class="plat-icon">' + ic + '</span>';
       }
-      return '<span class="plat-icon"><span class="plat-tag ' + plat + '">' + ic + ' ' + plat + '</span></span>';
+      return '<span class="plat-icon"><span class="plat-tag ' + safePlat + '">' + ic + ' ' + safePlat + '</span></span>';
     }
 
     function renderTokens(m) {
@@ -232,7 +235,7 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
         return m.tokens
           .map((t) =>
             t.type === 'emote'
-              ? '<span class="emote-wrap"><img class="emote-img" src="' + t.url + '" alt="' + escapeHtml(t.name) + '" /></span>'
+              ? '<span class="emote-wrap"><img class="emote-img" src="' + escapeHtml(t.url) + '" alt="' + escapeHtml(t.name) + '" /></span>'
               : escapeHtml(t.text)
           )
           .join('');
@@ -247,10 +250,10 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
         .map(b => '<span class="badge">' + escapeHtml(b) + '</span>')
         .join('');
       return (
-        '<span class="time">' + tStr + '</span>' +
+        '<span class="time">' + escapeHtml(tStr) + '</span>' +
         renderPlatBadge(m.platform) +
         badges +
-        '<span class="author" style="color:' + resolveAuthorColor(m) + '">' + escapeHtml(truncateName(m.author)) + ':</span>' +
+        '<span class="author" style="color:' + escapeHtml(resolveAuthorColor(m)) + '">' + escapeHtml(truncateName(m.author)) + ':</span>' +
         '<span class="text">' + renderTokens(m) + '</span>'
       );
     }
@@ -588,7 +591,7 @@ const OBS_CUSTOM_DOCK_HTML = `<!DOCTYPE html>
     let appearance = { nameFontSize: 13, msgFontSize: 13.5, maxNameLength: 16, msgPadding: 5, showSeparator: true, sepColor: '#ffffff', sepOpacity: 8, usernameColorMode: 'user' };
 
     function escapeHtml(s) {
-      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
     function hexToRgba(hex, alphaPercent) {
       const clean = (hex || '#ffffff').replace('#', '');
@@ -615,7 +618,7 @@ const OBS_CUSTOM_DOCK_HTML = `<!DOCTYPE html>
     }
     function renderTokens(m) {
       if (Array.isArray(m.tokens) && m.tokens.length > 0) {
-        return m.tokens.map(t => t.type === 'emote' ? '<span class="emote-wrap"><img class="emote-img" src="' + t.url + '" alt="' + escapeHtml(t.name) + '" /></span>' : escapeHtml(t.text)).join('');
+        return m.tokens.map(t => t.type === 'emote' ? '<span class="emote-wrap"><img class="emote-img" src="' + escapeHtml(t.url) + '" alt="' + escapeHtml(t.name) + '" /></span>' : escapeHtml(t.text)).join('');
       }
       return escapeHtml(m.text);
     }
@@ -624,8 +627,8 @@ const OBS_CUSTOM_DOCK_HTML = `<!DOCTYPE html>
       const tStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
       const icons = { twitch: '🟣', youtube: '🔴', tiktok: '🎵' };
       const badges = (m.badges || []).map(b => '<span class="badge">' + escapeHtml(b) + '</span>').join('');
-      return '<span class="time">' + tStr + '</span><span class="plat-icon">' + (icons[m.platform] || '💬') + '</span>' + badges +
-        '<span class="author" style="color:' + (m.color || '#38bdf8') + '">' + escapeHtml(truncateName(m.author)) + ':</span>' +
+      return '<span class="time">' + escapeHtml(tStr) + '</span><span class="plat-icon">' + (icons[m.platform] || '💬') + '</span>' + badges +
+        '<span class="author" style="color:' + escapeHtml(m.color || '#38bdf8') + '">' + escapeHtml(truncateName(m.author)) + ':</span>' +
         '<span class="text">' + renderTokens(m) + '</span>';
     }
     function matches(m) {
@@ -1074,7 +1077,7 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
     let ws = null;
 
     function esc(s) {
-      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
     async function sdApi(path) {
@@ -1084,7 +1087,7 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
     function renderTokens(m) {
       if (Array.isArray(m.tokens) && m.tokens.length > 0) {
         return m.tokens.map(t => t.type === 'emote'
-          ? '<img class="emote" src="' + t.url + '" alt="' + esc(t.name) + '" />'
+          ? '<img class="emote" src="' + esc(t.url) + '" alt="' + esc(t.name) + '" />'
           : esc(t.text)
         ).join('');
       }
@@ -1096,7 +1099,7 @@ const OBS_TABLET_HTML = `<!DOCTYPE html>
       div.className = 'tb-msg ' + m.platform + (m.isHighlight ? ' highlight' : '');
       div.dataset.id = m.id;
       const ic = m.platform === 'twitch' ? '🟣' : m.platform === 'youtube' ? '🔴' : '🎵';
-      div.innerHTML = ic + ' <span class="tb-author" style="color:' + (m.color || '#38bdf8') + '">' + esc(m.author) + ':</span>' + renderTokens(m);
+      div.innerHTML = ic + ' <span class="tb-author" style="color:' + esc(m.color || '#38bdf8') + '">' + esc(m.author) + ':</span>' + renderTokens(m);
       div.onclick = () => {
         selectedMsg = m;
         tbSheet.classList.add('open');
@@ -2127,7 +2130,8 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
           const slot = document.createElement('div');
           if (m) {
             slot.className = 'gs-match-slot ' + (m.win ? 'win' : 'loss');
-            const img = m.championIconUrl ? '<img src="' + m.championIconUrl + '" alt="" />' : '';
+            const safeUrl = String(m.championIconUrl || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const img = safeUrl ? '<img src="' + safeUrl + '" alt="" />' : '';
             slot.innerHTML = img + '<span class="gs-match-badge">' + (m.win ? 'W' : 'L') + '</span>';
           } else {
             slot.className = 'gs-match-slot';
@@ -2347,8 +2351,9 @@ const OBS_LOL_BUILD_HTML = `<!DOCTYPE html>
         box.className = 'lb-slot' + (slot === 6 ? ' trinket' : '');
         const it = bySlot[slot];
         if (it && it.iconUrl) {
-          const cnt = Number(it.count || 1) > 1 ? '<span class="lb-cnt">' + it.count + '</span>' : '';
-          box.innerHTML = '<img src="' + it.iconUrl + '" alt="" />' + cnt;
+          const safeIconUrl = String(it.iconUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const cnt = Number(it.count || 1) > 1 ? '<span class="lb-cnt">' + Number(it.count) + '</span>' : '';
+          box.innerHTML = '<img src="' + safeIconUrl + '" alt="" />' + cnt;
         } else {
           box.innerHTML = '<span class="lb-slot-empty">' + (slot === 6 ? '👁️' : '•') + '</span>';
         }
@@ -2590,10 +2595,18 @@ class ObsServer {
             }
             try {
               if (this.onGameWebhook) await this.onGameWebhook(kind, body);
-              res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.writeHead(200, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff',
+                'Access-Control-Allow-Origin': '*'
+              });
               res.end(JSON.stringify({ ok: true }));
             } catch (err) {
-              res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+              res.writeHead(400, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff',
+                'Access-Control-Allow-Origin': '*'
+              });
               res.end(JSON.stringify({ ok: false, error: err.message }));
             }
           });
@@ -2608,7 +2621,7 @@ class ObsServer {
           const safeKind = allowedKinds.find((k) => k === parts[1]);
           const filePath = safeEvType && safeKind && this.alertMediaResolver ? this.alertMediaResolver(safeEvType, safeKind) : null;
           if (!filePath || !fs.existsSync(filePath)) {
-            res.writeHead(404);
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
             res.end('Alert media not found');
             return;
           }
@@ -2637,13 +2650,13 @@ class ObsServer {
         if (urlPath.startsWith('/api/sound/')) {
           const soundId = decodeURIComponent(urlPath.replace('/api/sound/', '').trim());
           if (!/^[a-zA-Z0-9_-]{1,64}$/.test(soundId)) {
-            res.writeHead(400);
+            res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
             res.end('Invalid sound id');
             return;
           }
           const filePath = this.soundFileResolver ? this.soundFileResolver(soundId) : null;
           if (!filePath || !fs.existsSync(filePath)) {
-            res.writeHead(404);
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
             res.end('Sound not found');
             return;
           }
