@@ -1,14 +1,17 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { stampProjectVersion } = require('./bump_version');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
 const appName = 'OmniGridStudio.app';
 const targetApp = path.join(distDir, appName);
 const electronApp = path.join(rootDir, 'node_modules', 'electron', 'dist', 'Electron.app');
+const appVersion = stampProjectVersion();
+const plistBundleVersion = appVersion.replace(/[^0-9.]/g, '.');
 
-console.log('⚡ Building OmniGridStudio.app for macOS...');
+console.log(`⚡ Building OmniGridStudio.app v${appVersion} for macOS...`);
 
 fs.rmSync(targetApp, { recursive: true, force: true });
 fs.rmSync(path.join(distDir, 'OmniStreamChat.app'), { recursive: true, force: true });
@@ -53,7 +56,8 @@ try {
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleName OmniGridStudio" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName OmniGrid Studio" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier app.omnigrid.studio" "${plistPath}"`);
-  execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.0" "${plistPath}"`);
+  execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${appVersion}" "${plistPath}"`);
+  execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${plistBundleVersion}" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Set :CFBundleIconFile OmniGridStudio.icns" "${plistPath}"`);
   execSync(`/usr/libexec/PlistBuddy -c "Delete :NSAppleEventsUsageDescription" "${plistPath}" 2>/dev/null || true`);
   execSync(`/usr/libexec/PlistBuddy -c "Add :NSAppleEventsUsageDescription string 'OmniGrid Studio liest den aktuellen Spotify-Track fuer das OBS-Widget und !song.'" "${plistPath}"`);

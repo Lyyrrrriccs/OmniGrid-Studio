@@ -7,14 +7,20 @@ const { app, shell } = require('electron');
 const GITHUB_OWNER = 'Lyyrrrriccs';
 const GITHUB_REPO = 'OmniGrid-Studio';
 
-function parseSemver(ver) {
-  const clean = String(ver || '').trim().replace(/^v/i, '').split('-')[0];
-  return clean.split('.').map((n) => parseInt(n, 10) || 0);
+function extractVersionToken(raw) {
+  const m = String(raw || '').match(/\bv?(\d{4}\.\d{1,2}\.\d{1,2}[-.]\d{3,4}|\d+\.\d+\.\d+(?:[-.][0-9A-Za-z.]+)?)\b/i);
+  return m ? m[1] : '';
+}
+
+function parseVersionParts(ver) {
+  const clean = String(ver || '').trim().replace(/^v/i, '');
+  if (!clean) return [];
+  return clean.split(/[.\-_:\s]+/).map((n) => parseInt(n, 10) || 0);
 }
 
 function isNewerVersion(remote, current) {
-  const r = parseSemver(remote);
-  const c = parseSemver(current);
+  const r = parseVersionParts(remote);
+  const c = parseVersionParts(current);
   const len = Math.max(r.length, c.length, 3);
   for (let i = 0; i < len; i++) {
     const rv = r[i] || 0;
@@ -187,26 +193,38 @@ class GitHubAutoUpdater {
       if (rel?.notFound) {
         return this.emit({ status: 'up-to-date', latestVersion: currentVersion, error: '' });
       }
-      const rawTag = String(rel.tag_name || rel.name || '');
-      const cleanSemver = rawTag.replace(/^v/i, '');
-      const isSemverTag = /^\d+\.\d+\.\d+/.test(cleanSemver);
+      const rawTag = String(rel.tag_name || '');
+      const rawName = String(rel.name || '');
+      const detectedVer = extractVersionToken(rawTag) || extractVersionToken(rawName);
       const releaseUrl = rel.html_url || this.state.releaseUrl;
       const releaseNotes = String(rel.body || '').slice(0, 600);
       const asset = pickPlatformAsset(rel.assets);
 
       let hasUpdate = false;
-      let latestVersionLabel = isSemverTag ? cleanSemver : currentVersion;
+      let latestVersionLabel = detectedVer || currentVersion;
 
-      if (isSemverTag) {
-        hasUpdate = isNewerVersion(cleanSemver, currentVersion);
+      if (detectedVer) {
+        hasUpdate = isNewerVersion(detectedVer, currentVersion);
       } else if (asset && (asset.updated_at || rel.published_at)) {
         const remoteTs = Date.parse(asset.updated_at || rel.published_at);
         const localTs = this.getLocalBuildTimestamp();
         // Consider remote rolling build newer if published > 2 minutes after local build timestamp
         if (!Number.isNaN(remoteTs) && remoteTs > localTs + 120 * 1000) {
           hasUpdate = true;
-          const dateStr = new Date(remoteTs).toISOString().slice(0, 16).replace('T', ' ');
-          latestVersionLabel = `${currentVersion} (${dateStr})`;
+          const dtf = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Europe/Berlin',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const p = {};
+          for (const part of dtf.formatToParts(new Date(remoteTs))) {
+            if (part.type !== 'literal') p[part.type] = part.value;
+          }
+          latestVersionLabel = `${p.year}.${p.month}.${p.day}-${p.hour === '24' ? '00' : p.hour}${p.minute}`;
         }
       }
 

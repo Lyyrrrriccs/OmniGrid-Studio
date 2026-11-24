@@ -14,8 +14,30 @@ permissions:
   contents: write
 
 jobs:
+  prepare-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - id: ver
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            RAW_TAG="${{ github.ref_name }}"
+            echo "version=${RAW_TAG#v}" >> "$GITHUB_OUTPUT"
+          else
+            VER=$(node -e "console.log(require('./scripts/bump_version').formatDateTimeVersion())")
+            echo "version=$VER" >> "$GITHUB_OUTPUT"
+          fi
+
   build-windows:
+    needs: prepare-version
     runs-on: windows-latest
+    env:
+      OMNIGRID_BUILD_VERSION: ${{ needs.prepare-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,10 +59,13 @@ jobs:
             OmniGridStudio-Windows.zip
             OmniGridStudio-Windows.zip.sha256
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
-          name: OmniGrid Studio (${{ github.ref_name }})
+          name: OmniGrid Studio v${{ needs.prepare-version.outputs.version }}
 
   build-macos:
+    needs: prepare-version
     runs-on: macos-latest
+    env:
+      OMNIGRID_BUILD_VERSION: ${{ needs.prepare-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -60,4 +85,4 @@ jobs:
             OmniGridStudio-macOS.zip
             OmniGridStudio-macOS.zip.sha256
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
-          name: OmniGrid Studio (${{ github.ref_name }})
+          name: OmniGrid Studio v${{ needs.prepare-version.outputs.version }}

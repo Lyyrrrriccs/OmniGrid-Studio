@@ -1,11 +1,13 @@
 {
   "name": "omnigrid-studio",
-  "version": "1.1.0",
+  "version": "2026.11.24-2339",
   "description": "OmniGrid Studio — Local All-in-One Streaming Suite (Multistream Chat, Clip & 9:16 Shorts Studio, OBS Control & Overlays, Discord/Social & Schedule Studio, Giveaway, Soundboard & Hype Detector)",
   "main": "src/main.js",
   "scripts": {
+    "prestart": "node scripts/bump_version.js",
     "start": "electron .",
     "demo": "DEMO_MODE=true electron .",
+    "version:stamp": "node scripts/bump_version.js",
     "build:mac": "node scripts/build_mac.js",
     "build:win": "node scripts/build_win.js",
     "audit:privacy": "node scripts/audit_privacy.js"

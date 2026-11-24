@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
+const { stampProjectVersion } = require('./bump_version');
 
 /**
  * Cross-Platform Windows Portable Builder (`npm run build:win`)
@@ -55,7 +56,8 @@ function copyRecursiveSync(src, dest) {
 }
 
 async function buildWindowsPortable() {
-  console.log('⚡ Building standalone Windows Application (OmniGridStudio.exe)...');
+  const appVersion = stampProjectVersion();
+  console.log(`⚡ Building standalone Windows Application v${appVersion} (OmniGridStudio.exe)...`);
   fs.rmSync(winOutDir, { recursive: true, force: true });
   fs.mkdirSync(winOutDir, { recursive: true });
 

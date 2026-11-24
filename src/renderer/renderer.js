@@ -6508,6 +6508,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   function renderUpdaterState(st) {
     if (!st) return;
     currentReleaseUrl = st.releaseUrl || '';
+    const appVerBadge = document.getElementById('appVersionBadge');
+    if (st.currentVersion) {
+      if (appVerBadge) appVerBadge.textContent = `v${st.currentVersion}`;
+      document.title = `OmniGrid Studio v${st.currentVersion} — Dein Streamer Cockpit`;
+    }
     if (statusText) {
       if (st.status === 'checking') {
         statusText.style.color = '#38bdf8';
@@ -6529,7 +6534,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         statusText.textContent = `❌ ${st.error || 'Fehler'}`;
       } else {
         statusText.style.color = '#94a3b8';
-        statusText.textContent = `v${st.currentVersion || '1.1.0'}`;
+        statusText.textContent = st.currentVersion ? `v${st.currentVersion}` : 'v—';
       }
     }
 
