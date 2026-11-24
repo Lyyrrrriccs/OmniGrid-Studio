@@ -154,6 +154,22 @@ function playSoundboardById(soundIdOrName) {
   return { ok: true, sound: item.name };
 }
 
+function getBuiltinObsOverlays(port = 4588) {
+  const base = `http://127.0.0.1:${port}`;
+  return [
+    { id: 'chat', label: '💬 Multi-Chat Overlay (Twitch / YT / TikTok)', inputName: 'OmniGrid Chat', url: `${base}/`, width: 450, height: 700, posX: 24, posY: 340 },
+    { id: 'alerts', label: '🔔 Stream-Alerts (Follow, Sub, Bits, Raid)', inputName: 'OmniGrid Alerts', url: `${base}/alerts`, width: 720, height: 260, posX: 600, posY: 40, rerouteAudio: true },
+    { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
+    { id: 'game-stats', label: '🎮 Game-Addons Stats (CS2, LoL, Valorant, Souls…)', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 260, posX: 1460, posY: 24 },
+    { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
+    { id: 'goals', label: '🎯 Stream-Goals (Follower / Subs / Spenden)', inputName: 'OmniGrid Goals', url: `${base}/goals`, width: 460, height: 220, posX: 24, posY: 175 },
+    { id: 'poll', label: '📊 Live-Umfrage (Poll)', inputName: 'OmniGrid Umfrage', url: `${base}/poll`, width: 460, height: 300, posX: 1430, posY: 300 },
+    { id: 'giveaway', label: '🎁 Giveaway / Gewinnspiel', inputName: 'OmniGrid Giveaway', url: `${base}/giveaway`, width: 480, height: 300, posX: 720, posY: 390 },
+    { id: 'schedule', label: '📅 Stream-Sendeplan', inputName: 'OmniGrid Sendeplan', url: `${base}/schedule`, width: 620, height: 440, posX: 650, posY: 320 },
+    { id: 'soundboard', label: '🔊 Soundboard Audio-Player', inputName: 'OmniGrid Soundboard', url: `${base}/soundboard`, width: 320, height: 120, posX: 24, posY: 940, rerouteAudio: true }
+  ];
+}
+
 function broadcastScheduleToObs(cfg) {
   const ss = socialSchedule.normalizeSocialScheduleConfig(cfg?.socialSchedule);
   const channel = cfg?.streamerName || cfg?.twitchChannel || 'Stream';
@@ -2887,6 +2903,24 @@ app.whenReady().then(async () => {
       if (act === 'get-screenshot') return await obsWs.getSceneScreenshot(payload.sceneName || '');
       if (act === 'get-input-kinds') return await obsWs.getInputKinds();
       if (act === 'create-input') return await obsWs.createInput(payload);
+      if (act === 'get-builtin-overlays') {
+        return { ok: true, overlays: getBuiltinObsOverlays(obsServer.port || 4588) };
+      }
+      if (act === 'add-builtin-overlay') {
+        const list = getBuiltinObsOverlays(obsServer.port || 4588);
+        const preset = list.find((o) => o.id === payload.overlayId);
+        if (!preset) return { ok: false, error: 'Unbekanntes App-Overlay.' };
+        return await obsWs.addOrAttachBrowserOverlay({
+          sceneName: payload.sceneName,
+          inputName: payload.customName || preset.inputName,
+          url: preset.url,
+          width: preset.width,
+          height: preset.height,
+          posX: preset.posX,
+          posY: preset.posY,
+          rerouteAudio: Boolean(preset.rerouteAudio)
+        });
+      }
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
       if (act === 'start-virtual-cam') return await obsWs.startVirtualCam();
       if (act === 'stop-virtual-cam') return await obsWs.stopVirtualCam();

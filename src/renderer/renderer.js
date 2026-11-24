@@ -4954,6 +4954,50 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     });
 
     if (hasUrl) {
+      if (builtinOverlaysCache.length) {
+        const presetWrap = document.createElement('div');
+        const presetLbl = document.createElement('label');
+        presetLbl.style.fontSize = '10px';
+        presetLbl.textContent = '⚡ App-Overlay zuweisen (ohne URL)';
+        const presetSel = document.createElement('select');
+        const customOpt = document.createElement('option');
+        customOpt.value = '';
+        customOpt.textContent = '— Eigene URL / Manuell —';
+        presetSel.appendChild(customOpt);
+        builtinOverlaysCache.forEach((ov) => {
+          const opt = document.createElement('option');
+          opt.value = ov.id;
+          opt.textContent = ov.label;
+          if (String(settings.url || '').replace(/\/$/, '') === String(ov.url || '').replace(/\/$/, '')) {
+            opt.selected = true;
+          }
+          presetSel.appendChild(opt);
+        });
+        presetSel.addEventListener('change', async () => {
+          const ov = builtinOverlaysCache.find((o) => o.id === presetSel.value);
+          if (!ov) return;
+          const upd = await window.omnichat.obsWsAction({
+            action: 'set-input-settings',
+            inputName: item.sourceName,
+            inputSettings: {
+              url: ov.url,
+              width: ov.width,
+              height: ov.height,
+              ...(ov.rerouteAudio ? { reroute_audio: true } : {})
+            }
+          });
+          if (upd?.ok) {
+            setStatus(`✅ "${item.sourceName}" auf ${ov.label} gestellt!`, '#4ade80');
+            await loadInputConfig(item);
+            await loadSceneItems(currentSceneName);
+            refreshPreview();
+          }
+        });
+        presetWrap.appendChild(presetLbl);
+        presetWrap.appendChild(presetSel);
+        sourceConfigFields.appendChild(presetWrap);
+      }
+
       const wrap = document.createElement('div');
       const lbl = document.createElement('label');
       lbl.style.fontSize = '10px';
@@ -5652,6 +5696,56 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const inpNewName = document.getElementById('seNewSourceName');
   const inpNewVal = document.getElementById('seNewSourceValue');
   const btnAddSource = document.getElementById('btnSeAddSource');
+  const selBuiltinOverlay = document.getElementById('seBuiltinOverlay');
+  const btnAddBuiltinOverlay = document.getElementById('btnSeAddBuiltinOverlay');
+  let builtinOverlaysCache = [];
+
+  async function loadBuiltinOverlays() {
+    if (!selBuiltinOverlay) return;
+    const res = await window.omnichat.obsWsAction({ action: 'get-builtin-overlays' });
+    const list = Array.isArray(res?.overlays) ? res.overlays : [];
+    builtinOverlaysCache = list;
+    const prev = selBuiltinOverlay.value;
+    selBuiltinOverlay.innerHTML = '';
+    list.forEach((ov) => {
+      const opt = document.createElement('option');
+      opt.value = ov.id;
+      opt.textContent = ov.label;
+      selBuiltinOverlay.appendChild(opt);
+    });
+    if (prev && list.some((x) => x.id === prev)) selBuiltinOverlay.value = prev;
+  }
+
+  btnAddBuiltinOverlay?.addEventListener('click', async () => {
+    if (!currentSceneName) {
+      setStatus('⚠️ Bitte zuerst oben mit OBS verbinden und eine Szene wählen.', '#fbbf24');
+      return;
+    }
+    const overlayId = selBuiltinOverlay?.value || 'chat';
+    const res = await window.omnichat.obsWsAction({
+      action: 'add-builtin-overlay',
+      sceneName: currentSceneName,
+      overlayId
+    });
+    if (res?.ok) {
+      setStatus(
+        res.reusedInScene
+          ? `✅ "${res.inputName}" ist bereits in dieser Szene (wurde eingeblendet & markiert).`
+          : `✅ App-Overlay "${res.inputName}" direkt zur Szene hinzugefügt!`,
+        '#4ade80'
+      );
+      await loadSceneItems(currentSceneName);
+      const added = sceneItems.find((x) => x.sceneItemId === res.sceneItemId || x.sourceName === res.inputName);
+      if (added) {
+        selectSourceItem(added);
+        renderSourcesList();
+        renderCanvasOverlay();
+      }
+      setTimeout(refreshPreview, 350);
+    } else {
+      setStatus(`❌ ${res?.error || 'Overlay konnte nicht hinzugefügt werden.'}`, '#f87171');
+    }
+  });
 
   const FRIENDLY_KINDS = {
     browser_source: '🌐 Browser-Quelle (URL)',
@@ -5687,7 +5781,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     });
   }
 
-  btnOpen?.addEventListener('click', loadInputKinds);
+  btnOpen?.addEventListener('click', () => {
+    loadInputKinds();
+    loadBuiltinOverlays();
+  });
 
   btnAddSource?.addEventListener('click', async () => {
     if (!currentSceneName) return;

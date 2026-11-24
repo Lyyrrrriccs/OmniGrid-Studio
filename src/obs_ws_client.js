@@ -406,6 +406,73 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, sceneItemId: res.sceneItemId, inputName: name };
   }
 
+  async addOrAttachBrowserOverlay({ sceneName, inputName, url, width = 480, height = 360, posX = null, posY = null, rerouteAudio = false }) {
+    const targetScene = String(sceneName || this.state.currentScene || '').trim();
+    const name = String(inputName || '').trim();
+    if (!targetScene || !name || !url) {
+      throw new Error('Szene, Name und Overlay-URL erforderlich.');
+    }
+
+    const inputSettings = {
+      url: String(url),
+      width: Number(width) || 480,
+      height: Number(height) || 360,
+      shutdown: false
+    };
+    if (rerouteAudio) inputSettings.reroute_audio = true;
+
+    // 1. Prüfen, ob das Overlay bereits in der aktuellen Szene liegt
+    const listRes = await this.call('GetSceneItemList', { sceneName: targetScene });
+    const existingInScene = (Array.isArray(listRes.sceneItems) ? listRes.sceneItems : []).find(
+      (it) => String(it.sourceName || '') === name
+    );
+    if (existingInScene) {
+      await this.call('SetInputSettings', { inputName: name, inputSettings, overlay: true }).catch(() => {});
+      if (!existingInScene.sceneItemEnabled) {
+        await this.call('SetSceneItemEnabled', {
+          sceneName: targetScene,
+          sceneItemId: Number(existingInScene.sceneItemId),
+          sceneItemEnabled: true
+        }).catch(() => {});
+      }
+      return { ok: true, sceneItemId: existingInScene.sceneItemId, inputName: name, reusedInScene: true };
+    }
+
+    // 2. Neu anlegen oder aus anderer Szene wiederverwenden (OBS Input-Namen sind global)
+    let sceneItemId = null;
+    try {
+      const created = await this.call('CreateInput', {
+        sceneName: targetScene,
+        inputName: name,
+        inputKind: 'browser_source',
+        inputSettings,
+        sceneItemEnabled: true
+      });
+      sceneItemId = created.sceneItemId;
+    } catch (e) {
+      await this.call('SetInputSettings', { inputName: name, inputSettings, overlay: true });
+      const attached = await this.call('CreateSceneItem', {
+        sceneName: targetScene,
+        sourceName: name,
+        sceneItemEnabled: true
+      });
+      sceneItemId = attached.sceneItemId;
+    }
+
+    if (sceneItemId !== null && Number.isFinite(Number(posX)) && Number.isFinite(Number(posY))) {
+      await this.call('SetSceneItemTransform', {
+        sceneName: targetScene,
+        sceneItemId: Number(sceneItemId),
+        sceneItemTransform: {
+          positionX: Math.max(0, Math.round(Number(posX))),
+          positionY: Math.max(0, Math.round(Number(posY)))
+        }
+      }).catch(() => {});
+    }
+
+    return { ok: true, sceneItemId, inputName: name, reusedInScene: false };
+  }
+
   async removeSceneItem(sceneName, sceneItemId) {
     await this.call('RemoveSceneItem', {
       sceneName: String(sceneName || this.state.currentScene),
