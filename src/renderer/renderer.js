@@ -4612,10 +4612,69 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
     const lolMatchBox = document.getElementById('gaLolMatchControls');
     if (lolMatchBox) lolMatchBox.classList.toggle('hidden', addon.id !== 'lol');
+    const jcBox = document.getElementById('gaJcControls');
+    if (jcBox) jcBox.classList.toggle('hidden', addon.id !== 'justchatting');
     const chkMapCover = document.getElementById('gaLolMapCover');
     const txtMapCover = document.getElementById('gaLolMapCoverText');
     if (chkMapCover) chkMapCover.checked = Boolean(gaState.perAddonStats?.lol?.mapCoverEnabled);
     if (txtMapCover) txtMapCover.value = gaState.perAddonStats?.lol?.mapCoverText || 'Minimap verdeckt • Kein Ghosting';
+
+    if (addon.id === 'justchatting') {
+      const jc = gaState.perAddonStats?.justchatting || {};
+      const agendaEl = document.getElementById('gaJcAgendaText');
+      if (agendaEl && document.activeElement !== agendaEl) agendaEl.value = jc.agendaText || '';
+      const qnaChk = document.getElementById('gaJcQnaEnabled');
+      if (qnaChk) qnaChk.checked = jc.qnaEnabled !== false;
+      const steps = String(jc.agendaText || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      const curIdx = Math.min(Math.max(0, Number(jc.activeAgendaIdx || 0)), Math.max(0, steps.length - 1));
+      const stepBadge = document.getElementById('gaJcStepBadge');
+      if (stepBadge) {
+        stepBadge.textContent = steps.length ? `Kapitel ${curIdx + 1}/${steps.length}: ${steps[curIdx].slice(0, 26)}` : 'Keine Kapitel';
+      }
+      const actBox = document.getElementById('gaJcActiveQuestionBox');
+      if (actBox) {
+        const aq = jc.activeQuestion;
+        actBox.innerHTML = aq && aq.text
+          ? `📺 <strong>Im Stream aktiv (@${escapeHtml(aq.author || 'Viewer')}):</strong> „${escapeHtml(aq.text)}“`
+          : 'Aktuell im Stream eingeblendet: <em>keine Frage</em>';
+      }
+      const qList = document.getElementById('gaJcQueueList');
+      if (qList) {
+        qList.innerHTML = '';
+        const queue = Array.isArray(jc.qnaQueue) ? jc.qnaQueue : [];
+        if (!queue.length) {
+          qList.innerHTML = '<div style="font-size:11px; color:#64748b;">Warteschlange leer — Zuschauer können im Chat <code>!ask Deine Frage</code> schreiben.</div>';
+        } else {
+          queue.forEach((q, idx) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:4px 7px; border-radius:6px; background:rgba(30,41,59,0.75); border:1px solid rgba(236,72,153,0.22); font-size:11.5px;';
+            const txt = document.createElement('span');
+            txt.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+            txt.textContent = `#${idx + 1} @${q.author}: ${q.text}`;
+            const showBtn = document.createElement('button');
+            showBtn.className = 'btn-sm';
+            showBtn.style.cssText = 'padding:2px 7px; background:#db2777; color:#fff;';
+            showBtn.textContent = '📺 Zeigen';
+            showBtn.addEventListener('click', async () => {
+              const r = await window.omnichat.gameAddonsJcAction?.({ action: 'show-question', id: q.id });
+              if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+            });
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-sm warn';
+            delBtn.style.padding = '2px 6px';
+            delBtn.textContent = '✕';
+            delBtn.addEventListener('click', async () => {
+              const r = await window.omnichat.gameAddonsJcAction?.({ action: 'remove-question', id: q.id });
+              if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+            });
+            row.appendChild(txt);
+            row.appendChild(showBtn);
+            row.appendChild(delBtn);
+            qList.appendChild(row);
+          });
+        }
+      }
+    }
 
     if (!fieldsEl) return;
     fieldsEl.innerHTML = '';
@@ -4669,6 +4728,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (addon.id === 'lol') {
         nextAddonStats.mapCoverEnabled = Boolean(document.getElementById('gaLolMapCover')?.checked);
         nextAddonStats.mapCoverText = document.getElementById('gaLolMapCoverText')?.value.trim() || 'Minimap verdeckt • Kein Ghosting';
+      }
+      if (addon.id === 'justchatting') {
+        nextAddonStats.agendaText = document.getElementById('gaJcAgendaText')?.value || '';
+        nextAddonStats.qnaEnabled = document.getElementById('gaJcQnaEnabled')?.checked !== false;
       }
       gaState.perAddonStats = { ...(gaState.perAddonStats || {}), [addon.id]: nextAddonStats };
     }
@@ -4752,20 +4815,83 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   });
 
   document.getElementById('btnGaLolWin')?.addEventListener('click', async () => {
+    const lpInp = fieldsEl?.querySelector('input[data-ga-key="lp"]');
+    if (lpInp) { lpInp.value = String((parseInt(lpInp.value || '0', 10) || 0) + 22); await saveFromForm(); }
     const champ = fieldsEl?.querySelector('input[data-ga-key="champion"]')?.value || '';
     const res = await window.omnichat.gameAddonsLolRecordMatch({ win: true, champion: champ });
     if (res?.ok) {
       gaState = res.gameAddons;
-      if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🏆 Sieg zu den letzten 6 Matches hinzugefügt!'; }
+      if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🏆 Sieg (+22 LP) zu den letzten 6 Matches hinzugefügt!'; }
     }
   });
   document.getElementById('btnGaLolLoss')?.addEventListener('click', async () => {
+    const lpInp = fieldsEl?.querySelector('input[data-ga-key="lp"]');
+    if (lpInp) { lpInp.value = String(Math.max(0, (parseInt(lpInp.value || '0', 10) || 0) - 18)); await saveFromForm(); }
     const champ = fieldsEl?.querySelector('input[data-ga-key="champion"]')?.value || '';
     const res = await window.omnichat.gameAddonsLolRecordMatch({ win: false, champion: champ });
     if (res?.ok) {
       gaState = res.gameAddons;
-      if (statusEl) { statusEl.style.color = '#fbbf24'; statusEl.textContent = '💀 Niederlage zu den letzten 6 Matches hinzugefügt!'; }
+      if (statusEl) { statusEl.style.color = '#fbbf24'; statusEl.textContent = '💀 Niederlage (-18 LP) zu den letzten 6 Matches hinzugefügt!'; }
     }
+  });
+  document.getElementById('btnGaLolLpPlus')?.addEventListener('click', () => {
+    const lpInp = fieldsEl?.querySelector('input[data-ga-key="lp"]');
+    if (lpInp) { lpInp.value = String((parseInt(lpInp.value || '0', 10) || 0) + 20); saveFromForm(); }
+  });
+  document.getElementById('btnGaLolLpMinus')?.addEventListener('click', () => {
+    const lpInp = fieldsEl?.querySelector('input[data-ga-key="lp"]');
+    if (lpInp) { lpInp.value = String(Math.max(0, (parseInt(lpInp.value || '0', 10) || 0) - 20)); saveFromForm(); }
+  });
+  document.getElementById('btnGaCopyBuildUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-build');
+    if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🔗 http://127.0.0.1:4588/lol-build kopiert! (Live Item-Build & Elo-Bar, 550×125)'; }
+  });
+
+  // Just Chatting Suite Controls
+  document.getElementById('gaJcAgendaText')?.addEventListener('change', saveFromForm);
+  document.getElementById('gaJcQnaEnabled')?.addEventListener('change', saveFromForm);
+  document.getElementById('btnGaJcPrevStep')?.addEventListener('click', async () => {
+    await saveFromForm();
+    const r = await window.omnichat.gameAddonsJcAction?.({ action: 'step-agenda', delta: -1 });
+    if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+  });
+  document.getElementById('btnGaJcNextStep')?.addEventListener('click', async () => {
+    await saveFromForm();
+    const r = await window.omnichat.gameAddonsJcAction?.({ action: 'step-agenda', delta: 1 });
+    if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+  });
+  document.getElementById('btnGaJcAddQ')?.addEventListener('click', async () => {
+    const authorEl = document.getElementById('gaJcManualQAuthor');
+    const txtEl = document.getElementById('gaJcManualQText');
+    const txt = txtEl?.value.trim() || '';
+    if (!txt) return;
+    const author = (authorEl?.value.trim() || 'Community').replace(/^@/, '');
+    const r = await window.omnichat.gameAddonsJcAction?.({ action: 'add-question', author, text: txt });
+    if (r?.ok) {
+      if (txtEl) txtEl.value = '';
+      gaState = r.gameAddons;
+      renderFields();
+    }
+  });
+  document.getElementById('btnGaJcNextQ')?.addEventListener('click', async () => {
+    const r = await window.omnichat.gameAddonsJcAction?.({ action: 'next-question' });
+    if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+  });
+  document.getElementById('btnGaJcHideQ')?.addEventListener('click', async () => {
+    const r = await window.omnichat.gameAddonsJcAction?.({ action: 'hide-question' });
+    if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+  });
+  document.getElementById('btnGaJcClearQ')?.addEventListener('click', async () => {
+    const r = await window.omnichat.gameAddonsJcAction?.({ action: 'clear-questions' });
+    if (r?.ok) { gaState = r.gameAddons; renderFields(); }
+  });
+  document.getElementById('btnGaCopyJcLtUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/jc-lowerthird');
+    if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🔗 http://127.0.0.1:4588/jc-lowerthird kopiert! (TV-Bauchbinde, 920×145)'; }
+  });
+  document.getElementById('btnGaCopyJcQnaUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/jc-qna');
+    if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🔗 http://127.0.0.1:4588/jc-qna kopiert! (Viewer Q&A Spotlight, 640×220)'; }
   });
   document.getElementById('btnGaLolClearMatches')?.addEventListener('click', async () => {
     const res = await window.omnichat.gameAddonsLolRecordMatch({ clear: true });
@@ -5746,6 +5872,29 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       setStatus(`❌ ${res?.error || 'Overlay konnte nicht hinzugefügt werden.'}`, '#f87171');
     }
   });
+
+  async function applyBuiltinBundle(bundleId, label) {
+    if (!currentSceneName) {
+      setStatus('⚠️ Bitte zuerst oben mit OBS verbinden und eine Szene wählen.', '#fbbf24');
+      return;
+    }
+    setStatus(`⏳ Füge ${label} in Szene "${currentSceneName}" ein...`, '#38bdf8');
+    const res = await window.omnichat.obsWsAction({
+      action: 'add-builtin-bundle',
+      sceneName: currentSceneName,
+      bundleId
+    });
+    if (res?.ok) {
+      setStatus(`✅ ${label} komplett eingefügt (${(res.added || []).join(', ')})!`, '#4ade80');
+      await loadSceneItems(currentSceneName);
+      setTimeout(refreshPreview, 450);
+    } else {
+      setStatus(`❌ ${res?.error || 'Set konnte nicht eingefügt werden.'}`, '#f87171');
+    }
+  }
+
+  document.getElementById('btnSeBundleLol')?.addEventListener('click', () => applyBuiltinBundle('lol', '⚔️ Komplettes LoL-Set'));
+  document.getElementById('btnSeBundleJc')?.addEventListener('click', () => applyBuiltinBundle('justchatting', '💬 Just-Chatting-Set'));
 
   const FRIENDLY_KINDS = {
     browser_source: '🌐 Browser-Quelle (URL)',

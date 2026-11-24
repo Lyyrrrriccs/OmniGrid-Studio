@@ -98,6 +98,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   gameAddonsReset: (addonId) => ipcRenderer.invoke('game-addons-reset', addonId),
   gameAddonsExportCs2Gsi: () => ipcRenderer.invoke('game-addons-export-cs2-gsi'),
   gameAddonsLolRecordMatch: (payload) => ipcRenderer.invoke('game-addons-lol-record-match', payload),
+  gameAddonsJcAction: (payload) => ipcRenderer.invoke('game-addons-jc-action', payload),
   onGameAddonsUpdated: (cb) => ipcRenderer.on('game-addons-updated', (_ev, data) => cb(data)),
   onUpdaterState: (cb) => ipcRenderer.on('updater-state', (_ev, st) => cb(st)),
   updaterGetState: () => ipcRenderer.invoke('updater-get-state'),

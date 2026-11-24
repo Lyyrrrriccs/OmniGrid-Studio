@@ -1916,6 +1916,23 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-champ-icon { width: 56px; height: 56px; border-radius: 4px; border: 2px solid #c8aa6e; box-shadow: 0 0 14px rgba(10,200,185,0.42); object-fit: cover; object-position: center 15%; background: #091428; flex-shrink: 0; }
     .gs-champ-name { font-size: 17px; font-weight: 800; color: #f0e6d2; font-family: Georgia, "Times New Roman", serif; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
     .gs-skin-name { font-size: 11.5px; color: #0ac8b9; font-weight: 700; margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.9); }
+    .gs-elo-sub { font-size: 10.5px; color: #c8aa6e; font-weight: 700; margin-top: 3px; letter-spacing: 0.04em; }
+
+    /* Just Chatting / Talk-Show Agenda Theme */
+    .gs-card.theme-jc {
+      width: 410px;
+      background: linear-gradient(145deg, rgba(17, 24, 39, 0.94) 0%, rgba(30, 18, 46, 0.95) 100%);
+      border: 1.5px solid rgba(236, 72, 153, 0.5);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.55), 0 0 24px rgba(236, 72, 153, 0.16);
+    }
+    .gs-jc-agenda { display: none; margin-top: 10px; padding-top: 9px; border-top: 1px solid rgba(236,72,153,0.25); flex-direction: column; gap: 5px; }
+    .gs-card.theme-jc .gs-jc-agenda { display: flex; }
+    .gs-jc-topic { font-size: 13px; font-weight: 800; color: #fdf2f8; margin-bottom: 3px; line-height: 1.3; }
+    .gs-jc-step { display: flex; align-items: center; gap: 8px; font-size: 11.5px; padding: 4px 8px; border-radius: 7px; color: #cbd5e1; background: rgba(15, 23, 42, 0.5); }
+    .gs-jc-step.done { opacity: 0.55; text-decoration: line-through; }
+    .gs-jc-step.active { background: rgba(236, 72, 153, 0.22); border: 1px solid rgba(236, 72, 153, 0.55); color: #fff; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -1931,11 +1948,13 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         <div>
           <div class="gs-champ-name" id="gsChampName"></div>
           <div class="gs-skin-name" id="gsSkinName"></div>
+          <div class="gs-elo-sub" id="gsEloSub"></div>
         </div>
       </div>
       <div class="gs-grid" id="gsGrid"></div>
+      <div class="gs-jc-agenda" id="gsJcAgenda"></div>
       <div class="gs-matches-wrap" id="gsMatchesWrap">
-        <div class="gs-matches-lbl">Letzte 6 Matches</div>
+        <div class="gs-matches-lbl" id="gsMatchesLbl">Letzte 6 Matches</div>
         <div class="gs-matches-row" id="gsMatchesRow"></div>
       </div>
     </div>
@@ -1949,7 +1968,10 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     const champIconEl = document.getElementById('gsChampIcon');
     const champNameEl = document.getElementById('gsChampName');
     const skinNameEl = document.getElementById('gsSkinName');
+    const eloSubEl = document.getElementById('gsEloSub');
     const gridEl = document.getElementById('gsGrid');
+    const jcAgendaEl = document.getElementById('gsJcAgenda');
+    const matchesLblEl = document.getElementById('gsMatchesLbl');
     const matchesRowEl = document.getElementById('gsMatchesRow');
 
     function renderStats(data) {
@@ -1957,11 +1979,19 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       card.style.display = data.overlayEnabled === false ? 'none' : '';
       if (data.overlayEnabled === false) return;
       const isLol = data.addonId === 'lol';
+      const isJc = data.addonId === 'justchatting';
       card.classList.toggle('theme-lol', isLol);
+      card.classList.toggle('theme-jc', isJc);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
-      const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').trim();
+      const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').replace(/—.*/, '').trim();
       titleEl.textContent = (data.icon || '🎮') + ' ' + cleanTitle;
-      badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
+      if (isLol) {
+        badgeEl.textContent = (data.lolRank || 'LoL') + ' • ' + Number(data.lolLp || 0) + ' LP';
+      } else if (isJc) {
+        badgeEl.textContent = data.jcMood || 'LIVE TALK';
+      } else {
+        badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
+      }
 
       const iconUrl = data.skinIconUrl || data.championIconUrl;
       if (isLol && iconUrl) {
@@ -1972,8 +2002,12 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
           }
         };
         champIconEl.src = iconUrl;
-        champNameEl.textContent = data.champion || 'Champion';
+        champNameEl.textContent = (data.champion || 'Champion') + (data.lolRole ? ' • ' + data.lolRole : '');
         skinNameEl.textContent = data.skinName ? '✨ ' + data.skinName : 'Classic';
+        const extras = [];
+        if (data.keystone) extras.push('⚡ ' + data.keystone);
+        if (data.currentGold > 0) extras.push('🪙 ' + data.currentGold + 'g');
+        eloSubEl.textContent = extras.join('  •  ');
         splashEl.style.backgroundImage = data.skinSplashUrl ? 'url("' + data.skinSplashUrl + '")' : 'none';
       } else {
         lolHeroEl.classList.remove('visible');
@@ -1991,8 +2025,30 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         gridEl.appendChild(cell);
       });
 
+      if (isJc && jcAgendaEl) {
+        jcAgendaEl.innerHTML = '';
+        const topicDiv = document.createElement('div');
+        topicDiv.className = 'gs-jc-topic';
+        topicDiv.textContent = '🎙️ ' + (data.jcTopic || 'Chill Talk');
+        jcAgendaEl.appendChild(topicDiv);
+        const steps = Array.isArray(data.jcAgendaItems) ? data.jcAgendaItems : [];
+        const cur = Number(data.jcActiveAgendaIdx || 0);
+        steps.forEach((st, idx) => {
+          const row = document.createElement('div');
+          row.className = 'gs-jc-step' + (idx < cur ? ' done' : idx === cur ? ' active' : '');
+          const icon = idx < cur ? '✓' : idx === cur ? '▶' : String(idx + 1) + '.';
+          row.textContent = icon + ' ' + st;
+          jcAgendaEl.appendChild(row);
+        });
+      }
+
       if (isLol && matchesRowEl) {
         const list = Array.isArray(data.recentMatches) ? data.recentMatches.slice(0, 6) : [];
+        const w = Number(data.lolWins || 0);
+        const l = Number(data.lolLosses || 0);
+        if (matchesLblEl) {
+          matchesLblEl.textContent = w + l > 0 ? 'Session: ' + w + 'W - ' + l + 'L • Letzte 6 Matches' : 'Letzte 6 Matches';
+        }
         matchesRowEl.innerHTML = '';
         for (let i = 0; i < 6; i++) {
           const m = list[i];
@@ -2116,6 +2172,286 @@ const OBS_LOL_MAP_HTML = `<!DOCTYPE html>
         try {
           const p = JSON.parse(ev.data);
           if (p.type === 'game-stats') renderMapCover(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest();
+    connectWs();
+    setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
+const OBS_LOL_BUILD_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — LoL Live Item-Build & Elo Bar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f0e6d2; overflow: hidden; }
+    .lb-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 16px;
+      background: linear-gradient(155deg, rgba(9, 20, 40, 0.96) 0%, rgba(1, 10, 19, 0.98) 100%);
+      border: 2px solid #c8aa6e;
+      border-radius: 5px;
+      box-shadow: inset 0 0 0 1px rgba(200,170,110,0.3), 0 8px 24px rgba(0,0,0,0.65);
+      position: relative;
+    }
+    .lb-elo { display: flex; flex-direction: column; gap: 3px; padding-right: 12px; border-right: 1px solid rgba(200,170,110,0.35); min-width: 145px; }
+    .lb-rank { font-family: Georgia, "Times New Roman", serif; font-size: 14px; font-weight: 800; color: #f0e6d2; letter-spacing: 0.04em; text-transform: uppercase; }
+    .lb-lp { font-size: 11.5px; font-weight: 800; color: #0ac8b9; }
+    .lb-meta { font-size: 10px; color: #c8aa6e; white-space: nowrap; }
+    .lb-items { display: flex; align-items: center; gap: 5px; }
+    .lb-slot {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      background: rgba(7, 16, 32, 0.9);
+      border: 1.5px solid rgba(200, 170, 110, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .lb-slot.trinket { border-radius: 50%; border-color: #0ac8b9; margin-left: 3px; width: 36px; height: 36px; }
+    .lb-slot img { width: 100%; height: 100%; object-fit: cover; }
+    .lb-slot-empty { font-size: 10px; color: rgba(200,170,110,0.28); }
+    .lb-cnt { position: absolute; bottom: 1px; right: 2px; font-size: 9px; font-weight: 900; background: rgba(1,10,19,0.9); color: #f0e6d2; padding: 0 3px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div class="lb-bar" id="lbBar">
+    <div class="lb-elo">
+      <div class="lb-rank" id="lbRank">DIAMOND IV</div>
+      <div class="lb-lp" id="lbLp">50 LP • 0W - 0L</div>
+      <div class="lb-meta" id="lbMeta">⚔️ Live Build</div>
+    </div>
+    <div class="lb-items" id="lbItems"></div>
+  </div>
+  <script>
+    const barEl = document.getElementById('lbBar');
+    const rankEl = document.getElementById('lbRank');
+    const lpEl = document.getElementById('lbLp');
+    const metaEl = document.getElementById('lbMeta');
+    const itemsEl = document.getElementById('lbItems');
+
+    function fmtTime(sec) {
+      const s = Math.max(0, Math.floor(Number(sec || 0)));
+      const m = Math.floor(s / 60);
+      const r = String(s % 60).padStart(2, '0');
+      return m + ':' + r;
+    }
+
+    function renderBuild(d) {
+      if (!d) return;
+      barEl.style.display = d.overlayEnabled === false ? 'none' : 'inline-flex';
+      if (d.overlayEnabled === false) return;
+      rankEl.textContent = (d.lolRank || 'UNRANKED') + (d.lolRole ? ' • ' + d.lolRole : '');
+      const wl = Number(d.lolWins || 0) + Number(d.lolLosses || 0) > 0
+        ? ' • ' + Number(d.lolWins || 0) + 'W-' + Number(d.lolLosses || 0) + 'L'
+        : '';
+      lpEl.textContent = Number(d.lolLp || 0) + ' LP' + wl;
+
+      const metaParts = [];
+      if (d.keystone) metaParts.push('⚡ ' + d.keystone);
+      if (d.currentGold > 0) metaParts.push('🪙 ' + d.currentGold + 'g');
+      if (d.gameTimeSec > 0) metaParts.push('⏱️ ' + fmtTime(d.gameTimeSec));
+      metaEl.textContent = metaParts.join(' • ') || ('⚔️ ' + (d.champion || 'League of Legends'));
+
+      const bySlot = {};
+      (Array.isArray(d.items) ? d.items : []).forEach((it, i) => {
+        const s = typeof it.slot === 'number' ? it.slot : i;
+        bySlot[s] = it;
+      });
+      itemsEl.innerHTML = '';
+      for (let slot = 0; slot < 7; slot++) {
+        const box = document.createElement('div');
+        box.className = 'lb-slot' + (slot === 6 ? ' trinket' : '');
+        const it = bySlot[slot];
+        if (it && it.iconUrl) {
+          const cnt = Number(it.count || 1) > 1 ? '<span class="lb-cnt">' + it.count + '</span>' : '';
+          box.innerHTML = '<img src="' + it.iconUrl + '" alt="" />' + cnt;
+        } else {
+          box.innerHTML = '<span class="lb-slot-empty">' + (slot === 6 ? '👁️' : '•') + '</span>';
+        }
+        itemsEl.appendChild(box);
+      }
+    }
+
+    function fetchLatest() {
+      fetch('/api/game-stats').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) renderBuild(d); }).catch(() => {});
+    }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'game-stats') renderBuild(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest();
+    connectWs();
+    setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
+const OBS_JC_LOWERTHIRD_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — Just Chatting Bauchbinde</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
+    .lt-wrap {
+      display: flex;
+      flex-direction: column;
+      max-width: 900px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(30, 18, 46, 0.95) 100%);
+      border: 1.5px solid rgba(236, 72, 153, 0.55);
+      border-left: 6px solid #ec4899;
+      border-radius: 12px;
+      padding: 12px 18px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 24px rgba(236, 72, 153, 0.18);
+      backdrop-filter: blur(12px);
+    }
+    .lt-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .lt-live { background: #ef4444; color: #fff; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .lt-mood { background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.5); color: #fbcfe8; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; }
+    .lt-clock { margin-left: auto; font-size: 12px; font-weight: 700; color: #cbd5e1; font-variant-numeric: tabular-nums; }
+    .lt-topic { font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.01em; line-height: 1.2; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+    .lt-bottom { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 5px; font-size: 12.5px; color: #cbd5e1; }
+    .lt-sub { font-weight: 600; color: #f9a8d4; }
+    .lt-ticker { font-size: 11.5px; color: #94a3b8; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="lt-wrap" id="ltWrap">
+    <div class="lt-top">
+      <span class="lt-live">● LIVE TALK</span>
+      <span class="lt-mood" id="ltMood">☕ Cozy Talk</span>
+      <span class="lt-clock" id="ltClock">--:--</span>
+    </div>
+    <div class="lt-topic" id="ltTopic">Chill Talk &amp; Community Q&amp;A</div>
+    <div class="lt-bottom">
+      <span class="lt-sub" id="ltSub">Fragen mit !ask stellen</span>
+      <span class="lt-ticker" id="ltTicker">!discord • !socials</span>
+    </div>
+  </div>
+  <script>
+    const wrapEl = document.getElementById('ltWrap');
+    const moodEl = document.getElementById('ltMood');
+    const clockEl = document.getElementById('ltClock');
+    const topicEl = document.getElementById('ltTopic');
+    const subEl = document.getElementById('ltSub');
+    const tickerEl = document.getElementById('ltTicker');
+
+    function tickClock() {
+      clockEl.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+    }
+    tickClock();
+    setInterval(tickClock, 10000);
+
+    function renderLt(d) {
+      if (!d) return;
+      wrapEl.style.display = d.overlayEnabled === false ? 'none' : 'flex';
+      if (d.overlayEnabled === false) return;
+      moodEl.textContent = d.jcMood || '☕ Cozy Talk';
+      topicEl.textContent = d.jcTopic || 'Chill Talk & Community Q&A';
+      subEl.textContent = d.jcSubtopic || '';
+      tickerEl.textContent = d.jcSocialTicker || '';
+    }
+
+    function fetchLatest() {
+      fetch('/api/game-stats').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) renderLt(d); }).catch(() => {});
+    }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'game-stats') renderLt(p.data);
+        } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest();
+    connectWs();
+    setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
+const OBS_JC_QNA_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — Viewer Q&A Spotlight</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
+    .qna-card {
+      max-width: 620px;
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.96) 0%, rgba(46, 16, 101, 0.95) 100%);
+      border: 2px solid rgba(236, 72, 153, 0.7);
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 16px 38px rgba(0,0,0,0.65), 0 0 28px rgba(236, 72, 153, 0.25);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .qna-card.hidden { opacity: 0; transform: translateY(14px); pointer-events: none; }
+    .qna-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .qna-pill { background: #ec4899; color: #fff; font-size: 10.5px; font-weight: 900; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .qna-author { font-size: 14px; font-weight: 800; color: #fbcfe8; }
+    .qna-plat { margin-left: auto; font-size: 10.5px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; opacity: 0.85; }
+    .qna-text { font-size: 19px; font-weight: 700; color: #ffffff; line-height: 1.38; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <div class="qna-card hidden" id="qnaCard">
+    <div class="qna-head">
+      <span class="qna-pill">❓ Zuschauer-Frage</span>
+      <span class="qna-author" id="qnaAuthor">@Viewer fragt:</span>
+      <span class="qna-plat" id="qnaPlat">CHAT</span>
+    </div>
+    <div class="qna-text" id="qnaText"></div>
+  </div>
+  <script>
+    const cardEl = document.getElementById('qnaCard');
+    const authorEl = document.getElementById('qnaAuthor');
+    const platEl = document.getElementById('qnaPlat');
+    const textEl = document.getElementById('qnaText');
+
+    function renderQna(d) {
+      if (!d || d.overlayEnabled === false || !d.jcActiveQuestion || !d.jcActiveQuestion.text) {
+        cardEl.classList.add('hidden');
+        return;
+      }
+      const q = d.jcActiveQuestion;
+      authorEl.textContent = '@' + (q.author || 'Zuschauer') + ' fragt:';
+      platEl.textContent = String(q.platform || 'chat').toUpperCase();
+      textEl.textContent = '„' + q.text + '“';
+      cardEl.classList.remove('hidden');
+    }
+
+    function fetchLatest() {
+      fetch('/api/game-stats').then((r) => (r.ok ? r.json() : null)).then((d) => renderQna(d)).catch(() => {});
+    }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try {
+          const p = JSON.parse(ev.data);
+          if (p.type === 'game-stats') renderQna(p.data);
         } catch (e) {}
       };
       ws.onclose = () => setTimeout(connectWs, 2000);
@@ -2279,6 +2615,12 @@ class ObsServer {
           res.end(OBS_GAME_STATS_HTML);
         } else if (urlPath === '/lol-map') {
           res.end(OBS_LOL_MAP_HTML);
+        } else if (urlPath === '/lol-build') {
+          res.end(OBS_LOL_BUILD_HTML);
+        } else if (urlPath === '/jc-lowerthird') {
+          res.end(OBS_JC_LOWERTHIRD_HTML);
+        } else if (urlPath === '/jc-qna') {
+          res.end(OBS_JC_QNA_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }

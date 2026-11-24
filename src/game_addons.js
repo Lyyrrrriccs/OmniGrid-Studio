@@ -1,13 +1,52 @@
 const DEFAULT_GAME_ADDONS_CONFIG = {
-  selectedMode: 'auto', // 'auto' | 'cs2' | 'lol' | 'minecraft' | 'souls' | 'valorant' | 'universal'
+  selectedMode: 'auto', // 'auto' | 'lol' | 'justchatting' | 'cs2' | 'minecraft' | 'souls' | 'valorant' | 'universal'
   currentGameName: '',
+  overlayEnabled: true,
   autoSwitchByGame: true,
   lolPollingEnabled: false,
   autoTriggerEvents: true,
   perAddonStats: {
     universal: { kills: 0, deaths: 0, wins: 0, rank: 'Live' },
     cs2: { kills: 0, deaths: 0, assists: 0, mvps: 0, map: 'Mirage', score: '0 : 0' },
-    lol: { champion: 'Ahri', skinId: 0, skinName: '', championIconUrl: '', skinIconUrl: '', skinSplashUrl: '', kills: 0, deaths: 0, assists: 0, cs: 0, level: 1, recentMatches: [], mapCoverEnabled: false, mapCoverText: 'Minimap verdeckt • Kein Ghosting' },
+    lol: {
+      riotId: '',
+      region: 'euw',
+      rank: 'Diamond IV',
+      lp: 50,
+      role: 'Mid',
+      champion: 'Ahri',
+      skinId: 0,
+      skinName: '',
+      championIconUrl: '',
+      skinIconUrl: '',
+      skinSplashUrl: '',
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      cs: 0,
+      level: 1,
+      gameTimeSec: 0,
+      currentGold: 0,
+      keystone: '',
+      spell1: '',
+      spell2: '',
+      items: [],
+      recentMatches: [],
+      mapCoverEnabled: false,
+      mapCoverText: 'Minimap verdeckt • Kein Ghosting'
+    },
+    justchatting: {
+      topic: 'Chill Talk & Community Q&A',
+      subtopic: 'Fragen mit !ask stellen • !agenda für heutigen Plan',
+      mood: '☕ Cozy Talk',
+      currentLink: '',
+      socialTicker: '!discord • !socials • Schön, dass ihr da seid!',
+      agendaText: 'Begrüßung & Kaffeerunde\nCommunity News & Clips\nViewer Q&A (!ask)\nAusblick & Games',
+      activeAgendaIdx: 0,
+      qnaEnabled: true,
+      activeQuestion: { id: '', author: '', platform: '', text: '' },
+      qnaQueue: []
+    },
     minecraft: { deaths: 0, diamonds: 0, days: 1, mode: 'Survival' },
     souls: { deaths: 0, bosses: 0, run: 'Any%', bossName: 'Aktueller Boss' },
     valorant: { kills: 0, deaths: 0, wins: 0, rank: 'Diamond', agent: 'Jett' }
@@ -15,6 +54,45 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
 };
 
 const GAME_ADDONS = [
+  {
+    id: 'lol',
+    name: 'League of Legends — Komplett-Suite',
+    icon: '⚔️',
+    accent: '#0ac8b9',
+    gameMatches: ['league of legends', 'lol', 'teamfight tactics'],
+    fields: [
+      { key: 'riotId', label: 'Riot-ID (Name#TAG für !opgg)', type: 'text' },
+      { key: 'region', label: 'Region (euw, na, kr, eune)', type: 'text' },
+      { key: 'rank', label: 'Rank / Elo', type: 'text' },
+      { key: 'lp', label: 'LP', type: 'number' },
+      { key: 'role', label: 'Rolle / Lane', type: 'text' },
+      { key: 'champion', label: 'Champion', type: 'text' },
+      { key: 'skinId', label: 'Skin-ID', type: 'number' },
+      { key: 'kills', label: 'Kills', type: 'number' },
+      { key: 'deaths', label: 'Deaths', type: 'number' },
+      { key: 'assists', label: 'Assists', type: 'number' },
+      { key: 'cs', label: 'CS', type: 'number' },
+      { key: 'level', label: 'Level', type: 'number' }
+    ],
+    chatCommands: ['!elo', '!lp', '!opgg', '!ugg', '!champ', '!skin', '!build', '!items', '!mh', '!kd', '!stats'],
+    eventHint: 'Komplett-Set: Hextech HUD (/game-stats), Live Item-Build & Elo-Bar (/lol-build), Anti-Ghosting Minimap (/lol-map), Live Client API (127.0.0.1:2999) & Auto-Pentakill-Clip!'
+  },
+  {
+    id: 'justchatting',
+    name: 'Just Chatting & Talk Suite',
+    icon: '💬',
+    accent: '#ec4899',
+    gameMatches: ['just chatting', 'talk shows', 'podcasts', 'irl', 'special events', 'science & technology', 'music', 'art'],
+    fields: [
+      { key: 'topic', label: '🎙️ Aktuelles Thema (Bauchbinde)', type: 'text' },
+      { key: 'subtopic', label: '💡 Untertitel / Hinweis', type: 'text' },
+      { key: 'mood', label: '✨ Vibe / Modus-Badge', type: 'text' },
+      { key: 'currentLink', label: '🎬 Aktueller Video-/React-Link (!video)', type: 'text' },
+      { key: 'socialTicker', label: '📢 Social-Ticker (Bauchbinde)', type: 'text' }
+    ],
+    chatCommands: ['!thema', '!topic', '!agenda', '!ask', '!frage', '!video', '!react', '!setthema', '!nextq'],
+    eventHint: 'Komplett-Set: TV-Bauchbinde (/jc-lowerthird), Viewer Q&A Spotlight (/jc-qna), Themen-Agenda (/game-stats) & Live Chat-Fragen (!ask).'
+  },
   {
     id: 'cs2',
     name: 'Counter-Strike 2 (GSI)',
@@ -31,24 +109,6 @@ const GAME_ADDONS = [
     ],
     chatCommands: ['!kd', '!stats', '!map'],
     eventHint: 'CS2 GSI (POST /api/game/cs2-gsi): Live K/D/A, Map, Score & Auto-Aktion bei 3K/Ace.'
-  },
-  {
-    id: 'lol',
-    name: 'League of Legends (Live API)',
-    icon: '⚔️',
-    accent: '#38bdf8',
-    gameMatches: ['league of legends', 'lol', 'teamfight tactics'],
-    fields: [
-      { key: 'champion', label: 'Champion', type: 'text' },
-      { key: 'skinId', label: 'Skin-ID', type: 'number' },
-      { key: 'kills', label: 'Kills', type: 'number' },
-      { key: 'deaths', label: 'Deaths', type: 'number' },
-      { key: 'assists', label: 'Assists', type: 'number' },
-      { key: 'cs', label: 'CS', type: 'number' },
-      { key: 'level', label: 'Level', type: 'number' }
-    ],
-    chatCommands: ['!stats', '!kd', '!champ'],
-    eventHint: 'LoL Live Client API (127.0.0.1:2999): Live Champion, K/D/A, CS & Level.'
   },
   {
     id: 'minecraft',
@@ -127,9 +187,23 @@ deepFreeze(GAME_ADDONS);
 deepFreeze(DEFAULT_GAME_ADDONS_CONFIG);
 
 const PRESET_ADDON_IDS = GAME_ADDONS.map((a) => a.id);
-// Zusätzliche (nicht im Formular sichtbare) Felder, die pro Addon erlaubt sind
 const EXTRA_STAT_KEYS = {
-  lol: ['skinName', 'championIconUrl', 'skinIconUrl', 'skinSplashUrl', 'recentMatches', 'mapCoverEnabled', 'mapCoverText']
+  lol: [
+    'skinName',
+    'championIconUrl',
+    'skinIconUrl',
+    'skinSplashUrl',
+    'gameTimeSec',
+    'currentGold',
+    'keystone',
+    'spell1',
+    'spell2',
+    'items',
+    'recentMatches',
+    'mapCoverEnabled',
+    'mapCoverText'
+  ],
+  justchatting: ['agendaText', 'activeAgendaIdx', 'qnaEnabled', 'activeQuestion', 'qnaQueue']
 };
 
 function sanitizeAddonStats(addonId, rawStats = {}) {
@@ -140,16 +214,32 @@ function sanitizeAddonStats(addonId, rawStats = {}) {
     ...((addon && addon.fields) || []).map((f) => f.key),
     ...(EXTRA_STAT_KEYS[addonId] || [])
   ]);
-  const out = JSON.parse(JSON.stringify(defaults)); // tiefe Kopie, Preset bleibt unberührt
+  const out = JSON.parse(JSON.stringify(defaults));
   const src = rawStats && typeof rawStats === 'object' ? rawStats : {};
   for (const key of Object.keys(src)) {
     if (!allowed.has(key)) continue;
     const def = defaults[key];
     const val = src[key];
-    if (typeof def === 'number') out[key] = Number.isFinite(Number(val)) ? Number(val) : def;
-    else if (typeof def === 'boolean') out[key] = Boolean(val);
-    else if (Array.isArray(def)) out[key] = Array.isArray(val) ? val.slice(0, 20) : [];
-    else out[key] = val === undefined || val === null ? def : String(val).slice(0, 200);
+    if (typeof def === 'number') {
+      out[key] = Number.isFinite(Number(val)) ? Number(val) : def;
+    } else if (typeof def === 'boolean') {
+      out[key] = Boolean(val);
+    } else if (Array.isArray(def)) {
+      out[key] = Array.isArray(val) ? val.slice(0, 30) : [];
+    } else if (def && typeof def === 'object') {
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        const cleanObj = {};
+        for (const subK of Object.keys(def)) {
+          cleanObj[subK] = val[subK] === undefined || val[subK] === null ? def[subK] : String(val[subK]).slice(0, 280);
+        }
+        out[key] = cleanObj;
+      } else {
+        out[key] = JSON.parse(JSON.stringify(def));
+      }
+    } else {
+      const maxLen = key === 'agendaText' ? 1200 : 240;
+      out[key] = val === undefined || val === null ? def : String(val).slice(0, maxLen);
+    }
   }
   return out;
 }
@@ -205,8 +295,39 @@ function resolveActiveAddon(cfg = {}) {
   return { addon, stats, ga };
 }
 
+function parseAgendaItems(agendaText = '') {
+  return String(agendaText || '')
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function buildOpggLinks(riotId = '', region = 'euw') {
+  const cleanId = String(riotId || '').trim();
+  const reg = String(region || 'euw').trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'euw';
+  if (!cleanId || !cleanId.includes('#')) return null;
+  const [gameName, tagLine] = cleanId.split('#').map((s) => s.trim());
+  if (!gameName || !tagLine) return null;
+  const slug = `${encodeURIComponent(gameName)}-${encodeURIComponent(tagLine)}`;
+  const uggReg = { euw: 'euw1', eune: 'eun1', na: 'na1', kr: 'kr', br: 'br1', oce: 'oc1', tr: 'tr1', jp: 'jp1' }[reg] || `${reg}1`;
+  return {
+    opgg: `https://www.op.gg/summoners/${reg}/${slug}`,
+    ugg: `https://u.gg/lol/profile/${uggReg}/${encodeURIComponent(gameName.toLowerCase())}-${encodeURIComponent(tagLine.toLowerCase())}/overview`
+  };
+}
+
 function buildObsGameStatsPayload(cfg = {}) {
   const { addon, stats, ga } = resolveActiveAddon(cfg);
+  const lolStats = ga.perAddonStats?.lol || {};
+  const jcStats = ga.perAddonStats?.justchatting || {};
+
+  const lolMatches = Array.isArray(lolStats.recentMatches) ? lolStats.recentMatches.slice(0, 6) : [];
+  const lolWins = lolMatches.filter((m) => m && m.win).length;
+  const lolLosses = lolMatches.filter((m) => m && !m.win).length;
+  const lolTimeMin = Number(lolStats.gameTimeSec || 0) > 60 ? Number(lolStats.gameTimeSec) / 60 : 0;
+  const lolCspm = lolTimeMin > 0 ? (Number(lolStats.cs || 0) / lolTimeMin).toFixed(1) : '';
+
   let displayStats = [];
   if (addon.id === 'lol') {
     const k = Number(stats.kills || 0);
@@ -216,8 +337,17 @@ function buildObsGameStatsPayload(cfg = {}) {
     displayStats = [
       { key: 'kda', label: 'K / D / A', value: `${k}/${d}/${a}` },
       { key: 'kd', label: 'K/D', value: kd },
-      { key: 'cs', label: 'CS', value: Number(stats.cs || 0) },
+      { key: 'cs', label: lolCspm ? `CS (${lolCspm}/m)` : 'CS', value: Number(stats.cs || 0) },
       { key: 'level', label: 'LVL', value: Number(stats.level || 1) }
+    ];
+  } else if (addon.id === 'justchatting') {
+    const qQueue = Array.isArray(stats.qnaQueue) ? stats.qnaQueue : [];
+    const agenda = parseAgendaItems(stats.agendaText);
+    const curStep = Math.min(Math.max(0, Number(stats.activeAgendaIdx || 0)), Math.max(0, agenda.length - 1));
+    displayStats = [
+      { key: 'mood', label: 'Vibe', value: stats.mood || '☕ Live' },
+      { key: 'step', label: 'Kapitel', value: agenda.length ? `${curStep + 1} / ${agenda.length}` : '—' },
+      { key: 'qna', label: 'Offene Fragen', value: qQueue.length }
     ];
   } else {
     displayStats = addon.fields.map((f) => ({
@@ -225,12 +355,16 @@ function buildObsGameStatsPayload(cfg = {}) {
       label: f.label,
       value: stats[f.key] !== undefined && stats[f.key] !== '' ? stats[f.key] : '—'
     }));
-    // Add K/D ratio automatically when kills & deaths exist
     if (typeof stats.kills === 'number' && typeof stats.deaths === 'number') {
       const kd = stats.deaths > 0 ? (stats.kills / stats.deaths).toFixed(2) : String(stats.kills.toFixed(2));
       displayStats.push({ key: 'kd', label: 'K/D', value: kd });
     }
   }
+
+  const agendaItems = parseAgendaItems(jcStats.agendaText);
+  const activeAgendaIdx = Math.min(Math.max(0, Number(jcStats.activeAgendaIdx || 0)), Math.max(0, agendaItems.length - 1));
+  const qnaQueue = Array.isArray(jcStats.qnaQueue) ? jcStats.qnaQueue : [];
+
   return {
     addonId: addon.id,
     addonName: addon.name,
@@ -239,15 +373,41 @@ function buildObsGameStatsPayload(cfg = {}) {
     selectedMode: ga.selectedMode,
     overlayEnabled: ga.overlayEnabled !== false,
     currentGameName: ga.currentGameName,
-    champion: stats.champion || '',
-    skinId: Number(stats.skinId || 0),
-    skinName: stats.skinName || '',
-    championIconUrl: stats.championIconUrl || '',
-    skinIconUrl: stats.skinIconUrl || '',
-    skinSplashUrl: stats.skinSplashUrl || '',
-    recentMatches: Array.isArray(stats.recentMatches) ? stats.recentMatches.slice(0, 6) : [],
-    mapCoverEnabled: Boolean(stats.mapCoverEnabled),
-    mapCoverText: String(stats.mapCoverText || 'Minimap verdeckt • Kein Ghosting'),
+    // LoL payload (usable by /game-stats, /lol-map AND /lol-build simultaneously)
+    riotId: lolStats.riotId || '',
+    region: lolStats.region || 'euw',
+    lolRank: lolStats.rank || 'Unranked',
+    lolLp: Number(lolStats.lp || 0),
+    lolRole: lolStats.role || '',
+    lolWins,
+    lolLosses,
+    lolCspm,
+    gameTimeSec: Number(lolStats.gameTimeSec || 0),
+    currentGold: Math.round(Number(lolStats.currentGold || 0)),
+    keystone: lolStats.keystone || '',
+    spell1: lolStats.spell1 || '',
+    spell2: lolStats.spell2 || '',
+    items: Array.isArray(lolStats.items) ? lolStats.items.slice(0, 7) : [],
+    champion: lolStats.champion || '',
+    skinId: Number(lolStats.skinId || 0),
+    skinName: lolStats.skinName || '',
+    championIconUrl: lolStats.championIconUrl || '',
+    skinIconUrl: lolStats.skinIconUrl || '',
+    skinSplashUrl: lolStats.skinSplashUrl || '',
+    recentMatches: lolMatches,
+    mapCoverEnabled: Boolean(lolStats.mapCoverEnabled),
+    mapCoverText: String(lolStats.mapCoverText || 'Minimap verdeckt • Kein Ghosting'),
+    // Just Chatting payload (usable by /game-stats, /jc-lowerthird AND /jc-qna simultaneously)
+    jcTopic: jcStats.topic || 'Chill Talk & Community Q&A',
+    jcSubtopic: jcStats.subtopic || '',
+    jcMood: jcStats.mood || '☕ Cozy Talk',
+    jcCurrentLink: jcStats.currentLink || '',
+    jcSocialTicker: jcStats.socialTicker || '',
+    jcAgendaItems: agendaItems,
+    jcActiveAgendaIdx: activeAgendaIdx,
+    jcQnaEnabled: jcStats.qnaEnabled !== false,
+    jcActiveQuestion: jcStats.activeQuestion && jcStats.activeQuestion.text ? jcStats.activeQuestion : null,
+    jcQnaCount: qnaQueue.length,
     stats: displayStats,
     chatCommands: addon.chatCommands
   };
@@ -256,10 +416,157 @@ function buildObsGameStatsPayload(cfg = {}) {
 function handleGameChatCommand(cfg = {}, msg = {}) {
   const text = String(msg.text || '').trim();
   if (!text.startsWith('!')) return null;
-  const cmd = text.split(/\s+/)[0].toLowerCase();
+  const firstSpace = text.indexOf(' ');
+  const cmd = (firstSpace > 0 ? text.slice(0, firstSpace) : text).toLowerCase();
+  const argText = firstSpace > 0 ? text.slice(firstSpace + 1).trim() : '';
   const { addon, stats, ga } = resolveActiveAddon(cfg);
   const roles = Array.isArray(msg.roles) ? msg.roles.map((r) => String(r).toLowerCase()) : [];
-  const isModOrBroadcaster = roles.some((r) => ['broadcaster', 'moderator', 'mod'].includes(r));
+  const isModOrBroadcaster = Boolean(msg.isSelf) || roles.some((r) => ['broadcaster', 'moderator', 'mod'].includes(r));
+
+  // === JUST CHATTING COMMAND SUITE ===
+  if (addon.id === 'justchatting') {
+    if ((cmd === '!setthema' || cmd === '!settopic') && isModOrBroadcaster && argText) {
+      stats.topic = argText.slice(0, 140);
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, justchatting: stats } },
+        reply: `🎙️ Neues Gesprächsthema gesetzt: "${stats.topic}"`
+      };
+    }
+
+    if (cmd === '!nextq' && isModOrBroadcaster) {
+      const queue = Array.isArray(stats.qnaQueue) ? [...stats.qnaQueue] : [];
+      const nextQ = queue.shift() || { id: '', author: '', platform: '', text: '' };
+      stats.qnaQueue = queue;
+      stats.activeQuestion = nextQ;
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, justchatting: stats } },
+        reply: nextQ.text
+          ? `❓ Aktuelle Frage von @${nextQ.author}: "${nextQ.text}"`
+          : '✅ Keine weiteren offenen Fragen in der Q&A-Warteschlange!'
+      };
+    }
+
+    if ((cmd === '!ask' || cmd === '!frage' || cmd === '!q') && stats.qnaEnabled !== false) {
+      if (argText.length < 3) {
+        return { mutated: false, reply: `💬 @${msg.author || 'Viewer'}: Schreib deine Frage einfach dahinter, z. B. !ask Was hältst du vom neuen Patch?` };
+      }
+      const queue = Array.isArray(stats.qnaQueue) ? [...stats.qnaQueue] : [];
+      const cleanQ = argText.slice(0, 220);
+      const dup = queue.some((q) => q.text.toLowerCase() === cleanQ.toLowerCase());
+      if (!dup && queue.length < 30) {
+        queue.push({
+          id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          author: String(msg.author || 'Zuschauer').slice(0, 40),
+          platform: String(msg.platform || 'twitch'),
+          text: cleanQ
+        });
+        stats.qnaQueue = queue;
+        return {
+          mutated: true,
+          bypassCooldown: true,
+          nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, justchatting: stats } },
+          reply: `💬 @${msg.author || 'Viewer'}, deine Frage steht auf Platz #${queue.length} der Q&A-Liste!`
+        };
+      }
+      return null;
+    }
+
+    if (cmd === '!thema' || cmd === '!topic') {
+      return {
+        mutated: false,
+        reply: `🎙️ Aktuelles Thema: ${stats.topic || 'Chill Talk'}${stats.subtopic ? ` — ${stats.subtopic}` : ''}`
+      };
+    }
+
+    if (cmd === '!agenda') {
+      const items = parseAgendaItems(stats.agendaText);
+      if (!items.length) return { mutated: false, reply: '📋 Heute wird spontan gequatscht — keine feste Agenda!' };
+      const cur = Math.min(Math.max(0, Number(stats.activeAgendaIdx || 0)), items.length - 1);
+      const formatted = items.map((it, i) => `${i < cur ? '✅' : i === cur ? '👉' : '⏳'} ${i + 1}. ${it}`).join(' | ');
+      return { mutated: false, reply: `📋 Heutige Themen: ${formatted}` };
+    }
+
+    if (cmd === '!video' || cmd === '!react' || cmd === '!link') {
+      return {
+        mutated: false,
+        reply: stats.currentLink
+          ? `🎬 Aktuelles Video / Thema: ${stats.currentLink}`
+          : `💬 Aktuell ist kein Video-Link hinterlegt (Thema: ${stats.topic || 'Talk'}).`
+      };
+    }
+  }
+
+  // === LEAGUE OF LEGENDS COMMAND SUITE ===
+  if (addon.id === 'lol') {
+    const matches = Array.isArray(stats.recentMatches) ? stats.recentMatches.slice(0, 6) : [];
+    const w = matches.filter((m) => m && m.win).length;
+    const l = matches.filter((m) => m && !m.win).length;
+    const wr = w + l > 0 ? ` (${Math.round((w / (w + l)) * 100)}% WR)` : '';
+
+    if (cmd === '!elo' || cmd === '!lp' || cmd === '!rank') {
+      const rolePart = stats.role ? ` • Rolle: ${stats.role}` : '';
+      const sessionPart = w + l > 0 ? ` • Session: ${w}W - ${l}L${wr}` : '';
+      return {
+        mutated: false,
+        reply: `⚔️ Aktuelle Elo: ${stats.rank || 'Unranked'} (${Number(stats.lp || 0)} LP)${rolePart}${sessionPart}`
+      };
+    }
+
+    if (cmd === '!opgg' || cmd === '!ugg') {
+      const links = buildOpggLinks(stats.riotId, stats.region);
+      if (!links) {
+        return {
+          mutated: false,
+          reply: `⚔️ ${stats.rank || 'LoL'} (${Number(stats.lp || 0)} LP) — Tipp: Riot-ID (Name#TAG) in Game-Addons eintragen für direkten Profil-Link!`
+        };
+      }
+      const targetUrl = cmd === '!ugg' ? links.ugg : links.opgg;
+      return {
+        mutated: false,
+        reply: `⚔️ LoL-Profil (${stats.riotId} • ${stats.rank || 'Live'} ${Number(stats.lp || 0)} LP): ${targetUrl}`
+      };
+    }
+
+    if (cmd === '!champ' || cmd === '!skin') {
+      const skinPart = stats.skinName ? ` [Skin: ${stats.skinName}]` : '';
+      const timeMin = Number(stats.gameTimeSec || 0) > 60 ? Number(stats.gameTimeSec) / 60 : 0;
+      const cspm = timeMin > 0 ? ` (${(Number(stats.cs || 0) / timeMin).toFixed(1)}/m)` : '';
+      return {
+        mutated: false,
+        reply: `⚔️ Champion: ${stats.champion || '—'}${skinPart} • Rolle: ${stats.role || '—'} • KDA: ${stats.kills || 0}/${stats.deaths || 0}/${stats.assists || 0} • ${stats.cs || 0} CS${cspm} (Lvl ${stats.level || 1})`
+      };
+    }
+
+    if (cmd === '!build' || cmd === '!items' || cmd === '!runes') {
+      const itemNames = (Array.isArray(stats.items) ? stats.items : [])
+        .map((i) => i && i.name)
+        .filter(Boolean);
+      const runePart = stats.keystone ? `Keystone: ${stats.keystone}` : '';
+      const spellsPart = stats.spell1 || stats.spell2 ? `Spells: ${[stats.spell1, stats.spell2].filter(Boolean).join(' / ')}` : '';
+      const goldPart = stats.currentGold ? `Gold: ${Math.round(Number(stats.currentGold))}` : '';
+      const metaParts = [runePart, spellsPart, goldPart].filter(Boolean).join(' • ');
+      return {
+        mutated: false,
+        reply: itemNames.length
+          ? `🛡️ ${stats.champion || 'LoL'} Build: ${itemNames.join(' → ')}${metaParts ? ` | ${metaParts}` : ''}`
+          : `🛡️ ${stats.champion || 'LoL'}: Noch keine Items im Inventar${metaParts ? ` (${metaParts})` : ''}.`
+      };
+    }
+
+    if (cmd === '!mh' || cmd === '!matchhistory' || cmd === '!streak') {
+      if (!matches.length) {
+        return { mutated: false, reply: '📜 Noch keine Matches in der heutigen Session aufgezeichnet.' };
+      }
+      const summary = matches
+        .map((m) => `${m.win ? '✅W' : '❌L'} ${m.champion || ''}${m.kills !== undefined ? ` (${m.kills}/${m.deaths}/${m.assists})` : ''}`.trim())
+        .join(' | ');
+      return { mutated: false, reply: `📜 Letzte Matches (${w}W-${l}L${wr}): ${summary}` };
+    }
+  }
 
   // Mutating commands (Mod / Broadcaster only)
   if ((cmd === '!death+' || cmd === '!win+') && isModOrBroadcaster) {
@@ -279,7 +586,9 @@ function handleGameChatCommand(cfg = {}, msg = {}) {
 
   if (cmd === '!stats' || cmd === '!kd') {
     if (!addon.chatCommands.includes(cmd) && cmd === '!kd') return null;
-    const parts = addon.fields.map((f) => `${f.label}: ${stats[f.key] ?? 0}`);
+    const parts = addon.fields
+      .filter((f) => !['riotId', 'region', 'skinId', 'subtopic', 'socialTicker', 'currentLink'].includes(f.key))
+      .map((f) => `${f.label}: ${stats[f.key] ?? 0}`);
     if (typeof stats.kills === 'number' && typeof stats.deaths === 'number') {
       const kd = stats.deaths > 0 ? (stats.kills / stats.deaths).toFixed(2) : String(stats.kills);
       parts.push(`K/D: ${kd}`);
@@ -298,9 +607,6 @@ function handleGameChatCommand(cfg = {}, msg = {}) {
   }
   if (cmd === '!map' && stats.map !== undefined) {
     return { mutated: false, reply: `${addon.icon} Aktuelle Map: ${stats.map} (${stats.score || '0 : 0'})` };
-  }
-  if (cmd === '!champ' && stats.champion !== undefined) {
-    return { mutated: false, reply: `${addon.icon} Champion: ${stats.champion} (${stats.kills}/${stats.deaths}/${stats.assists}, ${stats.cs} CS)` };
   }
   if (cmd === '!boss' && stats.bossName !== undefined) {
     return { mutated: false, reply: `${addon.icon} Aktueller Boss: ${stats.bossName} (Tode bisher: ${stats.deaths ?? 0})` };
@@ -352,7 +658,7 @@ async function ensureDdragonLoaded() {
 async function resolveLolDdragonAssets(championName = '', skinId = 0, explicitSkinName = '') {
   const cleanName = String(championName || '').trim();
   if (!cleanName || cleanName === '—') {
-    return { championIconUrl: '', skinSplashUrl: '', skinName: explicitSkinName || '' };
+    return { version: cachedDdragon.version || '14.23.1', championIconUrl: '', skinIconUrl: '', skinSplashUrl: '', skinName: explicitSkinName || '' };
   }
 
   const dd = await ensureDdragonLoaded();
@@ -381,11 +687,31 @@ async function resolveLolDdragonAssets(championName = '', skinId = 0, explicitSk
 
   const champIcon = `https://ddragon.leagueoflegends.com/cdn/${ver}/img/champion/${champId}.png`;
   return {
+    version: ver,
     championIconUrl: champIcon,
     skinIconUrl: num > 0 ? `https://ddragon.leagueoflegends.com/cdn/img/champion/loading/${champId}_${num}.jpg` : champIcon,
     skinSplashUrl: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${champId}_${num}.jpg`,
     skinName: resolvedSkinName || (num === 0 ? 'Classic' : `Skin #${num}`)
   };
+}
+
+async function resolveLolItemList(rawItems = []) {
+  if (!Array.isArray(rawItems) || !rawItems.length) return [];
+  const dd = await ensureDdragonLoaded();
+  const ver = dd.version || '14.23.1';
+  return rawItems
+    .filter((it) => it && Number(it.itemID) > 0)
+    .slice(0, 7)
+    .map((it) => {
+      const id = Number(it.itemID);
+      return {
+        id,
+        slot: Number(it.slot ?? 0),
+        count: Number(it.count || 1),
+        name: String(it.displayName || `Item #${id}`).slice(0, 60),
+        iconUrl: `https://ddragon.leagueoflegends.com/cdn/${ver}/img/item/${id}.png`
+      };
+    });
 }
 
 module.exports = {
@@ -395,11 +721,14 @@ module.exports = {
   sanitizeAddonStats,
   resetAddonStats,
   PRESET_ADDON_IDS,
+  parseAgendaItems,
+  buildOpggLinks,
   getAddonById,
   matchAddonByGameName,
   resolveActiveAddon,
   buildObsGameStatsPayload,
   handleGameChatCommand,
   buildCs2GsiConfig,
-  resolveLolDdragonAssets
+  resolveLolDdragonAssets,
+  resolveLolItemList
 };

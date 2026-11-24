@@ -160,10 +160,13 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'chat', label: '💬 Multi-Chat Overlay (Twitch / YT / TikTok)', inputName: 'OmniGrid Chat', url: `${base}/`, width: 450, height: 700, posX: 24, posY: 340 },
     { id: 'alerts', label: '🔔 Stream-Alerts (Follow, Sub, Bits, Raid)', inputName: 'OmniGrid Alerts', url: `${base}/alerts`, width: 720, height: 260, posX: 600, posY: 40, rerouteAudio: true },
     { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
-    { id: 'game-stats', label: '🎮 Game-Addons Stats (CS2, LoL, Valorant, Souls…)', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 260, posX: 1460, posY: 24 },
+    { id: 'game-stats', label: '🎮 Game-Addons / Talk-Agenda Card', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 310, posX: 1460, posY: 24 },
+    { id: 'lol-build', label: '⚔️ LoL Live Item-Build & Elo-Bar', inputName: 'OmniGrid LoL-Build', url: `${base}/lol-build`, width: 550, height: 125, posX: 685, posY: 940 },
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
+    { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
+    { id: 'jc-qna', label: '❓ Just Chatting Viewer Q&A Spotlight', inputName: 'OmniGrid JC Q&A', url: `${base}/jc-qna`, width: 640, height: 220, posX: 640, posY: 665 },
     { id: 'goals', label: '🎯 Stream-Goals (Follower / Subs / Spenden)', inputName: 'OmniGrid Goals', url: `${base}/goals`, width: 460, height: 220, posX: 24, posY: 175 },
-    { id: 'poll', label: '📊 Live-Umfrage (Poll)', inputName: 'OmniGrid Umfrage', url: `${base}/poll`, width: 460, height: 300, posX: 1430, posY: 300 },
+    { id: 'poll', label: '📊 Live-Umfrage (Poll)', inputName: 'OmniGrid Umfrage', url: `${base}/poll`, width: 460, height: 300, posX: 1430, posY: 355 },
     { id: 'giveaway', label: '🎁 Giveaway / Gewinnspiel', inputName: 'OmniGrid Giveaway', url: `${base}/giveaway`, width: 480, height: 300, posX: 720, posY: 390 },
     { id: 'schedule', label: '📅 Stream-Sendeplan', inputName: 'OmniGrid Sendeplan', url: `${base}/schedule`, width: 620, height: 440, posX: 650, posY: 320 },
     { id: 'soundboard', label: '🔊 Soundboard Audio-Player', inputName: 'OmniGrid Soundboard', url: `${base}/soundboard`, width: 320, height: 120, posX: 24, posY: 940, rerouteAudio: true }
@@ -1290,7 +1293,7 @@ function forwardChatMessage(msg) {
     }
 
     // Game-Addon specific chat commands (switches automatically with active game)
-    if ((msg.platform === 'twitch' || msg.platform === 'youtube') && String(msg.text || '').trim().startsWith('!')) {
+    if (String(msg.text || '').trim().startsWith('!')) {
       const now = Date.now();
       const cfg = loadConfig();
       const gRes = gameAddons.handleGameChatCommand(cfg, msg);
@@ -1300,10 +1303,26 @@ function forwardChatMessage(msg) {
           saveConfig(cfg);
           broadcastGameAddonsState(cfg);
         }
-        if (gRes.reply && now - lastGameCmdAt > 4000) {
+        if (gRes.reply && (gRes.bypassCooldown || now - lastGameCmdAt > 4000)) {
           lastGameCmdAt = now;
-          if (msg.platform === 'twitch' && twitch.canWrite) twitch.sendMessage(gRes.reply).catch(() => {});
-          else if (msg.platform === 'youtube' && youtube.canWrite) youtube.sendMessage(gRes.reply).catch(() => {});
+          if (demoActive) {
+            setTimeout(() => {
+              broadcastToWindows('chat-message', {
+                id: `ga_bot_${Date.now()}`,
+                platform: msg.platform || 'twitch',
+                author: cfg.streamerName || 'OmniGrid Bot',
+                color: '#ec4899',
+                badges: ['BOT'],
+                text: gRes.reply,
+                tokens: [{ type: 'text', text: gRes.reply }],
+                timestamp: Date.now()
+              });
+            }, 180);
+          } else if (msg.platform === 'twitch' && twitch.canWrite) {
+            twitch.sendMessage(gRes.reply).catch(() => {});
+          } else if (msg.platform === 'youtube' && youtube.canWrite) {
+            youtube.sendMessage(gRes.reply).catch(() => {});
+          }
         }
       }
     }
@@ -2456,10 +2475,44 @@ app.whenReady().then(async () => {
         if (me) {
           const skinNum = Number(me.skinID ?? me.skinId ?? 0);
           const ddAssets = await gameAddons.resolveLolDdragonAssets(me.championName || '', skinNum, me.skinName || '');
+          const liveItems = await gameAddons.resolveLolItemList(me.items || []);
           const prevLol = ga.perAddonStats.lol || {};
           let recentMatches = Array.isArray(prevLol.recentMatches) ? prevLol.recentMatches.slice(0, 6) : [];
 
           const events = Array.isArray(data?.events?.Events) ? data.events.Events : [];
+          if (!global.__seenLolEventIds) global.__seenLolEventIds = new Set();
+          const gameTime = Number(data?.gameData?.gameTime || 0);
+          if (gameTime < 30 && global.__seenLolEventIds.size > 0) {
+            global.__seenLolEventIds.clear();
+          }
+
+          const myNames = [ap.riotId, ap.riotIdGameName, ap.summonerName, me.summonerName, me.riotIdGameName]
+            .filter(Boolean)
+            .map((s) => String(s).toLowerCase());
+
+          for (const ev of events) {
+            const evKey = `${ev.EventID}_${ev.EventName}`;
+            if (global.__seenLolEventIds.has(evKey)) continue;
+            global.__seenLolEventIds.add(evKey);
+            if (!ga.autoTriggerEvents || gameTime < 20) continue;
+
+            const killerLow = String(ev.KillerName || '').toLowerCase();
+            const isMe = killerLow && myNames.some((n) => n === killerLow || killerLow.includes(n));
+            if (ev.EventName === 'Multikill' && isMe && Number(ev.KillStreak || 0) >= 3) {
+              const streak = Number(ev.KillStreak);
+              const label = streak >= 5 ? 'PENTAKILL' : streak === 4 ? 'Quadra Kill' : 'Triple Kill';
+              const desc = `⚔️ LoL ${label} (${me.championName || 'Live'})!`;
+              appendDiagLog('system', 'info', desc);
+              if (streak >= 5) {
+                executeHypeTrigger(cfg, desc).catch(() => {});
+              } else if (twitch.connected) {
+                twitch.createStreamMarker(desc).catch(() => {});
+              }
+            } else if ((ev.EventName === 'BaronKill' || ev.EventName === 'HeraldKill') && isMe) {
+              if (twitch.connected) twitch.createStreamMarker(`⚔️ LoL ${ev.EventName} (${me.championName || ''})`).catch(() => {});
+            }
+          }
+
           const gameEndEv = events.find((ev) => ev?.EventName === 'GameEnd');
           if (gameEndEv && !global.__lastLolGameEndRecorded) {
             global.__lastLolGameEndRecorded = true;
@@ -2473,11 +2526,23 @@ app.whenReady().then(async () => {
               at: Date.now()
             });
             recentMatches = recentMatches.slice(0, 6);
-          } else if (!gameEndEv && global.__lastLolGameEndRecorded && Number(data?.gameData?.gameTime || 0) < 60) {
+          } else if (!gameEndEv && global.__lastLolGameEndRecorded && gameTime < 60) {
             global.__lastLolGameEndRecorded = false;
           }
 
+          const keystone =
+            ap?.fullRunes?.keystone?.displayName ||
+            me?.runes?.keystone?.displayName ||
+            prevLol.keystone ||
+            '';
+          const spell1 = me?.summonerSpells?.summonerSpellOne?.displayName || prevLol.spell1 || '';
+          const spell2 = me?.summonerSpells?.summonerSpellTwo?.displayName || prevLol.spell2 || '';
+          const posMap = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'ADC', UTILITY: 'Support' };
+          const liveRole = posMap[String(me.position || '').toUpperCase()] || prevLol.role || 'Mid';
+
           ga.perAddonStats.lol = {
+            ...prevLol,
+            role: liveRole,
             champion: me.championName || '—',
             skinId: skinNum,
             skinName: ddAssets.skinName || me.skinName || '',
@@ -2489,6 +2554,12 @@ app.whenReady().then(async () => {
             assists: Number(me.scores?.assists || 0),
             cs: Number(me.scores?.creepScore || 0),
             level: Number(ap?.level || me.level || 1),
+            gameTimeSec: Math.round(gameTime),
+            currentGold: Math.round(Number(ap?.currentGold ?? prevLol.currentGold ?? 0)),
+            keystone,
+            spell1,
+            spell2,
+            items: liveItems,
             recentMatches,
             mapCoverEnabled: Boolean(prevLol.mapCoverEnabled),
             mapCoverText: String(prevLol.mapCoverText || 'Minimap verdeckt • Kein Ghosting')
@@ -2920,6 +2991,49 @@ app.whenReady().then(async () => {
           posY: preset.posY,
           rerouteAudio: Boolean(preset.rerouteAudio)
         });
+      }
+      if (act === 'add-builtin-bundle') {
+        const list = getBuiltinObsOverlays(obsServer.port || 4588);
+        const bundleMap = {
+          lol: {
+            addonMode: 'lol',
+            gameName: 'League of Legends',
+            ids: ['game-stats', 'lol-build', 'lol-map', 'alerts', 'chat']
+          },
+          justchatting: {
+            addonMode: 'justchatting',
+            gameName: 'Just Chatting',
+            ids: ['jc-lowerthird', 'jc-qna', 'game-stats', 'spotify', 'alerts', 'chat']
+          }
+        };
+        const bundle = bundleMap[payload.bundleId];
+        if (!bundle) return { ok: false, error: 'Unbekanntes Overlay-Set.' };
+        const added = [];
+        for (const id of bundle.ids) {
+          const preset = list.find((o) => o.id === id);
+          if (!preset) continue;
+          await obsWs.addOrAttachBrowserOverlay({
+            sceneName: payload.sceneName,
+            inputName: preset.inputName,
+            url: preset.url,
+            width: preset.width,
+            height: preset.height,
+            posX: preset.posX,
+            posY: preset.posY,
+            rerouteAudio: Boolean(preset.rerouteAudio)
+          });
+          added.push(preset.inputName);
+        }
+        const cfg = loadConfig();
+        const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+        ga.overlayEnabled = true;
+        ga.selectedMode = bundle.addonMode;
+        ga.currentGameName = bundle.gameName;
+        if (bundle.addonMode === 'lol') ga.lolPollingEnabled = true;
+        cfg.gameAddons = ga;
+        saveConfig(cfg);
+        broadcastGameAddonsState(cfg);
+        return { ok: true, added, addonMode: bundle.addonMode };
       }
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
       if (act === 'start-virtual-cam') return await obsWs.startVirtualCam();
@@ -3896,6 +4010,58 @@ app.whenReady().then(async () => {
     if (res.canceled || !res.filePath) return { ok: false, canceled: true };
     fs.writeFileSync(res.filePath, content, 'utf8');
     return { ok: true, filePath: res.filePath };
+  });
+
+  ipcMain.handle('game-addons-jc-action', (_ev, payload = {}) => {
+    const cfg = loadConfig();
+    const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
+    const jc = ga.perAddonStats.justchatting || {};
+    const queue = Array.isArray(jc.qnaQueue) ? [...jc.qnaQueue] : [];
+    const act = String(payload.action || '');
+
+    if (act === 'set-agenda-idx') {
+      const items = gameAddons.parseAgendaItems(jc.agendaText);
+      jc.activeAgendaIdx = Math.max(0, Math.min(Math.max(0, items.length - 1), Number(payload.index || 0)));
+    } else if (act === 'step-agenda') {
+      const items = gameAddons.parseAgendaItems(jc.agendaText);
+      const delta = Number(payload.delta || 1);
+      jc.activeAgendaIdx = Math.max(0, Math.min(Math.max(0, items.length - 1), Number(jc.activeAgendaIdx || 0) + delta));
+    } else if (act === 'add-question') {
+      const txt = String(payload.text || '').trim().slice(0, 220);
+      if (txt) {
+        queue.push({
+          id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          author: String(payload.author || 'Community').slice(0, 40),
+          platform: String(payload.platform || 'chat'),
+          text: txt
+        });
+        jc.qnaQueue = queue;
+      }
+    } else if (act === 'show-question') {
+      const idx = queue.findIndex((q) => q.id === payload.id);
+      if (idx >= 0) {
+        const [picked] = queue.splice(idx, 1);
+        jc.qnaQueue = queue;
+        jc.activeQuestion = picked;
+      }
+    } else if (act === 'next-question') {
+      const nextQ = queue.shift() || { id: '', author: '', platform: '', text: '' };
+      jc.qnaQueue = queue;
+      jc.activeQuestion = nextQ;
+    } else if (act === 'hide-question') {
+      jc.activeQuestion = { id: '', author: '', platform: '', text: '' };
+    } else if (act === 'remove-question') {
+      jc.qnaQueue = queue.filter((q) => q.id !== payload.id);
+    } else if (act === 'clear-questions') {
+      jc.qnaQueue = [];
+      jc.activeQuestion = { id: '', author: '', platform: '', text: '' };
+    }
+
+    ga.perAddonStats.justchatting = jc;
+    cfg.gameAddons = ga;
+    saveConfig(cfg);
+    broadcastGameAddonsState(cfg);
+    return { ok: true, gameAddons: ga, addons: gameAddons.GAME_ADDONS };
   });
 
   ipcMain.handle('game-addons-lol-record-match', async (_ev, payload = {}) => {
