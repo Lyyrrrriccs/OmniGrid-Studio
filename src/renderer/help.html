@@ -135,6 +135,8 @@
       <button class="help-tab" data-doc="GUIDE.md">📘 Guide (EN)</button>
       <button class="help-tab" data-doc="README.de.md">⚡ Übersicht (DE)</button>
       <button class="help-tab" data-doc="README.md">🌐 Overview (EN)</button>
+      <button class="help-tab" data-doc="PRIVACY.md">🔒 Datenschutz / Privacy</button>
+      <button class="help-tab" data-doc="CHANGELOG.md">📋 Changelog</button>
     </div>
     <input type="search" class="help-search" id="helpSearch" placeholder="🔍 In Anleitung suchen..." />
   </header>
@@ -311,7 +313,28 @@
     });
 
     searchEl.addEventListener('input', applyFilterAndRender);
-    loadDoc('ANLEITUNG.md');
+
+    function activateDocTab(docName) {
+      document.querySelectorAll('.help-tab').forEach((b) => b.classList.toggle('active', b.dataset.doc === docName));
+      loadDoc(docName);
+    }
+
+    if (window.omnichat?.i18nGet) {
+      window.omnichat.i18nGet().then((b) => {
+        const isEn = b?.lang === 'en';
+        document.title = isEn ? 'OmniGrid Studio — User Guide & Help' : 'OmniGrid Studio — Anleitung & Hilfe';
+        searchEl.placeholder = isEn ? '🔍 Search guide...' : '🔍 In Anleitung suchen...';
+        activateDocTab(isEn ? 'GUIDE.md' : 'ANLEITUNG.md');
+      }).catch(() => activateDocTab('ANLEITUNG.md'));
+      window.omnichat.onI18nChanged?.((b) => {
+        const isEn = b?.lang === 'en';
+        document.title = isEn ? 'OmniGrid Studio — User Guide & Help' : 'OmniGrid Studio — Anleitung & Hilfe';
+        searchEl.placeholder = isEn ? '🔍 Search guide...' : '🔍 In Anleitung suchen...';
+        activateDocTab(isEn ? 'GUIDE.md' : 'ANLEITUNG.md');
+      });
+    } else {
+      activateDocTab('ANLEITUNG.md');
+    }
   </script>
 </body>
 </html>

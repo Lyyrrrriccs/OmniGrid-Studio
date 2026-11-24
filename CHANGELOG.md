@@ -4,6 +4,32 @@ Alle wichtigen Änderungen und neuen Features von **OmniGrid Studio** im Überbl
 
 ---
 
+## [1.2.0] — 2026-11-24
+
+### ✨ Neue Features & Erweiterungen
+- **Mehrsprachiges JSON-Übersetzungssystem (`🇩🇪 DE` / `🇬🇧 EN`):**
+  - Vollständige JSON-Sprachdateien (`src/locales/de.json` & `src/locales/en.json`, jeweils 850+ Schlüssel) für sämtliche Menüs, Topbar-Buttons, Seitenleisten, Config-Tabs, Modals, Platzhalter, Tooltips und dynamischen Statusanzeigen.
+  - Direkte **Live-Sprachauswahl im Hauptfenster** (Topbar) sowie in der nativen macOS-/Windows-Menüleiste (`🌐 Sprache / Language`) ohne App-Neustart; automatisch erweiterbar über zusätzliche `<lang>.json`-Dateien.
+- **Game-Addons: League of Legends & Just Chatting Komplett-Suites (`🎮 Game-Addons`):**
+  - **Schreibgeschützte Vorlagen & OBS-Overlay-Schalter:** Vorgefertigte Addon-Vorlagen sind schreibgeschützt (`↺ Werte zurücksetzen`); alle Game-Addon-Overlays lassen sich per Checkbox **👁️ OBS Game-Stats-Overlay anzeigen** oder Stream Deck (`/api/streamdeck/game-overlay?state=toggle`) sofort ein-/ausblenden.
+  - **⚔️ League of Legends Komplett-Suite:**
+    - **Lokales LCU-Auslesen (`127.0.0.1`, ohne Riot-API-Key):** Liest echten **Solo/Duo- bzw. Flex-Rank**, **exakte aktuelle LP** sowie **Riot-ID (`Name#TAG`) + Region** live aus dem geöffneten League-Client (`🔄 Rank & LP aus LoL-Client lesen` + Auto-Poll).
+    - **Live Ingame API (`127.0.0.1:2999`) & Auto-Highlights:** Liest Champion, Skin, Lane/Rolle, KDA, CS/m, Level, Gold, Keystone-Rune, Summoner Spells & alle **6 Inventar-Items + Trinket** live aus; setzt automatisch Twitch-Stream-Marker bei Triple/Quadra/Baron und löst bei **Pentakill** automatisch den **Hype-Clip inkl. Chat-Post** aus.
+    - **3 Hextech-Overlays:** `/game-stats` (mit Hextech **Rank- & LP-Box inkl. Fortschrittsbalken** direkt rechts neben dem Champion-Icon), `/lol-build` (Live Item-Build & Elo-Bar) und `/lol-map` (Anti-Ghosting Minimap-Cover).
+    - **Chat-Commands:** `!elo`, `!lp`, `!rank`, `!opgg`, `!ugg`, `!champ`, `!skin`, `!build`, `!items`, `!runes`, `!mh`.
+  - **💬 Just Chatting & Talk Suite:**
+    - **3 Talk-/Podcast-Overlays:** `/jc-lowerthird` (TV-Bauchbinde mit Live-Thema, Vibe-Badge, Uhrzeit & Social-Ticker), `/jc-qna` (Viewer Q&A Spotlight) und `/game-stats` (Kapitel-Agenda).
+    - **Live Viewer-Q&A & Moderation:** Zuschauer reichen Fragen per `!ask <Frage>` / `!frage <Frage>` ein; Steuerung im UI oder direkt per Chat (`!setthema`, `!nextq`, `!thema`, `!agenda`, `!video`).
+- **OBS Szenen- & Quellen-Editor Upgrades (`🎛️ Szenen-Editor`):**
+  - **1-Klick App-Overlays & Komplett-Sets (ohne URL-Kopieren):** Alle **13 integrierten OmniGrid-Overlays** lassen sich direkt per Dropdown einfügen — inklusive 1-Klick-Szenenpaketen **`⚔️ Komplettes LoL-Set`** und **`💬 Just-Chatting-Set`**.
+  - **Vordergrund & Hintergrund (Ebenen-Steuerung):** Quellen per Toolbar (`⏫ Vordergrund`, `🔼 Vor`, `🔽 Hinter`, `⏬ Hintergrund`), Zeilen-Buttons (`🔼`/`🔽`) oder **Drag & Drop (`⠿`)** frei sortieren.
+- **Discord Live-Announcer (`📅 Schedule & Go-Live`):**
+  - Einmaliger Post pro Stream (bei OBS-Start und/oder Twitch-Live-Erkennung ohne Doppel-Post), **automatisches Live-Update alle 5 Minuten** (Titel, Spiel, Zuschauer, „Live seit“-Timer & Twitch-Vorschaubild ohne erneuten Rollen-Ping) und automatisches Umstellen auf **„⚫ Stream beendet“** inkl. Dauer & Zuschauer-Peak bei Stream-Ende.
+- **Chat-Hype-Detektor Verbesserungen (`🔥 Hype`):**
+  - Zuverlässige Wortanfangs-Keyword-Erkennung, einstellbare **Keyword-Treffer-Schwelle** (Standard: `3×`), **Live-Hype-Meter**, manueller **`🔥 Hype jetzt auslösen`**-Button sowie **automatische Twitch-Clip-Erstellung mit direktem Posten des Clip-Links in den Twitch-/YouTube-Chat**.
+
+---
+
 ## [1.1.0] — 2026-11-22
 
 ### ✨ Neue Features

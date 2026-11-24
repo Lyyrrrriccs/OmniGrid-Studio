@@ -216,10 +216,14 @@ Verwandle deine **OBS Replay-Buffer**-Aufnahmen oder Stream-Videos ohne externes
 
 ---
 
-## 17. Discord, Go-Live & Sendeplan-Studio (`📅 Schedule & Go-Live`)
+## 17. Discord Live-Announcer, Go-Live & Sendeplan-Studio (`📅 Schedule & Go-Live`)
 
-Informiere deine Community automatisch über Stream-Starts und kommende Streams:
-1. **Discord Webhook Add-on:** Hinterlege im Tab **`🔗 Discord & Plattformen`** deine Discord Webhook-URL (optional auch einen zweiten Webhook nur für den Sendeplan) sowie einen Rollen-Ping (`everyone`, `here` oder Role-ID). Aktiviere **Auto-Post bei OBS-Stream-Start**, damit beim Live-Gehen automatisch ein Rich-Embed mit Titel, Spiel & Links gepostet wird.
+Informiere deine Community vollautomatisch über Stream-Starts, Live-Status und kommende Streams:
+1. **Discord Live-Announcer (`🔗 Discord & Plattformen`):**
+   - Hinterlege deine Discord Webhook-URL (optional auch einen zweiten Webhook für den Sendeplan) sowie einen Rollen-Ping (`everyone`, `here` oder numerische Role-ID).
+   - **Zwei Auto-Trigger (ohne Doppel-Post):** Aktiviere **🚀 Automatisch posten, wenn OBS-Stream startet** und/oder **🟣 Auch posten, wenn Twitch „live“ meldet** (ideal für Streamer ohne OBS WebSocket). Pro Stream wird garantiert **nur eine einzige Nachricht** gesendet.
+   - **🔄 Live-Update alle 5 Minuten:** Aktualisiert dieselbe Discord-Nachricht automatisch (ohne erneuten Rollen-Ping!) mit aktuellem **Titel, Spiel/Kategorie, Zuschauerzahl, „Live seit“-Timer und frischem Twitch-Vorschaubild**.
+   - **⚫ Sauberer Abschluss bei Stream-Ende:** Stellt das Embed nach Stream-Ende automatisch auf **„Stream beendet“** inklusive **Stream-Dauer** und **Zuschauer-Peak** um (auch manuell per Button steuerbar).
 2. **X (Twitter), Bluesky, Mastodon & Instagram:**
    - **X (Twitter) API v2:** Mit deinen 4 OAuth-1.0a-Keys postet OmniGrid Studio Go-Live & Sendeplan direkt auf X — alternativ jederzeit per Browser-Share (`𝕏 Auf X (Browser)`).
    - **Bluesky & Mastodon:** Direktes Posten per App-Passwort bzw. Access-Token.
@@ -235,14 +239,20 @@ Informiere deine Community automatisch über Stream-Starts und kommende Streams:
 
 - **🎁 Live-Giveaway (`🎁 Giveaway`):** Definiere Titel, Keyword (z. B. `!join`) und Sub/VIP/Mod-Multiplikator (`1×`–`3×`). Starte das Giveaway, ziehe einen gewichteten Gewinner und zeige das animierte Verlosungs-Overlay in OBS unter `http://127.0.0.1:4588/giveaway`.
 - **🔊 Integriertes Soundboard (`🔊 Sounds`):** Nutze die 4 Standard-Sounds oder füge eigene `.mp3`/`.wav`/`.ogg`-Dateien hinzu. Sounds können lokal abgespielt und direkt an OBS (`/alerts` und `/soundboard`) sowie über die Stream Deck API (`/api/streamdeck/sound?name=...`) getriggert werden.
-- **🔥 Chat-Hype-Detektor (`🔥 Hype`):** Überwacht das Chat-Tempo (Hype-Keywords zählen doppelt) und setzt bei Spikes automatisch einen **Twitch Stream-Marker**, speichert den **OBS Replay-Buffer** oder erstellt einen **Twitch-Clip**.
+- **🔥 Chat-Hype-Detektor (`🔥 Hype`):**
+  - Überwacht das Chat-Tempo im eingestellten Zeitfenster: Erreicht der Chat entweder die **Min. Hype-Punkte** oder die Anzahl an **Keyword-Treffern** (Standard: `3×` Wörter wie `pog`, `clip`, `lul`, `gg` — jede Keyword-Nachricht zählt 3 Punkte), löst der Hype sofort aus.
+  - **Live-Hype-Meter & Manueller Auslöser:** Im `🔥 Hype`-Fenster siehst du live den aktuellen Punktestand, erkannte Keywords und Cooldown — und kannst per **`🔥 Hype jetzt auslösen`** jederzeit selbst einen Hype triggern (im `▶ Demo`-Modus auch offline testbar!).
+  - **Automatische Aktionen:** Erstellt automatisch einen **Twitch-Clip**, **postet den fertigen Clip-Link direkt in den Twitch-/YouTube-Chat** (und als Highlight-Karte in deinen Feed), setzt einen **Twitch Stream-Marker**, speichert optional den **OBS Replay-Buffer** und triggert deine **Govee Hype-Lichtszene**. *(Hinweis: Echte Twitch-Clips & Marker erlaubt die Twitch-API nur während dein Kanal tatsächlich live ist.)*
 
 ## 19. OBS Szenen- & Quellen-Editor (`🎛️ Szenen-Editor`)
 
 - **Direkt verbinden:** Oben rechts im Editor findest du den Status und den Button **🔌 Mit OBS verbinden** — du kannst OBS also direkt im Editor verbinden oder neu verbinden.
-- **Scharfe 1080p HD-Standbild-Vorschau:** Der Editor lädt ein gestochen scharfes `1920 × 1080` Vorschaubild deiner Szene (ohne permanentes Live-Preview/VirtualCam) und aktualisiert es automatisch bei Änderungen oder per Klick auf **🔄 Vorschau aktualisieren**. Reine Audio-Quellen werden in der 16:9-Vorschau ausgeblendet, bleiben aber rechts in der Quellenliste und im Audio-Mixer steuerbar.
-- **Maus-Steuerung auf der Leinwand:** Ziehe Video-Quellen direkt auf der 16:9-Vorschau zum Verschieben oder an den Ecken zum Vergrößern/Verkleinern. Über **🎯 Zentrieren** und **⛶ Vollbild** richtest du Quellen mit einem Klick aus.
-- **Quellen hinzufügen & konfigurieren:** Erstelle neue Quellen (Browser, Bild, Medien, Text, Bildschirm-/Fensteraufnahme, Kamera, Audio) und wähle bei einer ausgewählten Quelle unter **🎯 Quelle konfigurieren** dynamisch **Aufnahme-Modus**, **Bildschirm**, **Fenster**, **Anwendung**, **Gerät** oder **Browser-URL** aus (auf macOS lokal ermittelt — 100% crash-sicher für OBS).
+- **⚡ App-Overlays & Komplett-Sets mit 1 Klick einfügen (ohne URL-Kopieren):**
+  - Rechts oben unter **⚡ App-Overlay direkt einfügen (ohne URL)** wählst du jedes der **13 integrierten OmniGrid-Overlays** (Chat, Alerts, Musik, Game-Stats/Agenda, LoL-Build, LoL-Minimap, Just-Chatting-Bauchbinde, Viewer-Q&A, Goals, Poll, Giveaway, Sendeplan, Soundboard) direkt im Dropdown aus und klickst auf **➕ Einfügen** — Port, optimale Auflösung, Startposition und Audio-Routing werden vollautomatisch gesetzt (existiert das Overlay schon in einer anderen Szene, wird es konflikt-frei wiederverwendet).
+  - Über **`⚔️ Komplettes LoL-Set`** bzw. **`💬 Just-Chatting-Set`** fügst du das gesamte abgestimmte Overlay-Paket mit einem einzigen Klick fertig positioniert in deine Szene ein!
+- **⏫ Vordergrund & ⏬ Hintergrund (Ebenen-Steuerung):**
+  - Verschiebe die ausgewählte Quelle über die Toolbar unter der Vorschau (**`⏫ Vordergrund`**, **`🔼 Vor`**, **`🔽 Hinter`**, **`⏬ Hintergrund`**), über die **`🔼` / `🔽` Buttons** direkt in der Quellenliste (*Tipp: `⇧ Shift` + Klick springt ganz nach vorn/hinten*) oder per **Drag & Drop (`⠿`)** mit der Maus (*oben = Vordergrund, unten = Hintergrund*).
+- **Scharfe 1080p HD-Vorschau & Maus-Steuerung:** Ziehe Quellen direkt auf der `1920 × 1080`-Vorschau zum Verschieben oder an den Ecken zum Skalieren (**🎯 Zentrieren** / **⛶ Vollbild**). Unter **🎯 Quelle konfigurieren** wechselst du Aufnahme-Modus, Bildschirm, Fenster, Anwendung, Gerät oder App-Overlay live.
 
 ## 20. Automatische Updates (GitHub Releases)
 
@@ -282,6 +292,41 @@ OBS übernimmt nur noch das **einmalige Rendern & Enkodieren (`1×`)**, während
   2. Den unverschlüsselten Klartext-Quellcode (`src/`) der laufenden App direkt einzusehen.
   3. Einen **Live-Quellcode-Scan** über alle Dateien auszuführen, der jede im Code existierende Ziel-Domain samt Datei & Zeilennummer auflistet.
   4. Den System-Befehl (`lsof` / `Get-NetTCPConnection`) zu kopieren, um direkt im Betriebssystem alle offenen Netzwerkverbindungen zu kontrollieren.
+
+---
+
+## 25. Game-Addons: League of Legends & Just Chatting Komplett-Suites (`🎮 Game-Addons`)
+
+Über **🎮 Game-Addons** oben in der Cockpit-Leiste wechselst du das aktive Spiel-Addon manuell oder lässt es im Modus **`🤖 Auto`** automatisch mit deiner Twitch-/Stream-Manager-Kategorie umschalten:
+- **🔒 Schreibgeschützte Vorlagen & 👁️ Overlay-Schalter:** Alle mitgelieferten Addon-Vorlagen sind schreibgeschützt (Name, Struktur & Commands können nicht überschrieben werden; die Live-Werte lassen sich per **↺ Werte zurücksetzen** jederzeit zurücksetzen). Über **👁️ OBS Game-Stats-Overlay anzeigen** (oder Stream Deck `/api/streamdeck/game-overlay?state=toggle`) blendest du alle Game-Addon-Overlays jederzeit mit einem Klick in OBS ein oder aus.
+
+### ⚔️ League of Legends — Komplett-Suite
+- **Automatisches Auslesen ohne Riot-API-Key (`127.0.0.1`):**
+  1. **League Client (LCU):** Sobald dein LoL-Client geöffnet und eingeloggt ist, liest OmniGrid Studio alle ~12 Sekunden (oder sofort per **`🔄 Rank & LP aus LoL-Client lesen`**) deinen echten **Solo/Duo- bzw. Flex-Rank**, deine **exakten aktuellen LP** sowie deine **Riot-ID (`Name#TAG`) + Region** lokal aus!
+  2. **Live Ingame API (`127.0.0.1:2999`):** Sobald ein Match läuft, werden **Champion + Skin-Splash, Lane/Rolle, K/D/A, CS & CS/m, Level, Gold, Keystone-Rune, Summoner Spells & alle 6 Items + Trinket** live aktualisiert. Bei eigenem Triple/Quadra/Baron wird automatisch ein Twitch-Marker gesetzt — bei einem **PENTAKILL** löst automatisch der **Hype-Clip inkl. Chat-Post** aus!
+- **3 Hextech OBS-Overlays:**
+  - `http://127.0.0.1:4588/game-stats` — Hextech HUD mit Champion-Icon, **Rank- & LP-Box inkl. Fortschrittsbalken rechts daneben**, K/D/A, CS/m, Session-Bilanz & letzten 6 Matches.
+  - `http://127.0.0.1:4588/lol-build` — Kompakte Live Item-Build & Elo-Leiste (`550×125`).
+  - `http://127.0.0.1:4588/lol-map` — Anti-Ghosting Minimap-Cover (`280×280`).
+- **Chat-Commands:** `!elo`, `!lp`, `!rank`, `!opgg`, `!ugg`, `!champ`, `!skin`, `!build`, `!items`, `!runes`, `!mh`.
+
+### 💬 Just Chatting & Talk Suite
+- **3 Talk-/Podcast OBS-Overlays:**
+  - `http://127.0.0.1:4588/jc-lowerthird` — Animierte TV-Bauchbinde (`920×145`) mit Gesprächsthema, Untertitel, Vibe-Badge, Live-Uhrzeit & Social-Ticker.
+  - `http://127.0.0.1:4588/jc-qna` — **Viewer Q&A Spotlight** (`640×220`), das die aktuell ausgewählte Zuschauer-Frage (`@User fragt: ...`) groß im Stream einblendet (und automatisch ausblendet, wenn keine Frage aktiv ist).
+  - `http://127.0.0.1:4588/game-stats` — Talk-Agenda-Karte mit erledigten (`✓`), aktivem (`▶`) und kommenden Kapiteln.
+- **Chat-Commands & Live-Moderation:**
+  - Zuschauer: `!ask <Frage>` / `!frage <Frage>` (reiht Fragen live in deine Q&A-Warteschlange ein), `!thema`, `!agenda`, `!video` / `!react`.
+  - Streamer & Mods direkt aus dem Chat: `!setthema <Neues Thema>` (aktualisiert sofort die Bauchbinde) und `!nextq` (blendet die nächste Zuschauer-Frage im Stream ein).
+- **Weitere enthaltene Game-Addons:** **🎯 Counter-Strike 2 (GSI)** (inkl. `.cfg`-Export), **🔫 Valorant / Tactical FPS**, **💀 Elden Ring / Soulsborne**, **⛏️ Minecraft** und **🏆 Universal Game Counter**.
+
+---
+
+## 26. Mehrsprachigkeit & JSON-Sprachdateien (`🇩🇪 DE` / `🇬🇧 EN`)
+
+- **Direkte Sprachauswahl im Hauptfenster:** Ganz links in der oberen Button-Leiste (neben **⚙️ Config**) sowie in der Anwendungs-Menüleiste unter **🌐 Sprache / Language** kannst du jederzeit live und ohne Neustart zwischen **🇩🇪 Deutsch (`DE`)** und **🇬🇧 Englisch (`EN`)** umschalten.
+- **Offene JSON-Struktur (`src/locales/`):** Alle Übersetzungen für Menüs, Buttons, Einstellungen, Modals, Platzhalter und Tooltips liegen sauber gegliedert in `src/locales/de.json` und `src/locales/en.json`. Weitere Sprachen lassen sich jederzeit durch Ablegen einer neuen `<code.json>`-Datei in `src/locales/` ergänzen und erscheinen automatisch im Auswahlmenü.
+
 
 
 

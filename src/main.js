@@ -2699,7 +2699,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('get-help-doc', (_ev, docName) => {
-    const allowed = new Set(['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md']);
+    const allowed = new Set(['ANLEITUNG.md', 'GUIDE.md', 'README.de.md', 'README.md', 'PRIVACY.md', 'CHANGELOG.md']);
     const safeName = allowed.has(docName) ? docName : 'ANLEITUNG.md';
     try {
       const filePath = path.join(__dirname, '..', safeName);

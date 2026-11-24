@@ -22,7 +22,7 @@ OmniGrid Studio baut **nur dann** eine Verbindung auf, wenn du die jeweilige Fun
 
 | Dienst / Funktion | Ziel-Domain | Wann wird verbunden? |
 |---|---|---|
-| **OBS, Overlays & RTMP-Relay** | `127.0.0.1` / `localhost` | Nur lokal auf deinem eigenen Computer (verlässt deinen PC nie) |
+| **OBS, Overlays, RTMP-Relay & LoL Client (LCU / Live API)** | `127.0.0.1` / `localhost` | Nur lokal auf deinem eigenen Computer (verlässt deinen PC nie) |
 | **Elgato Key Light** | `192.168.x.x:9123` (Lokales LAN) | Nur lokal in deinem eigenen Heimnetzwerk |
 | **Twitch Chat, API & Ingest** | `irc-ws.chat.twitch.tv`, `api.twitch.tv`, `id.twitch.tv`, `*.live-video.net` | Nur wenn Twitch aktiviert ist |
 | **YouTube Live & OAuth2** | `www.youtube.com`, `www.googleapis.com`, `oauth2.googleapis.com`, `a.rtmp.youtube.com` | Nur wenn YouTube aktiviert ist |
@@ -30,7 +30,7 @@ OmniGrid Studio baut **nur dann** eine Verbindung auf, wenn du die jeweilige Fun
 | **Emote-Anbieter** | `7tv.io`, `api.betterttv.net`, `api.frankerfacez.com` | Beim Laden der Chat-Emotes |
 | **Govee Smart-Light** | `openapi.api.govee.com` | Nur wenn Govee aktiviert & dein eigener Govee API-Key hinterlegt ist |
 | **Discord / Social Auto-Post** | `discord.com`, `bsky.social`, `api.x.com`, `graph.facebook.com`, `api.imgbb.com` | Nur wenn du Go-Live / Sendeplan postest |
-| **Musik Album-Cover & LoL Icons** | `itunes.apple.com`, `ddragon.leagueoflegends.com` | Öffentliche Cover-/Icon-Suche ohne persönliche Daten |
+| **Musik Album-Cover & LoL Icons/Items** | `itunes.apple.com`, `ddragon.leagueoflegends.com` | Öffentliche Cover-/Icon-Suche ohne persönliche Daten (für `!opgg`/`!ugg` wird lediglich ein Text-Link generiert, kein Hintergrund-Request) |
 | **GitHub Auto-Updater & Feedback** | `api.github.com`, `github.com/Lyyrrrriccs/omni-stream-chat` | Versions-Check für Updates & Feedback-Button |
 
 ---
