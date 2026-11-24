@@ -116,6 +116,10 @@ contextBridge.exposeInMainWorld('omnichat', {
   multiStreamStop: () => ipcRenderer.invoke('multistream-stop'),
   multiStreamConfigureObs: (payload) => ipcRenderer.invoke('multistream-configure-obs', payload),
   submitGithubFeedback: (payload) => ipcRenderer.invoke('submit-github-feedback', payload),
+  i18nGet: () => ipcRenderer.invoke('i18n-get'),
+  i18nSet: (lang) => ipcRenderer.invoke('i18n-set', lang),
+  onI18nChanged: (cb) => ipcRenderer.on('i18n-changed', (_ev, bundle) => cb(bundle)),
+  onMenuCommand: (cb) => ipcRenderer.on('menu-command', (_ev, data) => cb(data)),
   privacyAuditRun: () => ipcRenderer.invoke('privacy-audit-run'),
   privacyOpenPath: (target) => ipcRenderer.invoke('privacy-open-path', target)
 });

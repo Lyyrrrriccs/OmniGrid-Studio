@@ -1706,10 +1706,11 @@ function updatePlatformStatusUI(states) {
     }
 
     pill.className = `plat-pill ${plat} ${st.status}`;
+    const td = (k, fb, vars) => (window.tDyn ? window.tDyn(k, vars) : fb);
     if (st.enabled === false) {
-      txt.textContent = 'Aus';
+      txt.textContent = td('statusOff', 'Aus');
       if (viewerEl) viewerEl.textContent = '';
-      btn.textContent = 'Aktivieren';
+      btn.textContent = td('activate', 'Aktivieren');
       btn.classList.remove('disconnect');
       if (errEl) errEl.textContent = '';
     } else if (st.status === 'connected') {
@@ -1719,21 +1720,21 @@ function updatePlatformStatusUI(states) {
         extra += ` ❤️${(st.likes / 1000).toFixed(1)}k`;
       }
       if (viewerEl) viewerEl.textContent = extra;
-      btn.textContent = 'Trennen';
+      btn.textContent = td('disconnect', 'Trennen');
       btn.classList.add('disconnect');
       if (errEl) {
         if (st.error) {
           errEl.textContent = st.error;
         } else if (plat === 'youtube' && st.streamTitle) {
           errEl.textContent = st.canWrite
-            ? `✅ Verbunden (${st.streamTitle}) — Chat lesen & schreiben aktiv`
-            : `✅ Verbunden (${st.streamTitle}) — Nur-Lesen (OAuth2 für Schreiben optional)`;
+            ? td('connectedRw', `✅ Verbunden (${st.streamTitle}) — Chat lesen & schreiben aktiv`, { target: st.streamTitle })
+            : td('connectedRo', `✅ Verbunden (${st.streamTitle}) — Nur-Lesen`, { target: st.streamTitle });
         } else if (plat === 'tiktok' && st.roomId) {
           errEl.textContent = `Room-ID: ${st.roomId}`;
         } else if (plat === 'twitch') {
           errEl.textContent = st.canWrite
-            ? `✅ Verbunden (#${st.channel}) — Chat lesen & schreiben aktiv`
-            : `✅ Verbunden (#${st.channel}) — Chat lesen aktiv (Nur-Lesen ohne Chat-Token)`;
+            ? td('connectedRw', `✅ Verbunden (#${st.channel}) — Chat lesen & schreiben aktiv`, { target: `#${st.channel}` })
+            : td('connectedRo', `✅ Verbunden (#${st.channel}) — Nur-Lesen`, { target: `#${st.channel}` });
         } else {
           errEl.textContent = '';
         }
@@ -1741,13 +1742,13 @@ function updatePlatformStatusUI(states) {
     } else if (st.status === 'reconnecting') {
       txt.textContent = 'Reconnect...';
       if (viewerEl) viewerEl.textContent = '';
-      btn.textContent = 'Stopp';
+      btn.textContent = td('stop', 'Stopp');
       btn.classList.add('disconnect');
       if (errEl && st.error) errEl.textContent = st.error;
     } else if (st.status === 'standby') {
-      txt.textContent = 'Standby';
+      txt.textContent = td('standby', 'Standby');
       if (viewerEl) viewerEl.textContent = '';
-      btn.textContent = 'Stopp';
+      btn.textContent = td('stop', 'Stopp');
       btn.classList.add('disconnect');
       if (errEl && st.error) errEl.textContent = st.error;
     } else if (st.status === 'connecting') {
@@ -1756,15 +1757,15 @@ function updatePlatformStatusUI(states) {
       btn.textContent = '...';
       btn.classList.remove('disconnect');
     } else if (st.status === 'error') {
-      txt.textContent = 'Fehler';
+      txt.textContent = window.__appLang === 'en' ? 'Error' : 'Fehler';
       if (viewerEl) viewerEl.textContent = '';
-      btn.textContent = 'Verbinden';
+      btn.textContent = td('connect', 'Verbinden');
       btn.classList.remove('disconnect');
       if (errEl && st.error) errEl.textContent = st.error;
     } else {
-      txt.textContent = 'Aus';
+      txt.textContent = td('statusOff', 'Aus');
       if (viewerEl) viewerEl.textContent = '';
-      btn.textContent = plat === 'twitch' ? 'Verbinden' : 'Start / Standby';
+      btn.textContent = plat === 'twitch' ? td('connect', 'Verbinden') : td('startStandby', 'Start / Standby');
       btn.classList.remove('disconnect');
     }
   }
@@ -3127,33 +3128,35 @@ function updateObsWsUI(st) {
   const btnStream = document.getElementById('btnObsStream');
 
   const isConn = Boolean(st.connected);
+  window.__latestObsWsState = st;
+  const td = (k, fb, vars) => (window.tDyn ? window.tDyn(k, vars) : fb);
   if (badge) {
-    badge.textContent = isConn ? '(Verbunden)' : st.connecting ? '(...)' : '(Aus)';
+    badge.textContent = isConn ? td('obsBadgeConnected', '(Verbunden)') : st.connecting ? '(...)' : td('obsBadgeOff', '(Aus)');
     badge.style.color = isConn ? '#4ade80' : '#94a3b8';
   }
   if (cfgStatus) {
     if (isConn) {
       cfgStatus.style.color = '#4ade80';
-      cfgStatus.textContent = `✅ Verbunden — Szene: ${st.currentScene || 'Unbekannt'}`;
+      cfgStatus.textContent = td('obsSceneConnected', `✅ Verbunden — Szene: ${st.currentScene || '—'}`, { scene: st.currentScene || '—' });
     } else if (st.error) {
       cfgStatus.style.color = '#f87171';
       cfgStatus.textContent = `❌ ${st.error}`;
     } else {
       cfgStatus.style.color = '#94a3b8';
-      cfgStatus.textContent = st.connecting ? '⏳ Verbinde...' : 'Nicht verbunden';
+      cfgStatus.textContent = st.connecting ? td('obsConnecting', '⏳ Verbinde...') : td('obsNotConnected', 'Nicht verbunden');
     }
   }
-  if (btnConn) btnConn.textContent = isConn ? '🔄 Neu verbinden' : '🔌 Mit OBS verbinden';
+  if (btnConn) btnConn.textContent = isConn ? td('obsReconnectBtn', '🔄 Neu verbinden') : td('obsConnectBtn', '🔌 Mit OBS verbinden');
   if (btnDisc) btnDisc.classList.toggle('hidden', !isConn);
 
   const seBadge = document.getElementById('seObsWsBadge');
   const seConn = document.getElementById('btnSeObsWsConnect');
   const seDisc = document.getElementById('btnSeObsWsDisconnect');
   if (seBadge) {
-    seBadge.textContent = isConn ? '● OBS: Verbunden' : st.connecting ? '● OBS: Verbinde...' : '● OBS: Aus';
+    seBadge.textContent = isConn ? td('obsSeConnected', '● OBS: Verbunden') : st.connecting ? td('obsSeConnecting', '● OBS: Verbinde...') : td('obsSeOff', '● OBS: Aus');
     seBadge.style.color = isConn ? '#4ade80' : st.error ? '#f87171' : '#94a3b8';
   }
-  if (seConn) seConn.textContent = isConn ? '🔄 Neu verbinden' : '🔌 Mit OBS verbinden';
+  if (seConn) seConn.textContent = isConn ? td('obsReconnectBtn', '🔄 Neu verbinden') : td('obsConnectBtn', '🔌 Mit OBS verbinden');
   if (seDisc) seDisc.classList.toggle('hidden', !isConn);
 
   [selScene, btnReplay, btnMic, btnRec, btnStream].forEach((el) => {
@@ -3162,7 +3165,7 @@ function updateObsWsUI(st) {
 
   if (selScene) {
     if (!isConn) {
-      selScene.innerHTML = '<option value="">— OBS in Config verbinden —</option>';
+      selScene.innerHTML = `<option value="">${td('obsConnectInConfig', '— OBS in Config verbinden —')}</option>`;
     } else {
       selScene.innerHTML = '';
       (st.scenes || []).forEach((s) => {
@@ -6811,3 +6814,191 @@ function renderDiscordLiveStatus(state) {
 window.omnichat.onDiscordLiveState?.((state) => renderDiscordLiveStatus(state));
 // Beim Start: laufende Live-Session (z. B. nach App-Neustart) wieder aufnehmen
 window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)).catch(() => {});
+
+// ======================================================
+// JSON I18N / MULTI-LANGUAGE SYSTEM (DE / EN + EXTENSIBLE)
+// ======================================================
+(function initI18nSystem() {
+  const selLang = document.getElementById('selAppLanguage');
+  let activeBundle = null;
+  let textMap = new Map();
+  let titleMap = new Map();
+  let phMap = new Map();
+  let isApplying = false;
+
+  function normWs(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function collectPairs(baseObj, activeObj, targetMap, normalize = true) {
+    if (!baseObj || typeof baseObj !== 'object') return;
+    for (const k of Object.keys(baseObj)) {
+      const bVal = baseObj[k];
+      const aVal = activeObj ? activeObj[k] : undefined;
+      if (typeof bVal === 'string' && typeof aVal === 'string') {
+        targetMap.set(normalize ? normWs(bVal) : bVal.trim(), aVal);
+      } else if (bVal && typeof bVal === 'object') {
+        collectPairs(bVal, aVal || {}, targetMap, normalize);
+      }
+    }
+  }
+
+  window.tDyn = function tDyn(key, vars = {}) {
+    const dyn = activeBundle?.active?.dynamic || {};
+    let str = dyn[key] || activeBundle?.base?.dynamic?.[key] || key;
+    if (vars && typeof vars === 'object') {
+      for (const [vk, vv] of Object.entries(vars)) {
+        str = str.replace(new RegExp(`\\{${vk}\\}`, 'g'), String(vv));
+      }
+    }
+    return str;
+  };
+
+  function shouldSkipElement(el) {
+    if (!el || el.nodeType !== 1) return false;
+    const tag = el.tagName;
+    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return true;
+    if (el.classList?.contains('chat-msg')) return true;
+    const id = el.id;
+    if (id === 'diagLogList' || id === 'eventTickerList' || id === 'pinnedBody' || id === 'selAppLanguage') return true;
+    return false;
+  }
+
+  function translateSubtree(root) {
+    if (!root || !activeBundle) return;
+    isApplying = true;
+    try {
+      const stack = [root];
+      while (stack.length) {
+        const node = stack.pop();
+        if (node.nodeType === 1) {
+          if (shouldSkipElement(node)) continue;
+
+          if (node.hasAttribute('title')) {
+            if (node.__i18nOrigTitle === undefined) {
+              const cur = node.getAttribute('title') || '';
+              if (titleMap.has(normWs(cur))) node.__i18nOrigTitle = normWs(cur);
+            }
+            if (node.__i18nOrigTitle && titleMap.has(node.__i18nOrigTitle)) {
+              const nextT = titleMap.get(node.__i18nOrigTitle);
+              if (node.getAttribute('title') !== nextT) node.setAttribute('title', nextT);
+            }
+          }
+
+          if (node.hasAttribute('placeholder')) {
+            if (node.__i18nOrigPh === undefined) {
+              const curP = (node.getAttribute('placeholder') || '').trim();
+              if (phMap.has(curP)) node.__i18nOrigPh = curP;
+              else if (phMap.has(normWs(curP))) node.__i18nOrigPh = normWs(curP);
+            }
+            if (node.__i18nOrigPh && phMap.has(node.__i18nOrigPh)) {
+              const nextP = phMap.get(node.__i18nOrigPh);
+              if (node.getAttribute('placeholder') !== nextP) node.setAttribute('placeholder', nextP);
+            }
+          }
+
+          const children = node.childNodes;
+          for (let i = children.length - 1; i >= 0; i--) {
+            stack.push(children[i]);
+          }
+        } else if (node.nodeType === 3) {
+          const raw = node.nodeValue || '';
+          if (!raw.trim()) continue;
+          if (node.__i18nOrigCore === undefined) {
+            const m = raw.match(/^(\s*)([\s\S]*?)(\s*)$/);
+            const core = normWs(m ? m[2] : raw);
+            if (textMap.has(core)) {
+              node.__i18nLead = m ? m[1] : '';
+              node.__i18nTrail = m ? m[3] : '';
+              node.__i18nOrigCore = core;
+            }
+          }
+          if (node.__i18nOrigCore && textMap.has(node.__i18nOrigCore)) {
+            const nextVal = (node.__i18nLead || '') + textMap.get(node.__i18nOrigCore) + (node.__i18nTrail || '');
+            if (node.nodeValue !== nextVal) node.nodeValue = nextVal;
+          }
+        }
+      }
+    } finally {
+      isApplying = false;
+    }
+  }
+
+  function applyBundle(bundle) {
+    if (!bundle?.base || !bundle?.active) return;
+    activeBundle = bundle;
+    window.__appLang = bundle.lang || 'de';
+    document.documentElement.lang = window.__appLang;
+    if (bundle.active?.meta?.appTitle) {
+      document.title = bundle.active.meta.appTitle;
+    }
+
+    textMap = new Map();
+    titleMap = new Map();
+    phMap = new Map();
+    collectPairs(bundle.base.ui, bundle.active.ui, textMap, true);
+    collectPairs(bundle.base.titles, bundle.active.titles, titleMap, true);
+    collectPairs(bundle.base.placeholders, bundle.active.placeholders, phMap, false);
+    collectPairs(bundle.base.placeholders, bundle.active.placeholders, phMap, true);
+
+    if (selLang && Array.isArray(bundle.availableLocales) && bundle.availableLocales.length) {
+      selLang.innerHTML = '';
+      bundle.availableLocales.forEach((loc) => {
+        const opt = document.createElement('option');
+        opt.value = loc.code;
+        opt.textContent = loc.shortLabel || `${loc.flag || ''} ${loc.code.toUpperCase()}`.trim();
+        if (loc.code === bundle.lang) opt.selected = true;
+        selLang.appendChild(opt);
+      });
+    }
+
+    translateSubtree(document.body);
+    if (typeof updatePlatformStatusUI === 'function' && currentStates) {
+      updatePlatformStatusUI(currentStates);
+    }
+    if (typeof updateObsWsUI === 'function' && window.__latestObsWsState) {
+      updateObsWsUI(window.__latestObsWsState);
+    }
+  }
+
+  selLang?.addEventListener('change', async () => {
+    const res = await window.omnichat.i18nSet?.(selLang.value);
+    if (res?.ok) applyBundle(res);
+  });
+
+  window.omnichat.onI18nChanged?.((bundle) => {
+    if (bundle?.ok) applyBundle(bundle);
+  });
+
+  window.omnichat.onMenuCommand?.((data) => {
+    if (data?.command === 'open-privacy') document.getElementById('btnOpenPrivacyAudit')?.click();
+    if (data?.command === 'open-feedback') document.getElementById('btnOpenFeedback')?.click();
+  });
+
+  // Automatically translate dynamically rendered modal controls (Scene Editor, Game Addons, etc.)
+  let pendingRaf = false;
+  const pendingRoots = new Set();
+  const observer = new MutationObserver((mutations) => {
+    if (isApplying || !activeBundle || window.__appLang === 'de') return;
+    for (const m of mutations) {
+      const t = m.target;
+      if (!t || t.nodeType !== 1) continue;
+      if (t.closest?.('#chatFeed, #diagLogList, #eventTickerList')) continue;
+      pendingRoots.add(t);
+    }
+    if (!pendingRaf && pendingRoots.size) {
+      pendingRaf = true;
+      requestAnimationFrame(() => {
+        pendingRaf = false;
+        const roots = [...pendingRoots];
+        pendingRoots.clear();
+        roots.forEach((r) => translateSubtree(r));
+      });
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  window.omnichat.i18nGet?.().then((bundle) => {
+    if (bundle?.ok) applyBundle(bundle);
+  }).catch(() => {});
+})();

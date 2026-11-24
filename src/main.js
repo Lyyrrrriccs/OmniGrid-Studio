@@ -1,6 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const i18n = require('./i18n');
 const { TwitchConnector } = require('./connectors/twitch');
 const { YouTubeConnector } = require('./connectors/youtube');
 const { TikTokConnector } = require('./connectors/tiktok');
@@ -710,6 +711,7 @@ function getDefaultConfig() {
     },
     hideBots: false,
     collapseSpam: true,
+    language: 'de',
     platformIndicatorStyle: 'icon_badge',
     mainWindowBounds: null,
     chatDockBounds: null,
@@ -4335,6 +4337,46 @@ app.whenReady().then(async () => {
       return { ok: true };
     }
     return { ok: false };
+  });
+
+  const refreshNativeMenu = (langCode) => {
+    i18n.applyLocalizedAppMenu(Menu, langCode, {
+      onSelectLanguage: (nextCode) => {
+        const cfg = loadConfig();
+        cfg.language = i18n.normalizeLang(nextCode);
+        saveConfig(cfg);
+        refreshNativeMenu(cfg.language);
+        const bundle = i18n.getI18nBundle(cfg.language);
+        if (mainWindow && !mainWindow.isDestroyed() && bundle.active?.meta?.appTitle) {
+          mainWindow.setTitle(bundle.active.meta.appTitle);
+        }
+        broadcastToWindows('i18n-changed', bundle);
+      },
+      onOpenGuide: () => {
+        if (typeof openHelpWindow === 'function') openHelpWindow();
+      },
+      onMenuCommand: (cmd) => broadcastToWindows('menu-command', { command: cmd })
+    });
+  };
+
+  refreshNativeMenu(loadConfig().language || 'de');
+
+  ipcMain.handle('i18n-get', () => {
+    const cfg = loadConfig();
+    return i18n.getI18nBundle(cfg.language || 'de');
+  });
+
+  ipcMain.handle('i18n-set', (_ev, langCode) => {
+    const cfg = loadConfig();
+    cfg.language = i18n.normalizeLang(langCode);
+    saveConfig(cfg);
+    refreshNativeMenu(cfg.language);
+    const bundle = i18n.getI18nBundle(cfg.language);
+    if (mainWindow && !mainWindow.isDestroyed() && bundle.active?.meta?.appTitle) {
+      mainWindow.setTitle(bundle.active.meta.appTitle);
+    }
+    broadcastToWindows('i18n-changed', bundle);
+    return bundle;
   });
 
   setTimeout(() => {
