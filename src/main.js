@@ -3217,6 +3217,12 @@ app.whenReady().then(async () => {
       if (act === 'set-scene-item-transform') {
         return await obsWs.setSceneItemTransform(payload.sceneName, payload.sceneItemId, payload.transform || {});
       }
+      if (act === 'get-source-transparency') {
+        return await obsWs.getSourceTransparency(payload.sourceName);
+      }
+      if (act === 'set-source-transparency') {
+        return await obsWs.setSourceTransparency(payload.sourceName, payload.transparencyPct);
+      }
       if (act === 'reorder-scene-item') {
         return await obsWs.reorderSceneItem(payload.sceneName, payload.sceneItemId, payload.mode, payload.sceneItemIndex);
       }

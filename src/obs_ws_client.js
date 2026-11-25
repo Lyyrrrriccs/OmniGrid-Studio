@@ -89,12 +89,15 @@ function obsRpcChallengeDigestBase64(input) {
  * Supports RPC challenge-response authentication, scene switching, stream/record toggles,
  * replay buffer saving, and mic mute toggling.
  */
+const OMNIGRID_TRANSPARENCY_FILTER = 'OmniGrid Transparenz';
+
 class ObsWsClient extends EventEmitter {
   constructor() {
     super();
     this.ws = null;
     this.reqCounter = 1;
     this.pending = new Map();
+    this._colorFilterSpec = null;
     this.state = {
       connected: false,
       connecting: false,
@@ -198,6 +201,7 @@ class ObsWsClient extends EventEmitter {
           entry.reject(new Error('OBS WebSocket Verbindung geschlossen.'));
         }
         this.pending.clear();
+    this._colorFilterSpec = null;
         const closeErr = !wasConnected && code === 4009 ? 'Falsches OBS WebSocket-Passwort.' : '';
         this._updateState({
           connected: false,
@@ -333,6 +337,104 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, micName: target, micMuted: Boolean(res.inputMuted) };
   }
 
+  async _resolveColorFilterSpec() {
+    if (this._colorFilterSpec) return this._colorFilterSpec;
+    for (const kind of ['color_filter_v2', 'color_filter']) {
+      try {
+        const def = await this.call('GetSourceFilterDefaultSettings', { filterKind: kind });
+        const defOpacity = def?.defaultFilterSettings?.opacity;
+        const maxVal = typeof defOpacity === 'number' && defOpacity > 1.5 ? 100 : 1.0;
+        this._colorFilterSpec = { kind, maxVal };
+        return this._colorFilterSpec;
+      } catch (e) {}
+    }
+    this._colorFilterSpec = { kind: 'color_filter_v2', maxVal: 1.0 };
+    return this._colorFilterSpec;
+  }
+
+  _opacitySettingToTransparencyPct(rawOpacity, filterKind = 'color_filter_v2') {
+    if (typeof rawOpacity !== 'number' || !Number.isFinite(rawOpacity)) return 0;
+    const isLegacyPct = filterKind === 'color_filter' || rawOpacity > 1.001;
+    const opacityPct = isLegacyPct
+      ? Math.max(0, Math.min(100, rawOpacity))
+      : Math.max(0, Math.min(100, rawOpacity * 100));
+    return Math.max(0, Math.min(100, Math.round(100 - opacityPct)));
+  }
+
+  async getSourceTransparency(sourceName) {
+    const target = String(sourceName || '').trim();
+    if (!target) return { ok: false, transparencyPct: 0 };
+    try {
+      const res = await this.call('GetSourceFilterList', { sourceName: target });
+      const filters = Array.isArray(res.filters) ? res.filters : [];
+      const own = filters.find((f) => f.filterName === OMNIGRID_TRANSPARENCY_FILTER);
+      if (own) {
+        if (own.filterEnabled === false) return { ok: true, sourceName: target, transparencyPct: 0 };
+        const pct = this._opacitySettingToTransparencyPct(own.filterSettings?.opacity, own.filterKind);
+        return { ok: true, sourceName: target, transparencyPct: pct };
+      }
+      const existingColor = filters.find(
+        (f) => f.filterEnabled !== false && (f.filterKind === 'color_filter_v2' || f.filterKind === 'color_filter') && f.filterSettings?.opacity !== undefined
+      );
+      if (existingColor) {
+        const pct = this._opacitySettingToTransparencyPct(existingColor.filterSettings.opacity, existingColor.filterKind);
+        return { ok: true, sourceName: target, transparencyPct: pct };
+      }
+    } catch (e) {}
+    return { ok: true, sourceName: target, transparencyPct: 0 };
+  }
+
+  async setSourceTransparency(sourceName, transparencyPct = 0) {
+    const target = String(sourceName || '').trim();
+    if (!target) throw new Error('Kein Quellenname angegeben.');
+    const pct = Math.max(0, Math.min(100, Math.round(Number(transparencyPct) || 0)));
+    const spec = await this._resolveColorFilterSpec();
+
+    const listRes = await this.call('GetSourceFilterList', { sourceName: target });
+    const filters = Array.isArray(listRes.filters) ? listRes.filters : [];
+    const own = filters.find((f) => f.filterName === OMNIGRID_TRANSPARENCY_FILTER);
+
+    if (pct <= 0) {
+      if (own) {
+        await this.call('RemoveSourceFilter', {
+          sourceName: target,
+          filterName: OMNIGRID_TRANSPARENCY_FILTER
+        }).catch(() => {});
+      }
+      return { ok: true, sourceName: target, transparencyPct: 0, opacityPct: 100 };
+    }
+
+    const opacityVal =
+      spec.maxVal === 100
+        ? Math.max(0, Math.min(100, Math.round(100 - pct)))
+        : Number(Math.max(0, Math.min(1, (100 - pct) / 100)).toFixed(3));
+
+    if (own) {
+      await this.call('SetSourceFilterSettings', {
+        sourceName: target,
+        filterName: OMNIGRID_TRANSPARENCY_FILTER,
+        filterSettings: { opacity: opacityVal },
+        overlay: true
+      });
+      if (own.filterEnabled === false) {
+        await this.call('SetSourceFilterEnabled', {
+          sourceName: target,
+          filterName: OMNIGRID_TRANSPARENCY_FILTER,
+          filterEnabled: true
+        }).catch(() => {});
+      }
+    } else {
+      await this.call('CreateSourceFilter', {
+        sourceName: target,
+        filterName: OMNIGRID_TRANSPARENCY_FILTER,
+        filterKind: spec.kind,
+        filterSettings: { opacity: opacityVal }
+      });
+    }
+
+    return { ok: true, sourceName: target, transparencyPct: pct, opacityPct: 100 - pct };
+  }
+
   async getSceneItems(sceneName = '') {
     const target = String(sceneName || this.state.currentScene || '').trim();
     if (!target) throw new Error('Keine Szene ausgewählt.');
@@ -346,6 +448,24 @@ class ObsWsClient extends EventEmitter {
 
     const res = await this.call('GetSceneItemList', { sceneName: target });
     const rawItems = Array.isArray(res.sceneItems) ? res.sceneItems : [];
+    const uniqueVisualSources = [
+      ...new Set(
+        rawItems
+          .filter((it) => {
+            const k = String(it.inputKind || '').toLowerCase();
+            return it.sourceName && !k.includes('audio') && k !== 'sck_audio_capture';
+          })
+          .map((it) => String(it.sourceName))
+      )
+    ];
+    const transparencyMap = new Map();
+    await Promise.all(
+      uniqueVisualSources.map(async (srcName) => {
+        const trRes = await this.getSourceTransparency(srcName);
+        transparencyMap.set(srcName, Number(trRes?.transparencyPct || 0));
+      })
+    );
+
     const items = rawItems.map((it, idx) => ({
       sceneItemId: it.sceneItemId,
       sceneItemIndex: typeof it.sceneItemIndex === 'number' ? it.sceneItemIndex : idx,
@@ -354,6 +474,7 @@ class ObsWsClient extends EventEmitter {
       inputKind: it.inputKind || '',
       sceneItemEnabled: Boolean(it.sceneItemEnabled),
       sceneItemLocked: Boolean(it.sceneItemLocked),
+      transparencyPct: transparencyMap.get(String(it.sourceName)) || 0,
       transform: it.sceneItemTransform || {}
     }));
     return { ok: true, sceneName: target, baseWidth, baseHeight, items: items.reverse() };
@@ -665,6 +786,7 @@ class ObsWsClient extends EventEmitter {
       entry.reject(new Error('Verbindung getrennt.'));
     }
     this.pending.clear();
+    this._colorFilterSpec = null;
     if (this.ws) {
       try {
         this.ws.removeAllListeners();

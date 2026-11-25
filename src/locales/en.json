@@ -613,6 +613,8 @@
       "seHdBadge": "🖼️ 1080p HD Preview (updates on changes)",
       "sePlaceholder": "Connect OBS to load 1080p HD preview...",
       "sePosSizeLayer": "📐 Position, Size & Layer:",
+      "seTransparencyLabel": "💧 Transparency:",
+      "seVisibleInitial": "100% visible",
       "seClickSource": "— Click a source —",
       "seLayerFront": "⏫ Bring to Front",
       "seLayerUp": "🔼 Forward",

@@ -252,6 +252,8 @@ Keep your community updated automatically before, during, and after every stream
   - Click **`⚔️ Complete LoL Set`** or **`💬 Just Chatting Set`** to insert the entire coordinated overlay layout into your scene in a single click!
 - **⏫ Foreground & ⏬ Background Layer Ordering:**
   - Move any selected source forward or backward using the toolbar buttons (**`⏫ Bring to Front`**, **`🔼 Forward`**, **`🔽 Backward`**, **`⏬ Send to Back`**), the **`🔼` / `🔽` row buttons** (*`⇧ Shift` + Click jumps straight to top/bottom*), or **Drag & Drop (`⠿`)** in the source list (*top = foreground, bottom = background*).
+- **💧 Per-Element Transparency (`0–100%`):**
+  - Adjust the **transparency of each visual scene element** directly via the inline slider in the **source list** or below the preview using the **💧 Transparency slider**, percentage input, and quick presets (`0%`, `25%`, `50%`, `75%`) live in OBS (managed via a dedicated non-destructive `OmniGrid Transparenz` OBS color correction filter that cleans itself up automatically at `0%`).
 - **Crisp 1080p HD Preview, Canvas Controls & Native File Picker:** Drag sources directly on the `1920 × 1080` preview to move them or drag corners to resize (**🎯 Center** / **⛶ Fullscreen**). When adding or editing **Image, Video/Media, or Text File sources**, a native **Finder / Explorer file dialog** opens directly — no manual file paths ever need to be typed.
 
 ## 20. Automatic Updates (GitHub Releases)

@@ -252,6 +252,8 @@ Informiere deine Community vollautomatisch über Stream-Starts, Live-Status und 
   - Über **`⚔️ Komplettes LoL-Set`** bzw. **`💬 Just-Chatting-Set`** fügst du das gesamte abgestimmte Overlay-Paket mit einem einzigen Klick fertig positioniert in deine Szene ein!
 - **⏫ Vordergrund & ⏬ Hintergrund (Ebenen-Steuerung):**
   - Verschiebe die ausgewählte Quelle über die Toolbar unter der Vorschau (**`⏫ Vordergrund`**, **`🔼 Vor`**, **`🔽 Hinter`**, **`⏬ Hintergrund`**), über die **`🔼` / `🔽` Buttons** direkt in der Quellenliste (*Tipp: `⇧ Shift` + Klick springt ganz nach vorn/hinten*) oder per **Drag & Drop (`⠿`)** mit der Maus (*oben = Vordergrund, unten = Hintergrund*).
+- **💧 Transparenz pro Element (`0–100 %`):**
+  - Stelle die **Transparenz jedes einzelnen visuellen Szene-Elements** direkt per kompaktem Schieberegler in der **Quellenliste** oder unterhalb der Vorschau per **💧 Transparenz-Slider**, Prozent-Eingabe und Schnell-Presets (`0%`, `25%`, `50%`, `75%`) live in OBS ein (über einen dedizierten, zerstörungsfreien OBS-Farbkorrektur-Filter `OmniGrid Transparenz`, der bei `0%` automatisch wieder sauber entfernt wird).
 - **Scharfe 1080p HD-Vorschau, Maus-Steuerung & Finder/Explorer-Dateiauswahl:** Ziehe Quellen direkt auf der `1920 × 1080`-Vorschau zum Verschieben oder an den Ecken zum Skalieren (**🎯 Zentrieren** / **⛶ Vollbild**). Beim Hinzufügen oder Bearbeiten von **Bild-, Video-/Medien- oder Textdatei-Quellen** öffnet sich direkt der native **Finder- / Explorer-Dateidialog** — Dateipfade müssen nirgendwo per Text eingetippt werden.
 
 ## 20. Automatische Updates (GitHub Releases)

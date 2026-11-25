@@ -613,6 +613,8 @@
       "seHdBadge": "🖼️ 1080p HD-Vorschau (aktualisiert bei Änderungen)",
       "sePlaceholder": "OBS verbinden, um 1080p HD-Vorschau zu laden...",
       "sePosSizeLayer": "📐 Position, Größe & Ebene:",
+      "seTransparencyLabel": "💧 Transparenz:",
+      "seVisibleInitial": "100% sichtbar",
       "seClickSource": "— Quelle anklicken —",
       "seLayerFront": "⏫ Vordergrund",
       "seLayerUp": "🔼 Vor",

@@ -5187,6 +5187,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const btnLayerUp = document.getElementById('btnSeLayerUp');
   const btnLayerDown = document.getElementById('btnSeLayerDown');
   const btnLayerBack = document.getElementById('btnSeLayerBack');
+  const rngTransparency = document.getElementById('seTransparencyRange');
+  const inpTransparencyPct = document.getElementById('seTransparencyPct');
+  const lblTransparencyReadout = document.getElementById('seTransparencyReadout');
+  const transPresetBtns = Array.from(modal.querySelectorAll('.se-trans-preset'));
 
   let currentSceneName = '';
   let baseWidth = 1920;
@@ -5560,15 +5564,87 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  let transparencyThrottleTimer = null;
+  let pendingTransparencyCall = null;
+
+  function formatVisibleReadout(transPct) {
+    const vis = Math.max(0, Math.min(100, 100 - Math.round(Number(transPct) || 0)));
+    return window.__appLang === 'en' ? `${vis}% visible` : `${vis}% sichtbar`;
+  }
+
+  function syncSelectedTransparencyUI(transPct) {
+    const pct = Math.max(0, Math.min(100, Math.round(Number(transPct) || 0)));
+    if (rngTransparency) rngTransparency.value = String(pct);
+    if (inpTransparencyPct) inpTransparencyPct.value = String(pct);
+    if (lblTransparencyReadout) lblTransparencyReadout.textContent = formatVisibleReadout(pct);
+  }
+
+  async function applyItemTransparency(item, rawPct, { commitPreview = false, skipListRebuild = false } = {}) {
+    if (!item?.sourceName) return;
+    const pct = Math.max(0, Math.min(100, Math.round(Number(rawPct) || 0)));
+    sceneItems.forEach((x) => {
+      if (x.sourceName === item.sourceName) x.transparencyPct = pct;
+    });
+    if (selectedItem?.sourceName === item.sourceName) {
+      selectedItem.transparencyPct = pct;
+      syncSelectedTransparencyUI(pct);
+    }
+    renderCanvasOverlay();
+    if (!skipListRebuild) renderSourcesList();
+
+    const sendNow = async () => {
+      const res = await window.omnichat.obsWsAction({
+        action: 'set-source-transparency',
+        sourceName: item.sourceName,
+        transparencyPct: pct
+      });
+      if (res?.ok) {
+        if (commitPreview) {
+          setStatus(
+            pct === 0
+              ? `✅ "${item.sourceName}": Transparenz auf 0% (100% sichtbar) gesetzt.`
+              : `✅ "${item.sourceName}": ${pct}% Transparenz (${100 - pct}% sichtbar) gesetzt.`,
+            '#4ade80'
+          );
+          setTimeout(refreshPreview, 120);
+        }
+      } else if (commitPreview) {
+        setStatus(`❌ ${res?.error || 'Transparenz konnte in OBS nicht gesetzt werden.'}`, '#f87171');
+      }
+    };
+
+    if (commitPreview) {
+      if (transparencyThrottleTimer) {
+        clearTimeout(transparencyThrottleTimer);
+        transparencyThrottleTimer = null;
+      }
+      pendingTransparencyCall = null;
+      await sendNow();
+      return;
+    }
+
+    pendingTransparencyCall = sendNow;
+    if (!transparencyThrottleTimer) {
+      transparencyThrottleTimer = setTimeout(async () => {
+        transparencyThrottleTimer = null;
+        const fn = pendingTransparencyCall;
+        pendingTransparencyCall = null;
+        if (fn) await fn();
+      }, 75);
+    }
+  }
+
   function selectSourceItem(item) {
     selectedItem = item;
     const disabled = !item || isAudioOnlyItem(item);
-    [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen].forEach((el) => {
+    [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen, rngTransparency, inpTransparencyPct].forEach((el) => {
       if (el) el.disabled = disabled;
     });
+    transPresetBtns.forEach((b) => { b.disabled = disabled; });
     updateLayerButtonsState(item);
     if (!item) {
       if (lblSelSource) lblSelSource.textContent = '— Quelle anklicken —';
+      syncSelectedTransparencyUI(0);
       loadInputConfig(null);
       return;
     }
@@ -5577,6 +5653,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (inpPosX) inpPosX.value = String(Math.round(tr.positionX || 0));
     if (inpPosY) inpPosY.value = String(Math.round(tr.positionY || 0));
     if (inpScalePct) inpScalePct.value = String(Math.round((tr.scaleX || 1) * 100));
+    syncSelectedTransparencyUI(item.transparencyPct || 0);
     loadInputConfig(item);
   }
 
@@ -5614,7 +5691,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
       const tag = document.createElement('div');
       tag.style.cssText = `position:absolute; top:2px; left:2px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; background:${isSel ? '#0284c7' : 'rgba(15,23,42,0.78)'}; color:#f8fafc; pointer-events:none; white-space:nowrap; max-width:95%; overflow:hidden; text-overflow:ellipsis;`;
-      tag.textContent = it.sourceName;
+      const trPct = Number(it.transparencyPct || 0);
+      tag.textContent = trPct > 0 ? `${it.sourceName} • 💧${trPct}%` : it.sourceName;
       box.appendChild(tag);
 
       box.addEventListener('mousedown', (e) => {
@@ -5800,7 +5878,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       });
 
       row.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') return;
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
         selectSourceItem(it);
         renderSourcesList();
         renderCanvasOverlay();
@@ -5891,6 +5969,53 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
       row.appendChild(grip);
       row.appendChild(nameSpan);
+
+      if (!isAudioOnlyItem(it)) {
+        const transWrap = document.createElement('div');
+        transWrap.style.cssText = 'display:flex; align-items:center; gap:3px; padding:0 3px;';
+        transWrap.title = 'Transparenz dieser Quelle (0% = voll sichtbar, 100% = unsichtbar)';
+
+        const miniSlider = document.createElement('input');
+        miniSlider.type = 'range';
+        miniSlider.min = '0';
+        miniSlider.max = '100';
+        miniSlider.step = '1';
+        miniSlider.value = String(Math.max(0, Math.min(100, Number(it.transparencyPct || 0))));
+        miniSlider.style.cssText = 'width:54px; cursor:pointer;';
+
+        const miniBadge = document.createElement('span');
+        const initPct = Math.max(0, Math.min(100, Number(it.transparencyPct || 0)));
+        miniBadge.style.cssText = `font-size:10px; min-width:28px; text-align:right; font-variant-numeric:tabular-nums; color:${initPct > 0 ? '#38bdf8' : '#64748b'}; font-weight:${initPct > 0 ? '700' : '500'};`;
+        miniBadge.textContent = `${initPct}%`;
+
+        miniSlider.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          row.draggable = false;
+        });
+        miniSlider.addEventListener('mouseup', () => {
+          row.draggable = total > 1;
+        });
+        miniSlider.addEventListener('click', (e) => e.stopPropagation());
+        miniSlider.addEventListener('input', (e) => {
+          e.stopPropagation();
+          const p = Math.max(0, Math.min(100, parseInt(miniSlider.value || '0', 10) || 0));
+          miniBadge.textContent = `${p}%`;
+          miniBadge.style.color = p > 0 ? '#38bdf8' : '#64748b';
+          miniBadge.style.fontWeight = p > 0 ? '700' : '500';
+          applyItemTransparency(it, p, { commitPreview: false, skipListRebuild: true });
+        });
+        miniSlider.addEventListener('change', (e) => {
+          e.stopPropagation();
+          row.draggable = total > 1;
+          const p = Math.max(0, Math.min(100, parseInt(miniSlider.value || '0', 10) || 0));
+          applyItemTransparency(it, p, { commitPreview: true, skipListRebuild: false });
+        });
+
+        transWrap.appendChild(miniSlider);
+        transWrap.appendChild(miniBadge);
+        row.appendChild(transWrap);
+      }
+
       row.appendChild(upBtn);
       row.appendChild(downBtn);
       row.appendChild(eyeBtn);
@@ -6134,6 +6259,39 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnLayerUp?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'up'));
   btnLayerDown?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'down'));
   btnLayerBack?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'back'));
+
+  rngTransparency?.addEventListener('input', () => {
+    if (!selectedItem) return;
+    const pct = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '0', 10) || 0));
+    syncSelectedTransparencyUI(pct);
+    applyItemTransparency(selectedItem, pct, { commitPreview: false, skipListRebuild: false });
+  });
+  rngTransparency?.addEventListener('change', () => {
+    if (!selectedItem) return;
+    const pct = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '0', 10) || 0));
+    applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+  });
+  inpTransparencyPct?.addEventListener('change', () => {
+    if (!selectedItem) return;
+    const pct = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '0', 10) || 0));
+    syncSelectedTransparencyUI(pct);
+    applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+  });
+  inpTransparencyPct?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && selectedItem) {
+      const pct = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '0', 10) || 0));
+      syncSelectedTransparencyUI(pct);
+      applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+    }
+  });
+  transPresetBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!selectedItem) return;
+      const pct = Math.max(0, Math.min(100, parseInt(btn.dataset.trans || '0', 10) || 0));
+      syncSelectedTransparencyUI(pct);
+      applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+    });
+  });
 
   btnCenter?.addEventListener('click', async () => {
     if (!selectedItem || !currentSceneName) return;
