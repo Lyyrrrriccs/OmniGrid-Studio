@@ -8500,3 +8500,230 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     await runImport({ rawJson, fileName: file.name });
   });
 })();
+
+(() => {
+  const modal = document.getElementById('quickSetupModal');
+  if (!modal) return;
+
+  const totalSteps = 5;
+  let currentStep = 1;
+  let obsConnectedNow = false;
+  let ytAuthorizedNow = false;
+
+  const panels = Array.from(modal.querySelectorAll('.qs-panel'));
+  const pills = Array.from(modal.querySelectorAll('.qs-step-pill'));
+  const progressFill = document.getElementById('qsProgressFill');
+  const stepIndicator = document.getElementById('qsStepIndicator');
+  const btnPrev = document.getElementById('btnQsPrev');
+  const btnNext = document.getElementById('btnQsNext');
+  const obsBadge = document.getElementById('qsObsStatusBadge');
+  const obsFeedback = document.getElementById('qsObsFeedback');
+  const ytBadge = document.getElementById('qsYtOAuthBadge');
+  const extrasFeedback = document.getElementById('qsExtrasFeedback');
+  const summaryList = document.getElementById('qsSummaryList');
+
+  const fieldPairs = [
+    ['qsStreamerName', 'inputStreamerName', 'value'],
+    ['qsEnableTwitch', 'chkEnableTwitch', 'checked'],
+    ['qsTwitchChannel', 'inputTwitchChannel', 'value'],
+    ['qsEnableYoutube', 'chkEnableYoutube', 'checked'],
+    ['qsYoutubeChannel', 'inputYoutubeChannel', 'value'],
+    ['qsEnableTiktok', 'chkEnableTiktok', 'checked'],
+    ['qsTiktokChannel', 'inputTiktokChannel', 'value'],
+    ['qsTwitchUser', 'inputTwitchUser', 'value'],
+    ['qsTwitchToken', 'inputTwitchToken', 'value']
+  ];
+
+  const syncFromMainForm = () => {
+    for (const [qsId, mainId, prop] of fieldPairs) {
+      const qsEl = document.getElementById(qsId);
+      const mainEl = document.getElementById(mainId);
+      if (qsEl && mainEl) qsEl[prop] = mainEl[prop];
+    }
+    const ytStat = document.getElementById('ytOAuthStatus')?.textContent || '';
+    ytAuthorizedNow = ytStat.toLowerCase().includes('verbunden') || ytStat.toLowerCase().includes('aktiv') || ytStat.includes('✅');
+    if (ytBadge) {
+      ytBadge.textContent = ytAuthorizedNow ? '🟢 Verbunden' : 'Nur-Lesen';
+      ytBadge.style.color = ytAuthorizedNow ? '#4ade80' : '#cbd5e1';
+      ytBadge.style.background = ytAuthorizedNow ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.18)';
+    }
+  };
+
+  const syncToMainForm = () => {
+    for (const [qsId, mainId, prop] of fieldPairs) {
+      const qsEl = document.getElementById(qsId);
+      const mainEl = document.getElementById(mainId);
+      if (qsEl && mainEl) mainEl[prop] = qsEl[prop];
+    }
+  };
+
+  const renderSummary = () => {
+    if (!summaryList) return;
+    syncToMainForm();
+    const tw = document.getElementById('qsTwitchChannel')?.value.trim();
+    const yt = document.getElementById('qsYoutubeChannel')?.value.trim();
+    const tt = document.getElementById('qsTiktokChannel')?.value.trim();
+    const twTok = document.getElementById('qsTwitchToken')?.value.trim();
+    const rows = [
+      ['🟣 Twitch', tw ? `✅ ${tw}${twTok ? ' (+ Schreib-Token)' : ' (Lesen)'}` : '⚪ Nicht eingerichtet'],
+      ['🔴 YouTube Live', yt ? `✅ ${yt}${ytAuthorizedNow ? ' (+ OAuth2)' : ' (Lesen)'}` : '⚪ Nicht eingerichtet'],
+      ['🎵 TikTok Live', tt ? `✅ ${tt}` : '⚪ Nicht eingerichtet'],
+      ['🎥 OBS Studio', obsConnectedNow ? '✅ Verbunden' : '⚪ Optional (später unter Config → OBS)'],
+      ['🎙️ Sprachsteuerung', document.getElementById('qsVoiceCodeOut')?.textContent ? '✅ Pairing-Code bereit' : '⚪ Optional (Config → Tablet & Stream Deck)']
+    ];
+    summaryList.innerHTML = '';
+    for (const [label, val] of rows) {
+      const row = document.createElement('div');
+      row.className = 'qs-summary-row';
+      const left = document.createElement('strong');
+      left.textContent = label;
+      const right = document.createElement('span');
+      right.textContent = val;
+      row.append(left, right);
+      summaryList.appendChild(row);
+    }
+  };
+
+  const goToStep = (step) => {
+    currentStep = Math.max(1, Math.min(totalSteps, step));
+    panels.forEach((p) => p.classList.toggle('active', Number(p.dataset.qsPanel) === currentStep));
+    pills.forEach((b) => {
+      const s = Number(b.dataset.qsStep);
+      b.classList.toggle('active', s === currentStep);
+      b.classList.toggle('done', s < currentStep);
+    });
+    if (progressFill) progressFill.style.width = `${Math.round((currentStep / totalSteps) * 100)}%`;
+    if (stepIndicator) stepIndicator.textContent = `Schritt ${currentStep} von ${totalSteps}`;
+    if (btnPrev) btnPrev.disabled = currentStep === 1;
+    if (btnNext) btnNext.style.display = currentStep === totalSteps ? 'none' : '';
+    if (currentStep === totalSteps) renderSummary();
+  };
+
+  const openWizard = () => {
+    syncFromMainForm();
+    goToStep(1);
+    document.getElementById('configPageModal')?.classList.add('hidden');
+    modal.classList.remove('hidden');
+  };
+
+  const closeWizard = (markDone = true) => {
+    syncToMainForm();
+    modal.classList.add('hidden');
+    if (markDone) {
+      try { localStorage.setItem('omnigrid_quick_setup_done', '1'); } catch (e) {}
+    }
+  };
+
+  document.getElementById('btnOpenQuickSetup')?.addEventListener('click', openWizard);
+  document.getElementById('btnOpenQuickSetupFromConfig')?.addEventListener('click', openWizard);
+  document.getElementById('btnQsClose')?.addEventListener('click', () => closeWizard(true));
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeWizard(true); });
+  pills.forEach((b) => b.addEventListener('click', () => { syncToMainForm(); goToStep(Number(b.dataset.qsStep)); }));
+  btnPrev?.addEventListener('click', () => { syncToMainForm(); goToStep(currentStep - 1); });
+  btnNext?.addEventListener('click', async () => {
+    syncToMainForm();
+    await window.omnichat.saveProfile(getFormConfig()).catch(() => {});
+    goToStep(currentStep + 1);
+  });
+
+  document.getElementById('btnQsGetTwitchToken')?.addEventListener('click', () => {
+    document.getElementById('btnGetTwitchToken')?.click();
+  });
+
+  document.getElementById('btnQsYtImportJson')?.addEventListener('click', () => {
+    document.getElementById('btnYtImportOAuthJson')?.click();
+  });
+
+  document.getElementById('btnQsYtGuide')?.addEventListener('click', () => {
+    window.omnichat.openHelpWindow?.({ section: '22', anchor: 'Google / YouTube OAuth2' });
+  });
+
+  document.getElementById('btnQsImportBackup')?.addEventListener('click', async () => {
+    const res = await window.omnichat.importConfig?.();
+    if (res?.ok) closeWizard(true);
+  });
+
+  const updateObsBadge = (connected) => {
+    obsConnectedNow = Boolean(connected);
+    if (!obsBadge) return;
+    obsBadge.textContent = obsConnectedNow ? '🟢 OBS verbunden' : '⚪ Nicht verbunden';
+    obsBadge.style.color = obsConnectedNow ? '#4ade80' : '#cbd5e1';
+    obsBadge.style.background = obsConnectedNow ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.18)';
+  };
+
+  window.omnichat.onObsWsState?.((st) => updateObsBadge(Boolean(st?.connected)));
+
+  document.getElementById('btnQsObsAutoSetup')?.addEventListener('click', async () => {
+    if (obsFeedback) { obsFeedback.textContent = '⏳ Konfiguriere OBS WebSocket automatisch...'; obsFeedback.style.color = '#38bdf8'; }
+    const res = await window.omnichat.obsWsAutoSetup?.();
+    updateObsBadge(Boolean(res?.connected || res?.ok));
+    if (obsFeedback) {
+      obsFeedback.textContent = res?.ok ? `✅ ${res.message || 'OBS erfolgreich verbunden!'}` : `⚠️ ${res?.error || 'Bitte OBS Studio öffnen und erneut testen.'}`;
+      obsFeedback.style.color = res?.ok ? '#4ade80' : '#fbbf24';
+    }
+  });
+
+  document.getElementById('btnQsObsConnectOnly')?.addEventListener('click', async () => {
+    if (obsFeedback) { obsFeedback.textContent = '⏳ Teste OBS-Verbindung...'; obsFeedback.style.color = '#38bdf8'; }
+    const res = await window.omnichat.obsWsConnect?.();
+    updateObsBadge(Boolean(res?.ok));
+    if (obsFeedback) {
+      obsFeedback.textContent = res?.ok ? '✅ OBS WebSocket verbunden!' : `⚠️ ${res?.error || 'OBS nicht erreichbar.'}`;
+      obsFeedback.style.color = res?.ok ? '#4ade80' : '#fbbf24';
+    }
+  });
+
+  document.getElementById('btnQsCopyOverlay')?.addEventListener('click', async () => {
+    const url = document.getElementById('qsObsOverlayUrl')?.value || 'http://127.0.0.1:4588/overlay';
+    try {
+      await navigator.clipboard.writeText(url);
+      if (obsFeedback) { obsFeedback.textContent = '📋 OBS Overlay-URL kopiert!'; obsFeedback.style.color = '#4ade80'; }
+    } catch (e) {}
+  });
+
+  document.getElementById('btnQsVoicePair')?.addEventListener('click', async () => {
+    const res = await window.omnichat.voiceGeneratePairing?.({});
+    const out = document.getElementById('qsVoiceCodeOut');
+    if (out && res?.pairingCode) out.textContent = `Code: ${res.pairingCodeFormatted || res.pairingCode}`;
+    if (extrasFeedback) {
+      extrasFeedback.textContent = res?.ok ? '✅ Pairing-Code erstellt (10 Min. gültig).' : `⚠️ ${res?.error || 'Fehler'}`;
+      extrasFeedback.style.color = res?.ok ? '#4ade80' : '#fbbf24';
+    }
+  });
+
+  document.getElementById('btnQsExportBackup')?.addEventListener('click', async () => {
+    syncToMainForm();
+    await window.omnichat.saveProfile(getFormConfig()).catch(() => {});
+    const res = await window.omnichat.exportConfig?.();
+    if (extrasFeedback && !res?.canceled) {
+      extrasFeedback.textContent = res?.ok ? '✅ Backup gespeichert!' : `⚠️ ${res?.error || 'Export fehlgeschlagen.'}`;
+      extrasFeedback.style.color = res?.ok ? '#4ade80' : '#f87171';
+    }
+  });
+
+  document.getElementById('btnQsFinishConnect')?.addEventListener('click', async () => {
+    syncToMainForm();
+    const cfg = getFormConfig();
+    await window.omnichat.saveProfile(cfg).catch(() => {});
+    await window.omnichat.connectAll(cfg).catch(() => {});
+    closeWizard(true);
+  });
+
+  document.getElementById('btnQsTryDemo')?.addEventListener('click', async () => {
+    closeWizard(true);
+    document.getElementById('btnDemo')?.click();
+  });
+
+  window.omnichat.onInitState?.((data) => {
+    if (data?.obsWsState) updateObsBadge(Boolean(data.obsWsState.connected));
+    const urlInput = document.getElementById('qsObsOverlayUrl');
+    if (urlInput && data?.obsOverlayUrl) urlInput.value = data.obsOverlayUrl;
+    const cfg = data?.config || {};
+    const hasAnyChannel = Boolean(cfg.twitch?.channel || cfg.youtube?.channel || cfg.tiktok?.channel);
+    let done = false;
+    try { done = localStorage.getItem('omnigrid_quick_setup_done') === '1'; } catch (e) {}
+    if (!hasAnyChannel && !done) {
+      setTimeout(openWizard, 450);
+    }
+  });
+})();

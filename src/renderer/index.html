@@ -55,6 +55,7 @@
         <option value="de">🇩🇪 DE</option>
         <option value="en">🇬🇧 EN</option>
       </select>
+      <button class="btn-chip" id="btnOpenQuickSetup" style="background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.45); color: #7dd3fc; font-weight: 700;" title="Schritt-für-Schritt Einrichtungs-Assistent starten">🧭 Quick Setup</button>
       <button class="btn-chip" id="btnOpenConfig" title="Zentrale Konfiguration öffnen (Design, OBS, Alerts, TTS, Stream Deck, System)">⚙️ Config</button>
       <button class="btn-chip" id="btnOpenClipStudio" title="Clip- &amp; Replay-Studio (9:16 Shorts Export)">🎞️ Clip-Studio</button>
       <button class="btn-chip" id="btnOpenSocialSchedule" title="Discord Go-Live, Sendeplan (Schedule) &amp; Social-Plattformen">📅 Schedule &amp; Go-Live</button>
@@ -1607,6 +1608,7 @@
           <p class="config-modal-sub">Alle Einstellungen werden automatisch gespeichert.</p>
         </div>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button class="btn-chip" id="btnOpenQuickSetupFromConfig" title="Schritt-für-Schritt Einrichtungs-Assistent starten">🧭 Quick Setup</button>
           <button class="btn-help-modal" id="btnHelpConfigTab" title="Anleitung passend zum aktuellen Tab rechts daneben öffnen">📖 Anleitung</button>
           <button class="btn-chip" id="btnCloseConfig">✕ Zurück zum Chat</button>
         </div>
@@ -2492,6 +2494,161 @@
           </div>
           <div id="privacyDomainsList" style="display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; padding: 6px; border-radius: 8px; background: rgba(2,6,23,0.6); border: 1px solid rgba(148,163,184,0.16); font-size: 11px;"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-modal-backdrop hidden" id="quickSetupModal">
+    <div class="qs-modal-shell" role="dialog" aria-modal="true" aria-label="OmniGrid Quick Setup">
+      <div class="qs-header">
+        <div>
+          <h2 style="margin: 0; font-size: 18px;">🧭 OmniGrid Studio — Quick Setup</h2>
+          <p style="margin: 2px 0 0; font-size: 12px; color: #94a3b8;">In 5 einfachen Schritten startklar für deinen Stream – alles kann später jederzeit geändert werden.</p>
+        </div>
+        <button class="btn-chip" id="btnQsClose" title="Assistent schließen">✕ Später</button>
+      </div>
+
+      <div class="qs-progress-wrap">
+        <div class="qs-progress-track"><div class="qs-progress-fill" id="qsProgressFill" style="width: 20%;"></div></div>
+        <div class="qs-steps-bar" id="qsStepsBar">
+          <button type="button" class="qs-step-pill active" data-qs-step="1">1. Kanäle</button>
+          <button type="button" class="qs-step-pill" data-qs-step="2">2. Schreiben &amp; OAuth</button>
+          <button type="button" class="qs-step-pill" data-qs-step="3">3. OBS Studio</button>
+          <button type="button" class="qs-step-pill" data-qs-step="4">4. Extras</button>
+          <button type="button" class="qs-step-pill" data-qs-step="5">5. Fertig</button>
+        </div>
+      </div>
+
+      <div class="qs-body">
+        <div class="qs-panel active" data-qs-panel="1">
+          <h3>📡 Schritt 1: Dein Name &amp; Streaming-Kanäle</h3>
+          <p class="section-hint">Trage einfach die Plattformen ein, die du nutzt. Leer gelassene Plattformen werden übersprungen.</p>
+
+          <div class="qs-card" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 12px; color: #cbd5e1;">💾 Hast du schon eine <code>omnigrid-backup.json</code> von einem anderen Gerät?</span>
+            <button type="button" class="btn-sm" id="btnQsImportBackup">📥 Backup direkt importieren</button>
+          </div>
+
+          <div class="qs-field-grid">
+            <div class="qs-field">
+              <label for="qsStreamerName">Dein Streamer-Name (für @Mention-Alarm)</label>
+              <input type="text" id="qsStreamerName" placeholder="z. B. DeinName" />
+            </div>
+            <div class="qs-field">
+              <label class="checkbox-row" style="margin-bottom: 4px;"><input type="checkbox" id="qsEnableTwitch" checked /> <strong>🟣 Twitch-Kanalname</strong></label>
+              <input type="text" id="qsTwitchChannel" placeholder="z. B. deinkanal" />
+            </div>
+            <div class="qs-field">
+              <label class="checkbox-row" style="margin-bottom: 4px;"><input type="checkbox" id="qsEnableYoutube" checked /> <strong>🔴 YouTube-@Handle oder Kanal-URL</strong></label>
+              <input type="text" id="qsYoutubeChannel" placeholder="z. B. @DeinKanal" />
+            </div>
+            <div class="qs-field">
+              <label class="checkbox-row" style="margin-bottom: 4px;"><input type="checkbox" id="qsEnableTiktok" checked /> <strong>🎵 TikTok-@Benutzername</strong></label>
+              <input type="text" id="qsTiktokChannel" placeholder="z. B. @dein_tiktok" />
+            </div>
+          </div>
+        </div>
+
+        <div class="qs-panel" data-qs-panel="2">
+          <h3>🔑 Schritt 2: Im Chat antworten &amp; YouTube Auto-Live (Optional)</h3>
+          <p class="section-hint">Nur zum <strong>Lesen</strong> brauchst du gar nichts einzutragen. Wenn du direkt aus OmniGrid im Chat antworten oder YouTube-Streams automatisch starten willst:</p>
+
+          <div class="qs-card">
+            <div style="font-weight: 700; margin-bottom: 6px;">🟣 Twitch Chat-Token (optional)</div>
+            <div class="qs-field-grid">
+              <div class="qs-field">
+                <label for="qsTwitchUser">Twitch-Accountname</label>
+                <input type="text" id="qsTwitchUser" placeholder="z. B. deinkanal" />
+              </div>
+              <div class="qs-field">
+                <label for="qsTwitchToken">Chat OAuth-Token</label>
+                <div class="select-with-btn">
+                  <input type="password" id="qsTwitchToken" placeholder="oauth:xxxxxxxx" />
+                  <button type="button" class="btn-sm" id="btnQsGetTwitchToken">🔗 Token holen</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="qs-card" style="margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div style="font-weight: 700;">🔴 YouTube OAuth2 (optional, für Schreiben &amp; Multi-Stream)</div>
+              <span id="qsYtOAuthBadge" class="badge-pill" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(148,163,184,0.18); color: #cbd5e1;">Nur-Lesen</span>
+            </div>
+            <p style="font-size: 11.5px; color: #94a3b8; margin: 6px 0 8px;">Importiere einfach deine Google Cloud <code>Download JSON</code>-Datei – Client-ID, Secret &amp; Anmeldung laufen automatisch.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-sm" id="btnQsYtImportJson" style="background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.5); color: #6ee7b7; font-weight: 700;">📂 Google JSON importieren &amp; anmelden</button>
+              <button type="button" class="btn-sm" id="btnQsYtGuide">📖 Schritt-für-Schritt Anleitung</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="qs-panel" data-qs-panel="3">
+          <h3>🎥 Schritt 3: OBS Studio verbinden (Zero-Touch)</h3>
+          <p class="section-hint">OmniGrid kann OBS WebSocket automatisch konfigurieren, Szenen steuern, Clips speichern und dein Chat-Overlay direkt einblenden.</p>
+
+          <div class="qs-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+              <strong>OBS WebSocket Verbindung</strong>
+              <span id="qsObsStatusBadge" class="badge-pill" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(148,163,184,0.18); color: #cbd5e1;">Nicht verbunden</span>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-primary btn-sm" id="btnQsObsAutoSetup">⚡ OBS automatisch einrichten &amp; verbinden</button>
+              <button type="button" class="btn-sm" id="btnQsObsConnectOnly">🔌 Nur verbinden testen</button>
+            </div>
+            <div id="qsObsFeedback" style="font-size: 11.5px; margin-top: 8px; min-height: 16px; color: #94a3b8;"></div>
+          </div>
+
+          <div class="qs-card" style="margin-top: 10px;">
+            <div style="font-weight: 700; margin-bottom: 4px;">💬 OBS Chat-Overlay Browser-Quelle</div>
+            <p style="font-size: 11.5px; color: #94a3b8; margin: 0 0 6px;">Füge diese lokale URL in OBS als <strong>Browser-Quelle</strong> (z. B. 420×700 px) hinzu:</p>
+            <div class="obs-url-row">
+              <input type="text" id="qsObsOverlayUrl" readonly value="http://127.0.0.1:4588/overlay" />
+              <button type="button" class="btn-sm" id="btnQsCopyOverlay">📋 Kopieren</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="qs-panel" data-qs-panel="4">
+          <h3>✨ Schritt 4: Optionale Extras &amp; Sicherung</h3>
+          <p class="section-hint">Du kannst diese Features direkt hier ausprobieren oder später jederzeit unter <strong>⚙️ Config</strong> einrichten.</p>
+
+          <div class="qs-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div>
+                <strong>🎙️ Sprachsteuerung (Alexa &amp; Google Home)</strong>
+                <div style="font-size: 11px; color: #94a3b8;">Clip, Hype-Modus &amp; Multi-Stream per Sprache – ohne Portweiterleitung.</div>
+              </div>
+              <button type="button" class="btn-sm" id="btnQsVoicePair">🔑 6-stelligen Code generieren</button>
+            </div>
+            <div id="qsVoiceCodeOut" style="margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px; font-weight: 800; letter-spacing: 4px; color: #38bdf8;"></div>
+          </div>
+
+          <div class="qs-card" style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div>
+              <strong>💾 Komplett-Backup sichern</strong>
+              <div style="font-size: 11px; color: #94a3b8;">Exportiere alle Einstellungen &amp; API-Keys als <code>.json</code>-Datei.</div>
+            </div>
+            <button type="button" class="btn-sm" id="btnQsExportBackup">📤 Jetzt exportieren</button>
+          </div>
+          <div id="qsExtrasFeedback" style="font-size: 11.5px; margin-top: 8px; min-height: 16px; color: #94a3b8;"></div>
+        </div>
+
+        <div class="qs-panel" data-qs-panel="5">
+          <h3>🚀 Schritt 5: Alles bereit!</h3>
+          <p class="section-hint">Hier ist deine aktuelle Übersicht. Mit einem Klick werden alle Einstellungen gespeichert und deine Kanäle live verbunden.</p>
+          <div id="qsSummaryList" class="qs-summary-list"></div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;">
+            <button type="button" class="btn-primary" id="btnQsFinishConnect" style="flex: 1; padding: 10px 16px; font-size: 13.5px; font-weight: 700;">🚀 Speichern &amp; Alle Kanäle verbinden</button>
+            <button type="button" class="btn-sm" id="btnQsTryDemo" style="padding: 10px 14px;">▶ Erstmal im Demo-Modus testen</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="qs-footer">
+        <button type="button" class="btn-sm" id="btnQsPrev">← Zurück</button>
+        <span id="qsStepIndicator" style="font-size: 12px; color: #94a3b8;">Schritt 1 von 5</span>
+        <button type="button" class="btn-primary btn-sm" id="btnQsNext">Weiter →</button>
       </div>
     </div>
   </div>
