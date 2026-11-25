@@ -161,17 +161,19 @@
               <input type="text" id="inputYoutubeVideoId" placeholder="Oder manuelle Video-ID / URL (optional)" style="margin-top: 4px;" />
             </div>
             <div class="cap-info">ℹ️ Ohne API-Key: Live-Chat, Custom-Emotes, SuperChats &amp; Members lesen • Zum Schreiben: Google OAuth2</div>
-            <details class="yt-oauth-details" style="margin-top: 6px; font-size: 11px;">
+            <details class="yt-oauth-details" id="ytOAuthDetailsBox" style="margin-top: 6px; font-size: 11px;">
               <summary style="cursor: pointer; user-select: none; color: #cbd5e1; font-weight: 600;">
                 🔑 YouTube Schreiben &amp; Auto-Livestream (OAuth2) — <span id="ytOAuthStatus">Nur-Lesen</span>
               </summary>
               <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;">
+                <button type="button" class="btn-sm" id="btnYtImportOAuthJson" style="width: 100%; padding: 7px 10px; font-weight: 700; background: rgba(16,185,129,0.24); border-color: rgba(16,185,129,0.55); color: #6ee7b7;" title="Wähle einfach die aus Google Cloud heruntergeladene JSON-Datei (Download JSON / client_secret_...json) im Finder/Explorer aus — Client-ID &amp; Secret werden automatisch übernommen und Google-Login startet sofort!">📂 Google „Download JSON“-Datei importieren &amp; anmelden…</button>
+                <div id="ytJsonImportBadge" class="hidden" style="font-size: 10.5px; color: #4ade80; padding: 3px 6px; border-radius: 5px; background: rgba(16,185,129,0.12);"></div>
                 <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                   <button type="button" class="btn-sm" data-help-sec="22" data-help-anchor="Google / YouTube OAuth2" style="flex: 1; font-size: 10.5px; font-weight: 700; background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.45); color: #7dd3fc;">📖 Schritt-für-Schritt OAuth2-Anleitung</button>
                   <button type="button" class="btn-sm" id="btnOpenGoogleCloudConsole" style="font-size: 10.5px;" title="Öffnet console.cloud.google.com im Browser">🌐 Google Cloud Console</button>
                 </div>
-                <input type="text" id="inputYtClientId" placeholder="Google OAuth2 Client-ID (Desktop-App)" />
-                <input type="password" id="inputYtClientSecret" placeholder="Client-Secret (optional)" />
+                <input type="text" id="inputYtClientId" placeholder="Google OAuth2 Client-ID (wird per JSON automatisch ausgefüllt)" />
+                <input type="password" id="inputYtClientSecret" placeholder="Client-Secret GOCSPX-... (wird per JSON automatisch ausgefüllt)" />
                 <div style="display: flex; gap: 6px;">
                   <button class="btn-sm" id="btnYtOAuthLogin" style="flex: 1;">🔐 Mit Google anmelden</button>
                   <button class="btn-sm hidden" id="btnYtOAuthLogout">Abmelden</button>

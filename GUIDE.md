@@ -325,12 +325,13 @@ Why use your own Google OAuth2 Client ID? Google requires an expensive restricte
 2. Click **`+ Create Credentials` → `OAuth client ID`** *(or `+ Create Client`)*.
 3. Under **Application type**, select **`Desktop app`** *(do **not** select "Web application", or Google will reject the local loopback redirect)*.
 4. Name it e.g. `OmniGrid Desktop` and click **Create**.
-5. Copy your **Client ID** (`...apps.googleusercontent.com`) and **Client secret** (`GOCSPX-...`).
+5. In the Google dialog, simply click **`⬇️ Download JSON`** (saves `client_secret_....json` to your `Downloads` folder).
 
-#### Step 5 — Sign In Inside OmniGrid Studio
-1. In OmniGrid Studio, open **⚙️ Config → 🌐 Plattformen** and locate the **🔴 YOUTUBE LIVE** card.
-2. Enter your YouTube handle (e.g. `@YourChannel`) and expand **"🔑 YouTube Schreiben & Auto-Livestream (OAuth2)"**.
-3. Paste your **Client ID** and **Client Secret**, then click **"🔐 Mit Google anmelden"**:
+#### Step 5 — 1-Click JSON Import Inside OmniGrid Studio (Zero Copy-Paste!)
+1. In OmniGrid Studio, open **⚙️ Config → 🌐 Plattformen** → **🔴 YOUTUBE LIVE** and enter your YouTube handle (e.g. `@YourChannel`).
+2. Expand **"🔑 YouTube Write & Auto-Livestream (OAuth2)"**.
+3. Click **"📂 Import Google 'Download JSON' File & Sign In…"** and pick your downloaded `client_secret_....json` in Finder / Explorer *(or drag & drop the `.json` file directly onto the YouTube card)*!
+   - OmniGrid automatically extracts both your `Client ID` and `GOCSPX-... Client Secret` and opens the Google sign-in flow in your browser immediately:
    - In the browser window that opens, select your Google account — **and if prompted to choose between your personal profile and a YouTube Brand Account, click your YouTube channel!**
    - On the *"Google hasn't verified this app"* screen (expected for your own personal Testing project), click **Continue** *(or Advanced → Go to OmniGrid Studio)*.
    - Check the YouTube permission boxes and click **Continue / Allow**.

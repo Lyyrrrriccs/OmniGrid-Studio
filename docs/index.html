@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniGrid Studio — Dein lokales Multi-Plattform Streamer Cockpit</title>
+  <meta name="description" content="Kostenlose Open-Source Streamer-Suite: Multi-Plattform Chat & RTMP-Relay (Twitch, YouTube, TikTok, Kick), OBS Szenen-Editor, Chat Hype Detector, 9:16 Shorts-Pipeline & LoL Game-Addons. Ohne Cloud, ohne Abo." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0b0f19; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .glass { background: rgba(17, 24, 39, 0.78); backdrop-filter: blur(12px); border: 1px solid rgba(55, 65, 81, 0.6); }
+    .glow { box-shadow: 0 0 40px rgba(99, 102, 241, 0.18); }
+    .tab-btn.active { background: #4f46e5; color: #fff; border-color: #6366f1; }
+  </style>
+</head>
+<body class="antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Navbar -->
+  <header class="sticky top-0 z-50 glass border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">⚡</span>
+        <span class="font-bold text-lg tracking-tight text-white">OmniGrid Studio</span>
+        <span class="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Open Source • 100 % Lokal</span>
+      </div>
+      <nav class="flex items-center gap-4 text-sm">
+        <a href="#features" class="hidden md:inline text-slate-300 hover:text-white transition" data-de="Features" data-en="Features">Features</a>
+        <a href="#showcase" class="hidden md:inline text-slate-300 hover:text-white transition" data-de="Screenshots" data-en="Screenshots">Screenshots</a>
+        <a href="#compare" class="hidden md:inline text-slate-300 hover:text-white transition" data-de="Vergleich" data-en="Compare">Vergleich</a>
+        <button id="langToggle" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 transition">EN / DE</button>
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-28">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-medium mb-6">
+        <span data-de="Kein Abo • Keine Cloud • Volle Kontrolle über deinen Stream" data-en="No Subscription • No Cloud • Full Control Over Your Stream">Kein Abo • Keine Cloud • Volle Kontrolle über deinen Stream</span>
+      </div>
+      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
+        <span data-de="Dein komplettes" data-en="Your Complete">Dein komplettes</span>
+        <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent"> Multi-Plattform Streamer Cockpit</span>
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto"
+         data-de="Vereine Twitch, YouTube, TikTok & Kick in einem einzigen lokalen Desktop-Tool: Multi-Chat mit Emotes, lokales RTMP-Relay ohne doppelte GPU-Last, OBS WebSocket-Szeneneditor, Chat Hype Detector, 9:16 Shorts-Pipeline und Game-Addons."
+         data-en="Unify Twitch, YouTube, TikTok & Kick in one local desktop suite: Unified multi-chat with emotes, local RTMP relay with zero extra GPU load, OBS WebSocket scene editor, Chat Hype Detector, 9:16 Shorts pipeline & game addons.">
+        Vereine Twitch, YouTube, TikTok & Kick in einem einzigen lokalen Desktop-Tool: Multi-Chat mit Emotes, lokales RTMP-Relay ohne doppelte GPU-Last, OBS WebSocket-Szeneneditor, Chat Hype Detector, 9:16 Shorts-Pipeline und Game-Addons.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/releases/latest" target="_blank"
+           class="px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-600/25 transition flex items-center gap-2">
+          <span>⬇️</span>
+          <span data-de="Kostenlos herunterladen (macOS / Windows)" data-en="Download Free (macOS / Windows)">Kostenlos herunterladen (macOS / Windows)</span>
+        </a>
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/blob/main/README.de.md" target="_blank"
+           class="px-7 py-3.5 rounded-xl glass hover:bg-slate-800/80 text-slate-200 font-semibold text-base transition">
+          <span data-de="📖 Dokumentation (README)" data-en="📖 Documentation (README)">📖 Dokumentation (README)</span>
+        </a>
+      </div>
+
+      <!-- Hero Screenshot -->
+      <div class="mt-14 max-w-6xl mx-auto rounded-2xl overflow-hidden border border-slate-700/80 glow">
+        <img src="assets/Omni-Studio-ActiveChat.jpg" alt="OmniGrid Studio Active Multi-Platform Chat & Streamer Cockpit" class="w-full h-auto block" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Feature & Screenshot Showcase -->
+  <section id="showcase" class="py-20 border-t border-slate-800/80 bg-slate-950/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-3xl font-bold text-white" data-de="Ein Blick ins Cockpit" data-en="Inside the Cockpit">Ein Blick ins Cockpit</h2>
+        <p class="mt-3 text-slate-400" data-de="Klicke durch die Module – alles läuft direkt lokal auf deinem Rechner." data-en="Click through the modules — everything runs natively and locally on your machine.">
+          Klicke durch die Module – alles läuft direkt lokal auf deinem Rechner.
+        </p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex flex-wrap justify-center gap-2.5 mb-8" id="showcaseTabs">
+        <button class="tab-btn active px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium transition"
+                data-img="assets/Omni-Studio-ActiveChat.jpg"
+                data-title-de="Unified Multi-Plattform Chat & Live-Statistiken"
+                data-title-en="Unified Multi-Platform Chat & Live Analytics"
+                data-desc-de="Twitch, YouTube und TikTok in einem Stream – inkl. 7TV/BTTV-Emotes, Plattform-Split-Balken, Event-Ticker (Raids, Bits, Subs), Spam-Filter, Chat-Export und direkter Antwort auf ausgewählte Plattformen."
+                data-desc-en="Twitch, YouTube, and TikTok in a single feed — including 7TV/BTTV emotes, platform split bar, event ticker (raids, bits, subs), spam filter, chat export, and multi-platform reply.">
+          💬 Multi-Chat & Events
+        </button>
+
+        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
+                data-img="assets/OmniStudio-MultiStream-Config.jpg"
+                data-title-de="Multi-Plattform RTMP-Relay (0 % Extra GPU-Last)"
+                data-title-en="Multi-Platform RTMP Relay (0% Extra GPU Load)"
+                data-desc-de="OBS rendert deinen Stream nur ein einziges Mal lokal an OmniGrid Studio (rtmp://127.0.0.1:1935/live/omnigrid) und OmniGrid verteilt ihn verlustfrei (-c copy) gleichzeitig an Twitch, YouTube, TikTok und Kick."
+                data-desc-en="OBS encodes your stream only once locally to OmniGrid Studio and OmniGrid distributes it losslessly (-c copy) simultaneously to Twitch, YouTube, TikTok, and Kick.">
+          📡 Multi-Stream Relay
+        </button>
+
+        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
+                data-img="assets/OmniStudio-Scene-Editor.jpg"
+                data-title-de="OBS Scene & Source Editor (WebSocket v5)"
+                data-title-en="OBS Scene & Source Editor (WebSocket v5)"
+                data-desc-de="Verschiebe und skaliere OBS-Quellen direkt auf der Live-Vorschau, füge fertige App-Overlays (Multi-Chat, Alerts, Musik-Widget, Game-Stats) per 1-Klick hinzu und steuere den gesamten OBS Audio-Mixer."
+                data-desc-en="Drag and resize OBS sources directly on the live canvas, insert built-in overlays (Multi-Chat, Alerts, Music Widget, Game Stats) in one click, and control the full OBS audio mixer.">
+          🎛️ OBS Szenen-Editor
+        </button>
+
+        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
+                data-img="assets/Omni-Studio-HypeDetector.jpg"
+                data-title-de="Chat Hype Detector (Auto-Marker & Auto-Clip)"
+                data-title-en="Chat Hype Detector (Auto-Marker & Auto-Clip)"
+                data-desc-de="Erkennt automatisch Chat-Spikes und Hype-Keywords (pog, omegalul, clip, hype...), setzt Twitch-Stream-Marker, speichert den OBS Replay-Buffer und erstellt vollautomatisch Twitch-Clips."
+                data-desc-en="Automatically detects chat spikes and hype keywords, sets Twitch stream markers, saves your OBS Replay Buffer, and creates Twitch clips hands-free.">
+          🔥 Chat Hype Detector
+        </button>
+
+        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
+                data-img="assets/OmniStudio-ClipandReplayStudio.jpg"
+                data-title-de="Clip- & Replay-Studio (9:16 Shorts-Pipeline)"
+                data-title-en="Clip & Replay Studio (9:16 Shorts Pipeline)"
+                data-desc-de="Schneide deine OBS-Replays direkt in der App per FFmpeg zu und exportiere sie wahlweise in 16:9 oder direkt als fertiges 9:16 Hochformat-Short mit Blur-Hintergrund für YouTube Shorts & TikTok."
+                data-desc-en="Trim your OBS replays right inside the app via FFmpeg and export either in 16:9 or directly as a vertical 9:16 short with blurred background for YouTube Shorts & TikTok.">
+          🎬 9:16 Shorts-Pipeline
+        </button>
+
+        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
+                data-img="assets/OmniStudio-GameAddons.jpg"
+                data-title-de="Game-Addons, Live Client API & Anti-Ghosting Minimap"
+                data-title-en="Game Addons, Live Client API & Anti-Ghosting Minimap"
+                data-desc-de="Liest Rank, LP, Champion & Live-Stats automatisch aus der League of Legends Client-API aus, triggert Auto-Clips bei Pentakills, bietet Chat-Commands (!elo, !build, !opgg) und ein Anti-Ghosting Minimap-Overlay."
+                data-desc-en="Automatically reads rank, LP, champion & live stats from the League of Legends Client API, triggers auto-clips on Pentakills, serves chat commands (!elo, !build, !opgg), and provides an anti-ghosting minimap overlay.">
+          ⚔️ Game-Addons (LoL / CS2)
+        </button>
+
+        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
+                data-img="assets/OmniStudio-Main-Window.jpg"
+                data-title-de="OBS-Dock-Modus, Musik-Widget, Goal-Bar & Live-Polls"
+                data-title-en="OBS Dock Mode, Music Widget, Goal Bar & Live Polls"
+                data-desc-de="Optimiert als schmales Cockpit links neben OBS: Zeigt den aktuellen Song von Spotify/Apple Music/Amazon Music ohne API-Key, steuert Sub-Goals und startet plattformübergreifende Chat-Umfragen (!vote)."
+                data-desc-en="Optimized as a sleek cockpit docked next to OBS: Displays now-playing tracks from Spotify/Apple Music/Amazon Music without API keys, updates sub goals, and runs cross-platform chat polls.">
+          🎵 Widgets & Polls
+        </button>
+      </div>
+
+      <!-- Active Showcase Display -->
+      <div class="glass rounded-2xl p-4 sm:p-6 max-w-6xl mx-auto">
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <h3 id="showcaseTitle" class="text-xl font-bold text-white">Unified Multi-Plattform Chat & Live-Statistiken</h3>
+            <p id="showcaseDesc" class="text-sm text-slate-300 mt-1">
+              Twitch, YouTube und TikTok in einem Stream – inkl. 7TV/BTTV-Emotes, Plattform-Split-Balken, Event-Ticker (Raids, Bits, Subs), Spam-Filter, Chat-Export und direkter Antwort auf ausgewählte Plattformen.
+            </p>
+          </div>
+        </div>
+        <div class="rounded-xl overflow-hidden border border-slate-700/80">
+          <img id="showcaseImg" src="assets/Omni-Studio-ActiveChat.jpg" alt="OmniGrid Studio Feature Preview" class="w-full h-auto block" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Feature Grid -->
+  <section id="features" class="py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-bold text-center text-white mb-12" data-de="Alles drin, was sonst 5 Tools braucht" data-en="Everything You Need — Replacing 5 Separate Tools">
+        Alles drin, was sonst 5 Tools braucht
+      </h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="glass rounded-xl p-6">
+          <div class="text-2xl mb-3">💬</div>
+          <h3 class="text-lg font-bold text-white" data-de="Multi-Chat ohne API-Key-Hürde" data-en="Multi-Chat Without API Key Hassle">Multi-Chat ohne API-Key-Hürde</h3>
+          <p class="text-sm text-slate-400 mt-2" data-de="Liest Twitch, YouTube Live-Chat (inkl. SuperChats & Member-Emotes) und TikTok Live gleichzeitig aus – inklusive Top-Chatter- & Emote-Analytics." data-en="Reads Twitch, YouTube Live Chat (including SuperChats & Member emotes), and TikTok Live simultaneously — with top chatter and emote analytics.">
+            Liest Twitch, YouTube Live-Chat (inkl. SuperChats & Member-Emotes) und TikTok Live gleichzeitig aus – inklusive Top-Chatter- & Emote-Analytics.
+          </p>
+        </div>
+
+        <div class="glass rounded-xl p-6">
+          <div class="text-2xl mb-3">🚀</div>
+          <h3 class="text-lg font-bold text-white" data-de="Lokales Multi-Stream RTMP-Relay" data-en="Local Multi-Stream RTMP Relay">Lokales Multi-Stream RTMP-Relay</h3>
+          <p class="text-sm text-slate-400 mt-2" data-de="Kein teurer Restream-Cloud-Dienst nötig: OBS sendet 1x lokal an OmniGrid, und das integrierte Relay verteilt den Stream an Twitch, YouTube, TikTok & Kick." data-en="No expensive cloud restreaming service needed: OBS sends once locally to OmniGrid, and the built-in relay distributes to Twitch, YouTube, TikTok & Kick.">
+            Kein teurer Restream-Cloud-Dienst nötig: OBS sendet 1x lokal an OmniGrid, und das integrierte Relay verteilt den Stream an Twitch, YouTube, TikTok & Kick.
+          </p>
+        </div>
+
+        <div class="glass rounded-xl p-6">
+          <div class="text-2xl mb-3">🎬</div>
+          <h3 class="text-lg font-bold text-white" data-de="Auto-Hype & 9:16 Shorts-Exporter" data-en="Auto-Hype & 9:16 Shorts Exporter">Auto-Hype & 9:16 Shorts-Exporter</h3>
+          <p class="text-sm text-slate-400 mt-2" data-de="Vom Chat-Hype direkt zum fertigen Clip: Replay-Buffer automatisch sichern, zuschneiden und als 9:16 Short mit Blur-Hintergrund exportieren." data-en="From chat hype straight to a finished clip: auto-save replay buffer, trim, and export as a 9:16 short with blurred background.">
+            Vom Chat-Hype direkt zum fertigen Clip: Replay-Buffer automatisch sichern, zuschneiden und als 9:16 Short mit Blur-Hintergrund exportieren.
+          </p>
+        </div>
+
+        <div class="glass rounded-xl p-6">
+          <div class="text-2xl mb-3">🎛️</div>
+          <h3 class="text-lg font-bold text-white" data-de="Visueller OBS Szenen- & Overlay-Editor" data-en="Visual OBS Scene & Overlay Editor">Visueller OBS Szenen- & Overlay-Editor</h3>
+          <p class="text-sm text-slate-400 mt-2" data-de="Steuere OBS über WebSocket v5: Drag-&-Drop-Layout, 1-Klick-Insertion für Chat-, Alert-, Musik- & Game-Overlays sowie kompletter Audio-Mixer." data-en="Control OBS via WebSocket v5: drag-and-drop canvas, 1-click insertion for chat, alert, music & game overlays, plus full audio mixer.">
+            Steuere OBS über WebSocket v5: Drag-&-Drop-Layout, 1-Klick-Insertion für Chat-, Alert-, Musik- & Game-Overlays sowie kompletter Audio-Mixer.
+          </p>
+        </div>
+
+        <div class="glass rounded-xl p-6">
+          <div class="text-2xl mb-3">🎮</div>
+          <h3 class="text-lg font-bold text-white" data-de="Native Game-Addons (LoL & CS2)" data-en="Native Game Addons (LoL & CS2)">Native Game-Addons (LoL & CS2)</h3>
+          <p class="text-sm text-slate-400 mt-2" data-de="Live-Rank/LP-Sync, Item-Build-Overlay, Anti-Ghosting-Minimap, Auto-Pentakill-Clips und Chat-Commands wie !elo, !build oder !opgg." data-en="Live rank/LP sync, item build overlay, anti-ghosting minimap, auto-Pentakill clips, and chat commands like !elo, !build, or !opgg.">
+            Live-Rank/LP-Sync, Item-Build-Overlay, Anti-Ghosting-Minimap, Auto-Pentakill-Clips und Chat-Commands wie !elo, !build oder !opgg.
+          </p>
+        </div>
+
+        <div class="glass rounded-xl p-6">
+          <div class="text-2xl mb-3">🔒</div>
+          <h3 class="text-lg font-bold text-white" data-de="100 % Lokal & Open Source" data-en="100% Local & Open Source">100 % Lokal & Open Source</h3>
+          <p class="text-sm text-slate-400 mt-2" data-de="Alle Overlays laufen als lokale Browser-Quellen (127.0.0.1:4588). Keine Telemetrie, kein Account-Zwang, keine monatlichen Gebühren." data-en="All overlays run as local browser sources (127.0.0.1:4588). Zero telemetry, no mandatory accounts, no monthly fees.">
+            Alle Overlays laufen als lokale Browser-Quellen (127.0.0.1:4588). Keine Telemetrie, kein Account-Zwang, keine monatlichen Gebühren.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section id="compare" class="py-20 border-t border-slate-800/80 bg-slate-950/40">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl font-bold text-center text-white mb-10" data-de="Warum OmniGrid Studio?" data-en="Why OmniGrid Studio?">Warum OmniGrid Studio?</h2>
+      <div class="glass rounded-2xl overflow-hidden">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-900/90 text-slate-300 border-b border-slate-800">
+            <tr>
+              <th class="p-4">Feature</th>
+              <th class="p-4 text-indigo-400 font-bold">OmniGrid Studio</th>
+              <th class="p-4 text-slate-400" data-de="Cloud-Tools / Abo-Suites" data-en="Cloud Tools / Paid Suites">Cloud-Tools / Abo-Suites</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/80">
+            <tr>
+              <td class="p-4 font-medium" data-de="Preis & Lizenz" data-en="Price & License">Preis & Lizenz</td>
+              <td class="p-4 text-emerald-400 font-semibold">0 € (Open Source)</td>
+              <td class="p-4 text-slate-400">15–50 € / Monat</td>
+            </tr>
+            <tr>
+              <td class="p-4 font-medium" data-de="Multi-Stream RTMP-Relay" data-en="Multi-Stream RTMP Relay">Multi-Stream RTMP-Relay</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-de="Lokal integriert (Twitch, YT, TikTok, Kick)" data-en="Built-in locally (Twitch, YT, TikTok, Kick)">Lokal integriert (Twitch, YT, TikTok, Kick)</td>
+              <td class="p-4 text-slate-400" data-de="Nur im teuren Pro-Abo" data-en="Paywalled in Pro tiers">Nur im teuren Pro-Abo</td>
+            </tr>
+            <tr>
+              <td class="p-4 font-medium" data-de="Daten & Privatsphäre" data-en="Data & Privacy">Daten & Privatsphäre</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-de="100 % lokal auf deinem PC/Mac" data-en="100% local on your PC/Mac">100 % lokal auf deinem PC/Mac</td>
+              <td class="p-4 text-slate-400" data-de="Cloud-Zwang & Tracking" data-en="Cloud lock-in & tracking">Cloud-Zwang & Tracking</td>
+            </tr>
+            <tr>
+              <td class="p-4 font-medium" data-de="9:16 Shorts-Schnitt & Auto-Hype" data-en="9:16 Shorts Cutter & Auto-Hype">9:16 Shorts-Schnitt & Auto-Hype</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-de="Direkt eingebaut (FFmpeg)" data-en="Built right in (FFmpeg)">Direkt eingebaut (FFmpeg)</td>
+              <td class="p-4 text-slate-400" data-de="Externe Zusatz-Tools nötig" data-en="Requires separate tools">Externe Zusatz-Tools nötig</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-12 border-t border-slate-800 text-center text-sm text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>⚡ <strong>OmniGrid Studio</strong> — Open Source Streamer Cockpit</div>
+      <div class="flex gap-6">
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio" target="_blank" class="hover:text-white transition">GitHub Repository</a>
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/releases" target="_blank" class="hover:text-white transition">Releases</a>
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/issues" target="_blank" class="hover:text-white transition">Feedback / Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    let currentLang = 'de';
+    const tabs = document.querySelectorAll('.tab-btn');
+    const showcaseImg = document.getElementById('showcaseImg');
+    const showcaseTitle = document.getElementById('showcaseTitle');
+    const showcaseDesc = document.getElementById('showcaseDesc');
+
+    function updateShowcase(btn) {
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.classList.add('bg-slate-900/70');
+      });
+      btn.classList.add('active');
+      btn.classList.remove('bg-slate-900/70');
+      showcaseImg.src = btn.dataset.img;
+      showcaseTitle.textContent = currentLang === 'de' ? btn.dataset.titleDe : btn.dataset.titleEn;
+      showcaseDesc.textContent = currentLang === 'de' ? btn.dataset.descDe : btn.dataset.descEn;
+    }
+
+    tabs.forEach(btn => btn.addEventListener('click', () => updateShowcase(btn)));
+
+    document.getElementById('langToggle').addEventListener('click', () => {
+      currentLang = currentLang === 'de' ? 'en' : 'de';
+      document.documentElement.lang = currentLang;
+      document.querySelectorAll('[data-de]').forEach(el => {
+        el.textContent = currentLang === 'de' ? el.dataset.de : el.dataset.en;
+      });
+      const activeBtn = document.querySelector('.tab-btn.active');
+      if (activeBtn) updateShowcase(activeBtn);
+    });
+  </script>
+</body>
+</html>
