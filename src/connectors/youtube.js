@@ -795,6 +795,255 @@ class YouTubeConnector extends EventEmitter {
     return nextOAuth.accessToken;
   }
 
+  async _authedJsonRequest(url, options = {}) {
+    let token = await this._ensureValidAccessToken();
+    const doCall = async (tok) => {
+      const hdrs = {
+        Authorization: `Bearer ${tok}`,
+        Accept: 'application/json',
+        ...(options.headers || {})
+      };
+      return await this._httpsRequest(url, { ...options, headers: hdrs });
+    };
+    let resp = await doCall(token);
+    if (resp.statusCode === 401 && this.oauth.refreshToken && this.oauth.clientId) {
+      token = await this.refreshAccessToken();
+      resp = await doCall(token);
+    }
+    return resp;
+  }
+
+  /**
+   * Ensures the YouTube channel has:
+   * 1) An RTMP `liveStream` (auto-fetches or creates the RTMP URL + Stream Key)
+   * 2) A bound `liveBroadcast` with `enableAutoStart: true` (creates one if none is ready/upcoming!)
+   * This solves why pushing RTMP alone to YouTube without opening YouTube Studio otherwise shows no live stream.
+   */
+  async prepareLiveBroadcast({ title = '', description = '', privacyStatus = 'public', preferredStreamKey = '' } = {}) {
+    if (!this.canWrite) {
+      throw new Error('YouTube OAuth2 ist noch nicht verbunden (unter ⚙️ Config → Plattformen → YouTube mit Google anmelden).');
+    }
+
+    const safePrivacy = ['public', 'unlisted', 'private'].includes(privacyStatus) ? privacyStatus : 'public';
+    const cleanTitle = String(title || '').trim().slice(0, 95) || 'Live Stream';
+
+    // 1. Fetch or create RTMP liveStream (ingestion address + stream key)
+    const streamsResp = await this._authedJsonRequest(
+      'https://www.googleapis.com/youtube/v3/liveStreams?part=id,snippet,cdn,status&mine=true&maxResults=25'
+    );
+    if (streamsResp.statusCode >= 400) {
+      const msg = streamsResp.json?.error?.message || `HTTP ${streamsResp.statusCode}`;
+      throw new Error(`YouTube LiveStream-Abruf fehlgeschlagen (ist Live-Streaming auf deinem YouTube-Kanal freigeschaltet?): ${msg}`);
+    }
+
+    const streams = Array.isArray(streamsResp.json?.items) ? streamsResp.json.items : [];
+    const rtmpStreams = streams.filter((s) => s?.cdn?.ingestionType === 'rtmp' && s?.cdn?.ingestionInfo?.streamName);
+    let chosenStream =
+      (preferredStreamKey
+        ? rtmpStreams.find((s) => s.cdn.ingestionInfo.streamName === preferredStreamKey)
+        : null) || rtmpStreams[0] || null;
+
+    if (!chosenStream) {
+      const createStreamPayload = JSON.stringify({
+        snippet: { title: 'OmniGrid Studio RTMP Key' },
+        cdn: {
+          frameRate: 'variable',
+          ingestionType: 'rtmp',
+          resolution: 'variable'
+        }
+      });
+      const createdStreamResp = await this._authedJsonRequest(
+        'https://www.googleapis.com/youtube/v3/liveStreams?part=id,snippet,cdn,status',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(createStreamPayload)
+          },
+          body: createStreamPayload
+        }
+      );
+      if (createdStreamResp.statusCode >= 400 || !createdStreamResp.json?.id) {
+        const msg = createdStreamResp.json?.error?.message || `HTTP ${createdStreamResp.statusCode}`;
+        throw new Error(`YouTube Stream-Schlüssel konnte nicht angelegt werden: ${msg}`);
+      }
+      chosenStream = createdStreamResp.json;
+    }
+
+    const streamId = chosenStream.id;
+    const rtmpUrl = chosenStream.cdn?.ingestionInfo?.ingestionAddress || 'rtmp://a.rtmp.youtube.com/live2';
+    const streamKey = chosenStream.cdn?.ingestionInfo?.streamName || '';
+
+    // 2. Check for an existing active / ready / upcoming liveBroadcast
+    const bcResp = await this._authedJsonRequest(
+      'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,contentDetails,status&broadcastType=all&mine=true&maxResults=25'
+    );
+    if (bcResp.statusCode >= 400) {
+      const msg = bcResp.json?.error?.message || `HTTP ${bcResp.statusCode}`;
+      throw new Error(`YouTube Broadcast-Abruf fehlgeschlagen: ${msg}`);
+    }
+
+    const broadcasts = Array.isArray(bcResp.json?.items) ? bcResp.json.items : [];
+    const reusableStates = new Set(['live', 'liveStarting', 'testing', 'ready', 'created']);
+    let activeBc =
+      broadcasts.find(
+        (b) =>
+          reusableStates.has(b?.status?.lifeCycleStatus) &&
+          b?.contentDetails?.boundStreamId === streamId
+      ) ||
+      broadcasts.find((b) => ['ready', 'created', 'testing'].includes(b?.status?.lifeCycleStatus)) ||
+      null;
+
+    let createdNew = false;
+    if (!activeBc) {
+      const bcPayload = JSON.stringify({
+        snippet: {
+          title: cleanTitle,
+          description: String(description || ''),
+          scheduledStartTime: new Date().toISOString()
+        },
+        status: {
+          privacyStatus: safePrivacy,
+          selfDeclaredMadeForKids: false
+        },
+        contentDetails: {
+          enableAutoStart: true,
+          enableAutoStop: true,
+          enableDvr: true,
+          latencyPreference: 'low'
+        }
+      });
+      const createBcResp = await this._authedJsonRequest(
+        'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status,contentDetails',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(bcPayload)
+          },
+          body: bcPayload
+        }
+      );
+      if (createBcResp.statusCode >= 400 || !createBcResp.json?.id) {
+        const msg = createBcResp.json?.error?.message || `HTTP ${createBcResp.statusCode}`;
+        throw new Error(`YouTube Livestream konnte nicht automatisch geplant werden: ${msg}`);
+      }
+      activeBc = createBcResp.json;
+      createdNew = true;
+    } else if (
+      ['ready', 'created'].includes(activeBc?.status?.lifeCycleStatus) &&
+      activeBc?.contentDetails?.enableAutoStart !== true
+    ) {
+      const updPayload = JSON.stringify({
+        id: activeBc.id,
+        snippet: {
+          title: title ? cleanTitle : (activeBc.snippet?.title || cleanTitle),
+          description: activeBc.snippet?.description || '',
+          scheduledStartTime: activeBc.snippet?.scheduledStartTime || new Date().toISOString()
+        },
+        status: {
+          privacyStatus: activeBc.status?.privacyStatus || safePrivacy,
+          selfDeclaredMadeForKids: Boolean(activeBc.status?.selfDeclaredMadeForKids)
+        },
+        contentDetails: {
+          ...(activeBc.contentDetails || {}),
+          enableAutoStart: true,
+          enableAutoStop: activeBc.contentDetails?.enableAutoStop !== false
+        }
+      });
+      await this._authedJsonRequest(
+        'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status,contentDetails',
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(updPayload)
+          },
+          body: updPayload
+        }
+      ).catch(() => {});
+    }
+
+    const broadcastId = activeBc.id;
+    const lifeCycle = activeBc?.status?.lifeCycleStatus || 'ready';
+
+    // 3. Bind liveBroadcast to the RTMP liveStream if not yet bound
+    if (!['live', 'liveStarting'].includes(lifeCycle) && activeBc?.contentDetails?.boundStreamId !== streamId) {
+      const bindUrl = `https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${encodeURIComponent(broadcastId)}&part=id,contentDetails&streamId=${encodeURIComponent(streamId)}`;
+      await this._authedJsonRequest(bindUrl, { method: 'POST', headers: { 'Content-Length': 0 } }).catch(() => {});
+    }
+
+    return {
+      ok: true,
+      broadcastId,
+      streamId,
+      rtmpUrl,
+      streamKey,
+      createdNew,
+      lifeCycleStatus: lifeCycle,
+      privacyStatus: activeBc?.status?.privacyStatus || safePrivacy,
+      watchUrl: `https://www.youtube.com/watch?v=${broadcastId}`
+    };
+  }
+
+  stopLiveTransitionWatch() {
+    if (this._liveTransitionTimer) {
+      clearInterval(this._liveTransitionTimer);
+      this._liveTransitionTimer = null;
+    }
+  }
+
+  /**
+   * Watches the YouTube `liveStream` health after RTMP starts and explicitly transitions
+   * the `liveBroadcast` to `testing` -> `live` if YouTube's `enableAutoStart` hasn't flipped it yet.
+   */
+  watchAndTransitionBroadcastToLive(broadcastId, streamId, onLive) {
+    this.stopLiveTransitionWatch();
+    if (!broadcastId || !streamId || !this.canWrite) return;
+    let attempts = 0;
+    this._liveTransitionTimer = setInterval(async () => {
+      attempts += 1;
+      if (attempts > 18) {
+        this.stopLiveTransitionWatch();
+        return;
+      }
+      try {
+        const [bcRes, stRes] = await Promise.all([
+          this._authedJsonRequest(
+            `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,status&id=${encodeURIComponent(broadcastId)}`
+          ),
+          this._authedJsonRequest(
+            `https://www.googleapis.com/youtube/v3/liveStreams?part=id,status&id=${encodeURIComponent(streamId)}`
+          )
+        ]);
+        const life = bcRes.json?.items?.[0]?.status?.lifeCycleStatus || '';
+        const streamStatus = stRes.json?.items?.[0]?.status?.streamStatus || '';
+
+        if (life === 'live') {
+          this.stopLiveTransitionWatch();
+          if (typeof onLive === 'function') {
+            onLive({ broadcastId, watchUrl: `https://www.youtube.com/watch?v=${broadcastId}` });
+          }
+          return;
+        }
+
+        if (streamStatus === 'active') {
+          if (life === 'ready') {
+            await this._authedJsonRequest(
+              `https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=live&id=${encodeURIComponent(broadcastId)}&part=id,status`,
+              { method: 'POST', headers: { 'Content-Length': 0 } }
+            ).catch(() => {});
+          } else if (life === 'testing') {
+            await this._authedJsonRequest(
+              `https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=live&id=${encodeURIComponent(broadcastId)}&part=id,status`,
+              { method: 'POST', headers: { 'Content-Length': 0 } }
+            ).catch(() => {});
+          }
+        }
+      } catch (e) {}
+    }, 5000);
+  }
+
   async _ensureValidAccessToken() {
     if (!this.oauth.accessToken && !this.oauth.refreshToken) {
       throw new Error('YouTube OAuth2 nicht angemeldet.');

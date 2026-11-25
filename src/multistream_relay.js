@@ -33,7 +33,10 @@ function normalizeRelayConfig(raw = {}) {
       youtube: {
         enabled: Boolean(t.youtube?.enabled ?? false),
         serverUrl: String(t.youtube?.serverUrl || 'rtmp://a.rtmp.youtube.com/live2').trim(),
-        streamKey: String(t.youtube?.streamKey || '').trim()
+        streamKey: String(t.youtube?.streamKey || '').trim(),
+        privacyStatus: ['public', 'unlisted', 'private'].includes(t.youtube?.privacyStatus)
+          ? t.youtube.privacyStatus
+          : 'public'
       },
       tiktok: {
         enabled: Boolean(t.tiktok?.enabled ?? false),
@@ -50,7 +53,7 @@ function normalizeRelayConfig(raw = {}) {
   };
 }
 
-function buildActiveDestinations(cfg) {
+function inspectRelayDestinations(cfg) {
   const norm = normalizeRelayConfig(cfg);
   const defs = [
     { id: 'twitch', label: 'Twitch', ...norm.targets.twitch },
@@ -58,19 +61,31 @@ function buildActiveDestinations(cfg) {
     { id: 'tiktok', label: 'TikTok', ...norm.targets.tiktok },
     { id: 'custom', label: norm.targets.custom.name || 'Custom', ...norm.targets.custom }
   ];
-  const out = [];
+  const active = [];
+  const skipped = [];
   for (const d of defs) {
     if (!d.enabled) continue;
     const base = String(d.serverUrl || '').trim().replace(/\/+$/, '');
     const key = String(d.streamKey || '').trim().replace(/^\/+/, '');
-    if (!base || !key) continue;
-    out.push({
+    if (!base || !key) {
+      skipped.push({
+        id: d.id,
+        label: d.label,
+        reason: !key ? `${d.label}: Stream-Schlüssel fehlt` : `${d.label}: Server-URL fehlt`
+      });
+      continue;
+    }
+    active.push({
       id: d.id,
       label: d.label,
       url: `${base}/${key}`
     });
   }
-  return out;
+  return { active, skipped };
+}
+
+function buildActiveDestinations(cfg) {
+  return inspectRelayDestinations(cfg).active;
 }
 
 function escapeTeeUrl(url) {
@@ -90,6 +105,9 @@ class MultiStreamRelay extends EventEmitter {
       ingestServer: 'rtmp://127.0.0.1:1935/live',
       ingestKey: 'omnigrid',
       activeTargets: [],
+      skippedTargets: [],
+      warnings: [],
+      youtubeWatchUrl: '',
       fps: 0,
       bitrateKbps: 0,
       uptime: '00:00:00',
@@ -107,34 +125,47 @@ class MultiStreamRelay extends EventEmitter {
     return this.getState();
   }
 
-  start(rawCfg = {}) {
+  start(rawCfg = {}, extraMeta = {}) {
     this.currentConfig = normalizeRelayConfig(rawCfg);
-    const dests = buildActiveDestinations(this.currentConfig);
+    const { active: dests, skipped } = inspectRelayDestinations(this.currentConfig);
     const ingestServer = `rtmp://127.0.0.1:${this.currentConfig.port}/live`;
     const ingestKey = this.currentConfig.streamKey;
+    const initWarnings = [
+      ...skipped.map((s) => `⚠️ ${s.reason} (wurde übersprungen)`),
+      ...(Array.isArray(extraMeta.warnings) ? extraMeta.warnings : [])
+    ];
 
     if (!dests.length) {
       return {
         ok: false,
-        error: 'Bitte mindestens eine Ziel-Plattform (Twitch, YouTube, TikTok oder Custom) aktivieren und deren Stream-Key eintragen.',
+        error: skipped.length
+          ? `Ziel-Konfiguration unvollständig: ${skipped.map((s) => s.reason).join(' • ')}`
+          : 'Bitte mindestens eine Ziel-Plattform (Twitch, YouTube, TikTok oder Custom) aktivieren und deren Stream-Key eintragen.',
         state: this._emitState({
           active: false,
           status: 'error',
           ingestServer,
           ingestKey,
           activeTargets: [],
-          error: 'Keine Ziel-Plattform mit Stream-Key aktiviert.'
+          skippedTargets: skipped.map((s) => s.label),
+          warnings: initWarnings,
+          youtubeWatchUrl: '',
+          error: 'Keine Ziel-Plattform mit Stream-Key bereit.'
         })
       };
     }
 
     this.stop(false);
     this.shouldRun = true;
-    this._spawnFfmpeg(dests, ingestServer, ingestKey);
+    this._spawnFfmpeg(dests, ingestServer, ingestKey, {
+      skippedTargets: skipped.map((s) => s.label),
+      warnings: initWarnings,
+      youtubeWatchUrl: String(extraMeta.youtubeWatchUrl || '')
+    });
     return { ok: true, state: this.getState() };
   }
 
-  _spawnFfmpeg(dests, ingestServer, ingestKey) {
+  _spawnFfmpeg(dests, ingestServer, ingestKey, meta = {}) {
     if (!this.shouldRun) return;
     const ffmpegBin = resolveFfmpegBinary();
     const listenUrl = `${ingestServer}/${ingestKey}`;
@@ -150,20 +181,32 @@ class MultiStreamRelay extends EventEmitter {
     ];
 
     if (dests.length === 1) {
-      args.push('-c', 'copy', '-f', 'flv', dests[0].url);
+      args.push(
+        '-map', '0:v',
+        '-map', '0:a?',
+        '-c', 'copy',
+        '-flags', '+global_header',
+        '-flvflags', 'no_duration_filesize',
+        '-f', 'flv',
+        dests[0].url
+      );
     } else {
       const teeSpec = dests
-        .map((d) => `[f=flv:onfail=ignore]${escapeTeeUrl(d.url)}`)
+        .map((d) => `[f=flv:flvflags=no_duration_filesize:onfail=ignore]${escapeTeeUrl(d.url)}`)
         .join('|');
-      args.push('-map', '0:v', '-map', '0:a?', '-c', 'copy', '-f', 'tee', teeSpec);
+      args.push('-map', '0:v', '-map', '0:a?', '-c', 'copy', '-flags', '+global_header', '-f', 'tee', teeSpec);
     }
 
+    const runtimeWarnings = [...(meta.warnings || [])];
     this._emitState({
       active: true,
       status: 'waiting',
       ingestServer,
       ingestKey,
       activeTargets: dests.map((d) => d.label),
+      skippedTargets: meta.skippedTargets || [],
+      warnings: runtimeWarnings,
+      youtubeWatchUrl: meta.youtubeWatchUrl || '',
       fps: 0,
       bitrateKbps: 0,
       uptime: '00:00:00',
@@ -192,6 +235,18 @@ class MultiStreamRelay extends EventEmitter {
             });
           } else if (/Input #0,\s*flv/i.test(line)) {
             this._emitState({ status: 'streaming', error: '' });
+          } else if (/Slave\s+.*error/i.test(line)) {
+            const matchedDest = dests.find((d) => {
+              const hostPart = String(d.url || '').split('/')[2] || '';
+              return hostPart && line.includes(hostPart);
+            });
+            const warnMsg = matchedDest
+              ? `⚠️ ${matchedDest.label}: RTMP-Verbindung fehlgeschlagen (Stream-Key oder Server prüfen!)`
+              : `⚠️ Ziel-Fehler: ${line.slice(0, 120)}`;
+            if (!runtimeWarnings.includes(warnMsg)) {
+              runtimeWarnings.push(warnMsg);
+              this._emitState({ warnings: [...runtimeWarnings] });
+            }
           } else if (/error|failed|Address already in use|Connection refused/i.test(line)) {
             lastErrLine = line.slice(0, 180);
           }
@@ -238,7 +293,7 @@ class MultiStreamRelay extends EventEmitter {
           error: code && lastErrLine ? lastErrLine : ''
         });
         this.restartTimer = setTimeout(() => {
-          this._spawnFfmpeg(dests, ingestServer, ingestKey);
+          this._spawnFfmpeg(dests, ingestServer, ingestKey, meta);
         }, 1000);
       });
     } catch (err) {
@@ -284,5 +339,6 @@ class MultiStreamRelay extends EventEmitter {
 module.exports = {
   MultiStreamRelay,
   normalizeRelayConfig,
-  buildActiveDestinations
+  buildActiveDestinations,
+  inspectRelayDestinations
 };

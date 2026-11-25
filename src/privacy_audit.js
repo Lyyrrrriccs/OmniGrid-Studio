@@ -13,6 +13,7 @@ const ALLOWED_DOMAINS = [
   { domain: 'youtube.com', purpose: 'Offizieller YouTube Dienst' },
   { domain: 'youtu.be', purpose: 'Offizieller YouTube Kurzlink' },
   { domain: 'accounts.google.com', purpose: 'Offizieller Google / YouTube OAuth2 Login' },
+  { domain: 'console.cloud.google.com', purpose: 'Offizielle Google Cloud Console (Info-Link zur Erstellung der eigenen YouTube OAuth2 Client-ID)' },
   { domain: 'oauth2.googleapis.com', purpose: 'Offizieller Google OAuth2 Token-Endpunkt' },
   { domain: 'www.googleapis.com', purpose: 'Offizielle YouTube Data API v3 (Chat senden / Shorts Upload)' },
   { domain: 'a.rtmp.youtube.com', purpose: 'Offizieller YouTube Live RTMP Ingest-Server' },

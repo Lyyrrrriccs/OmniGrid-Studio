@@ -583,7 +583,8 @@ function getMultiStreamSettings() {
       youtube: {
         enabled: Boolean(document.getElementById('chkMsYoutube')?.checked),
         serverUrl: document.getElementById('inputMsYoutubeUrl')?.value.trim() || 'rtmp://a.rtmp.youtube.com/live2',
-        streamKey: document.getElementById('inputMsYoutubeKey')?.value.trim() || ''
+        streamKey: document.getElementById('inputMsYoutubeKey')?.value.trim() || '',
+        privacyStatus: document.getElementById('selMsYoutubePrivacy')?.value || 'public'
       },
       tiktok: {
         enabled: Boolean(document.getElementById('chkMsTiktok')?.checked),
@@ -1965,6 +1966,8 @@ function applyConfigToForm(cfg) {
     setChk('chkMsYoutube', msT.youtube.enabled);
     setVal('inputMsYoutubeUrl', msT.youtube.serverUrl || 'rtmp://a.rtmp.youtube.com/live2');
     setVal('inputMsYoutubeKey', msT.youtube.streamKey || '');
+    const selYtPriv = document.getElementById('selMsYoutubePrivacy');
+    if (selYtPriv) selYtPriv.value = msT.youtube.privacyStatus || 'public';
   }
   if (msT.tiktok) {
     setChk('chkMsTiktok', msT.tiktok.enabled);
@@ -3348,6 +3351,24 @@ function updateObsWsUI(st) {
 }
 
 window.omnichat.onObsWsState?.((st) => updateObsWsUI(st));
+
+document.getElementById('btnObsWsAutoSetup')?.addEventListener('click', async () => {
+  const cfgStatus = document.getElementById('obsWsConfigStatus');
+  if (cfgStatus) {
+    cfgStatus.style.color = '#38bdf8';
+    cfgStatus.textContent = '⚡ Richte OBS automatisch ein & verbinde...';
+  }
+  const res = await window.omnichat.obsWsAutoSetup?.();
+  if (res?.port) {
+    const portInp = document.getElementById('inputObsWsPort');
+    if (portInp) portInp.value = String(res.port);
+  }
+  if (res?.state) updateObsWsUI(res.state);
+  if (cfgStatus && res?.message) {
+    cfgStatus.style.color = res.ok ? '#4ade80' : '#fbbf24';
+    cfgStatus.textContent = res.message;
+  }
+});
 
 document.getElementById('btnObsWsConnect')?.addEventListener('click', async () => {
   const host = document.getElementById('inputObsWsHost')?.value.trim() || '127.0.0.1';
@@ -5177,6 +5198,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const statusEl = document.getElementById('seStatus');
 
   const lblSelSource = document.getElementById('seSelectedSourceName');
+  const btnRenameSelected = document.getElementById('btnSeRenameSelected');
+  const renameBar = document.getElementById('seRenameBar');
+  const inpRenameSource = document.getElementById('seRenameInput');
+  const btnRenameSave = document.getElementById('btnSeRenameSave');
+  const btnRenameCancel = document.getElementById('btnSeRenameCancel');
   const inpPosX = document.getElementById('sePosX');
   const inpPosY = document.getElementById('sePosY');
   const inpScalePct = document.getElementById('seScalePct');
@@ -5187,6 +5213,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const btnLayerUp = document.getElementById('btnSeLayerUp');
   const btnLayerDown = document.getElementById('btnSeLayerDown');
   const btnLayerBack = document.getElementById('btnSeLayerBack');
+  const rngTransparency = document.getElementById('seTransparencyRange');
+  const inpTransparencyPct = document.getElementById('seTransparencyPct');
+  const lblTransparencyReadout = document.getElementById('seTransparencyReadout');
+  const transPresetBtns = Array.from(modal.querySelectorAll('.se-trans-preset'));
 
   let currentSceneName = '';
   let baseWidth = 1920;
@@ -5560,15 +5590,128 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  let transparencyThrottleTimer = null;
+  let pendingTransparencyCall = null;
+
+  function formatVisibleReadout(transPct) {
+    const vis = Math.max(0, Math.min(100, 100 - Math.round(Number(transPct) || 0)));
+    return window.__appLang === 'en' ? `${vis}% visible` : `${vis}% sichtbar`;
+  }
+
+  function syncSelectedTransparencyUI(transPct) {
+    const pct = Math.max(0, Math.min(100, Math.round(Number(transPct) || 0)));
+    if (rngTransparency) rngTransparency.value = String(pct);
+    if (inpTransparencyPct) inpTransparencyPct.value = String(pct);
+    if (lblTransparencyReadout) lblTransparencyReadout.textContent = formatVisibleReadout(pct);
+  }
+
+  async function applyItemTransparency(item, rawPct, { commitPreview = false, skipListRebuild = false } = {}) {
+    if (!item?.sourceName) return;
+    const pct = Math.max(0, Math.min(100, Math.round(Number(rawPct) || 0)));
+    sceneItems.forEach((x) => {
+      if (x.sourceName === item.sourceName) x.transparencyPct = pct;
+    });
+    if (selectedItem?.sourceName === item.sourceName) {
+      selectedItem.transparencyPct = pct;
+      syncSelectedTransparencyUI(pct);
+    }
+    renderCanvasOverlay();
+    if (!skipListRebuild) renderSourcesList();
+
+    const sendNow = async () => {
+      const res = await window.omnichat.obsWsAction({
+        action: 'set-source-transparency',
+        sourceName: item.sourceName,
+        transparencyPct: pct
+      });
+      if (res?.ok) {
+        if (commitPreview) {
+          setStatus(
+            pct === 0
+              ? `✅ "${item.sourceName}": Transparenz auf 0% (100% sichtbar) gesetzt.`
+              : `✅ "${item.sourceName}": ${pct}% Transparenz (${100 - pct}% sichtbar) gesetzt.`,
+            '#4ade80'
+          );
+          setTimeout(refreshPreview, 120);
+        }
+      } else if (commitPreview) {
+        setStatus(`❌ ${res?.error || 'Transparenz konnte in OBS nicht gesetzt werden.'}`, '#f87171');
+      }
+    };
+
+    if (commitPreview) {
+      if (transparencyThrottleTimer) {
+        clearTimeout(transparencyThrottleTimer);
+        transparencyThrottleTimer = null;
+      }
+      pendingTransparencyCall = null;
+      await sendNow();
+      return;
+    }
+
+    pendingTransparencyCall = sendNow;
+    if (!transparencyThrottleTimer) {
+      transparencyThrottleTimer = setTimeout(async () => {
+        transparencyThrottleTimer = null;
+        const fn = pendingTransparencyCall;
+        pendingTransparencyCall = null;
+        if (fn) await fn();
+      }, 75);
+    }
+  }
+
+  function closeToolbarRenameBar() {
+    renameBar?.classList.add('hidden');
+  }
+
+  async function performSourceRename(item, rawNewName) {
+    if (!item?.sourceName) return false;
+    const oldName = item.sourceName;
+    const newName = String(rawNewName || '').trim();
+    if (!newName || newName === oldName) {
+      closeToolbarRenameBar();
+      return false;
+    }
+    const res = await window.omnichat.obsWsAction({
+      action: 'rename-source',
+      oldName,
+      newName,
+      inputKind: item.inputKind || ''
+    });
+    if (res?.ok) {
+      closeToolbarRenameBar();
+      setStatus(`✅ Quelle "${oldName}" in "${newName}" umbenannt.`, '#4ade80');
+      await Promise.all([loadSceneItems(currentSceneName), loadAudioInputs()]);
+      const renamedItem =
+        sceneItems.find((x) => x.sceneItemId === item.sceneItemId) ||
+        sceneItems.find((x) => x.sourceName === newName) ||
+        null;
+      if (renamedItem) {
+        selectSourceItem(renamedItem);
+        renderSourcesList();
+        renderCanvasOverlay();
+      }
+      return true;
+    }
+    setStatus(`❌ ${res?.error || 'Quelle konnte nicht umbenannt werden.'}`, '#f87171');
+    return false;
+  }
+
   function selectSourceItem(item) {
+    if (selectedItem?.sceneItemId !== item?.sceneItemId) {
+      closeToolbarRenameBar();
+    }
     selectedItem = item;
     const disabled = !item || isAudioOnlyItem(item);
-    [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen].forEach((el) => {
+    if (btnRenameSelected) btnRenameSelected.disabled = !item;
+    [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen, rngTransparency, inpTransparencyPct].forEach((el) => {
       if (el) el.disabled = disabled;
     });
+    transPresetBtns.forEach((b) => { b.disabled = disabled; });
     updateLayerButtonsState(item);
     if (!item) {
       if (lblSelSource) lblSelSource.textContent = '— Quelle anklicken —';
+      syncSelectedTransparencyUI(0);
       loadInputConfig(null);
       return;
     }
@@ -5577,6 +5720,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (inpPosX) inpPosX.value = String(Math.round(tr.positionX || 0));
     if (inpPosY) inpPosY.value = String(Math.round(tr.positionY || 0));
     if (inpScalePct) inpScalePct.value = String(Math.round((tr.scaleX || 1) * 100));
+    syncSelectedTransparencyUI(item.transparencyPct || 0);
     loadInputConfig(item);
   }
 
@@ -5614,7 +5758,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
       const tag = document.createElement('div');
       tag.style.cssText = `position:absolute; top:2px; left:2px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; background:${isSel ? '#0284c7' : 'rgba(15,23,42,0.78)'}; color:#f8fafc; pointer-events:none; white-space:nowrap; max-width:95%; overflow:hidden; text-overflow:ellipsis;`;
-      tag.textContent = it.sourceName;
+      const trPct = Number(it.transparencyPct || 0);
+      tag.textContent = trPct > 0 ? `${it.sourceName} • 💧${trPct}%` : it.sourceName;
       box.appendChild(tag);
 
       box.addEventListener('mousedown', (e) => {
@@ -5793,14 +5938,62 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       const nameSpan = document.createElement('span');
       nameSpan.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
       nameSpan.textContent = it.sourceName;
+      nameSpan.title = `${it.sourceName} (Doppelklick zum Umbenennen)`;
       nameSpan.addEventListener('click', () => {
         selectSourceItem(it);
         renderSourcesList();
         renderCanvasOverlay();
       });
 
+      const startInlineRename = (e) => {
+        if (e) e.stopPropagation();
+        if (row.dataset.renaming === '1') return;
+        row.dataset.renaming = '1';
+        row.draggable = false;
+
+        const editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.value = it.sourceName;
+        editInput.style.cssText = 'flex:1; min-width:80px; font-size:11.5px; padding:2px 6px;';
+        editInput.addEventListener('click', (ev) => ev.stopPropagation());
+        editInput.addEventListener('mousedown', (ev) => ev.stopPropagation());
+
+        let finished = false;
+        const finishInline = async (commit) => {
+          if (finished) return;
+          finished = true;
+          row.dataset.renaming = '0';
+          row.draggable = total > 1;
+          if (commit) {
+            const ok = await performSourceRename(it, editInput.value);
+            if (ok) return;
+          }
+          if (editInput.parentNode === row) {
+            row.replaceChild(nameSpan, editInput);
+          }
+        };
+
+        editInput.addEventListener('keydown', (ev) => {
+          ev.stopPropagation();
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            finishInline(true);
+          } else if (ev.key === 'Escape') {
+            ev.preventDefault();
+            finishInline(false);
+          }
+        });
+        editInput.addEventListener('blur', () => finishInline(true));
+
+        row.replaceChild(editInput, nameSpan);
+        editInput.focus();
+        editInput.select();
+      };
+
+      nameSpan.addEventListener('dblclick', startInlineRename);
+
       row.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') return;
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
         selectSourceItem(it);
         renderSourcesList();
         renderCanvasOverlay();
@@ -5891,6 +6084,61 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
       row.appendChild(grip);
       row.appendChild(nameSpan);
+
+      if (!isAudioOnlyItem(it)) {
+        const transWrap = document.createElement('div');
+        transWrap.style.cssText = 'display:flex; align-items:center; gap:3px; padding:0 3px;';
+        transWrap.title = 'Transparenz dieser Quelle (0% = voll sichtbar, 100% = unsichtbar)';
+
+        const miniSlider = document.createElement('input');
+        miniSlider.type = 'range';
+        miniSlider.min = '0';
+        miniSlider.max = '100';
+        miniSlider.step = '1';
+        miniSlider.value = String(Math.max(0, Math.min(100, Number(it.transparencyPct || 0))));
+        miniSlider.style.cssText = 'width:54px; cursor:pointer;';
+
+        const miniBadge = document.createElement('span');
+        const initPct = Math.max(0, Math.min(100, Number(it.transparencyPct || 0)));
+        miniBadge.style.cssText = `font-size:10px; min-width:28px; text-align:right; font-variant-numeric:tabular-nums; color:${initPct > 0 ? '#38bdf8' : '#64748b'}; font-weight:${initPct > 0 ? '700' : '500'};`;
+        miniBadge.textContent = `${initPct}%`;
+
+        miniSlider.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          row.draggable = false;
+        });
+        miniSlider.addEventListener('mouseup', () => {
+          row.draggable = total > 1;
+        });
+        miniSlider.addEventListener('click', (e) => e.stopPropagation());
+        miniSlider.addEventListener('input', (e) => {
+          e.stopPropagation();
+          const p = Math.max(0, Math.min(100, parseInt(miniSlider.value || '0', 10) || 0));
+          miniBadge.textContent = `${p}%`;
+          miniBadge.style.color = p > 0 ? '#38bdf8' : '#64748b';
+          miniBadge.style.fontWeight = p > 0 ? '700' : '500';
+          applyItemTransparency(it, p, { commitPreview: false, skipListRebuild: true });
+        });
+        miniSlider.addEventListener('change', (e) => {
+          e.stopPropagation();
+          row.draggable = total > 1;
+          const p = Math.max(0, Math.min(100, parseInt(miniSlider.value || '0', 10) || 0));
+          applyItemTransparency(it, p, { commitPreview: true, skipListRebuild: false });
+        });
+
+        transWrap.appendChild(miniSlider);
+        transWrap.appendChild(miniBadge);
+        row.appendChild(transWrap);
+      }
+
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'btn-sm';
+      renameBtn.style.padding = '2px 5px';
+      renameBtn.textContent = '✏️';
+      renameBtn.title = 'Quelle umbenennen (oder Doppelklick auf den Namen)';
+      renameBtn.addEventListener('click', startInlineRename);
+
+      row.appendChild(renameBtn);
       row.appendChild(upBtn);
       row.appendChild(downBtn);
       row.appendChild(eyeBtn);
@@ -6134,6 +6382,67 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnLayerUp?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'up'));
   btnLayerDown?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'down'));
   btnLayerBack?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'back'));
+
+  btnRenameSelected?.addEventListener('click', () => {
+    if (!selectedItem || !renameBar || !inpRenameSource) return;
+    const isHidden = renameBar.classList.contains('hidden');
+    if (isHidden) {
+      inpRenameSource.value = selectedItem.sourceName;
+      renameBar.classList.remove('hidden');
+      inpRenameSource.focus();
+      inpRenameSource.select();
+    } else {
+      closeToolbarRenameBar();
+    }
+  });
+  btnRenameSave?.addEventListener('click', () => {
+    if (selectedItem && inpRenameSource) {
+      performSourceRename(selectedItem, inpRenameSource.value);
+    }
+  });
+  btnRenameCancel?.addEventListener('click', closeToolbarRenameBar);
+  inpRenameSource?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && selectedItem) {
+      e.preventDefault();
+      performSourceRename(selectedItem, inpRenameSource.value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeToolbarRenameBar();
+    }
+  });
+
+  rngTransparency?.addEventListener('input', () => {
+    if (!selectedItem) return;
+    const pct = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '0', 10) || 0));
+    syncSelectedTransparencyUI(pct);
+    applyItemTransparency(selectedItem, pct, { commitPreview: false, skipListRebuild: false });
+  });
+  rngTransparency?.addEventListener('change', () => {
+    if (!selectedItem) return;
+    const pct = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '0', 10) || 0));
+    applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+  });
+  inpTransparencyPct?.addEventListener('change', () => {
+    if (!selectedItem) return;
+    const pct = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '0', 10) || 0));
+    syncSelectedTransparencyUI(pct);
+    applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+  });
+  inpTransparencyPct?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && selectedItem) {
+      const pct = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '0', 10) || 0));
+      syncSelectedTransparencyUI(pct);
+      applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+    }
+  });
+  transPresetBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (!selectedItem) return;
+      const pct = Math.max(0, Math.min(100, parseInt(btn.dataset.trans || '0', 10) || 0));
+      syncSelectedTransparencyUI(pct);
+      applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
+    });
+  });
 
   btnCenter?.addEventListener('click', async () => {
     if (!selectedItem || !currentSceneName) return;
@@ -6986,7 +7295,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const inputIds = [
     'numMsPort', 'inputMsLocalKey', 'chkMsAutoConfigObs', 'chkMsAutoStartObs',
     'chkMsTwitch', 'inputMsTwitchUrl', 'inputMsTwitchKey',
-    'chkMsYoutube', 'inputMsYoutubeUrl', 'inputMsYoutubeKey',
+    'chkMsYoutube', 'inputMsYoutubeUrl', 'inputMsYoutubeKey', 'selMsYoutubePrivacy',
     'chkMsTiktok', 'inputMsTiktokUrl', 'inputMsTiktokKey',
     'chkMsCustom', 'inputMsCustomName', 'inputMsCustomUrl', 'inputMsCustomKey'
   ];
@@ -7011,18 +7320,21 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     btnCfgStop?.classList.toggle('hidden', !isRunning);
 
     const targetsStr = (st.activeTargets || []).join(' + ') || 'Keine Ziele';
+    const warnSuffix =
+      Array.isArray(st.warnings) && st.warnings.length ? ` • ${st.warnings.join(' | ')}` : '';
+    const ytSuffix = st.youtubeWatchUrl ? ` • 🔴 YT: ${st.youtubeWatchUrl}` : '';
     if (st.status === 'streaming') {
       if (badgeLive) {
         badgeLive.textContent = '(🔴 LIVE)';
-        badgeLive.style.color = '#4ade80';
+        badgeLive.style.color = st.warnings?.length ? '#fbbf24' : '#4ade80';
       }
-      const statLine = `🔴 LIVE → ${targetsStr} • ${st.bitrateKbps || 0} kbps • ${st.fps || 0} FPS (${st.uptime || '00:00:00'})`;
+      const statLine = `🔴 LIVE → ${targetsStr} • ${st.bitrateKbps || 0} kbps • ${st.fps || 0} FPS (${st.uptime || '00:00:00'})${ytSuffix}${warnSuffix}`;
       if (telemetryLive) {
-        telemetryLive.style.color = '#4ade80';
+        telemetryLive.style.color = st.warnings?.length ? '#fbbf24' : '#4ade80';
         telemetryLive.textContent = statLine;
       }
       if (statusCfg) {
-        statusCfg.style.color = '#4ade80';
+        statusCfg.style.color = st.warnings?.length ? '#fbbf24' : '#4ade80';
         statusCfg.textContent = statLine;
       }
     } else if (st.status === 'waiting') {
@@ -7030,13 +7342,13 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         badgeLive.textContent = '(⏳ Wartet auf OBS)';
         badgeLive.style.color = '#38bdf8';
       }
-      const waitLine = `⏳ Relay bereit (${st.ingestServer}/${st.ingestKey}) → Wartet auf OBS-Stream (${targetsStr})...`;
+      const waitLine = `⏳ Relay bereit (${st.ingestServer}/${st.ingestKey}) → Wartet auf OBS-Stream (${targetsStr})${ytSuffix}${warnSuffix}`;
       if (telemetryLive) {
-        telemetryLive.style.color = '#38bdf8';
+        telemetryLive.style.color = st.warnings?.length ? '#fbbf24' : '#38bdf8';
         telemetryLive.textContent = waitLine;
       }
       if (statusCfg) {
-        statusCfg.style.color = '#38bdf8';
+        statusCfg.style.color = st.warnings?.length ? '#fbbf24' : '#38bdf8';
         statusCfg.textContent = waitLine;
       }
     } else if (st.status === 'error') {
@@ -7070,6 +7382,39 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   window.omnichat.onMultiStreamState?.(renderRelayState);
   window.omnichat.multiStreamGetState?.().then(renderRelayState).catch(() => {});
+  window.omnichat.onMultiStreamConfigSynced?.((ms) => {
+    if (!ms?.targets?.youtube) return;
+    const chk = document.getElementById('chkMsYoutube');
+    const urlInp = document.getElementById('inputMsYoutubeUrl');
+    const keyInp = document.getElementById('inputMsYoutubeKey');
+    const privSel = document.getElementById('selMsYoutubePrivacy');
+    if (chk) chk.checked = Boolean(ms.targets.youtube.enabled);
+    if (urlInp && ms.targets.youtube.serverUrl) urlInp.value = ms.targets.youtube.serverUrl;
+    if (keyInp && ms.targets.youtube.streamKey) keyInp.value = ms.targets.youtube.streamKey;
+    if (privSel && ms.targets.youtube.privacyStatus) privSel.value = ms.targets.youtube.privacyStatus;
+  });
+
+  document.getElementById('btnOpenGoogleCloudConsole')?.addEventListener('click', () => {
+    window.omnichat.openExternalUrl?.('https://console.cloud.google.com/apis/library/youtube.googleapis.com');
+  });
+
+  document.getElementById('btnMsPrepareYoutube')?.addEventListener('click', async () => {
+    saveMsConfig();
+    if (statusCfg) {
+      statusCfg.style.color = '#38bdf8';
+      statusCfg.textContent = '⏳ Lade YouTube Stream-Schlüssel & bereite YouTube Live-Broadcast per OAuth2 vor...';
+    }
+    const res = await window.omnichat.multiStreamPrepareYoutube?.({ multiStream: getMultiStreamSettings() });
+    if (res?.ok) {
+      if (statusCfg) {
+        statusCfg.style.color = '#4ade80';
+        statusCfg.textContent = `✅ YouTube bereit! Stream-Key geladen & Broadcast (${res.privacyStatus}) auf Auto-Start gesetzt: ${res.watchUrl}`;
+      }
+    } else if (statusCfg) {
+      statusCfg.style.color = '#f87171';
+      statusCfg.textContent = `❌ ${res?.error || 'YouTube OAuth2 Vorbereitung fehlgeschlagen.'}`;
+    }
+  });
 
   async function handleStart() {
     saveMsConfig();
@@ -7105,11 +7450,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (res?.ok) {
       if (statusCfg) {
         statusCfg.style.color = '#4ade80';
-        statusCfg.textContent = `✅ OBS Stream-Server automatisch auf ${res.server} (Key: ${res.key}) gesetzt!`;
+        statusCfg.textContent = `✅ OBS vollautomatisch auf ${res.server} (Key: ${res.key}) eingestellt & Erweitertes-Broadcasting-Konflikt deaktiviert!`;
       }
     } else if (statusCfg) {
       statusCfg.style.color = '#f87171';
-      statusCfg.textContent = `❌ ${res?.error || 'Bitte zuerst OBS WebSocket v5 verbinden.'}`;
+      statusCfg.textContent = `❌ ${res?.error || 'OBS konnte nicht erreicht werden (bitte OBS starten).'}`;
     }
   });
 

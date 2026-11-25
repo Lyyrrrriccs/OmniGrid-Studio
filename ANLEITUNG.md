@@ -29,10 +29,10 @@
 2. Wähle im Dropdown **„✨ Aktiven Livestream automatisch erkennen“** (empfohlen) oder klicke auf **🔍**, um geplante/laufende Streams manuell auszuwählen.
 3. Klicke auf **„Start / Standby“**. Sobald dein Stream live geht, verbindet sich der Chat automatisch.
    > *Hinweis: Zum **Lesen** von YouTube-Chat, SuperChats, Members & Custom-Emotes ist **kein API-Key** nötig.*
-4. **Optional — In den YouTube-Chat schreiben (Google OAuth2):**
-   - Öffne in der YouTube-Karte **„🔑 YouTube Schreiben (OAuth2)“**.
-   - Aktiviere einmalig in deiner [Google Cloud Console](https://console.cloud.google.com/) die **YouTube Data API v3** und erstelle unter *Anmeldedaten* eine **OAuth-Client-ID** vom Typ **Desktop-App** *(warum individuell? Google verlangt für zentrale Apps mit `youtube.force-ssl`-Schreibrechten ein strenges App-Audit, und mit einer eigenen Client-ID nutzt jeder Streamer sein eigenes kostenloses 10.000-Units/Tag-Quota)*.
-   - Trage die **Client-ID** (und optional das **Client-Secret**) ein und klicke auf **„🔐 Mit Google anmelden“**. Danach kannst du direkt aus OmniGrid Studio und per `!song`-Bot in den YouTube-Livechat schreiben.
+4. **Optional — In den YouTube-Chat schreiben & Vollautomatisches Multi-Streaming (Google OAuth2):**
+   - Öffne in der YouTube-Karte **„🔑 YouTube Schreiben & Auto-Livestream (OAuth2)“**.
+   - Damit kannst du nicht nur direkt aus OmniGrid in den YouTube-Livechat schreiben, sondern beim **Multi-Plattform-Streaming** auch deinen **YouTube-Stream-Schlüssel automatisch abrufen** und **YouTube-Livestreams vollautomatisch starten**, ohne jemals YouTube Studio öffnen zu müssen!
+   - 👉 **Die komplette Klick-für-Klick-Einrichtung (inkl. Testnutzer gegen Fehler 403 & Desktop-App Client-ID)** findest du unten in **[Kapitel 22 → Schritt-für-Schritt: Google / YouTube OAuth2 einrichten](#sec-22)** (oder per Klick auf **📖 OAuth2-Anleitung** direkt im OAuth-Bereich).
 
 ### 🎵 TikTok Live
 1. Gib deinen **TikTok-@Benutzernamen** ein.
@@ -252,6 +252,10 @@ Informiere deine Community vollautomatisch über Stream-Starts, Live-Status und 
   - Über **`⚔️ Komplettes LoL-Set`** bzw. **`💬 Just-Chatting-Set`** fügst du das gesamte abgestimmte Overlay-Paket mit einem einzigen Klick fertig positioniert in deine Szene ein!
 - **⏫ Vordergrund & ⏬ Hintergrund (Ebenen-Steuerung):**
   - Verschiebe die ausgewählte Quelle über die Toolbar unter der Vorschau (**`⏫ Vordergrund`**, **`🔼 Vor`**, **`🔽 Hinter`**, **`⏬ Hintergrund`**), über die **`🔼` / `🔽` Buttons** direkt in der Quellenliste (*Tipp: `⇧ Shift` + Klick springt ganz nach vorn/hinten*) oder per **Drag & Drop (`⠿`)** mit der Maus (*oben = Vordergrund, unten = Hintergrund*).
+- **✏️ Quellen direkt umbenennen:**
+  - Benenne jede OBS-Quelle (sowie eingebettete Szenen) direkt im Szenen-Editor um — entweder per **Doppelklick auf den Quellennamen**, über den **`✏️`-Button** in der Quellenliste oder über **`✏️ Umbenennen`** neben der ausgewählten Quelle unter der Vorschau (`Enter` speichert, `Esc` bricht ab).
+- **💧 Transparenz pro Element (`0–100 %`):**
+  - Stelle die **Transparenz jedes einzelnen visuellen Szene-Elements** direkt per kompaktem Schieberegler in der **Quellenliste** oder unterhalb der Vorschau per **💧 Transparenz-Slider**, Prozent-Eingabe und Schnell-Presets (`0%`, `25%`, `50%`, `75%`) live in OBS ein (über einen dedizierten, zerstörungsfreien OBS-Farbkorrektur-Filter `OmniGrid Transparenz`, der bei `0%` automatisch wieder sauber entfernt wird).
 - **Scharfe 1080p HD-Vorschau, Maus-Steuerung & Finder/Explorer-Dateiauswahl:** Ziehe Quellen direkt auf der `1920 × 1080`-Vorschau zum Verschieben oder an den Ecken zum Skalieren (**🎯 Zentrieren** / **⛶ Vollbild**). Beim Hinzufügen oder Bearbeiten von **Bild-, Video-/Medien- oder Textdatei-Quellen** öffnet sich direkt der native **Finder- / Explorer-Dateidialog** — Dateipfade müssen nirgendwo per Text eingetippt werden.
 
 ## 20. Automatische Updates (GitHub Releases)
@@ -282,9 +286,73 @@ Informiere deine Community vollautomatisch über Stream-Starts, Live-Status und 
 ## 22. Lokales Multi-Plattform-Streaming Relay (`📡 Multi-Stream`)
 
 OBS übernimmt nur noch das **einmalige Rendern & Enkodieren (`1×`)**, während OmniGrid Studio den Stream lokal mit **0 % zusätzlicher GPU-/CPU-Enkodierlast (`-c copy`)** gleichzeitig an **Twitch**, **YouTube Live**, **TikTok Live** und **Kick / Custom RTMP** verteilt:
-1. **Ziele & Stream-Keys eintragen:** Öffne **⚙️ Config → 📡 Plattformen** (oder klicke in der Live-Sidebar bei *Multi-Plattform-Stream* auf **⚙️ Ziele**). Aktiviere die gewünschten Plattformen (Twitch, YouTube, TikTok, Kick/Custom) und trage deine jeweiligen Stream-Schlüssel ein.
-2. **OBS automatisch einstellen:** Klicke auf **⚡ OBS automatisch auf OmniGrid-Relay einstellen** (setzt in OBS per WebSocket v5 automatisch `rtmp://127.0.0.1:1935/live` mit Schlüssel `omnigrid`).
-3. **1-Klick Multi-Stream Start:** Klicke in der Live-Sidebar auf **📡 Multi-Stream Start** — OmniGrid Studio startet den lokalen RTMP-Verteiler und startet automatisch den OBS-Stream mit. Bitrate (`kbps`), `FPS` und aktive Ziele siehst du live im Cockpit.
+1. **Ziele & Stream-Keys eintragen (inkl. vollautomatischem YouTube-Live-Start):** Öffne **⚙️ Config → 📡 Plattformen** (oder klicke in der Live-Sidebar bei *Multi-Plattform-Stream* auf **⚙️ Ziele**). Aktiviere die gewünschten Plattformen (Twitch, YouTube, TikTok, Kick/Custom).
+   - **YouTube Live Besonderheit gelöst:** Anders als Twitch zeigt YouTube bei reinem RTMP-Push keinen öffentlichen Stream an, solange in YouTube Studio kein aktiver Broadcast mit *Auto-Start* existiert. Ist dein YouTube-Konto per **Google OAuth2** verbunden, holt OmniGrid beim Start (oder per Klick auf **⚡ Stream-Key & Live-Broadcast automatisch per YouTube-OAuth vorbereiten**) vollautomatisch deinen YouTube-RTMP-Schlüssel, legt bei Bedarf einen neuen YouTube-Livestream (`🌍 Öffentlich` / `🔗 Nicht gelistet` / `🔒 Privat`) mit **Auto-Start** an und schaltet ihn auf **🔴 LIVE**, ohne dass du YouTube Studio im Browser öffnen musst!
+2. **100 % Vollautomatik ohne OBS-Einstellungen:** OmniGrid liest Port & Passwort von OBS WebSocket automatisch aus deiner lokalen OBS-Installation aus, setzt in OBS automatisch `rtmp://127.0.0.1:1935/live` (`omnigrid`) und **deaktiviert vollautomatisch den OBS-Konflikt „Erweitertes Broadcasting“ (`EnableMultitrackVideo`)**, sodass die OBS-Fehlermeldung *„Keine Konfigurations-URL für die aktuelle Plattform verfügbar“* gar nicht erst auftreten kann.
+3. **1-Klick Multi-Stream Start:** Klicke in der Live-Sidebar auf **📡 Multi-Stream Start** — OmniGrid Studio verbindet sich bei Bedarf selbstständig mit OBS, konfiguriert den Stream-Dienst, startet den lokalen RTMP-Verteiler und startet automatisch den OBS-Stream mit. Bitrate (`kbps`), `FPS` und aktive Ziele siehst du live im Cockpit.
+
+### 🔑 Schritt-für-Schritt: Google / YouTube OAuth2 für Multi-Plattform-Streaming einrichten
+
+Warum eigene Google-OAuth2-Daten? Google verlangt für zentrale Drittanbieter-Apps mit YouTube-Steuerungsrechten (`youtube.force-ssl`) ein kostenpflichtiges Sicherheits-Audit und teilt ein einziges Tages-Limit unter allen Nutzern auf. Mit deiner eigenen kostenlosen **Desktop-App Client-ID** (dauert einmalig ca. 3 Minuten, **keine Kreditkarte nötig**) hast du volle **10.000 API-Einheiten pro Tag** exklusiv für deinen eigenen Kanal — und alle Zugangsdaten bleiben zu 100 % lokal auf deinem Rechner.
+
+#### ✅ Vorab-Check (einmalig auf YouTube prüfen)
+- Öffne einmal im Browser `https://studio.youtube.com` → klicke oben rechts auf **Erstellen → Livestream starten**.
+- **Wichtig:** Wenn du auf diesem YouTube-Kanal noch **nie** gestreamt hast, verlangt YouTube einmalig eine Telefon-Bestätigung und startet einen **24-Stunden-Countdown** zur Freischaltung von Livestreams. Erst wenn dein Kanal für Livestreams freigeschaltet ist, darf die YouTube-API Streams starten.
+
+#### Schritt 1 — Kostenloses Google-Cloud-Projekt anlegen
+1. Öffne [https://console.cloud.google.com/](https://console.cloud.google.com/) (oder klicke in OmniGrid im YouTube-OAuth-Bereich auf **🌐 Google Cloud Console öffnen**) und melde dich mit deinem Google-Konto an.
+2. Klicke oben links neben dem *Google Cloud*-Logo auf die **Projektauswahl** → **Neues Projekt** (*New Project*).
+3. Vergib einen beliebigen Projektnamen (z. B. `OmniGrid YouTube`) und klicke auf **Erstellen** (*Create*).
+4. Achte darauf, dass dieses neue Projekt oben links in der Projektauswahl aktiv ausgewählt ist.
+
+#### Schritt 2 — „YouTube Data API v3“ aktivieren
+1. Öffne im linken Seitenmenü **APIs & Dienste → Bibliothek** (*APIs & Services → Library*).
+2. Tippe in das Suchfeld **`YouTube Data API v3`** ein und klicke auf den Treffer.
+3. Klicke auf den blauen Button **Aktivieren** (*Enable*).
+
+#### Schritt 3 — OAuth-Zustimmungsbildschirm & Testnutzer eintragen (WICHTIG!)
+1. Öffne im linken Menü **APIs & Dienste → OAuth-Zustimmungsbildschirm** *(in der neueren Google-Ansicht heißt der Punkt **Google Auth Platform → Übersicht / Branding**)*.
+2. Falls du ihn zum ersten Mal einrichtest, klicke auf **Erste Schritte** (*Get Started* / *Konfigurieren*):
+   - **App-Name:** `OmniGrid Studio`
+   - **Nutzer-Support-E-Mail:** wähle deine eigene Google-E-Mail-Adresse aus dem Dropdown
+   - **Zielgruppe (*Audience*):** wähle **Extern** (*External*)
+   - **Kontaktdaten des Entwicklers:** trage deine eigene E-Mail-Adresse ein → klicke auf **Speichern / Erstellen**.
+3. **Eigenen Account als Testnutzer freischalten (verhindert Fehler 403!):**
+   - Öffne links **Zielgruppe** (*Audience*) bzw. scrolle zum Abschnitt **Testnutzer** (*Test users*).
+   - Lass den Veröffentlichungsstatus einfach auf **„Test“** (*Testing*) stehen — du musst die App **nicht** verifizieren oder veröffentlichen!
+   - Klicke unter **Testnutzer** auf **`+ Add users` / `+ Nutzer hinzufügen`**, trage **exakt die Google-E-Mail-Adresse deines YouTube-Kanals** ein und klicke auf **Speichern**.
+
+#### Schritt 4 — OAuth-Client-ID vom Typ „Desktop-App“ erstellen
+1. Öffne links **APIs & Dienste → Anmeldedaten** (*Credentials*) — bzw. unter *Google Auth Platform* den Punkt **Clients**.
+2. Klicke oben auf **`+ Anmeldedaten erstellen` → `OAuth-Client-ID`** *(bzw. `+ Client erstellen`)*.
+3. Wähle bei **Anwendungstyp (*Application type*)** unbedingt **`Desktop-App`** (*Desktop app*) aus! *(Wähle **nicht** „Webanwendung“, sonst entsteht ein Redirect-Fehler.)*
+4. Gib als Namen z. B. `OmniGrid Desktop` ein und klicke auf **Erstellen** (*Create*).
+5. Google zeigt dir jetzt deine **Client-ID** (endet auf `.apps.googleusercontent.com`) und deinen **Clientschlüssel / Client-Secret** (beginnt meist mit `GOCSPX-...`).
+
+#### Schritt 5 — In OmniGrid Studio verbinden
+1. Öffne in OmniGrid Studio **⚙️ Config → 🌐 Plattformen** und gehe zur Karte **🔴 YOUTUBE LIVE**.
+2. Trage oben dein YouTube-@Handle ein (z. B. `@DeinKanal`).
+3. Klappe **„🔑 YouTube Schreiben & Auto-Livestream (OAuth2)“** auf.
+4. Kopiere deine **Client-ID** in das erste Feld und dein **Client-Secret** in das zweite Feld.
+5. Klicke auf **„🔐 Mit Google anmelden“** — dein Standard-Browser öffnet sich:
+   - Wähle dein Google-Konto aus. **Falls sich ein zweites Auswahlfenster mit deinem persönlichen Konto und deinem YouTube-Brand-Kanal öffnet, klicke unbedingt auf deinen YouTube-Kanal!**
+   - Beim Hinweis *„Google hat diese App nicht überprüft“* (normal, da es dein eigenes privates Test-Projekt ist) klicke unten links auf **„Weiter“ (*Continue*)** *(bzw. „Erweitert → Weiter zu OmniGrid Studio“)*.
+   - Aktiviere die Berechtigungs-Haken (YouTube-Konto verwalten & Videos hochladen) und klicke auf **Weiter / Zulassen**.
+   - Der Browser meldet **„✅ YouTube-Konto verbunden!“** und in OmniGrid steht neben OAuth2 nun dein Kanalname in Grün.
+
+#### Schritt 6 — Multi-Plattform-Stream auf YouTube + Twitch starten
+1. Scrolle im selben Reiter (**⚙️ Config → 🌐 Plattformen**) nach unten zu **📡 Multi-Plattform-Streaming Relay**.
+2. Setze den Haken bei **🔴 YouTube Live Simulcast** und wähle rechts daneben die gewünschte Sichtbarkeit (**🌍 Öffentlich**, **🔗 Nicht gelistet** oder **🔒 Privat**).
+3. *(Optionaler Vorab-Test)* Klicke auf **⚡ Stream-Key & Live-Broadcast automatisch per YouTube-OAuth vorbereiten** — OmniGrid lädt sofort deinen echten YouTube-Stream-Schlüssel und legt einen startbereiten Broadcast an.
+4. Ab jetzt genügt vor jedem Stream ein einziger Klick in der Sidebar auf **📡 Multi-Stream Start**: OmniGrid bereitet den YouTube-Broadcast automatisch vor, startet OBS + das lokale Relay und schaltet deinen YouTube-Livestream automatisch auf **🔴 LIVE** (inkl. automatischer Live-Chat-Verbindung)!
+
+#### 🛠️ Häufige Stolpersteine & Sofort-Hilfe
+| Meldung / Symptom | Ursache & Lösung |
+| :--- | :--- |
+| **`Fehler 403: access_denied`** im Browser | Deine Google-E-Mail wurde in **Schritt 3.3** noch nicht unter **Zielgruppe → Testnutzer (`+ Add users`)** eingetragen. |
+| **`Error 400: redirect_uri_mismatch`** | In **Schritt 4.3** wurde versehentlich *Webanwendung* statt **Desktop-App** gewählt → einfach eine neue Client-ID vom Typ **Desktop-App** anlegen. |
+| **`The user is not enabled for live streaming`** | Auf diesem Kanal wurde noch nie gestreamt (24h-Freischaltung unter `studio.youtube.com` → *Livestream starten* abwarten) **oder** beim Google-Login wurde das Haupt-Gmail-Profil statt des YouTube-Brand-Kanals angeklickt (einmal auf *Abmelden* → neu anmelden → richtigen Kanal wählen). |
+| **Stream bleibt ohne OAuth2 unsichtbar** | Wenn du **kein** OAuth2 nutzt und nur manuell den Stream-Key einträgst, muss in `studio.youtube.com` einmalig ein Stream mit aktiviertem Schalter **„Automatischer Start“** angelegt sein. Mit OAuth2 übernimmt OmniGrid das komplett für dich. |
 
 ## 23. Feedback, Feature-Wünsche & GitHub Discussions (`💬 Feedback`)
 
