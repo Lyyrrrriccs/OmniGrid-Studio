@@ -8601,9 +8601,64 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
 
   const openWizard = () => {
     syncFromMainForm();
+    refreshSetupStatusUI();
     goToStep(1);
     document.getElementById('configPageModal')?.classList.add('hidden');
     modal.classList.remove('hidden');
+  };
+
+  const evaluateSetupStatus = (cfg = null) => {
+    const tw = String(cfg ? cfg.twitch?.channel : document.getElementById('inputTwitchChannel')?.value || '').trim();
+    const yt = String(cfg ? cfg.youtube?.channel : document.getElementById('inputYoutubeChannel')?.value || '').trim();
+    const tt = String(cfg ? cfg.tiktok?.channel : document.getElementById('inputTiktokChannel')?.value || '').trim();
+    const items = [];
+    if (tw) items.push(`Twitch (${tw})`);
+    if (yt) items.push(`YouTube (${yt})`);
+    if (tt) items.push(`TikTok (${tt})`);
+    if (obsConnectedNow) items.push('OBS');
+    const persistedDone = Boolean(cfg?.quickSetupCompleted);
+    let localDone = false;
+    try { localDone = localStorage.getItem('omnigrid_quick_setup_done') === '1'; } catch (e) {}
+    const isConfigured = items.length > 0;
+    const isCompleted = isConfigured || persistedDone || localDone;
+    return { isConfigured, isCompleted, items };
+  };
+
+  const refreshSetupStatusUI = (cfg = null) => {
+    const st = evaluateSetupStatus(cfg);
+    const sideStatus = document.getElementById('sidebarQuickSetupStatus');
+    const sideBtn = document.getElementById('btnOpenQuickSetupSidebar');
+    const topBtn = document.getElementById('btnOpenQuickSetup');
+    const banner = document.getElementById('qsExistingStatusBanner');
+    if (sideStatus) {
+      sideStatus.textContent = st.isConfigured
+        ? `✅ Aktiv: ${st.items.slice(0, 2).join(', ')}${st.items.length > 2 ? ' …' : ''}`
+        : st.isCompleted
+          ? '⚪ Übersprungen – jederzeit startbar'
+          : '⚡ Noch nicht eingerichtet';
+      sideStatus.style.color = st.isConfigured ? '#4ade80' : '#fbbf24';
+    }
+    if (sideBtn) sideBtn.textContent = st.isCompleted ? 'Neu starten' : 'Starten';
+    if (topBtn) {
+      topBtn.textContent = st.isConfigured ? '🧭 Quick Setup ✓' : '🧭 Quick Setup';
+      topBtn.title = st.isConfigured
+        ? `Bereits eingerichtet (${st.items.join(', ')}) – klicken zum erneuten Starten`
+        : 'Schritt-für-Schritt Einrichtungs-Assistent starten';
+    }
+    if (banner) {
+      if (st.isConfigured) {
+        banner.textContent = `✅ Bereits eingerichtet: ${st.items.join(' • ')} — du kannst alle Werte hier prüfen oder anpassen.`;
+        banner.style.background = 'rgba(34,197,94,0.14)';
+        banner.style.borderColor = 'rgba(34,197,94,0.4)';
+        banner.style.color = '#86efac';
+      } else {
+        banner.textContent = '✨ Ersteinrichtung — folge den 5 Schritten, in unter 2 Minuten bist du startklar.';
+        banner.style.background = 'rgba(56,189,248,0.12)';
+        banner.style.borderColor = 'rgba(56,189,248,0.3)';
+        banner.style.color = '#bae6fd';
+      }
+    }
+    return st;
   };
 
   const closeWizard = (markDone = true) => {
@@ -8611,11 +8666,15 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     modal.classList.add('hidden');
     if (markDone) {
       try { localStorage.setItem('omnigrid_quick_setup_done', '1'); } catch (e) {}
+      window.omnichat.saveProfile({ quickSetupCompleted: true }).catch(() => {});
     }
+    refreshSetupStatusUI();
   };
 
   document.getElementById('btnOpenQuickSetup')?.addEventListener('click', openWizard);
+  document.getElementById('btnOpenQuickSetupSidebar')?.addEventListener('click', openWizard);
   document.getElementById('btnOpenQuickSetupFromConfig')?.addEventListener('click', openWizard);
+  document.getElementById('btnOpenQuickSetupSystem')?.addEventListener('click', openWizard);
   document.getElementById('btnQsClose')?.addEventListener('click', () => closeWizard(true));
   modal.addEventListener('click', (e) => { if (e.target === modal) closeWizard(true); });
   pills.forEach((b) => b.addEventListener('click', () => { syncToMainForm(); goToStep(Number(b.dataset.qsStep)); }));
@@ -8719,10 +8778,8 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     const urlInput = document.getElementById('qsObsOverlayUrl');
     if (urlInput && data?.obsOverlayUrl) urlInput.value = data.obsOverlayUrl;
     const cfg = data?.config || {};
-    const hasAnyChannel = Boolean(cfg.twitch?.channel || cfg.youtube?.channel || cfg.tiktok?.channel);
-    let done = false;
-    try { done = localStorage.getItem('omnigrid_quick_setup_done') === '1'; } catch (e) {}
-    if (!hasAnyChannel && !done) {
+    const st = refreshSetupStatusUI(cfg);
+    if (!st.isCompleted) {
       setTimeout(openWizard, 450);
     }
   });

@@ -82,6 +82,13 @@
     <!-- LEFT STREAMER PROFILE & APPEARANCE SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-scroll">
+        <div class="sidebar-section" id="sidebarQuickSetupBar" style="padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(168,85,247,0.1)); border: 1px solid rgba(56,189,248,0.3);">
+          <div style="min-width: 0;">
+            <div style="font-size: 12px; font-weight: 700; color: #e0f2fe;">🧭 Quick Setup</div>
+            <div id="sidebarQuickSetupStatus" style="font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Prüfe Einrichtung...</div>
+          </div>
+          <button type="button" class="btn-sm" id="btnOpenQuickSetupSidebar" style="flex-shrink: 0; background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); color: #bae6fd; font-weight: 700;">Starten</button>
+        </div>
         <div class="sidebar-section">
           <h3>📡 Plattformen verbinden</h3>
           <p class="section-hint">Jede Plattform läuft isoliert mit Auto-Reconnect & Duplikat-Schutz und lässt sich einzeln aktivieren oder neu verbinden.</p>
@@ -1121,6 +1128,7 @@
           <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
             <button class="btn-primary btn-sm" id="btnBackupExportAll" style="flex: 1; min-width: 170px;">📤 Alles exportieren (.json)</button>
             <button class="btn-sm" id="btnBackupImportAll" style="flex: 1; min-width: 170px;">📥 Backup importieren (.json)</button>
+            <button class="btn-sm" id="btnOpenQuickSetupSystem" style="flex: 1; min-width: 170px; background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.45); color: #7dd3fc;">🧭 Quick Setup neu starten</button>
           </div>
           <div id="backupDropZone" style="margin-top: 8px; padding: 10px; border-radius: 8px; border: 1px dashed rgba(148,163,184,0.35); background: rgba(15,23,42,0.35); text-align: center; font-size: 11px; color: #94a3b8; cursor: pointer;">
             📂 Oder <strong>.json</strong>-Backup-Datei einfach hier reinziehen
@@ -2520,6 +2528,9 @@
       </div>
 
       <div class="qs-body">
+        <div id="qsExistingStatusBanner" style="margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; font-size: 12px; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #bae6fd;">
+          ✨ Ersteinrichtung — in 5 Schritten startklar.
+        </div>
         <div class="qs-panel active" data-qs-panel="1">
           <h3>📡 Schritt 1: Dein Name &amp; Streaming-Kanäle</h3>
           <p class="section-hint">Trage einfach die Plattformen ein, die du nutzt. Leer gelassene Plattformen werden übersprungen.</p>
