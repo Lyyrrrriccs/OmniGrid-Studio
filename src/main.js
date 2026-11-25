@@ -836,6 +836,7 @@ function appendDiagLog(platform, level, message) {
 function getDefaultConfig() {
   return {
     streamerName: '',
+    quickSetupCompleted: false,
     keywordAlerts: '',
     keywordSound: true,
     keywordColor: '#f97316',
