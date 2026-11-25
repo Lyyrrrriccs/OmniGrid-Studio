@@ -679,6 +679,50 @@ class ObsWsClient extends EventEmitter {
     return { ok: true };
   }
 
+  async renameSource(oldName, newName, inputKind = '') {
+    const cleanOld = String(oldName || '').trim();
+    const cleanNew = String(newName || '').trim();
+    if (!cleanOld || !cleanNew) {
+      throw new Error('Bitte einen gültigen neuen Quellennamen eingeben.');
+    }
+    if (cleanOld === cleanNew) {
+      return { ok: true, oldName: cleanOld, newName: cleanNew, unchanged: true };
+    }
+
+    try {
+      await this.call('SetInputName', {
+        inputName: cleanOld,
+        newInputName: cleanNew
+      });
+    } catch (err) {
+      const msg = String(err?.message || '');
+      // Falls das Szenen-Element eine verschachtelte Szene statt eines Inputs ist:
+      if (!inputKind && !/already exists|601/i.test(msg)) {
+        try {
+          await this.call('SetSceneName', {
+            sceneName: cleanOld,
+            newSceneName: cleanNew
+          });
+        } catch (sceneErr) {
+          if (/already exists|601/i.test(String(sceneErr?.message || ''))) {
+            throw new Error(`Eine Quelle oder Szene namens "${cleanNew}" existiert bereits in OBS.`);
+          }
+          throw err;
+        }
+      } else if (/already exists|601/i.test(msg)) {
+        throw new Error(`Eine Quelle namens "${cleanNew}" existiert bereits in OBS.`);
+      } else {
+        throw err;
+      }
+    }
+
+    if (this.lastOpts && this.lastOpts.micName === cleanOld) {
+      this.lastOpts.micName = cleanNew;
+    }
+    await this.refreshState().catch(() => {});
+    return { ok: true, oldName: cleanOld, newName: cleanNew };
+  }
+
   async startVirtualCam() {
     let wasActive = false;
     try {

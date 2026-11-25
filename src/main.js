@@ -3294,6 +3294,9 @@ app.whenReady().then(async () => {
         return { ok: true, added, addonMode: bundle.addonMode };
       }
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
+      if (act === 'rename-source') {
+        return await obsWs.renameSource(payload.oldName, payload.newName, payload.inputKind || '');
+      }
       if (act === 'start-virtual-cam') return await obsWs.startVirtualCam();
       if (act === 'stop-virtual-cam') return await obsWs.stopVirtualCam();
       if (act === 'inspect-input') {

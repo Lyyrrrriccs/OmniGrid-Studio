@@ -5177,6 +5177,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const statusEl = document.getElementById('seStatus');
 
   const lblSelSource = document.getElementById('seSelectedSourceName');
+  const btnRenameSelected = document.getElementById('btnSeRenameSelected');
+  const renameBar = document.getElementById('seRenameBar');
+  const inpRenameSource = document.getElementById('seRenameInput');
+  const btnRenameSave = document.getElementById('btnSeRenameSave');
+  const btnRenameCancel = document.getElementById('btnSeRenameCancel');
   const inpPosX = document.getElementById('sePosX');
   const inpPosY = document.getElementById('sePosY');
   const inpScalePct = document.getElementById('seScalePct');
@@ -5634,9 +5639,50 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  function closeToolbarRenameBar() {
+    renameBar?.classList.add('hidden');
+  }
+
+  async function performSourceRename(item, rawNewName) {
+    if (!item?.sourceName) return false;
+    const oldName = item.sourceName;
+    const newName = String(rawNewName || '').trim();
+    if (!newName || newName === oldName) {
+      closeToolbarRenameBar();
+      return false;
+    }
+    const res = await window.omnichat.obsWsAction({
+      action: 'rename-source',
+      oldName,
+      newName,
+      inputKind: item.inputKind || ''
+    });
+    if (res?.ok) {
+      closeToolbarRenameBar();
+      setStatus(`✅ Quelle "${oldName}" in "${newName}" umbenannt.`, '#4ade80');
+      await Promise.all([loadSceneItems(currentSceneName), loadAudioInputs()]);
+      const renamedItem =
+        sceneItems.find((x) => x.sceneItemId === item.sceneItemId) ||
+        sceneItems.find((x) => x.sourceName === newName) ||
+        null;
+      if (renamedItem) {
+        selectSourceItem(renamedItem);
+        renderSourcesList();
+        renderCanvasOverlay();
+      }
+      return true;
+    }
+    setStatus(`❌ ${res?.error || 'Quelle konnte nicht umbenannt werden.'}`, '#f87171');
+    return false;
+  }
+
   function selectSourceItem(item) {
+    if (selectedItem?.sceneItemId !== item?.sceneItemId) {
+      closeToolbarRenameBar();
+    }
     selectedItem = item;
     const disabled = !item || isAudioOnlyItem(item);
+    if (btnRenameSelected) btnRenameSelected.disabled = !item;
     [inpPosX, inpPosY, inpScalePct, btnApplyTransform, btnCenter, btnFullscreen, rngTransparency, inpTransparencyPct].forEach((el) => {
       if (el) el.disabled = disabled;
     });
@@ -5871,11 +5917,59 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       const nameSpan = document.createElement('span');
       nameSpan.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
       nameSpan.textContent = it.sourceName;
+      nameSpan.title = `${it.sourceName} (Doppelklick zum Umbenennen)`;
       nameSpan.addEventListener('click', () => {
         selectSourceItem(it);
         renderSourcesList();
         renderCanvasOverlay();
       });
+
+      const startInlineRename = (e) => {
+        if (e) e.stopPropagation();
+        if (row.dataset.renaming === '1') return;
+        row.dataset.renaming = '1';
+        row.draggable = false;
+
+        const editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.value = it.sourceName;
+        editInput.style.cssText = 'flex:1; min-width:80px; font-size:11.5px; padding:2px 6px;';
+        editInput.addEventListener('click', (ev) => ev.stopPropagation());
+        editInput.addEventListener('mousedown', (ev) => ev.stopPropagation());
+
+        let finished = false;
+        const finishInline = async (commit) => {
+          if (finished) return;
+          finished = true;
+          row.dataset.renaming = '0';
+          row.draggable = total > 1;
+          if (commit) {
+            const ok = await performSourceRename(it, editInput.value);
+            if (ok) return;
+          }
+          if (editInput.parentNode === row) {
+            row.replaceChild(nameSpan, editInput);
+          }
+        };
+
+        editInput.addEventListener('keydown', (ev) => {
+          ev.stopPropagation();
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            finishInline(true);
+          } else if (ev.key === 'Escape') {
+            ev.preventDefault();
+            finishInline(false);
+          }
+        });
+        editInput.addEventListener('blur', () => finishInline(true));
+
+        row.replaceChild(editInput, nameSpan);
+        editInput.focus();
+        editInput.select();
+      };
+
+      nameSpan.addEventListener('dblclick', startInlineRename);
 
       row.addEventListener('click', (e) => {
         if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
@@ -6016,6 +6110,14 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         row.appendChild(transWrap);
       }
 
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'btn-sm';
+      renameBtn.style.padding = '2px 5px';
+      renameBtn.textContent = '✏️';
+      renameBtn.title = 'Quelle umbenennen (oder Doppelklick auf den Namen)';
+      renameBtn.addEventListener('click', startInlineRename);
+
+      row.appendChild(renameBtn);
       row.appendChild(upBtn);
       row.appendChild(downBtn);
       row.appendChild(eyeBtn);
@@ -6259,6 +6361,34 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnLayerUp?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'up'));
   btnLayerDown?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'down'));
   btnLayerBack?.addEventListener('click', () => selectedItem && moveItemLayer(selectedItem, 'back'));
+
+  btnRenameSelected?.addEventListener('click', () => {
+    if (!selectedItem || !renameBar || !inpRenameSource) return;
+    const isHidden = renameBar.classList.contains('hidden');
+    if (isHidden) {
+      inpRenameSource.value = selectedItem.sourceName;
+      renameBar.classList.remove('hidden');
+      inpRenameSource.focus();
+      inpRenameSource.select();
+    } else {
+      closeToolbarRenameBar();
+    }
+  });
+  btnRenameSave?.addEventListener('click', () => {
+    if (selectedItem && inpRenameSource) {
+      performSourceRename(selectedItem, inpRenameSource.value);
+    }
+  });
+  btnRenameCancel?.addEventListener('click', closeToolbarRenameBar);
+  inpRenameSource?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && selectedItem) {
+      e.preventDefault();
+      performSourceRename(selectedItem, inpRenameSource.value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeToolbarRenameBar();
+    }
+  });
 
   rngTransparency?.addEventListener('input', () => {
     if (!selectedItem) return;
