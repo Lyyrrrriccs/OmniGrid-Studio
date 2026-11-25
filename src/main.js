@@ -3559,6 +3559,110 @@ app.whenReady().then(async () => {
     return { ok: true, streams };
   });
 
+  function parseGoogleOAuthClientJson(rawText) {
+    let parsed;
+    try {
+      parsed = JSON.parse(String(rawText || ''));
+    } catch (e) {
+      throw new Error('Ungültige JSON-Datei (konnte nicht gelesen werden).');
+    }
+    const isWebClient = Boolean(parsed?.web && !parsed?.installed);
+    const block = parsed?.installed || parsed?.web || parsed || {};
+    const clientId = String(block.client_id || block.clientId || '').trim();
+    const clientSecret = String(block.client_secret || block.clientSecret || '').trim();
+    if (!clientId) {
+      throw new Error('Keine "client_id" in dieser JSON-Datei gefunden. Bitte lade die OAuth-Client-JSON aus Google Cloud (Download JSON) herunter.');
+    }
+    if (!clientSecret) {
+      throw new Error('Kein "client_secret" in dieser JSON-Datei gefunden.');
+    }
+    return {
+      clientId,
+      clientSecret,
+      projectId: String(block.project_id || '').trim(),
+      isWebClient
+    };
+  }
+
+  ipcMain.handle('youtube-oauth-import-json', async (_ev, opts = {}) => {
+    try {
+      const { dialog, shell } = require('electron');
+      let filePath = String(opts?.filePath || '').trim();
+      if (!filePath) {
+        let defaultDir = app.getPath('home');
+        try {
+          defaultDir = app.getPath('downloads') || defaultDir;
+        } catch (e) {}
+        const win = BrowserWindow.getFocusedWindow() || mainWindow;
+        const pick = await dialog.showOpenDialog(win, {
+          title: 'Google OAuth2 JSON-Datei auswählen (client_secret_...json)',
+          defaultPath: defaultDir,
+          properties: ['openFile'],
+          filters: [{ name: 'Google OAuth JSON', extensions: ['json'] }]
+        });
+        if (pick.canceled || !pick.filePaths?.[0]) {
+          return { ok: false, canceled: true };
+        }
+        filePath = pick.filePaths[0];
+      }
+
+      const rawText = fs.readFileSync(filePath, 'utf8');
+      const extracted = parseGoogleOAuthClientJson(rawText);
+
+      // Persist clientId & clientSecret immediately so they are never lost even if browser login is retried
+      const preCfg = loadConfig();
+      const preOAuth = {
+        ...(preCfg.youtubeOAuth || {}),
+        clientId: extracted.clientId,
+        clientSecret: extracted.clientSecret
+      };
+      preCfg.youtubeOAuth = preOAuth;
+      saveConfig(preCfg);
+      youtube.setOAuthConfig(preOAuth);
+
+      if (opts?.autoLogin === false) {
+        return {
+          ok: true,
+          importedOnly: true,
+          fileName: path.basename(filePath),
+          isWebClient: extracted.isWebClient,
+          oauth: preOAuth
+        };
+      }
+
+      const res = await youtube.startOAuthLogin({
+        clientId: extracted.clientId,
+        clientSecret: extracted.clientSecret,
+        openUrl: (url) => shell.openExternal(url)
+      });
+      const cfg = loadConfig();
+      cfg.youtubeOAuth = res.oauth;
+      saveConfig(cfg);
+      platformStatus.youtube.canWrite = youtube.canWrite;
+      obsServer.broadcastStatus(platformStatus);
+      broadcastToWindows('platform-status', platformStatus);
+      appendDiagLog(
+        'youtube',
+        'info',
+        `Google OAuth2 JSON importiert & YouTube verbunden (${res.oauth.accountName || 'Schreibrechte aktiv'}).`
+      );
+      return {
+        ok: true,
+        fileName: path.basename(filePath),
+        isWebClient: extracted.isWebClient,
+        oauth: res.oauth
+      };
+    } catch (err) {
+      appendDiagLog('youtube', 'error', `Google OAuth JSON-Import fehlgeschlagen: ${err.message}`);
+      const cfg = loadConfig();
+      return {
+        ok: false,
+        error: err.message,
+        oauth: cfg.youtubeOAuth || {}
+      };
+    }
+  });
+
   ipcMain.handle('youtube-oauth-login', async (_ev, creds) => {
     try {
       const { shell } = require('electron');

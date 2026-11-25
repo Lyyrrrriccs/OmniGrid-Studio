@@ -245,6 +245,7 @@
       "copyOverlayUrl": "Copy Overlay URL",
       "obsWsHeading": "🎛️ OBS WebSocket v5 Connection",
       "ytOauthSummaryNew": "🔑 YouTube Write & Auto-Livestream (OAuth2) —",
+      "ytOauthImportJsonBtn": "📂 Import Google 'Download JSON' File & Sign In…",
       "ytOauthGuideBtn": "📖 Step-by-Step OAuth2 Guide",
       "ytOauthGuideShort": "📖 OAuth2 Guide",
       "ytPrepareBtn": "⚡ Prepare Stream Key & Live Broadcast via OAuth",

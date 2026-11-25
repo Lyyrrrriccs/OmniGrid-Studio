@@ -327,14 +327,13 @@ Warum eigene Google-OAuth2-Daten? Google verlangt für zentrale Drittanbieter-Ap
 2. Klicke oben auf **`+ Anmeldedaten erstellen` → `OAuth-Client-ID`** *(bzw. `+ Client erstellen`)*.
 3. Wähle bei **Anwendungstyp (*Application type*)** unbedingt **`Desktop-App`** (*Desktop app*) aus! *(Wähle **nicht** „Webanwendung“, sonst entsteht ein Redirect-Fehler.)*
 4. Gib als Namen z. B. `OmniGrid Desktop` ein und klicke auf **Erstellen** (*Create*).
-5. Google zeigt dir jetzt deine **Client-ID** (endet auf `.apps.googleusercontent.com`) und deinen **Clientschlüssel / Client-Secret** (beginnt meist mit `GOCSPX-...`).
+5. Klicke im Google-Dialog unten links einfach auf **`⬇️ Download JSON`** (speichert `client_secret_....json` in deinem `Downloads`-Ordner).
 
-#### Schritt 5 — In OmniGrid Studio verbinden
-1. Öffne in OmniGrid Studio **⚙️ Config → 🌐 Plattformen** und gehe zur Karte **🔴 YOUTUBE LIVE**.
-2. Trage oben dein YouTube-@Handle ein (z. B. `@DeinKanal`).
-3. Klappe **„🔑 YouTube Schreiben & Auto-Livestream (OAuth2)“** auf.
-4. Kopiere deine **Client-ID** in das erste Feld und dein **Client-Secret** in das zweite Feld.
-5. Klicke auf **„🔐 Mit Google anmelden“** — dein Standard-Browser öffnet sich:
+#### Schritt 5 — In OmniGrid Studio per 1-Klick JSON-Import verbinden (kein Abtippen!)
+1. Öffne in OmniGrid Studio **⚙️ Config → 🌐 Plattformen** → Karte **🔴 YOUTUBE LIVE** und trage oben dein YouTube-@Handle ein (z. B. `@DeinKanal`).
+2. Klappe **„🔑 YouTube Schreiben & Auto-Livestream (OAuth2)“** auf.
+3. Klicke auf den grünen Button **„📂 Google ‚Download JSON‘-Datei importieren & anmelden…“** und wähle im Finder / Explorer deine heruntergeladene `client_secret_....json` aus *(oder ziehe die JSON-Datei per Drag & Drop direkt auf die YouTube-Karte)*!
+   - OmniGrid liest `Client-ID` und `GOCSPX-... Client-Secret` vollautomatisch und fehlerfrei aus und öffnet sofort das Google-Login im Browser:
    - Wähle dein Google-Konto aus. **Falls sich ein zweites Auswahlfenster mit deinem persönlichen Konto und deinem YouTube-Brand-Kanal öffnet, klicke unbedingt auf deinen YouTube-Kanal!**
    - Beim Hinweis *„Google hat diese App nicht überprüft“* (normal, da es dein eigenes privates Test-Projekt ist) klicke unten links auf **„Weiter“ (*Continue*)** *(bzw. „Erweitert → Weiter zu OmniGrid Studio“)*.
    - Aktiviere die Berechtigungs-Haken (YouTube-Konto verwalten & Videos hochladen) und klicke auf **Weiter / Zulassen**.

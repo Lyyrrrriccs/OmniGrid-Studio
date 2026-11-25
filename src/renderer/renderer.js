@@ -796,6 +796,79 @@ selectYoutubeStream.addEventListener('change', () => {
   }
 });
 
+async function runYoutubeJsonImport(droppedFilePath = '') {
+  const importBtn = document.getElementById('btnYtImportOAuthJson');
+  const loginBtn = document.getElementById('btnYtOAuthLogin');
+  const badge = document.getElementById('ytJsonImportBadge');
+  const origLabel = importBtn?.textContent || '📂 Google „Download JSON“-Datei importieren & anmelden…';
+
+  if (importBtn) {
+    importBtn.disabled = true;
+    importBtn.textContent = '⏳ JSON wird geladen & Google-Login im Browser geöffnet...';
+  }
+  if (loginBtn) loginBtn.disabled = true;
+
+  const res = await window.omnichat.youtubeOAuthImportJson?.({
+    filePath: droppedFilePath || '',
+    autoLogin: true
+  });
+
+  if (importBtn) {
+    importBtn.disabled = false;
+    importBtn.textContent = origLabel;
+  }
+  if (loginBtn) loginBtn.disabled = false;
+
+  if (res?.canceled) return;
+
+  if (res?.oauth) {
+    const cidEl = document.getElementById('inputYtClientId');
+    const secEl = document.getElementById('inputYtClientSecret');
+    if (cidEl && res.oauth.clientId) cidEl.value = res.oauth.clientId;
+    if (secEl && res.oauth.clientSecret) secEl.value = res.oauth.clientSecret;
+    updateYoutubeOAuthUI(res.oauth);
+  }
+
+  if (res?.ok) {
+    if (badge) {
+      badge.classList.remove('hidden');
+      badge.style.color = '#4ade80';
+      badge.textContent = `✅ ${res.fileName || 'JSON'} importiert & YouTube verbunden${res.oauth?.accountName ? ` (${res.oauth.accountName})` : ''}!`;
+    }
+  } else if (res?.error) {
+    if (badge) {
+      badge.classList.remove('hidden');
+      badge.style.color = '#fbbf24';
+      badge.textContent = res?.oauth?.clientId
+        ? `ℹ️ Client-ID & Secret aus JSON übernommen — Login-Hinweis: ${res.error}`
+        : `❌ ${res.error}`;
+    }
+  }
+}
+
+document.getElementById('btnYtImportOAuthJson')?.addEventListener('click', () => {
+  runYoutubeJsonImport('');
+});
+
+const ytDetailsDropBox = document.getElementById('ytOAuthDetailsBox') || document.getElementById('card_youtube');
+ytDetailsDropBox?.addEventListener('dragover', (e) => {
+  if (e.dataTransfer?.types?.includes('Files')) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+});
+ytDetailsDropBox?.addEventListener('drop', (e) => {
+  const f = e.dataTransfer?.files?.[0];
+  if (!f || !String(f.name || '').toLowerCase().endsWith('.json')) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const detailsEl = document.getElementById('ytOAuthDetailsBox');
+  if (detailsEl) detailsEl.open = true;
+  if (f.path) {
+    runYoutubeJsonImport(f.path);
+  }
+});
+
 document.getElementById('btnYtOAuthLogin')?.addEventListener('click', async () => {
   const btn = document.getElementById('btnYtOAuthLogin');
   const clientId = document.getElementById('inputYtClientId')?.value.trim() || '';
