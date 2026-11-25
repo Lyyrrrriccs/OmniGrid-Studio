@@ -29,10 +29,10 @@
 2. Keep **"Auto-detect active livestream"** selected (recommended) or click **🔍** to scan and pick a specific stream manually.
 3. Click **"Start / Standby"**. As soon as your stream goes live, chat connects automatically.
    > *Note: **Reading** live chat, SuperChats, Members, and custom YouTube emotes requires **no API key**.*
-4. **Optional — Writing to YouTube Chat (Google OAuth2):**
-   - Expand **"🔑 YouTube Schreiben (OAuth2)"** inside the YouTube card.
-   - In your [Google Cloud Console](https://console.cloud.google.com/), enable **YouTube Data API v3** and create a **Desktop app** OAuth2 Client ID *(each streamer creates their own Client ID so they get their own free 10,000 units/day quota and avoid Google's restricted-scope app verification audit for `youtube.force-ssl`)*.
-   - Paste your **Client ID** (and optional **Client Secret**) and click **"🔐 Mit Google anmelden"**. You can then send messages and `!song` replies directly to YouTube Live Chat.
+4. **Optional — Writing to YouTube Chat & Zero-Touch Multi-Streaming (Google OAuth2):**
+   - Expand **"🔑 YouTube Schreiben & Auto-Livestream (OAuth2)"** inside the YouTube card.
+   - Connecting Google OAuth2 lets OmniGrid both send messages to YouTube Live Chat **and** automatically fetch your YouTube RTMP Stream Key + create/transition your YouTube Live broadcasts during **Multi-Platform Streaming** without opening YouTube Studio!
+   - 👉 **For the complete click-by-click setup walkthrough (including Test Users to avoid Error 403 & Desktop App Client ID)**, jump to **[Section 22 → Step-by-Step: Enabling Google / YouTube OAuth2](#sec-22)** (or click **📖 OAuth2 Guide** right inside the YouTube OAuth box).
 
 ### 🎵 TikTok Live
 1. Enter your **TikTok @username**.
@@ -290,6 +290,65 @@ OBS only handles **rendering & encoding once (`1×`)**, while OmniGrid Studio di
    - **YouTube Live Auto-Broadcast:** Unlike Twitch, YouTube ignores raw RTMP pushes unless an active `liveBroadcast` with *Auto-Start* is bound to your stream key. When signed in with **YouTube Google OAuth2**, OmniGrid automatically fetches your YouTube RTMP stream key, creates/binds a ready YouTube Live broadcast (`🌍 Public` / `🔗 Unlisted` / `🔒 Private`) with **Auto-Start**, and transitions it to **🔴 LIVE** without opening YouTube Studio!
 2. **Zero-Touch OBS Automation:** OmniGrid automatically reads your local OBS WebSocket port & token from OBS's local config, configures `rtmp://127.0.0.1:1935/live` (`omnigrid`), and **automatically disables OBS's conflicting Enhanced Broadcasting (`EnableMultitrackVideo`) flag** so the *"No configuration URL available for current platform"* popup never occurs.
 3. **1-Click Multi-Stream Start:** Click **📡 Multi-Stream Start** in the sidebar — OmniGrid Studio auto-connects to OBS if needed, configures the stream service, launches the local RTMP relay, and starts your OBS stream automatically, showing live bitrate (`kbps`), `FPS`, and active targets.
+
+### 🔑 Step-by-Step: Enabling Google / YouTube OAuth2 for Multi-Platform Streaming
+
+Why use your own Google OAuth2 Client ID? Google requires an expensive restricted-scope security audit for centralized apps using `youtube.force-ssl` and shares a single daily quota across all users. Creating your own free **Desktop app Client ID** (takes ~3 minutes once, **no credit card required**) gives your channel its own dedicated **10,000 free API units/day**, while keeping 100% of your credentials locally on your machine.
+
+#### ✅ Prerequisite Check (One-Time on YouTube)
+- Visit `https://studio.youtube.com` once → click **Create → Go live** in the top right.
+- **Important:** If you have **never** streamed on this YouTube channel before, YouTube requires a one-time phone verification and a **24-hour activation period** before enabling live streaming on the account.
+
+#### Step 1 — Create a Free Google Cloud Project
+1. Open [https://console.cloud.google.com/](https://console.cloud.google.com/) (or click **🌐 Open Google Cloud Console** inside OmniGrid's YouTube OAuth section) and sign in with your Google account.
+2. Click the **Project picker** at the top left (next to the *Google Cloud* logo) → **New Project**.
+3. Name it e.g. `OmniGrid YouTube`, click **Create**, and make sure the new project is selected at the top left.
+
+#### Step 2 — Enable "YouTube Data API v3"
+1. In the left sidebar, open **APIs & Services → Library**.
+2. Search for **`YouTube Data API v3`**, click it, and press the blue **Enable** button.
+
+#### Step 3 — Configure OAuth Consent Screen & Add Yourself as a Test User (CRITICAL!)
+1. In the left sidebar, open **APIs & Services → OAuth consent screen** *(or **Google Auth Platform → Overview / Branding** in the newer Google UI)*.
+2. If not configured yet, click **Get Started**:
+   - **App name:** `OmniGrid Studio`
+   - **User support email:** select your Gmail address
+   - **Audience:** select **External**
+   - **Developer contact email:** enter your Gmail address → click **Create / Save**.
+3. **Add your email under Test Users (prevents Error 403!):**
+   - Open **Audience** in the left menu (or scroll to **Test users**).
+   - Leave Publishing status set to **Testing** (you do **not** need to submit the app for Google verification!).
+   - Under **Test users**, click **`+ Add users`**, enter **the exact Google email address of your YouTube account**, and click **Save**.
+
+#### Step 4 — Create an OAuth Client ID ("Desktop app")
+1. Open **APIs & Services → Credentials** (or **Google Auth Platform → Clients**).
+2. Click **`+ Create Credentials` → `OAuth client ID`** *(or `+ Create Client`)*.
+3. Under **Application type**, select **`Desktop app`** *(do **not** select "Web application", or Google will reject the local loopback redirect)*.
+4. Name it e.g. `OmniGrid Desktop` and click **Create**.
+5. Copy your **Client ID** (`...apps.googleusercontent.com`) and **Client secret** (`GOCSPX-...`).
+
+#### Step 5 — Sign In Inside OmniGrid Studio
+1. In OmniGrid Studio, open **⚙️ Config → 🌐 Plattformen** and locate the **🔴 YOUTUBE LIVE** card.
+2. Enter your YouTube handle (e.g. `@YourChannel`) and expand **"🔑 YouTube Schreiben & Auto-Livestream (OAuth2)"**.
+3. Paste your **Client ID** and **Client Secret**, then click **"🔐 Mit Google anmelden"**:
+   - In the browser window that opens, select your Google account — **and if prompted to choose between your personal profile and a YouTube Brand Account, click your YouTube channel!**
+   - On the *"Google hasn't verified this app"* screen (expected for your own personal Testing project), click **Continue** *(or Advanced → Go to OmniGrid Studio)*.
+   - Check the YouTube permission boxes and click **Continue / Allow**.
+   - The browser confirms **✅ Connected** and OmniGrid shows your connected YouTube channel in green.
+
+#### Step 6 — Start Multi-Platform Streaming to YouTube + Twitch
+1. Scroll down in **⚙️ Config → 🌐 Plattformen** to **📡 Multi-Plattform-Streaming Relay**.
+2. Check **🔴 YouTube Live Simulcast** and select your desired visibility (**🌍 Public**, **🔗 Unlisted**, or **🔒 Private**).
+3. *(Optional instant test)* Click **⚡ Prepare Stream Key & Live Broadcast via YouTube OAuth** — OmniGrid immediately populates your real YouTube Stream Key and prepares an Auto-Start broadcast.
+4. From now on, simply click **📡 Multi-Stream Start** in the sidebar: OmniGrid prepares your YouTube broadcast, starts OBS + the local relay, and transitions your YouTube stream to **🔴 LIVE** automatically!
+
+#### 🛠️ Common Errors & Instant Fixes
+| Error / Symptom | Cause & Solution |
+| :--- | :--- |
+| **`Error 403: access_denied`** in browser | Your Google email hasn't been added under **Audience → Test users (`+ Add users`)** yet (see Step 3.3). |
+| **`Error 400: redirect_uri_mismatch`** | *Web application* was chosen instead of **Desktop app** in Step 4.3 → create a new Client ID of type **Desktop app**. |
+| **`The user is not enabled for live streaming`** | Either the 24-hour initial YouTube Live activation (`studio.youtube.com` → *Go live*) hasn't finished yet, **or** you selected your base Gmail profile instead of your YouTube Brand Channel during login (click *Logout* → sign in again and pick the Brand Channel). |
+| **No stream visible when not using OAuth2** | If using a manual stream key without OAuth2, you must enable **"Auto-start"** once inside `studio.youtube.com`. With OAuth2 connected, OmniGrid handles this automatically. |
 
 ## 23. Feedback, Feature Requests & GitHub Discussions (`💬 Feedback`)
 

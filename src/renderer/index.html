@@ -163,9 +163,13 @@
             <div class="cap-info">ℹ️ Ohne API-Key: Live-Chat, Custom-Emotes, SuperChats &amp; Members lesen • Zum Schreiben: Google OAuth2</div>
             <details class="yt-oauth-details" style="margin-top: 6px; font-size: 11px;">
               <summary style="cursor: pointer; user-select: none; color: #cbd5e1; font-weight: 600;">
-                🔑 YouTube Schreiben (OAuth2) — <span id="ytOAuthStatus">Nur-Lesen</span>
+                🔑 YouTube Schreiben &amp; Auto-Livestream (OAuth2) — <span id="ytOAuthStatus">Nur-Lesen</span>
               </summary>
               <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 5px;">
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                  <button type="button" class="btn-sm" data-help-sec="22" data-help-anchor="Google / YouTube OAuth2" style="flex: 1; font-size: 10.5px; font-weight: 700; background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.45); color: #7dd3fc;">📖 Schritt-für-Schritt OAuth2-Anleitung</button>
+                  <button type="button" class="btn-sm" id="btnOpenGoogleCloudConsole" style="font-size: 10.5px;" title="Öffnet console.cloud.google.com im Browser">🌐 Google Cloud Console</button>
+                </div>
                 <input type="text" id="inputYtClientId" placeholder="Google OAuth2 Client-ID (Desktop-App)" />
                 <input type="password" id="inputYtClientSecret" placeholder="Client-Secret (optional)" />
                 <div style="display: flex; gap: 6px;">
@@ -1266,7 +1270,10 @@
               <input type="text" id="inputMsYoutubeUrl" value="rtmp://a.rtmp.youtube.com/live2" placeholder="rtmp://a.rtmp.youtube.com/live2" />
               <label style="font-size: 10px; margin-top: 5px; display: block;">YouTube Stream-Schlüssel (oder per OAuth automatisch laden)</label>
               <input type="password" id="inputMsYoutubeKey" placeholder="xxxx-xxxx-xxxx-xxxx-xxxx" />
-              <button type="button" class="btn-sm" id="btnMsPrepareYoutube" style="margin-top: 6px; width: 100%; font-size: 10.5px; background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.5); color: #fecaca; font-weight: 700;" title="Holt deinen YouTube Stream-Schlüssel automatisch per YouTube-OAuth2 und legt einen startbereiten YouTube-Livestream (Auto-Start) an, ohne dass du YouTube Studio öffnen musst">⚡ Stream-Key &amp; Live-Broadcast automatisch per YouTube-OAuth vorbereiten</button>
+              <div style="display: flex; gap: 5px; margin-top: 6px;">
+                <button type="button" class="btn-sm" id="btnMsPrepareYoutube" style="flex: 1; font-size: 10.5px; background: rgba(239,68,68,0.22); border-color: rgba(239,68,68,0.5); color: #fecaca; font-weight: 700;" title="Holt deinen YouTube Stream-Schlüssel automatisch per YouTube-OAuth2 und legt einen startbereiten YouTube-Livestream (Auto-Start) an, ohne dass du YouTube Studio öffnen musst">⚡ Stream-Key &amp; Live-Broadcast per OAuth vorbereiten</button>
+                <button type="button" class="btn-sm" data-help-sec="22" data-help-anchor="Google / YouTube OAuth2" style="font-size: 10.5px; white-space: nowrap; background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.45); color: #7dd3fc;" title="Ausführliche Schritt-für-Schritt-Anleitung für Google / YouTube OAuth2 rechts daneben öffnen">📖 OAuth2-Anleitung</button>
+              </div>
             </div>
 
             <!-- TIKTOK TARGET -->

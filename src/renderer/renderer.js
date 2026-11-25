@@ -7394,6 +7394,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (privSel && ms.targets.youtube.privacyStatus) privSel.value = ms.targets.youtube.privacyStatus;
   });
 
+  document.getElementById('btnOpenGoogleCloudConsole')?.addEventListener('click', () => {
+    window.omnichat.openExternalUrl?.('https://console.cloud.google.com/apis/library/youtube.googleapis.com');
+  });
+
   document.getElementById('btnMsPrepareYoutube')?.addEventListener('click', async () => {
     saveMsConfig();
     if (statusCfg) {
