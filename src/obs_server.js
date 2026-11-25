@@ -1939,6 +1939,21 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-card.theme-tron .gs-jc-step { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border-radius: 2px; background: rgba(0, 240, 255, 0.05); border-left: 2px solid rgba(0, 240, 255, 0.25); color: #7dd3fc; }
     .gs-card.theme-tron .gs-jc-step.active { background: rgba(0, 240, 255, 0.18); border-left: 3px solid #ff6a00; color: #ffffff; text-shadow: 0 0 8px rgba(0, 240, 255, 0.65); }
     .gs-card.theme-tron .gs-jc-step.done { opacity: 0.48; text-decoration: line-through; }
+    .gs-card.theme-val {
+      width: 410px;
+      background: linear-gradient(155deg, rgba(15, 25, 35, 0.96) 0%, rgba(10, 16, 24, 0.97) 100%);
+      border: 1.5px solid #ff4655;
+      border-radius: 2px;
+      clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+      box-shadow: 0 0 26px rgba(255, 70, 85, 0.25), 0 12px 28px rgba(0, 0, 0, 0.6);
+    }
+    .gs-card.theme-val .gs-head { border-bottom: 1px solid rgba(255, 70, 85, 0.4); padding-bottom: 7px; }
+    .gs-card.theme-val .gs-title { color: #ece8e1; text-transform: uppercase; letter-spacing: 0.08em; font-size: 13.5px; }
+    .gs-card.theme-val .gs-badge { background: rgba(255, 70, 85, 0.18); border: 1px solid #ff4655; color: #ff6b78; border-radius: 2px; letter-spacing: 0.08em; }
+    .gs-card.theme-val .gs-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .gs-card.theme-val .gs-cell { background: rgba(24, 36, 48, 0.88); border: 1px solid rgba(236, 232, 225, 0.16); border-left: 3px solid #ff4655; border-radius: 2px; text-align: left; padding: 6px 9px; }
+    .gs-card.theme-val .gs-lbl { color: #ff6b78; font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; }
+    .gs-card.theme-val .gs-val { color: #ece8e1; font-size: 14.5px; }
     .gs-matches-lbl { font-size: 9.5px; color: #c8aa6e; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
     .gs-matches-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
     .gs-match-slot { position: relative; height: 46px; border-radius: 4px; background: rgba(7, 16, 32, 0.82); border: 1px solid rgba(148, 163, 184, 0.25); display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -2076,9 +2091,11 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       const isLol = data.addonId === 'lol';
       const isJc = data.addonId === 'justchatting';
       const isTron = data.addonId === 'techtalk';
+      const isVal = data.addonId === 'valorant';
       card.classList.toggle('theme-lol', isLol);
       card.classList.toggle('theme-jc', isJc);
       card.classList.toggle('theme-tron', isTron);
+      card.classList.toggle('theme-val', isVal);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
       const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').replace(/—.*/, '').trim();
       titleEl.textContent = (data.icon || '🎮') + ' ' + cleanTitle;
@@ -2088,6 +2105,8 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         badgeEl.textContent = data.jcMood || 'LIVE TALK';
       } else if (isTron) {
         badgeEl.textContent = data.tronPhase || 'LIVE CODING';
+      } else if (isVal) {
+        badgeEl.textContent = (data.valAgent || 'AGENT') + ' • ' + (data.valRank || 'RANKED') + ' (' + Number(data.valRr || 0) + ' RR)';
       } else {
         badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
       }
@@ -2785,6 +2804,137 @@ const OBS_TRON_TALK_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_VAL_BAR_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Valorant Rank &amp; Match Bar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #ece8e1; overflow: hidden; }
+    .val-bar {
+      width: 550px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, rgba(15, 25, 35, 0.96) 0%, rgba(19, 28, 39, 0.95) 65%, rgba(45, 16, 22, 0.94) 100%);
+      border: 1.5px solid #ff4655;
+      clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+      box-shadow: 0 0 28px rgba(255, 70, 85, 0.28);
+      display: grid;
+      grid-template-columns: 1.35fr 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .val-rank-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: #ff6b78; text-transform: uppercase; }
+    .val-rank-name { font-size: 18px; font-weight: 900; letter-spacing: 0.04em; text-transform: uppercase; color: #ece8e1; }
+    .val-rr-track { height: 6px; background: rgba(236, 232, 225, 0.14); margin-top: 5px; overflow: hidden; }
+    .val-rr-fill { height: 100%; background: linear-gradient(90deg, #ff4655, #ff8b94); transition: width 0.3s ease; }
+    .val-box { padding: 7px 10px; background: rgba(255, 255, 255, 0.04); border-left: 2.5px solid #ff4655; }
+    .val-box-lbl { font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: #94a3b8; text-transform: uppercase; }
+    .val-box-val { font-size: 16px; font-weight: 900; color: #ece8e1; margin-top: 2px; }
+    .val-sub { font-size: 11px; color: #cbd5e1; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="val-bar" id="valBar">
+    <div>
+      <div class="val-rank-lbl" id="valAgentMap">JETT • ASCENT</div>
+      <div class="val-rank-name"><span id="valRank">DIAMOND II</span> <span id="valRrText" style="font-size: 13px; color: #ff6b78;">62 RR</span></div>
+      <div class="val-rr-track"><div class="val-rr-fill" id="valRrFill" style="width: 62%;"></div></div>
+    </div>
+    <div class="val-box">
+      <div class="val-box-lbl">SCORE / KDA</div>
+      <div class="val-box-val" id="valScore">7 : 5</div>
+      <div class="val-sub" id="valKda">0/0/0 • HS 28%</div>
+    </div>
+    <div class="val-box">
+      <div class="val-box-lbl">SESSION</div>
+      <div class="val-box-val" id="valSession">0W - 0L</div>
+      <div class="val-sub" id="valRiotId">VALORANT LIVE</div>
+    </div>
+  </div>
+  <script>
+    const bar = document.getElementById('valBar');
+    function renderVal(d) {
+      if (!d) return;
+      bar.style.display = d.overlayEnabled === false ? 'none' : '';
+      document.getElementById('valAgentMap').textContent = (d.valAgent || 'JETT') + ' • ' + (d.valMap || 'ASCENT');
+      document.getElementById('valRank').textContent = d.valRank || 'UNRANKED';
+      const rr = Math.max(0, Math.min(100, Number(d.valRr || 0)));
+      document.getElementById('valRrText').textContent = rr + ' RR';
+      document.getElementById('valRrFill').style.width = rr + '%';
+      document.getElementById('valScore').textContent = d.valScore || '0 : 0';
+      document.getElementById('valKda').textContent = Number(d.valKills || 0) + '/' + Number(d.valDeaths || 0) + '/' + Number(d.valAssists || 0) + ' • HS ' + Number(d.valHsPercent || 0) + '%';
+      document.getElementById('valSession').textContent = Number(d.valWins || 0) + 'W - ' + Number(d.valLosses || 0) + 'L';
+      document.getElementById('valRiotId').textContent = d.valRiotId || 'VALORANT LIVE';
+    }
+    function fetchLatest() { fetch('/api/game-stats').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) renderVal(d); }).catch(() => {}); }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => { try { const p = JSON.parse(ev.data); if (p.type === 'game-stats') renderVal(p.data); } catch (e) {} };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest(); connectWs(); setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
+const OBS_VAL_MAP_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Valorant Anti-Snipe Radar Cover</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: transparent; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; }
+    .cover {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 18px;
+      text-align: center;
+      background:
+        repeating-linear-gradient(45deg, rgba(255, 70, 85, 0.08) 0 10px, transparent 10px 20px),
+        linear-gradient(155deg, rgba(15, 25, 35, 0.98), rgba(9, 14, 22, 0.98));
+      border: 2px solid #ff4655;
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      color: #ece8e1;
+    }
+    .cover.hidden { display: none; }
+    .cover-icon { font-size: 32px; }
+    .cover-title { font-size: 13px; font-weight: 900; letter-spacing: 0.14em; color: #ff4655; text-transform: uppercase; }
+    .cover-sub { font-size: 11px; color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="cover hidden" id="valMapCover">
+    <div class="cover-icon">🛡️</div>
+    <div class="cover-title" id="valMapText">RADAR VERDECKT // ANTI-SNIPE</div>
+    <div class="cover-sub" id="valMapAgent">VALORANT TACTICAL SHIELD</div>
+  </div>
+  <script>
+    const el = document.getElementById('valMapCover');
+    function renderCover(d) {
+      if (!d) return;
+      const show = d.overlayEnabled !== false && Boolean(d.valMapCoverEnabled);
+      el.classList.toggle('hidden', !show);
+      document.getElementById('valMapText').textContent = d.valMapCoverText || 'RADAR VERDECKT // ANTI-SNIPE';
+      document.getElementById('valMapAgent').textContent = (d.valAgent || 'AGENT') + ' • ' + (d.valMap || 'MAP');
+    }
+    function fetchLatest() { fetch('/api/game-stats').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) renderCover(d); }).catch(() => {}); }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => { try { const p = JSON.parse(ev.data); if (p.type === 'game-stats') renderCover(p.data); } catch (e) {} };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest(); connectWs(); setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -3030,6 +3180,10 @@ class ObsServer {
           res.end(OBS_JC_QNA_HTML);
         } else if (urlPath === '/tron-talk') {
           res.end(OBS_TRON_TALK_HTML);
+        } else if (urlPath === '/val-bar') {
+          res.end(OBS_VAL_BAR_HTML);
+        } else if (urlPath === '/val-map') {
+          res.end(OBS_VAL_MAP_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }

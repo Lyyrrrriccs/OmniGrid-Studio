@@ -4934,6 +4934,15 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (jcBox) jcBox.classList.toggle('hidden', addon.id !== 'justchatting');
     const tronBox = document.getElementById('gaTronControls');
     if (tronBox) tronBox.classList.toggle('hidden', addon.id !== 'techtalk');
+    const valBox = document.getElementById('gaValControls');
+    if (valBox) valBox.classList.toggle('hidden', addon.id !== 'valorant');
+    if (addon.id === 'valorant') {
+      const v = gaState.perAddonStats?.valorant || {};
+      const chkValMap = document.getElementById('gaValMapCover');
+      const txtValMap = document.getElementById('gaValMapCoverText');
+      if (chkValMap) chkValMap.checked = Boolean(v.mapCoverEnabled);
+      if (txtValMap && document.activeElement !== txtValMap) txtValMap.value = v.mapCoverText || 'RADAR VERDECKT // ANTI-SNIPE';
+    }
     if (addon.id === 'techtalk') {
       const tt = gaState.perAddonStats?.techtalk || {};
       const tAgenda = document.getElementById('gaTronAgendaText');
@@ -5067,6 +5076,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (addon.id === 'techtalk') {
         nextAddonStats.agendaText = document.getElementById('gaTronAgendaText')?.value || '';
         nextAddonStats.tickerText = document.getElementById('gaTronTickerText')?.value || '';
+      }
+      if (addon.id === 'valorant') {
+        nextAddonStats.mapCoverEnabled = Boolean(document.getElementById('gaValMapCover')?.checked);
+        nextAddonStats.mapCoverText = document.getElementById('gaValMapCoverText')?.value.trim() || 'RADAR VERDECKT // ANTI-SNIPE';
       }
       gaState.perAddonStats = { ...(gaState.perAddonStats || {}), [addon.id]: nextAddonStats };
     }
@@ -5277,6 +5290,35 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   document.getElementById('btnGaCopyTronHudUrl')?.addEventListener('click', async () => {
     await navigator.clipboard.writeText('http://127.0.0.1:4588/game-stats');
     if (statusEl) { statusEl.style.color = '#00f0ff'; statusEl.textContent = '🔗 http://127.0.0.1:4588/game-stats kopiert! (TRON HUD, 430×310)'; }
+  });
+
+  const mutateValStat = async (updater) => {
+    if (!gaState) return;
+    const cur = { ...(gaState.perAddonStats?.valorant || {}) };
+    cur.mapCoverEnabled = Boolean(document.getElementById('gaValMapCover')?.checked);
+    cur.mapCoverText = document.getElementById('gaValMapCoverText')?.value.trim() || 'RADAR VERDECKT // ANTI-SNIPE';
+    updater(cur);
+    gaState.perAddonStats = { ...(gaState.perAddonStats || {}), valorant: cur };
+    const r = await window.omnichat.gameAddonsSave(gaState);
+    if (r?.ok) {
+      gaState = r.gameAddons;
+      renderFields();
+    }
+  };
+  document.getElementById('btnGaValWin')?.addEventListener('click', () => mutateValStat((v) => { v.wins = Number(v.wins || 0) + 1; v.rr = Math.min(100, Number(v.rr || 0) + 20); }));
+  document.getElementById('btnGaValLoss')?.addEventListener('click', () => mutateValStat((v) => { v.losses = Number(v.losses || 0) + 1; v.rr = Math.max(0, Number(v.rr || 0) - 18); }));
+  document.getElementById('btnGaValKillPlus')?.addEventListener('click', () => mutateValStat((v) => { v.kills = Number(v.kills || 0) + 1; }));
+  document.getElementById('btnGaValDeathPlus')?.addEventListener('click', () => mutateValStat((v) => { v.deaths = Number(v.deaths || 0) + 1; }));
+  document.getElementById('btnGaValRrPlus')?.addEventListener('click', () => mutateValStat((v) => { v.rr = Math.min(100, Number(v.rr || 0) + 20); }));
+  document.getElementById('btnGaValRrMinus')?.addEventListener('click', () => mutateValStat((v) => { v.rr = Math.max(0, Number(v.rr || 0) - 20); }));
+  document.getElementById('gaValMapCover')?.addEventListener('change', () => mutateValStat(() => {}));
+  document.getElementById('btnGaCopyValBarUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/val-bar');
+    if (statusEl) { statusEl.style.color = '#ff6b78'; statusEl.textContent = '🔗 http://127.0.0.1:4588/val-bar kopiert! (Valorant Rank/RR Bar, 560×125)'; }
+  });
+  document.getElementById('btnGaCopyValMapUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/val-map');
+    if (statusEl) { statusEl.style.color = '#ff6b78'; statusEl.textContent = '🔗 http://127.0.0.1:4588/val-map kopiert! (Radar Anti-Snipe Cover, 310×310)'; }
   });
   document.getElementById('btnGaCopyJcQnaUrl')?.addEventListener('click', async () => {
     await navigator.clipboard.writeText('http://127.0.0.1:4588/jc-qna');
@@ -6688,6 +6730,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   document.getElementById('btnSeBundleLol')?.addEventListener('click', () => applyBuiltinBundle('lol', '⚔️ Komplettes LoL-Set'));
   document.getElementById('btnSeBundleJc')?.addEventListener('click', () => applyBuiltinBundle('justchatting', '💬 Just-Chatting-Set'));
   document.getElementById('btnSeBundleTron')?.addEventListener('click', () => applyBuiltinBundle('techtalk', '💠 TRON Tech-Talk-Set'));
+  document.getElementById('btnSeBundleVal')?.addEventListener('click', () => applyBuiltinBundle('valorant', '🔫 Valorant-Set'));
 
   const FRIENDLY_KINDS = {
     browser_source: '🌐 Browser-Quelle (URL)',
