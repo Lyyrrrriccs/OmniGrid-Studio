@@ -35,7 +35,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   getPerfStats: () => ipcRenderer.invoke('get-perf-stats'),
   resetDefaults: () => ipcRenderer.invoke('reset-defaults'),
   exportConfig: () => ipcRenderer.invoke('export-config'),
-  importConfig: () => ipcRenderer.invoke('import-config'),
+  importConfig: (opts) => ipcRenderer.invoke('import-config', opts),
   listPeripherals: () => ipcRenderer.invoke('list-peripherals'),
   setHidTarget: (target) => ipcRenderer.invoke('set-hid-target', target),
   updateGlobalHotkeys: (cfg) => ipcRenderer.invoke('update-global-hotkeys', cfg),

@@ -3184,6 +3184,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.tablet-box', 'cfgTab_companion'],
     ['.streamdeck-box', 'cfgTab_companion'],
     ['.voice-control-box', 'cfgTab_companion'],
+    ['.backup-config-box', 'cfgTab_system'],
     ['.peripherals-box', 'cfgTab_system'],
     ['.perf-settings-box', 'cfgTab_system']
   ];
@@ -8430,4 +8431,72 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
 
   window.omnichat.onVoiceState?.(applyVoiceState);
   window.omnichat.voiceGetState?.().then(applyVoiceState).catch(() => {});
+})();
+
+(() => {
+  const btnExport = document.getElementById('btnBackupExportAll');
+  const btnImport = document.getElementById('btnBackupImportAll');
+  const dropZone = document.getElementById('backupDropZone');
+  const statusEl = document.getElementById('backupStatusMsg');
+  if (!btnExport || !btnImport) return;
+
+  const setMsg = (text, color = '#94a3b8') => {
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.style.color = color;
+  };
+
+  const runExport = async () => {
+    setMsg('⏳ Exportiere alle Einstellungen & API-Keys...', '#38bdf8');
+    await window.omnichat.saveProfile(getFormConfig());
+    const res = await window.omnichat.exportConfig();
+    if (res?.canceled) {
+      setMsg('Export abgebrochen.');
+      return;
+    }
+    if (res?.ok) {
+      const inc = res.summary?.included?.length ? ` (${res.summary.included.join(', ')})` : '';
+      setMsg(`✅ Komplett-Backup gespeichert${inc}!`, '#4ade80');
+    } else {
+      setMsg(`⚠️ Export fehlgeschlagen: ${res?.error || 'Unbekannter Fehler'}`, '#f87171');
+    }
+  };
+
+  const runImport = async (opts = {}) => {
+    setMsg('⏳ Importiere Backup...', '#38bdf8');
+    const res = await window.omnichat.importConfig(opts);
+    if (res?.canceled) {
+      setMsg('Import abgebrochen.');
+      return;
+    }
+    if (res?.ok && res.config) {
+      applyConfigToForm(res.config);
+      const inc = res.summary?.included?.length ? ` (${res.summary.included.join(', ')})` : '';
+      setMsg(`✅ Backup importiert${inc} – Oberfläche wird neu geladen...`, '#4ade80');
+    } else {
+      setMsg(`⚠️ Import fehlgeschlagen: ${res?.error || 'Ungültige Datei'}`, '#f87171');
+    }
+  };
+
+  btnExport.addEventListener('click', runExport);
+  btnImport.addEventListener('click', () => runImport());
+  dropZone?.addEventListener('click', () => runImport());
+  dropZone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = '#38bdf8';
+    dropZone.style.background = 'rgba(56,189,248,0.12)';
+  });
+  dropZone?.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = 'rgba(148,163,184,0.35)';
+    dropZone.style.background = 'rgba(15,23,42,0.35)';
+  });
+  dropZone?.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'rgba(148,163,184,0.35)';
+    dropZone.style.background = 'rgba(15,23,42,0.35)';
+    const file = e.dataTransfer?.files?.[0];
+    if (!file) return;
+    const rawJson = await file.text();
+    await runImport({ rawJson, fileName: file.name });
+  });
 })();
