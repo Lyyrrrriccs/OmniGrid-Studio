@@ -11,11 +11,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   prepare-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -24,9 +30,12 @@ jobs:
         with:
           node-version: 20
       - id: ver
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            RAW_TAG="${{ github.ref_name }}"
+          if [ "$REF_TYPE" = "tag" ]; then
+            RAW_TAG="$REF_NAME"
             echo "version=${RAW_TAG#v}" >> "$GITHUB_OUTPUT"
           else
             VER=$(node -e "console.log(require('./scripts/bump_version').formatDateTimeVersion())")
@@ -36,6 +45,8 @@ jobs:
   build-windows:
     needs: prepare-version
     runs-on: windows-latest
+    permissions:
+      contents: read
     env:
       OMNIGRID_BUILD_VERSION: ${{ needs.prepare-version.outputs.version }}
     steps:
@@ -53,17 +64,18 @@ jobs:
           Compress-Archive -Path dist/OmniGridStudio-win32-x64/* -DestinationPath OmniGridStudio-Windows.zip
           $hash = (Get-FileHash OmniGridStudio-Windows.zip -Algorithm SHA256).Hash.ToLower()
           "$hash  OmniGridStudio-Windows.zip" | Out-File -Encoding utf8 OmniGridStudio-Windows.zip.sha256
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: windows-dist
+          path: |
             OmniGridStudio-Windows.zip
             OmniGridStudio-Windows.zip.sha256
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
-          name: OmniGrid Studio v${{ needs.prepare-version.outputs.version }}
 
   build-macos:
     needs: prepare-version
     runs-on: macos-latest
+    permissions:
+      contents: read
     env:
       OMNIGRID_BUILD_VERSION: ${{ needs.prepare-version.outputs.version }}
     steps:
@@ -79,10 +91,28 @@ jobs:
         run: |
           ditto -c -k --sequesterRsrc --keepParent dist/OmniGridStudio.app OmniGridStudio-macOS.zip
           shasum -a 256 OmniGridStudio-macOS.zip > OmniGridStudio-macOS.zip.sha256
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: macos-dist
+          path: |
             OmniGridStudio-macOS.zip
             OmniGridStudio-macOS.zip.sha256
+
+  publish-release:
+    needs: [prepare-version, build-windows, build-macos]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-dist'
+          merge-multiple: true
+          path: release-assets
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'latest-build' }}
           name: OmniGrid Studio v${{ needs.prepare-version.outputs.version }}
+          make_latest: true
