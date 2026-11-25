@@ -6687,6 +6687,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   document.getElementById('btnSeBundleLol')?.addEventListener('click', () => applyBuiltinBundle('lol', '⚔️ Komplettes LoL-Set'));
   document.getElementById('btnSeBundleJc')?.addEventListener('click', () => applyBuiltinBundle('justchatting', '💬 Just-Chatting-Set'));
+  document.getElementById('btnSeBundleTron')?.addEventListener('click', () => applyBuiltinBundle('techtalk', '💠 TRON Tech-Talk-Set'));
 
   const FRIENDLY_KINDS = {
     browser_source: '🌐 Browser-Quelle (URL)',
