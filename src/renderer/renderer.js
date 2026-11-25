@@ -6884,18 +6884,55 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const btnReleaseUrl = document.getElementById('btnUpdateReleaseUrl');
   const btnDismiss = document.getElementById('btnUpdateDismiss');
   const btnCheck = document.getElementById('btnCheckUpdates');
+  const btnForceManual = document.getElementById('btnForceManualUpdate');
+  const btnInstallSystem = document.getElementById('btnInstallUpdateSystem');
+  const btnTopUpdate = document.getElementById('btnManualUpdateTop');
   const statusText = document.getElementById('updaterStatusText');
 
   let currentReleaseUrl = '';
+  let lastUpdaterState = null;
   let dismissed = false;
 
   function renderUpdaterState(st) {
     if (!st) return;
+    lastUpdaterState = st;
     currentReleaseUrl = st.releaseUrl || '';
     const appVerBadge = document.getElementById('appVersionBadge');
     if (st.currentVersion) {
       if (appVerBadge) appVerBadge.textContent = `v${st.currentVersion}`;
       document.title = `OmniGrid Studio v${st.currentVersion} — Dein Streamer Cockpit`;
+    }
+    if (btnInstallSystem) btnInstallSystem.classList.toggle('hidden', st.status !== 'downloaded');
+    if (btnTopUpdate) {
+      if (st.status === 'checking') {
+        btnTopUpdate.textContent = '⏳ Prüfe…';
+        btnTopUpdate.style.background = '';
+        btnTopUpdate.style.color = '#7dd3fc';
+      } else if (st.status === 'downloading') {
+        btnTopUpdate.textContent = `⬇️ Update ${st.percent || 0}%`;
+        btnTopUpdate.style.background = 'rgba(14,165,233,0.22)';
+        btnTopUpdate.style.color = '#7dd3fc';
+      } else if (st.status === 'downloaded') {
+        btnTopUpdate.textContent = '🚀 Update installieren';
+        btnTopUpdate.style.background = '#0284c7';
+        btnTopUpdate.style.color = '#fff';
+      } else if (st.status === 'available') {
+        btnTopUpdate.textContent = `🆕 Update v${st.latestVersion}`;
+        btnTopUpdate.style.background = 'rgba(245,158,11,0.22)';
+        btnTopUpdate.style.color = '#fde047';
+      } else if (st.status === 'up-to-date') {
+        btnTopUpdate.textContent = '✅ Aktuell';
+        btnTopUpdate.style.background = '';
+        btnTopUpdate.style.color = '#86efac';
+      } else if (st.status === 'error') {
+        btnTopUpdate.textContent = '⚠️ Update';
+        btnTopUpdate.style.background = '';
+        btnTopUpdate.style.color = '#fca5a5';
+      } else {
+        btnTopUpdate.textContent = '🔄 Update';
+        btnTopUpdate.style.background = '';
+        btnTopUpdate.style.color = '';
+      }
     }
     if (statusText) {
       if (st.status === 'checking') {
@@ -6951,11 +6988,31 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     renderUpdaterState(st);
   });
 
-  btnInstall?.addEventListener('click', async () => {
+  btnForceManual?.addEventListener('click', async () => {
+    dismissed = false;
+    const st = await window.omnichat.updaterCheck?.({ autoDownload: true, forceDownload: true });
+    renderUpdaterState(st);
+  });
+
+  btnTopUpdate?.addEventListener('click', async () => {
+    dismissed = false;
+    if (lastUpdaterState?.status === 'downloaded') {
+      await window.omnichat.updaterInstall?.();
+      return;
+    }
+    const st = await window.omnichat.updaterCheck?.({ autoDownload: true });
+    renderUpdaterState(st);
+  });
+
+  const runInstallUpdate = async () => {
     if (btnInstall) btnInstall.disabled = true;
+    if (btnInstallSystem) btnInstallSystem.disabled = true;
     await window.omnichat.updaterInstall?.();
     if (btnInstall) btnInstall.disabled = false;
-  });
+    if (btnInstallSystem) btnInstallSystem.disabled = false;
+  };
+  btnInstall?.addEventListener('click', runInstallUpdate);
+  btnInstallSystem?.addEventListener('click', runInstallUpdate);
 
   btnReleaseUrl?.addEventListener('click', () => {
     if (currentReleaseUrl) window.omnichat.openExternalUrl?.(currentReleaseUrl);

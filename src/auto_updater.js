@@ -68,45 +68,56 @@ function fetchJson(url) {
 }
 
 function downloadFile(url, destPath, onProgress, hops = 0) {
-  if (hops > 6) return Promise.reject(new Error('Zu viele Weiterleitungen beim Download'));
+  if (hops > 8) return Promise.reject(new Error('Zu viele Weiterleitungen beim Download'));
+  const partPath = `${destPath}.part`;
   return new Promise((resolve, reject) => {
-    const req = https.get(
-      url,
-      {
-        headers: {
-          'User-Agent': 'OmniGrid-Studio-Updater',
-          Accept: 'application/octet-stream'
+    const reqHeaders = hops === 0
+      ? { 'User-Agent': 'OmniGrid-Studio-Updater', Accept: 'application/octet-stream' }
+      : { 'User-Agent': 'OmniGrid-Studio-Updater' };
+    const req = https.get(url, { headers: reqHeaders }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume();
+        return resolve(downloadFile(res.headers.location, destPath, onProgress, hops + 1));
+      }
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        res.resume();
+        return reject(new Error(`Download fehlgeschlagen (HTTP ${res.statusCode})`));
+      }
+      const totalBytes = parseInt(res.headers['content-length'] || '0', 10) || 0;
+      let downloadedBytes = 0;
+      let lastEmit = 0;
+      const out = fs.createWriteStream(partPath);
+      res.on('data', (chunk) => {
+        downloadedBytes += chunk.length;
+        const now = Date.now();
+        if (onProgress && (now - lastEmit >= 250 || downloadedBytes === totalBytes)) {
+          lastEmit = now;
+          const percent = totalBytes > 0 ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)) : 0;
+          onProgress({ downloadedBytes, totalBytes, percent });
         }
-      },
-      (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          res.resume();
-          return resolve(downloadFile(res.headers.location, destPath, onProgress, hops + 1));
-        }
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          res.resume();
-          return reject(new Error(`Download fehlgeschlagen (HTTP ${res.statusCode})`));
-        }
-        const totalBytes = parseInt(res.headers['content-length'] || '0', 10) || 0;
-        let downloadedBytes = 0;
-        const out = fs.createWriteStream(destPath);
-        res.on('data', (chunk) => {
-          downloadedBytes += chunk.length;
-          if (onProgress) {
-            const percent = totalBytes > 0 ? Math.min(100, Math.round((downloadedBytes / totalBytes) * 100)) : 0;
-            onProgress({ downloadedBytes, totalBytes, percent });
+      });
+      res.pipe(out);
+      out.on('finish', () => {
+        out.close(() => {
+          try {
+            if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
+            fs.renameSync(partPath, destPath);
+            resolve(destPath);
+          } catch (e) {
+            reject(e);
           }
         });
-        res.pipe(out);
-        out.on('finish', () => out.close(() => resolve(destPath)));
-        out.on('error', (err) => {
-          try { fs.unlinkSync(destPath); } catch (e) {}
-          reject(err);
-        });
-      }
-    );
-    req.on('error', reject);
-    req.setTimeout(60000, () => req.destroy(new Error('Download-Timeout')));
+      });
+      out.on('error', (err) => {
+        try { fs.unlinkSync(partPath); } catch (e) {}
+        reject(err);
+      });
+    });
+    req.on('error', (err) => {
+      try { fs.unlinkSync(partPath); } catch (e) {}
+      reject(err);
+    });
+    req.setTimeout(120000, () => req.destroy(new Error('Download-Timeout (keine Daten seit 120s)')));
   });
 }
 
@@ -181,7 +192,7 @@ class GitHubAutoUpdater {
     }
   }
 
-  async checkForUpdates({ autoDownload = true } = {}) {
+  async checkForUpdates({ autoDownload = true, forceDownload = false } = {}) {
     if (this._checking) return this.getState();
     this._checking = true;
     const currentVersion = app.getVersion();
@@ -189,7 +200,11 @@ class GitHubAutoUpdater {
 
     try {
       const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
-      const rel = await fetchJson(apiUrl);
+      let rel = await fetchJson(apiUrl);
+      if (rel?.notFound) {
+        const list = await fetchJson(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=1`);
+        rel = Array.isArray(list) && list[0] ? list[0] : { notFound: true };
+      }
       if (rel?.notFound) {
         return this.emit({ status: 'up-to-date', latestVersion: currentVersion, error: '' });
       }
@@ -200,15 +215,14 @@ class GitHubAutoUpdater {
       const releaseNotes = String(rel.body || '').slice(0, 600);
       const asset = pickPlatformAsset(rel.assets);
 
-      let hasUpdate = false;
+      let hasUpdate = Boolean(forceDownload);
       let latestVersionLabel = detectedVer || currentVersion;
 
-      if (detectedVer) {
+      if (!hasUpdate && detectedVer) {
         hasUpdate = isNewerVersion(detectedVer, currentVersion);
-      } else if (asset && (asset.updated_at || rel.published_at)) {
+      } else if (!hasUpdate && asset && (asset.updated_at || rel.published_at)) {
         const remoteTs = Date.parse(asset.updated_at || rel.published_at);
         const localTs = this.getLocalBuildTimestamp();
-        // Consider remote rolling build newer if published > 2 minutes after local build timestamp
         if (!Number.isNaN(remoteTs) && remoteTs > localTs + 120 * 1000) {
           hasUpdate = true;
           const dtf = new Intl.DateTimeFormat('en-GB', {
@@ -295,7 +309,6 @@ class GitHubAutoUpdater {
       );
     } catch (e) {}
 
-    // macOS: if running inside a packaged .app and asset is a .zip, replace bundle & relaunch
     const execMarker = '.app/Contents/MacOS/';
     if (process.platform === 'darwin' && /\.zip$/i.test(filePath) && process.execPath.includes(execMarker)) {
       const appBundlePath = process.execPath.slice(0, process.execPath.indexOf(execMarker) + 4);
@@ -316,9 +329,19 @@ class GitHubAutoUpdater {
       }
 
       const newAppPath = path.join(extractDir, appName);
+      const swapScript = [
+        'PID="$3"',
+        'i=0',
+        'while kill -0 "$PID" 2>/dev/null && [ $i -lt 50 ]; do sleep 0.2; i=$((i+1)); done',
+        'xattr -dr com.apple.quarantine "$2" 2>/dev/null || true',
+        'rm -rf -- "$1"',
+        'mv -- "$2" "$1" || ditto -- "$2" "$1"',
+        'xattr -dr com.apple.quarantine "$1" 2>/dev/null || true',
+        'open -n "$1"'
+      ].join('; ');
       const child = spawn(
         '/bin/sh',
-        ['-c', 'sleep 1 && rm -rf -- "$1" && mv -- "$2" "$1" && open "$1"', 'sh', appBundlePath, newAppPath],
+        ['-c', swapScript, 'sh', appBundlePath, newAppPath, String(process.pid)],
         { detached: true, stdio: 'ignore' }
       );
       child.unref();
@@ -326,7 +349,28 @@ class GitHubAutoUpdater {
       return { ok: true, mode: 'relaunch' };
     }
 
-    // Fallback (dev mode, DMG, or Windows installer/zip)
+    if (process.platform === 'win32' && /\.zip$/i.test(filePath) && !/electron\.exe$/i.test(process.execPath)) {
+      const appDir = path.dirname(process.execPath);
+      const exePath = process.execPath;
+      const extractDir = path.join(path.dirname(filePath), `extract-${Date.now()}`);
+      const psScript = path.join(path.dirname(filePath), `apply-update-${Date.now()}.ps1`);
+      const psBody = [
+        `Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue`,
+        'Start-Sleep -Milliseconds 600',
+        `Expand-Archive -Path '${filePath.replace(/'/g, "''")}' -DestinationPath '${extractDir.replace(/'/g, "''")}' -Force`,
+        `Copy-Item -Path '${extractDir.replace(/'/g, "''")}\\*' -Destination '${appDir.replace(/'/g, "''")}' -Recurse -Force`,
+        `Start-Process -FilePath '${exePath.replace(/'/g, "''")}'`
+      ].join('\r\n');
+      fs.writeFileSync(psScript, psBody, 'utf8');
+      const child = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', psScript], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+      app.quit();
+      return { ok: true, mode: 'relaunch' };
+    }
+
     await shell.openPath(filePath);
     return { ok: true, mode: 'opened' };
   }
