@@ -1903,6 +1903,42 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-card.theme-lol .gs-cell.is-highlight .gs-val { color: #0ac8b9; text-shadow: 0 0 10px rgba(10,200,185,0.4); }
     .gs-matches-wrap { display: none; margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(200, 170, 110, 0.3); }
     .gs-card.theme-lol .gs-matches-wrap { display: block; }
+    @keyframes tronScan { 0% { transform: translateY(-100%); opacity: 0; } 30% { opacity: 0.45; } 100% { transform: translateY(380%); opacity: 0; } }
+    .gs-card.theme-tron {
+      width: 420px;
+      background:
+        linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+        radial-gradient(circle at 15% 0%, rgba(0, 240, 255, 0.16), transparent 55%),
+        linear-gradient(160deg, rgba(2, 9, 20, 0.96) 0%, rgba(4, 15, 29, 0.97) 100%);
+      background-size: 20px 20px, 20px 20px, 100% 100%, 100% 100%;
+      border: 1.5px solid #00f0ff;
+      border-radius: 2px;
+      clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.28), inset 0 0 18px rgba(0, 240, 255, 0.12);
+      overflow: hidden;
+    }
+    .gs-card.theme-tron::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      height: 28%;
+      background: linear-gradient(180deg, transparent, rgba(0, 240, 255, 0.14), transparent);
+      animation: tronScan 4.5s linear infinite;
+      pointer-events: none;
+    }
+    .gs-card.theme-tron .gs-head { border-bottom: 1px solid rgba(0, 240, 255, 0.35); padding-bottom: 7px; }
+    .gs-card.theme-tron .gs-title { color: #e0fbff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-transform: uppercase; letter-spacing: 0.1em; font-size: 13px; text-shadow: 0 0 10px rgba(0, 240, 255, 0.65); }
+    .gs-card.theme-tron .gs-badge { background: rgba(255, 106, 0, 0.16); border: 1px solid #ff6a00; color: #ff9a44; border-radius: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.08em; text-shadow: 0 0 8px rgba(255, 106, 0, 0.6); }
+    .gs-card.theme-tron .gs-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .gs-card.theme-tron .gs-cell { background: rgba(2, 22, 38, 0.85); border: 1px solid rgba(0, 240, 255, 0.35); border-radius: 2px; text-align: left; padding: 6px 9px; }
+    .gs-card.theme-tron .gs-lbl { color: #00f0ff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 9px; letter-spacing: 0.12em; }
+    .gs-card.theme-tron .gs-val { color: #f0fdff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; text-shadow: 0 0 8px rgba(0, 240, 255, 0.45); }
+    .gs-card.theme-tron .gs-jc-agenda { display: flex; border-top-color: rgba(0, 240, 255, 0.3); }
+    .gs-card.theme-tron .gs-jc-topic { color: #00f0ff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.04em; text-shadow: 0 0 8px rgba(0, 240, 255, 0.4); }
+    .gs-card.theme-tron .gs-jc-step { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; border-radius: 2px; background: rgba(0, 240, 255, 0.05); border-left: 2px solid rgba(0, 240, 255, 0.25); color: #7dd3fc; }
+    .gs-card.theme-tron .gs-jc-step.active { background: rgba(0, 240, 255, 0.18); border-left: 3px solid #ff6a00; color: #ffffff; text-shadow: 0 0 8px rgba(0, 240, 255, 0.65); }
+    .gs-card.theme-tron .gs-jc-step.done { opacity: 0.48; text-decoration: line-through; }
     .gs-matches-lbl { font-size: 9.5px; color: #c8aa6e; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
     .gs-matches-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
     .gs-match-slot { position: relative; height: 46px; border-radius: 4px; background: rgba(7, 16, 32, 0.82); border: 1px solid rgba(148, 163, 184, 0.25); display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -2039,8 +2075,10 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
       if (data.overlayEnabled === false) return;
       const isLol = data.addonId === 'lol';
       const isJc = data.addonId === 'justchatting';
+      const isTron = data.addonId === 'techtalk';
       card.classList.toggle('theme-lol', isLol);
       card.classList.toggle('theme-jc', isJc);
+      card.classList.toggle('theme-tron', isTron);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
       const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').replace(/—.*/, '').trim();
       titleEl.textContent = (data.icon || '🎮') + ' ' + cleanTitle;
@@ -2048,6 +2086,8 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         badgeEl.textContent = data.riotId || (data.lolRole ? data.lolRole.toUpperCase() : 'RANKED');
       } else if (isJc) {
         badgeEl.textContent = data.jcMood || 'LIVE TALK';
+      } else if (isTron) {
+        badgeEl.textContent = data.tronPhase || 'LIVE CODING';
       } else {
         badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
       }
@@ -2100,18 +2140,22 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         gridEl.appendChild(cell);
       });
 
-      if (isJc && jcAgendaEl) {
+      if ((isJc || isTron) && jcAgendaEl) {
         jcAgendaEl.innerHTML = '';
         const topicDiv = document.createElement('div');
         topicDiv.className = 'gs-jc-topic';
-        topicDiv.textContent = '🎙️ ' + (data.jcTopic || 'Chill Talk');
+        topicDiv.textContent = isTron
+          ? '💠 ' + (data.tronTopic || 'Tech Talk') + (data.tronStack ? ' // ' + data.tronStack : '')
+          : '🎙️ ' + (data.jcTopic || 'Chill Talk');
         jcAgendaEl.appendChild(topicDiv);
-        const steps = Array.isArray(data.jcAgendaItems) ? data.jcAgendaItems : [];
-        const cur = Number(data.jcActiveAgendaIdx || 0);
+        const steps = Array.isArray(isTron ? data.tronAgendaItems : data.jcAgendaItems)
+          ? (isTron ? data.tronAgendaItems : data.jcAgendaItems)
+          : [];
+        const cur = Number((isTron ? data.tronActiveAgendaIdx : data.jcActiveAgendaIdx) || 0);
         steps.forEach((st, idx) => {
           const row = document.createElement('div');
           row.className = 'gs-jc-step' + (idx < cur ? ' done' : idx === cur ? ' active' : '');
-          const icon = idx < cur ? '✓' : idx === cur ? '▶' : String(idx + 1) + '.';
+          const icon = idx < cur ? '✓' : idx === cur ? '▶' : String(idx + 1).padStart(2, '0');
           row.textContent = icon + ' ' + st;
           jcAgendaEl.appendChild(row);
         });
@@ -2540,6 +2584,207 @@ const OBS_JC_QNA_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_TRON_TALK_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid TRON Tech Talk &amp; GameDev Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Segoe UI", monospace; color: #e0fbff; overflow: hidden; }
+    @keyframes discSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes lightTrace { 0% { left: -30%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: 110%; opacity: 0; } }
+    .tron-bar {
+      position: relative;
+      width: 960px;
+      padding: 14px 20px 12px;
+      background:
+        linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(125deg, rgba(2, 10, 22, 0.95) 0%, rgba(5, 22, 40, 0.94) 60%, rgba(18, 12, 6, 0.94) 100%);
+      background-size: 22px 22px, 22px 22px, 100% 100%;
+      border: 1.5px solid #00f0ff;
+      clip-path: polygon(0 16px, 16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px));
+      box-shadow: 0 0 34px rgba(0, 240, 255, 0.30), inset 0 0 24px rgba(0, 240, 255, 0.14);
+      display: grid;
+      grid-template-columns: 74px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      overflow: hidden;
+    }
+    .tron-bar::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      height: 2px;
+      width: 28%;
+      background: linear-gradient(90deg, transparent, #00f0ff, #ffffff, #00f0ff, transparent);
+      animation: lightTrace 4.2s linear infinite;
+    }
+    .tron-bar::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      height: 2px;
+      width: 24%;
+      background: linear-gradient(90deg, transparent, #ff6a00, #ffd199, #ff6a00, transparent);
+      animation: lightTrace 5.6s linear infinite reverse;
+    }
+    .tron-disc {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2.5px solid #00f0ff;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.65), inset 0 0 14px rgba(0, 240, 255, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.18), rgba(2, 10, 22, 0.9));
+    }
+    .tron-disc::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      border: 2px dashed rgba(255, 106, 0, 0.85);
+      animation: discSpin 9s linear infinite;
+    }
+    .tron-disc-core { font-size: 22px; text-shadow: 0 0 12px #00f0ff; }
+    .tron-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .tron-phase {
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ff9f4d;
+      background: rgba(255, 106, 0, 0.16);
+      border: 1px solid #ff6a00;
+      box-shadow: 0 0 10px rgba(255, 106, 0, 0.35);
+    }
+    .tron-project { font-size: 12px; color: #7dd3fc; letter-spacing: 0.08em; text-transform: uppercase; }
+    .tron-topic {
+      font-size: 23px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.03em;
+      text-shadow: 0 0 14px rgba(0, 240, 255, 0.55);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tron-stack-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .tron-chip {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      color: #00f0ff;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid rgba(0, 240, 255, 0.42);
+      letter-spacing: 0.06em;
+    }
+    .tron-ticker {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(0, 240, 255, 0.25);
+      font-size: 11px;
+      color: #67e8f9;
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .tron-metrics { display: flex; gap: 8px; }
+    .tron-metric {
+      min-width: 82px;
+      padding: 8px 10px;
+      background: rgba(0, 24, 42, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      text-align: center;
+    }
+    .tron-metric.orange { border-color: rgba(255, 106, 0, 0.65); }
+    .tron-m-lbl { font-size: 9px; letter-spacing: 0.14em; color: #7dd3fc; }
+    .tron-metric.orange .tron-m-lbl { color: #ff9f4d; }
+    .tron-m-val { font-size: 22px; font-weight: 900; color: #ffffff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.65); }
+    .tron-metric.orange .tron-m-val { text-shadow: 0 0 10px rgba(255, 106, 0, 0.65); }
+  </style>
+</head>
+<body>
+  <div class="tron-bar" id="tronBar">
+    <div class="tron-disc"><span class="tron-disc-core">💠</span></div>
+    <div style="min-width: 0;">
+      <div class="tron-meta">
+        <span class="tron-phase" id="tronPhase">LIVE CODING</span>
+        <span class="tron-project" id="tronProject">GAMEDEV GRID</span>
+      </div>
+      <div class="tron-topic" id="tronTopic">Game Engine Architektur &amp; Live Coding</div>
+      <div class="tron-stack-row" id="tronStackRow"></div>
+    </div>
+    <div class="tron-metrics">
+      <div class="tron-metric orange">
+        <div class="tron-m-lbl">BUGS</div>
+        <div class="tron-m-val" id="tronBugs">0</div>
+      </div>
+      <div class="tron-metric">
+        <div class="tron-m-lbl">COMMITS</div>
+        <div class="tron-m-val" id="tronCommits">0</div>
+      </div>
+    </div>
+    <div class="tron-ticker">
+      <span id="tronTickerText">GRID ONLINE // !stack • !repo • !agenda</span>
+      <span id="tronSectorBadge" style="color: #ff9f4d; font-weight: 800;">SECTOR 01</span>
+    </div>
+  </div>
+  <script>
+    const bar = document.getElementById('tronBar');
+    const phaseEl = document.getElementById('tronPhase');
+    const projEl = document.getElementById('tronProject');
+    const topicEl = document.getElementById('tronTopic');
+    const stackRow = document.getElementById('tronStackRow');
+    const bugsEl = document.getElementById('tronBugs');
+    const commitsEl = document.getElementById('tronCommits');
+    const tickerEl = document.getElementById('tronTickerText');
+    const sectorEl = document.getElementById('tronSectorBadge');
+
+    function renderTron(d) {
+      if (!d) return;
+      bar.style.display = d.overlayEnabled === false ? 'none' : '';
+      phaseEl.textContent = d.tronPhase || 'LIVE CODING';
+      projEl.textContent = d.tronProject || 'GAMEDEV GRID';
+      topicEl.textContent = d.tronTopic || 'Tech Talk & GameDev';
+      bugsEl.textContent = String(Number(d.tronBugsFixed || 0));
+      commitsEl.textContent = String(Number(d.tronCommits || 0));
+      tickerEl.textContent = d.tronTickerText || 'GRID ONLINE // !stack • !repo • !agenda';
+      const items = Array.isArray(d.tronAgendaItems) ? d.tronAgendaItems : [];
+      const idx = Number(d.tronActiveAgendaIdx || 0);
+      sectorEl.textContent = items.length ? 'SECTOR ' + String(idx + 1).padStart(2, '0') + '/' + String(items.length).padStart(2, '0') + ' :: ' + items[idx] : 'GRID ACTIVE';
+      stackRow.innerHTML = '';
+      String(d.tronStack || '').split(/[•,|/]+/).map((s) => s.trim()).filter(Boolean).slice(0, 6).forEach((tag) => {
+        const chip = document.createElement('span');
+        chip.className = 'tron-chip';
+        chip.textContent = tag;
+        stackRow.appendChild(chip);
+      });
+    }
+    function fetchLatest() {
+      fetch('/api/game-stats').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) renderTron(d); }).catch(() => {});
+    }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try { const p = JSON.parse(ev.data); if (p.type === 'game-stats') renderTron(p.data); } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest();
+    connectWs();
+    setInterval(fetchLatest, 4000);
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -2783,6 +3028,8 @@ class ObsServer {
           res.end(OBS_JC_LOWERTHIRD_HTML);
         } else if (urlPath === '/jc-qna') {
           res.end(OBS_JC_QNA_HTML);
+        } else if (urlPath === '/tron-talk') {
+          res.end(OBS_TRON_TALK_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }

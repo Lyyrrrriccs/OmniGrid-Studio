@@ -415,6 +415,7 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
     { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
     { id: 'jc-qna', label: '❓ Just Chatting Viewer Q&A Spotlight', inputName: 'OmniGrid JC Q&A', url: `${base}/jc-qna`, width: 640, height: 220, posX: 640, posY: 665 },
+    { id: 'tron-talk', label: '💠 TRON Tech Talk & GameDev Bauchbinde', inputName: 'OmniGrid TRON Tech-Talk', url: `${base}/tron-talk`, width: 980, height: 170, posX: 470, posY: 890 },
     { id: 'goals', label: '🎯 Stream-Goals (Follower / Subs / Spenden)', inputName: 'OmniGrid Goals', url: `${base}/goals`, width: 460, height: 220, posX: 24, posY: 175 },
     { id: 'poll', label: '📊 Live-Umfrage (Poll)', inputName: 'OmniGrid Umfrage', url: `${base}/poll`, width: 460, height: 300, posX: 1430, posY: 355 },
     { id: 'giveaway', label: '🎁 Giveaway / Gewinnspiel', inputName: 'OmniGrid Giveaway', url: `${base}/giveaway`, width: 480, height: 300, posX: 720, posY: 390 },

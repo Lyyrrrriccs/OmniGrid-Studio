@@ -4932,6 +4932,19 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (lolMatchBox) lolMatchBox.classList.toggle('hidden', addon.id !== 'lol');
     const jcBox = document.getElementById('gaJcControls');
     if (jcBox) jcBox.classList.toggle('hidden', addon.id !== 'justchatting');
+    const tronBox = document.getElementById('gaTronControls');
+    if (tronBox) tronBox.classList.toggle('hidden', addon.id !== 'techtalk');
+    if (addon.id === 'techtalk') {
+      const tt = gaState.perAddonStats?.techtalk || {};
+      const tAgenda = document.getElementById('gaTronAgendaText');
+      if (tAgenda && document.activeElement !== tAgenda) tAgenda.value = tt.agendaText || '';
+      const tTicker = document.getElementById('gaTronTickerText');
+      if (tTicker && document.activeElement !== tTicker) tTicker.value = tt.tickerText || '';
+      const steps = String(tt.agendaText || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      const curIdx = Math.min(Math.max(0, Number(tt.activeAgendaIdx || 0)), Math.max(0, steps.length - 1));
+      const badge = document.getElementById('gaTronStepBadge');
+      if (badge) badge.textContent = steps.length ? `SECTOR ${String(curIdx + 1).padStart(2, '0')}/${String(steps.length).padStart(2, '0')}` : 'NO SECTOR';
+    }
     const chkMapCover = document.getElementById('gaLolMapCover');
     const txtMapCover = document.getElementById('gaLolMapCoverText');
     if (chkMapCover) chkMapCover.checked = Boolean(gaState.perAddonStats?.lol?.mapCoverEnabled);
@@ -5050,6 +5063,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (addon.id === 'justchatting') {
         nextAddonStats.agendaText = document.getElementById('gaJcAgendaText')?.value || '';
         nextAddonStats.qnaEnabled = document.getElementById('gaJcQnaEnabled')?.checked !== false;
+      }
+      if (addon.id === 'techtalk') {
+        nextAddonStats.agendaText = document.getElementById('gaTronAgendaText')?.value || '';
+        nextAddonStats.tickerText = document.getElementById('gaTronTickerText')?.value || '';
       }
       gaState.perAddonStats = { ...(gaState.perAddonStats || {}), [addon.id]: nextAddonStats };
     }
@@ -5225,6 +5242,41 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   document.getElementById('btnGaCopyJcLtUrl')?.addEventListener('click', async () => {
     await navigator.clipboard.writeText('http://127.0.0.1:4588/jc-lowerthird');
     if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🔗 http://127.0.0.1:4588/jc-lowerthird kopiert! (TV-Bauchbinde, 920×145)'; }
+  });
+
+  const mutateTronStat = async (updater) => {
+    if (!gaState) return;
+    const cur = { ...(gaState.perAddonStats?.techtalk || {}) };
+    cur.agendaText = document.getElementById('gaTronAgendaText')?.value ?? cur.agendaText ?? '';
+    cur.tickerText = document.getElementById('gaTronTickerText')?.value ?? cur.tickerText ?? '';
+    updater(cur);
+    gaState.perAddonStats = { ...(gaState.perAddonStats || {}), techtalk: cur };
+    const r = await window.omnichat.gameAddonsSave(gaState);
+    if (r?.ok) {
+      gaState = r.gameAddons;
+      renderFields();
+    }
+  };
+  document.getElementById('btnGaTronBugPlus')?.addEventListener('click', () => mutateTronStat((t) => { t.bugsFixed = Number(t.bugsFixed || 0) + 1; }));
+  document.getElementById('btnGaTronCommitPlus')?.addEventListener('click', () => mutateTronStat((t) => { t.commits = Number(t.commits || 0) + 1; }));
+  document.querySelectorAll('.ga-tron-phase-btn').forEach((b) => {
+    b.addEventListener('click', () => mutateTronStat((t) => { t.phase = b.getAttribute('data-phase') || 'LIVE CODING'; }));
+  });
+  document.getElementById('btnGaTronPrevStep')?.addEventListener('click', () => mutateTronStat((t) => {
+    const steps = String(t.agendaText || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    if (steps.length) t.activeAgendaIdx = (Number(t.activeAgendaIdx || 0) - 1 + steps.length) % steps.length;
+  }));
+  document.getElementById('btnGaTronNextStep')?.addEventListener('click', () => mutateTronStat((t) => {
+    const steps = String(t.agendaText || '').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+    if (steps.length) t.activeAgendaIdx = (Number(t.activeAgendaIdx || 0) + 1) % steps.length;
+  }));
+  document.getElementById('btnGaCopyTronTalkUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/tron-talk');
+    if (statusEl) { statusEl.style.color = '#00f0ff'; statusEl.textContent = '🔗 http://127.0.0.1:4588/tron-talk kopiert! (TRON Bauchbinde, 980×170)'; }
+  });
+  document.getElementById('btnGaCopyTronHudUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/game-stats');
+    if (statusEl) { statusEl.style.color = '#00f0ff'; statusEl.textContent = '🔗 http://127.0.0.1:4588/game-stats kopiert! (TRON HUD, 430×310)'; }
   });
   document.getElementById('btnGaCopyJcQnaUrl')?.addEventListener('click', async () => {
     await navigator.clipboard.writeText('http://127.0.0.1:4588/jc-qna');
