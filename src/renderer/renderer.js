@@ -3183,6 +3183,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.tts-box', 'cfgTab_obs'],
     ['.tablet-box', 'cfgTab_companion'],
     ['.streamdeck-box', 'cfgTab_companion'],
+    ['.voice-control-box', 'cfgTab_companion'],
     ['.peripherals-box', 'cfgTab_system'],
     ['.perf-settings-box', 'cfgTab_system']
   ];
@@ -8292,4 +8293,141 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
       }
     }
   });
+})();
+
+(() => {
+  const badgeEl = document.getElementById('voiceStatusBadge');
+  const relayInput = document.getElementById('inputVoiceRelayUrl');
+  const codeBox = document.getElementById('voicePairingCodeBox');
+  const timerEl = document.getElementById('voicePairingTimer');
+  const guideCodeEl = document.getElementById('voiceGuideCode');
+  const assistantsEl = document.getElementById('voiceConnectedAssistants');
+  const lastCmdEl = document.getElementById('voiceLastCommand');
+  const feedbackEl = document.getElementById('voiceFeedbackMsg');
+  const btnCopy = document.getElementById('btnVoiceCopyCode');
+  if (!badgeEl) return;
+
+  let voiceState = null;
+
+  const setFeedback = (msg, color = '#94a3b8') => {
+    if (!feedbackEl) return;
+    feedbackEl.textContent = msg;
+    feedbackEl.style.color = color;
+  };
+
+  const renderVoiceTimer = () => {
+    if (!timerEl) return;
+    const exp = Number(voiceState?.pairingExpiresAt || 0);
+    if (!voiceState?.pairingCode || !exp) {
+      timerEl.textContent = 'Noch kein Code generiert';
+      return;
+    }
+    const sec = Math.max(0, Math.floor((exp - Date.now()) / 1000));
+    if (sec <= 0) {
+      timerEl.textContent = 'Pairing-Code abgelaufen – bitte neu generieren';
+      if (codeBox) codeBox.textContent = '--- ---';
+      if (btnCopy) btnCopy.disabled = true;
+      return;
+    }
+    const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+    const ss = String(sec % 60).padStart(2, '0');
+    timerEl.textContent = `Gültig für noch ${mm}:${ss}`;
+  };
+
+  const applyVoiceState = (st) => {
+    if (!st) return;
+    voiceState = st;
+    if (relayInput && document.activeElement !== relayInput) {
+      relayInput.value = st.relayUrl || '';
+    }
+    const statusMap = {
+      connected: { label: '🟢 Verbunden mit Relay', bg: 'rgba(34,197,94,0.18)', color: '#4ade80' },
+      connecting: { label: '🟡 Verbinde...', bg: 'rgba(250,204,21,0.18)', color: '#fde047' },
+      local_only: { label: '🔵 Lokaler Testmodus', bg: 'rgba(56,189,248,0.18)', color: '#38bdf8' },
+      error: { label: '🔴 Verbindungsfehler', bg: 'rgba(248,113,113,0.18)', color: '#f87171' },
+      disconnected: { label: '⚪ Getrennt', bg: 'rgba(148,163,184,0.18)', color: '#cbd5e1' }
+    };
+    const meta = statusMap[st.status] || statusMap.disconnected;
+    badgeEl.textContent = meta.label;
+    badgeEl.style.background = meta.bg;
+    badgeEl.style.color = meta.color;
+
+    const hasActiveCode = Boolean(st.pairingCode && st.pairingExpiresAt > Date.now());
+    const formatted = hasActiveCode ? (st.pairingCodeFormatted || st.pairingCode) : '--- ---';
+    if (codeBox) codeBox.textContent = formatted;
+    if (guideCodeEl) guideCodeEl.textContent = hasActiveCode ? formatted : '123 456';
+    if (btnCopy) btnCopy.disabled = !hasActiveCode;
+
+    if (assistantsEl) {
+      const list = Array.isArray(st.connectedAssistants) && st.connectedAssistants.length
+        ? st.connectedAssistants.map((a) => (a === 'alexa' ? 'Amazon Alexa' : a === 'google_home' ? 'Google Home' : a)).join(', ')
+        : 'Keine';
+      assistantsEl.textContent = list;
+    }
+
+    if (lastCmdEl) {
+      lastCmdEl.textContent = st.lastCommand
+        ? `Letzter Befehl: ${st.lastCommand.action} (${st.lastCommand.ok ? 'OK' : 'Fehler'})`
+        : '';
+    }
+
+    if (st.lastError) setFeedback(`⚠️ ${st.lastError}`, '#fbbf24');
+    renderVoiceTimer();
+  };
+
+  setInterval(renderVoiceTimer, 1000);
+
+  document.getElementById('btnVoiceSaveRelay')?.addEventListener('click', async () => {
+    const relayUrl = String(relayInput?.value || '').trim();
+    const res = await window.omnichat.voiceSaveConfig?.({ relayUrl, enabled: Boolean(relayUrl) });
+    if (res?.state) applyVoiceState(res.state);
+    setFeedback(relayUrl ? '✅ Relay-URL gespeichert.' : 'ℹ️ Lokaler Modus aktiv (keine Relay-URL).', '#4ade80');
+  });
+
+  document.getElementById('btnVoiceGeneratePair')?.addEventListener('click', async () => {
+    setFeedback('⏳ Generiere Pairing-Code...', '#38bdf8');
+    const relayUrl = String(relayInput?.value || '').trim();
+    const res = await window.omnichat.voiceGeneratePairing?.({ relayUrl });
+    if (res?.state) applyVoiceState(res.state);
+    setFeedback(
+      res?.mode === 'cloud'
+        ? '✅ Pairing-Code im Cloud-Relay registriert (10 Min. gültig).'
+        : '✅ Lokaler Pairing-Code generiert (für Cloud-Kopplung Relay-URL eintragen).',
+      '#4ade80'
+    );
+  });
+
+  btnCopy?.addEventListener('click', async () => {
+    const code = voiceState?.pairingCode || '';
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setFeedback(`📋 Code ${voiceState.pairingCodeFormatted || code} kopiert!`, '#4ade80');
+    } catch (e) {
+      setFeedback('⚠️ Kopieren fehlgeschlagen.', '#f87171');
+    }
+  });
+
+  document.getElementById('btnVoiceDisconnect')?.addEventListener('click', async () => {
+    const res = await window.omnichat.voiceDisconnect?.();
+    if (res?.state) applyVoiceState(res.state);
+    setFeedback('🔌 Verbindung getrennt & Tokens zurückgesetzt.', '#fbbf24');
+  });
+
+  document.querySelectorAll('.voice-test-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const action = btn.getAttribute('data-voice-test');
+      if (!action) return;
+      setFeedback(`⏳ Teste "${action}"...`, '#38bdf8');
+      const res = await window.omnichat.voiceTestCommand?.(action, {});
+      if (res?.state) applyVoiceState(res.state);
+      setFeedback(
+        res?.ok ? `✅ ${res.message || 'Befehl ausgeführt.'}` : `⚠️ ${res?.error || 'Befehl fehlgeschlagen.'}`,
+        res?.ok ? '#4ade80' : '#fbbf24'
+      );
+    });
+  });
+
+  window.omnichat.onVoiceState?.(applyVoiceState);
+  window.omnichat.voiceGetState?.().then(applyVoiceState).catch(() => {});
 })();

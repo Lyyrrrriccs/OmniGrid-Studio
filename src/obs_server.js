@@ -2562,6 +2562,7 @@ class ObsServer {
     this.alertMediaResolver = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
+    this.onVoiceTestApi = null;
     this.onGameWebhook = null;
   }
 
@@ -2664,6 +2665,42 @@ class ObsServer {
           const mime = ext === '.wav' ? 'audio/wav' : ext === '.ogg' ? 'audio/ogg' : 'audio/mpeg';
           res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
           fs.createReadStream(filePath).pipe(res);
+          return;
+        }
+
+        if (urlPath === '/api/voice/test' && req.method === 'POST') {
+          let rawBody = '';
+          req.on('data', (chunk) => {
+            rawBody += chunk;
+            if (rawBody.length > 65536) rawBody = rawBody.slice(0, 65536);
+          });
+          req.on('end', async () => {
+            let body = {};
+            if (rawBody) {
+              try {
+                body = JSON.parse(rawBody);
+              } catch (e) {}
+            }
+            try {
+              const result = this.onVoiceTestApi
+                ? await this.onVoiceTestApi(body.action || '', body.payload || {})
+                : { ok: false, error: 'Voice test handler not registered.' };
+              res.writeHead(result?.ok === false ? 400 : 200, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
+              });
+              res.end(JSON.stringify(result || { ok: true }));
+            } catch (err) {
+              res.writeHead(500, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff',
+                'Access-Control-Allow-Origin': '*'
+              });
+              res.end(JSON.stringify({ ok: false, error: err.message }));
+            }
+          });
           return;
         }
 
@@ -2920,6 +2957,10 @@ class ObsServer {
 
   setAlertMediaResolver(fn) {
     this.alertMediaResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  setVoiceTestHandler(fn) {
+    this.onVoiceTestApi = typeof fn === 'function' ? fn : null;
   }
 
   broadcastGameStats(statsPayload) {

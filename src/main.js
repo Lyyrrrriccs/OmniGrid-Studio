@@ -19,10 +19,142 @@ const hueLights = require('./hue_lights');
 const nanoleafLights = require('./nanoleaf_lights');
 const obsAutoConfig = require('./obs_auto_config');
 const { MultiStreamRelay, normalizeRelayConfig, buildActiveDestinations } = require('./multistream_relay');
+const { VoiceControlBridge, normalizeVoiceConfig } = require('./voice_control');
 
 const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
 const multiRelay = new MultiStreamRelay();
 multiRelay.on('state', (st) => broadcastToWindows('multistream-state', st));
+
+async function executeVoiceCommand(action, payload = {}, meta = {}) {
+  const act = String(action || '').trim().toLowerCase();
+  const cfg = loadConfig();
+  const sourceLabel = meta.source || 'voice';
+
+  if (act === 'clip') {
+    if (demoActive) {
+      appendDiagLog('system', 'info', `🎙️ [${sourceLabel}] Demo-Clip ausgelöst`);
+      return { ok: true, message: 'Demo-Clip wurde erstellt.' };
+    }
+    const [clipRes, markerRes, replayRes] = await Promise.allSettled([
+      twitch.createClip(),
+      twitch.createStreamMarker(String(payload.description || 'Voice Highlight')),
+      obsWs.getState()?.connected ? obsWs.saveReplayBuffer() : Promise.resolve({ ok: false })
+    ]);
+    const clipOk = clipRes.status === 'fulfilled' && clipRes.value?.ok;
+    const markerOk = markerRes.status === 'fulfilled' && markerRes.value?.ok;
+    const replayOk = replayRes.status === 'fulfilled' && replayRes.value?.ok;
+    appendDiagLog(
+      'system',
+      'info',
+      `🎙️ [${sourceLabel}] Clip-Befehl ausgeführt (Twitch-Clip: ${clipOk ? 'OK' : '-'}, Marker: ${markerOk ? 'OK' : '-'}, OBS-Replay: ${replayOk ? 'OK' : '-'})`
+    );
+    return clipOk || markerOk || replayOk
+      ? { ok: true, message: 'Clip wurde erfolgreich gespeichert.' }
+      : { ok: false, error: 'Kein aktiver Stream oder OBS Replay-Buffer verbunden.' };
+  }
+
+  if (act === 'hype') {
+    const res = await executeHypeTrigger(cfg, `🎙️ Sprachbefehl (${sourceLabel}): Hype-Modus!`);
+    return res?.ok !== false
+      ? { ok: true, message: 'Hype-Modus wurde ausgelöst.' }
+      : { ok: false, error: res?.error || 'Hype-Modus fehlgeschlagen.' };
+  }
+
+  if (act === 'multistream_start') {
+    const ms = normalizeRelayConfig(cfg.multiStream || {});
+    const extraWarnings = [];
+    let youtubeWatchUrl = '';
+    let preparedYt = null;
+    if (ms.targets.youtube?.enabled && youtube.canWrite) {
+      try {
+        const streamTitle = String(cfg.streamManager?.title || `${cfg.streamerName || 'OmniGrid'} Live`).trim();
+        preparedYt = await youtube.prepareLiveBroadcast({
+          title: streamTitle,
+          privacyStatus: ms.targets.youtube.privacyStatus || 'public',
+          preferredStreamKey: ms.targets.youtube.streamKey || ''
+        });
+        if (preparedYt.rtmpUrl) ms.targets.youtube.serverUrl = preparedYt.rtmpUrl;
+        if (preparedYt.streamKey) ms.targets.youtube.streamKey = preparedYt.streamKey;
+        youtubeWatchUrl = preparedYt.watchUrl || '';
+        broadcastToWindows('multistream-config-synced', ms);
+      } catch (ytErr) {
+        extraWarnings.push(`⚠️ YouTube Broadcast-Vorbereitung: ${ytErr.message}`);
+      }
+    }
+    cfg.multiStream = ms;
+    saveConfig(cfg);
+    obsAutoConfig.autoProvisionObsLocalFiles({ disableMultitrackVideo: true });
+    const startRes = multiRelay.start(ms, { warnings: extraWarnings, youtubeWatchUrl });
+    if (!startRes.ok) return { ok: false, error: startRes.error || 'Multi-Stream konnte nicht gestartet werden.' };
+    if (preparedYt?.broadcastId && preparedYt?.streamId) {
+      youtube.watchAndTransitionBroadcastToLive(preparedYt.broadcastId, preparedYt.streamId, ({ broadcastId }) => {
+        if (cfg.youtube?.channel) youtube.connect({ target: cfg.youtube.channel, preferredVideoId: broadcastId }).catch(() => {});
+      });
+    }
+    const serverUrl = `rtmp://127.0.0.1:${ms.port}/live`;
+    const conn = await ensureObsWsConnected();
+    if (conn.ok) {
+      if (ms.autoConfigureObs !== false) {
+        try { await obsWs.configureCustomRtmpService(serverUrl, ms.streamKey); } catch (e) {}
+      }
+      if (ms.autoStartObsStream !== false) {
+        setTimeout(() => {
+          obsWs.startStream({ forceRelayUrl: serverUrl, forceRelayKey: ms.streamKey }).catch(() => {});
+        }, 650);
+      }
+    }
+    return { ok: true, message: 'Multi-Stream wurde gestartet.' };
+  }
+
+  if (act === 'multistream_stop') {
+    youtube.stopLiveTransitionWatch();
+    const ms = normalizeRelayConfig(cfg.multiStream || {});
+    if (obsWs.getState()?.connected && ms.autoStartObsStream !== false) {
+      try { await obsWs.stopStream(); } catch (e) {}
+    }
+    const stopRes = multiRelay.stop(true);
+    return stopRes?.ok !== false
+      ? { ok: true, message: 'Multi-Stream wurde gestoppt.' }
+      : { ok: false, error: stopRes?.error || 'Multi-Stream konnte nicht gestoppt werden.' };
+  }
+
+  if (act === 'mute_toggle') {
+    const conn = await ensureObsWsConnected();
+    if (!conn.ok) return { ok: false, error: 'OBS WebSocket ist nicht verbunden.' };
+    const res = await obsWs.toggleMicMute(String(payload.inputName || ''));
+    return res?.ok !== false
+      ? { ok: true, message: res?.muted ? 'Mikrofon stummgeschaltet.' : 'Mikrofon aktiviert.' }
+      : { ok: false, error: res?.error || 'Mikrofon konnte nicht umgeschaltet werden.' };
+  }
+
+  if (act === 'poll_start') {
+    const question = String(payload.question || 'Wie gefällt euch der Stream?').trim();
+    const rawOpts = Array.isArray(payload.options) && payload.options.length >= 2 ? payload.options : ['Ja!', 'Nein'];
+    activePoll = {
+      active: true,
+      visible: true,
+      visibleWhenStopped: true,
+      question,
+      options: rawOpts.slice(0, 6).map((label) => ({ label: String(label).trim(), votes: 0 })),
+      voters: {},
+      totalVotes: 0
+    };
+    const snap = getSanitizedPoll();
+    obsServer.broadcastPoll(snap);
+    broadcastToWindows('poll-updated', snap);
+    return { ok: true, message: `Umfrage "${question}" gestartet.` };
+  }
+
+  return { ok: false, error: `Unbekannter Sprachbefehl: ${act}` };
+}
+
+const voiceBridge = new VoiceControlBridge({ onCommand: executeVoiceCommand });
+voiceBridge.on('state', (st) => broadcastToWindows('voice-state', st));
+voiceBridge.on('config-updated', (vc) => {
+  const cfg = loadConfig();
+  cfg.voiceControl = normalizeVoiceConfig(vc);
+  saveConfig(cfg);
+});
 
 let mainWindow = null;
 let isAlwaysOnTop = false;
@@ -2670,6 +2802,12 @@ app.whenReady().then(async () => {
     broadcastScheduleToObs(saved);
     obsServer.onGameWebhook = handleIncomingGameWebhook;
     broadcastGameAddonsState(saved);
+    obsServer.setVoiceTestHandler((action, payload) => voiceBridge.executeLocalCommand(action, payload, 'local_api'));
+    const savedVoice = normalizeVoiceConfig(saved.voiceControl || {});
+    voiceBridge.setConfig(savedVoice);
+    if (savedVoice.enabled && savedVoice.relayUrl && savedVoice.channelId) {
+      voiceBridge.start();
+    }
 
     // Optional League of Legends Live Client API (127.0.0.1:2999) + LCU Ranked/LP Poller (lockfile)
     let lastLcuPollAt = 0;
@@ -4973,6 +5111,46 @@ app.whenReady().then(async () => {
     return multiRelay.stop(true);
   });
 
+  ipcMain.handle('voice-get-state', () => {
+    return voiceBridge.getPublicState();
+  });
+
+  ipcMain.handle('voice-save-config', (_ev, nextVc = {}) => {
+    const cfg = loadConfig();
+    const merged = normalizeVoiceConfig({ ...(cfg.voiceControl || {}), ...nextVc });
+    cfg.voiceControl = merged;
+    saveConfig(cfg);
+    voiceBridge.setConfig(merged);
+    if (merged.enabled && merged.relayUrl && merged.channelId) {
+      voiceBridge.start();
+    } else if (!merged.relayUrl) {
+      voiceBridge.stop();
+    }
+    return { ok: true, state: voiceBridge.getPublicState() };
+  });
+
+  ipcMain.handle('voice-generate-pairing', async (_ev, opts = {}) => {
+    const cfg = loadConfig();
+    if (opts && typeof opts.relayUrl === 'string') {
+      const merged = normalizeVoiceConfig({ ...(cfg.voiceControl || {}), relayUrl: opts.relayUrl, enabled: true });
+      cfg.voiceControl = merged;
+      saveConfig(cfg);
+      voiceBridge.setConfig(merged);
+    }
+    const res = await voiceBridge.generatePairingCode();
+    return { ...res, state: voiceBridge.getPublicState() };
+  });
+
+  ipcMain.handle('voice-disconnect', async () => {
+    const res = await voiceBridge.disconnectAndReset();
+    return { ...res, state: voiceBridge.getPublicState() };
+  });
+
+  ipcMain.handle('voice-test-command', async (_ev, action, payload = {}) => {
+    const res = await voiceBridge.executeLocalCommand(action, payload, 'local_ui');
+    return { ...res, state: voiceBridge.getPublicState() };
+  });
+
   ipcMain.handle('submit-github-feedback', async (_ev, payload = {}) => {
     const { shell } = require('electron');
     const https = require('https');
@@ -5158,6 +5336,9 @@ app.on('before-quit', () => {
 });
 
 app.on('will-quit', () => {
+  try {
+    voiceBridge.stop();
+  } catch (e) {}
   try {
     multiRelay.stop(false);
   } catch (e) {}
