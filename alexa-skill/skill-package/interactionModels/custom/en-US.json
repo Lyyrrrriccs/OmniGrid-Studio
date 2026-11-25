@@ -1,0 +1,97 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "omnigrid",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "PairDeviceIntent",
+          "slots": [
+            {
+              "name": "pairingCode",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "pair code {pairingCode}",
+            "connect code {pairingCode}",
+            "pairing {pairingCode}",
+            "link code {pairingCode}"
+          ]
+        },
+        {
+          "name": "ClipIntent",
+          "slots": [],
+          "samples": [
+            "make a clip",
+            "save clip",
+            "set a marker",
+            "mark that",
+            "create clip"
+          ]
+        },
+        {
+          "name": "HypeIntent",
+          "slots": [],
+          "samples": [
+            "trigger hype",
+            "start hype",
+            "hype now"
+          ]
+        },
+        {
+          "name": "MultiStreamStartIntent",
+          "slots": [],
+          "samples": [
+            "start multistream",
+            "start stream",
+            "go live"
+          ]
+        },
+        {
+          "name": "MultiStreamStopIntent",
+          "slots": [],
+          "samples": [
+            "stop multistream",
+            "stop stream",
+            "end stream"
+          ]
+        },
+        {
+          "name": "MuteToggleIntent",
+          "slots": [],
+          "samples": [
+            "toggle microphone",
+            "toggle mute",
+            "mute mic"
+          ]
+        },
+        {
+          "name": "PollStartIntent",
+          "slots": [
+            {
+              "name": "question",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "start poll {question}",
+            "new poll {question}"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

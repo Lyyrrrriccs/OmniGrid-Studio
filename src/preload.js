@@ -141,5 +141,11 @@ contextBridge.exposeInMainWorld('omnichat', {
   onI18nChanged: (cb) => ipcRenderer.on('i18n-changed', (_ev, bundle) => cb(bundle)),
   onMenuCommand: (cb) => ipcRenderer.on('menu-command', (_ev, data) => cb(data)),
   privacyAuditRun: () => ipcRenderer.invoke('privacy-audit-run'),
-  privacyOpenPath: (target) => ipcRenderer.invoke('privacy-open-path', target)
+  privacyOpenPath: (target) => ipcRenderer.invoke('privacy-open-path', target),
+  onVoiceState: (cb) => ipcRenderer.on('voice-state', (_ev, st) => cb(st)),
+  voiceGetState: () => ipcRenderer.invoke('voice-get-state'),
+  voiceSaveConfig: (payload) => ipcRenderer.invoke('voice-save-config', payload),
+  voiceGeneratePairing: (payload) => ipcRenderer.invoke('voice-generate-pairing', payload),
+  voiceDisconnect: () => ipcRenderer.invoke('voice-disconnect'),
+  voiceTestCommand: (payload) => ipcRenderer.invoke('voice-test-command', payload)
 });

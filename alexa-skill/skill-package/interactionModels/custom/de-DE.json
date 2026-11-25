@@ -1,0 +1,103 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "omnigrid",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "PairDeviceIntent",
+          "slots": [
+            {
+              "name": "pairingCode",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "kopple code {pairingCode}",
+            "verbinde code {pairingCode}",
+            "pairing {pairingCode}",
+            "kopple mit code {pairingCode}",
+            "verbinde mit code {pairingCode}"
+          ]
+        },
+        {
+          "name": "ClipIntent",
+          "slots": [],
+          "samples": [
+            "mach einen clip",
+            "setz einen marker",
+            "clip speichern",
+            "markiere das",
+            "erstelle einen clip"
+          ]
+        },
+        {
+          "name": "HypeIntent",
+          "slots": [],
+          "samples": [
+            "hype auslösen",
+            "hype starten",
+            "trigger hype",
+            "chat hype starten"
+          ]
+        },
+        {
+          "name": "MultiStreamStartIntent",
+          "slots": [],
+          "samples": [
+            "starte multistream",
+            "stream starten",
+            "geh live",
+            "starte multi stream"
+          ]
+        },
+        {
+          "name": "MultiStreamStopIntent",
+          "slots": [],
+          "samples": [
+            "stoppe multistream",
+            "stream stoppen",
+            "beende stream",
+            "stoppe multi stream"
+          ]
+        },
+        {
+          "name": "MuteToggleIntent",
+          "slots": [],
+          "samples": [
+            "mikrofon umschalten",
+            "mute umschalten",
+            "ton stummschalten",
+            "mikrofon stummschalten"
+          ]
+        },
+        {
+          "name": "PollStartIntent",
+          "slots": [
+            {
+              "name": "question",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "starte umfrage {question}",
+            "neue umfrage {question}",
+            "umfrage starten {question}"
+          ]
+        }
+      ],
+      "types": []
+    }
+  }
+}

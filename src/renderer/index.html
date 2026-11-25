@@ -1057,6 +1057,58 @@
           </div>
         </div>
 
+        <div class="sidebar-section voice-control-box">
+          <div class="card-header" style="margin-bottom: 6px;">
+            <h3 style="margin: 0;">🎙️ Sprachsteuerung (Alexa &amp; Google Home)</h3>
+            <span id="voiceStatusBadge" class="badge-pill" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(148,163,184,0.18); color: #cbd5e1;">Getrennt</span>
+          </div>
+          <p class="section-hint">
+            Steuere <strong>Clip, Hype-Modus, Multi-Stream, Mikrofon-Mute &amp; Umfragen</strong> per Sprache – komplett ohne Portweiterleitung, DynDNS oder laufende Serverkosten.
+          </p>
+
+          <div class="setting-row" style="margin-top: 8px;">
+            <label for="inputVoiceRelayUrl">Cloud-Relay-URL (Cloudflare Worker, optional)</label>
+            <div class="obs-url-row">
+              <input type="text" id="inputVoiceRelayUrl" placeholder="dein-relay.workers.dev (leer = lokaler Testmodus)" />
+              <button class="btn-sm" id="btnVoiceSaveRelay">Speichern</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px; padding: 12px; border-radius: 10px; background: rgba(15,23,42,0.55); border: 1px solid rgba(148,163,184,0.2); text-align: center;">
+            <div style="font-size: 11px; opacity: 0.78; margin-bottom: 4px;">6-stelliger Pairing-Code (10 Min. gültig)</div>
+            <div id="voicePairingCodeBox" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: #38bdf8; user-select: all;">--- ---</div>
+            <div id="voicePairingTimer" style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Noch kein Code generiert</div>
+            <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 10px;">
+              <button class="btn-primary btn-sm" id="btnVoiceGeneratePair">🔑 Pairing-Code generieren</button>
+              <button class="btn-sm" id="btnVoiceCopyCode" disabled>📋 Code kopieren</button>
+              <button class="btn-sm" id="btnVoiceDisconnect" style="color: #fca5a5;">🔌 Trennen / Token zurücksetzen</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span>Verbundene Assistenten: <strong id="voiceConnectedAssistants">Keine</strong></span>
+            <span id="voiceLastCommand" style="font-size: 11px; opacity: 0.78;"></span>
+          </div>
+
+          <div class="sub-divider-title" style="margin-top: 10px;">⚡ Sofort lokal testen (ohne Cloud)</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+            <button class="btn-sm voice-test-btn" data-voice-test="clip">🎬 Clip</button>
+            <button class="btn-sm voice-test-btn" data-voice-test="hype">🔥 Hype</button>
+            <button class="btn-sm voice-test-btn" data-voice-test="multistream_start">🚀 Multi-Stream Start</button>
+            <button class="btn-sm voice-test-btn" data-voice-test="multistream_stop">⏹ Multi-Stream Stop</button>
+            <button class="btn-sm voice-test-btn" data-voice-test="mute_toggle">🎙️ Mikrofon Mute</button>
+          </div>
+          <div id="voiceFeedbackMsg" style="font-size: 11px; margin-top: 6px; min-height: 16px;"></div>
+
+          <div style="margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.22); font-size: 11px; line-height: 1.5;">
+            <strong>Kurzanleitung:</strong><br />
+            1. Alexa Skill <strong>„OmniGrid Studio“</strong> aktivieren (oder Google Home Smart-Home-Szenen verknüpfen).<br />
+            2. Oben auf <strong>Pairing-Code generieren</strong> klicken.<br />
+            3. Sagen: <em>„Alexa, sag OmniGrid kopple Code <span id="voiceGuideCode">123 456</span>“</em>.<br />
+            4. Fertig! Danach z. B. <em>„Alexa, sag OmniGrid mach einen Clip“</em> oder <em>„Hey Google, aktiviere OmniGrid Hype“</em>.
+          </div>
+        </div>
+
         <!-- PERIPHERAL SELECTION: DEDICATED 2ND KEYBOARD & MOUSE + GLOBAL HOTKEYS -->
         <div class="sidebar-section peripherals-box">
           <div class="card-header" style="margin-bottom: 6px;">
