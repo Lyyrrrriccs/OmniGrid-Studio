@@ -3516,6 +3516,11 @@ app.whenReady().then(async () => {
             addonMode: 'justchatting',
             gameName: 'Just Chatting',
             ids: ['jc-lowerthird', 'jc-qna', 'game-stats', 'spotify', 'alerts', 'chat']
+          },
+          techtalk: {
+            addonMode: 'techtalk',
+            gameName: 'Software and Game Development',
+            ids: ['tron-talk', 'game-stats', 'spotify', 'alerts', 'chat']
           }
         };
         const bundle = bundleMap[payload.bundleId];
