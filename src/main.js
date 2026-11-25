@@ -4752,16 +4752,91 @@ app.whenReady().then(async () => {
     }
   });
 
+  ipcMain.handle('multistream-prepare-youtube', async (_ev, payload = {}) => {
+    try {
+      const cfg = loadConfig();
+      const ms = normalizeRelayConfig(payload.multiStream || cfg.multiStream || {});
+      const streamTitle = String(payload.title || cfg.streamManager?.title || `${cfg.streamerName || 'OmniGrid'} Live`).trim();
+      const ytPrep = await youtube.prepareLiveBroadcast({
+        title: streamTitle,
+        privacyStatus: ms.targets.youtube.privacyStatus || 'public',
+        preferredStreamKey: ms.targets.youtube.streamKey || ''
+      });
+      ms.targets.youtube.enabled = true;
+      ms.targets.youtube.serverUrl = ytPrep.rtmpUrl || ms.targets.youtube.serverUrl;
+      ms.targets.youtube.streamKey = ytPrep.streamKey || ms.targets.youtube.streamKey;
+      cfg.multiStream = ms;
+      saveConfig(cfg);
+      broadcastToWindows('multistream-config-synced', ms);
+      appendDiagLog(
+        'youtube',
+        'info',
+        `YouTube Live automatisch vorbereitet (${ytPrep.createdNew ? 'neuer Broadcast angelegt' : 'Broadcast bereit'}): ${ytPrep.watchUrl}`
+      );
+      return { ok: true, ...ytPrep, multiStream: ms };
+    } catch (err) {
+      appendDiagLog('youtube', 'error', `YouTube Live Vorbereitung fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('multistream-start', async (_ev, payload = {}) => {
     const cfg = loadConfig();
     const ms = normalizeRelayConfig(payload.multiStream || cfg.multiStream || {});
+
+    const extraWarnings = [];
+    let youtubeWatchUrl = '';
+    let preparedYt = null;
+
+    if (ms.targets.youtube?.enabled) {
+      if (youtube.canWrite) {
+        try {
+          const streamTitle = String(cfg.streamManager?.title || `${cfg.streamerName || 'OmniGrid'} Live`).trim();
+          preparedYt = await youtube.prepareLiveBroadcast({
+            title: streamTitle,
+            privacyStatus: ms.targets.youtube.privacyStatus || 'public',
+            preferredStreamKey: ms.targets.youtube.streamKey || ''
+          });
+          if (preparedYt.rtmpUrl) ms.targets.youtube.serverUrl = preparedYt.rtmpUrl;
+          if (preparedYt.streamKey) ms.targets.youtube.streamKey = preparedYt.streamKey;
+          youtubeWatchUrl = preparedYt.watchUrl || '';
+          broadcastToWindows('multistream-config-synced', ms);
+          appendDiagLog(
+            'youtube',
+            'info',
+            `YouTube Live Broadcast bereit (${preparedYt.privacyStatus}): ${youtubeWatchUrl}`
+          );
+        } catch (ytErr) {
+          extraWarnings.push(`⚠️ YouTube Broadcast-Vorbereitung: ${ytErr.message}`);
+          appendDiagLog('youtube', 'warn', `YouTube Auto-Broadcast Hinweis: ${ytErr.message}`);
+        }
+      } else if (ms.targets.youtube.streamKey) {
+        extraWarnings.push(
+          '💡 YouTube ohne OAuth2: Bitte in YouTube Studio „Automatischer Start“ aktivieren (oder unter Plattformen → YouTube OAuth2 verbinden, damit OmniGrid den Broadcast vollautomatisch live schaltet).'
+        );
+      } else {
+        extraWarnings.push(
+          '⚠️ YouTube ist aktiviert, aber weder ein Stream-Schlüssel eingetragen noch YouTube-OAuth2 verbunden!'
+        );
+      }
+    }
+
     cfg.multiStream = ms;
     saveConfig(cfg);
 
     obsAutoConfig.autoProvisionObsLocalFiles({ disableMultitrackVideo: true });
 
-    const startRes = multiRelay.start(ms);
+    const startRes = multiRelay.start(ms, { warnings: extraWarnings, youtubeWatchUrl });
     if (!startRes.ok) return startRes;
+
+    if (preparedYt?.broadcastId && preparedYt?.streamId) {
+      youtube.watchAndTransitionBroadcastToLive(preparedYt.broadcastId, preparedYt.streamId, ({ broadcastId, watchUrl }) => {
+        appendDiagLog('youtube', 'info', `🔴 YouTube Livestream ist jetzt öffentlich LIVE: ${watchUrl}`);
+        if (cfg.youtube?.channel) {
+          youtube.connect({ target: cfg.youtube.channel, preferredVideoId: broadcastId }).catch(() => {});
+        }
+      });
+    }
 
     const serverUrl = `rtmp://127.0.0.1:${ms.port}/live`;
     const conn = await ensureObsWsConnected();
@@ -4783,6 +4858,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('multistream-stop', async () => {
+    youtube.stopLiveTransitionWatch();
     const cfg = loadConfig();
     const ms = normalizeRelayConfig(cfg.multiStream || {});
     if (obsWs.getState()?.connected && ms.autoStartObsStream !== false) {

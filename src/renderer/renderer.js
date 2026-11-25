@@ -583,7 +583,8 @@ function getMultiStreamSettings() {
       youtube: {
         enabled: Boolean(document.getElementById('chkMsYoutube')?.checked),
         serverUrl: document.getElementById('inputMsYoutubeUrl')?.value.trim() || 'rtmp://a.rtmp.youtube.com/live2',
-        streamKey: document.getElementById('inputMsYoutubeKey')?.value.trim() || ''
+        streamKey: document.getElementById('inputMsYoutubeKey')?.value.trim() || '',
+        privacyStatus: document.getElementById('selMsYoutubePrivacy')?.value || 'public'
       },
       tiktok: {
         enabled: Boolean(document.getElementById('chkMsTiktok')?.checked),
@@ -1965,6 +1966,8 @@ function applyConfigToForm(cfg) {
     setChk('chkMsYoutube', msT.youtube.enabled);
     setVal('inputMsYoutubeUrl', msT.youtube.serverUrl || 'rtmp://a.rtmp.youtube.com/live2');
     setVal('inputMsYoutubeKey', msT.youtube.streamKey || '');
+    const selYtPriv = document.getElementById('selMsYoutubePrivacy');
+    if (selYtPriv) selYtPriv.value = msT.youtube.privacyStatus || 'public';
   }
   if (msT.tiktok) {
     setChk('chkMsTiktok', msT.tiktok.enabled);
@@ -7292,7 +7295,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const inputIds = [
     'numMsPort', 'inputMsLocalKey', 'chkMsAutoConfigObs', 'chkMsAutoStartObs',
     'chkMsTwitch', 'inputMsTwitchUrl', 'inputMsTwitchKey',
-    'chkMsYoutube', 'inputMsYoutubeUrl', 'inputMsYoutubeKey',
+    'chkMsYoutube', 'inputMsYoutubeUrl', 'inputMsYoutubeKey', 'selMsYoutubePrivacy',
     'chkMsTiktok', 'inputMsTiktokUrl', 'inputMsTiktokKey',
     'chkMsCustom', 'inputMsCustomName', 'inputMsCustomUrl', 'inputMsCustomKey'
   ];
@@ -7317,18 +7320,21 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     btnCfgStop?.classList.toggle('hidden', !isRunning);
 
     const targetsStr = (st.activeTargets || []).join(' + ') || 'Keine Ziele';
+    const warnSuffix =
+      Array.isArray(st.warnings) && st.warnings.length ? ` • ${st.warnings.join(' | ')}` : '';
+    const ytSuffix = st.youtubeWatchUrl ? ` • 🔴 YT: ${st.youtubeWatchUrl}` : '';
     if (st.status === 'streaming') {
       if (badgeLive) {
         badgeLive.textContent = '(🔴 LIVE)';
-        badgeLive.style.color = '#4ade80';
+        badgeLive.style.color = st.warnings?.length ? '#fbbf24' : '#4ade80';
       }
-      const statLine = `🔴 LIVE → ${targetsStr} • ${st.bitrateKbps || 0} kbps • ${st.fps || 0} FPS (${st.uptime || '00:00:00'})`;
+      const statLine = `🔴 LIVE → ${targetsStr} • ${st.bitrateKbps || 0} kbps • ${st.fps || 0} FPS (${st.uptime || '00:00:00'})${ytSuffix}${warnSuffix}`;
       if (telemetryLive) {
-        telemetryLive.style.color = '#4ade80';
+        telemetryLive.style.color = st.warnings?.length ? '#fbbf24' : '#4ade80';
         telemetryLive.textContent = statLine;
       }
       if (statusCfg) {
-        statusCfg.style.color = '#4ade80';
+        statusCfg.style.color = st.warnings?.length ? '#fbbf24' : '#4ade80';
         statusCfg.textContent = statLine;
       }
     } else if (st.status === 'waiting') {
@@ -7336,13 +7342,13 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         badgeLive.textContent = '(⏳ Wartet auf OBS)';
         badgeLive.style.color = '#38bdf8';
       }
-      const waitLine = `⏳ Relay bereit (${st.ingestServer}/${st.ingestKey}) → Wartet auf OBS-Stream (${targetsStr})...`;
+      const waitLine = `⏳ Relay bereit (${st.ingestServer}/${st.ingestKey}) → Wartet auf OBS-Stream (${targetsStr})${ytSuffix}${warnSuffix}`;
       if (telemetryLive) {
-        telemetryLive.style.color = '#38bdf8';
+        telemetryLive.style.color = st.warnings?.length ? '#fbbf24' : '#38bdf8';
         telemetryLive.textContent = waitLine;
       }
       if (statusCfg) {
-        statusCfg.style.color = '#38bdf8';
+        statusCfg.style.color = st.warnings?.length ? '#fbbf24' : '#38bdf8';
         statusCfg.textContent = waitLine;
       }
     } else if (st.status === 'error') {
@@ -7376,6 +7382,35 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   window.omnichat.onMultiStreamState?.(renderRelayState);
   window.omnichat.multiStreamGetState?.().then(renderRelayState).catch(() => {});
+  window.omnichat.onMultiStreamConfigSynced?.((ms) => {
+    if (!ms?.targets?.youtube) return;
+    const chk = document.getElementById('chkMsYoutube');
+    const urlInp = document.getElementById('inputMsYoutubeUrl');
+    const keyInp = document.getElementById('inputMsYoutubeKey');
+    const privSel = document.getElementById('selMsYoutubePrivacy');
+    if (chk) chk.checked = Boolean(ms.targets.youtube.enabled);
+    if (urlInp && ms.targets.youtube.serverUrl) urlInp.value = ms.targets.youtube.serverUrl;
+    if (keyInp && ms.targets.youtube.streamKey) keyInp.value = ms.targets.youtube.streamKey;
+    if (privSel && ms.targets.youtube.privacyStatus) privSel.value = ms.targets.youtube.privacyStatus;
+  });
+
+  document.getElementById('btnMsPrepareYoutube')?.addEventListener('click', async () => {
+    saveMsConfig();
+    if (statusCfg) {
+      statusCfg.style.color = '#38bdf8';
+      statusCfg.textContent = '⏳ Lade YouTube Stream-Schlüssel & bereite YouTube Live-Broadcast per OAuth2 vor...';
+    }
+    const res = await window.omnichat.multiStreamPrepareYoutube?.({ multiStream: getMultiStreamSettings() });
+    if (res?.ok) {
+      if (statusCfg) {
+        statusCfg.style.color = '#4ade80';
+        statusCfg.textContent = `✅ YouTube bereit! Stream-Key geladen & Broadcast (${res.privacyStatus}) auf Auto-Start gesetzt: ${res.watchUrl}`;
+      }
+    } else if (statusCfg) {
+      statusCfg.style.color = '#f87171';
+      statusCfg.textContent = `❌ ${res?.error || 'YouTube OAuth2 Vorbereitung fehlgeschlagen.'}`;
+    }
+  });
 
   async function handleStart() {
     saveMsConfig();

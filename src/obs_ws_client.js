@@ -809,6 +809,11 @@ class ObsWsClient extends EventEmitter {
       parameterName: 'EnableMultitrackVideo',
       parameterValue: 'false'
     }).catch(() => {});
+    await this.call('SetProfileParameter', {
+      parameterCategory: 'Stream1',
+      parameterName: 'MultitrackVideo',
+      parameterValue: 'false'
+    }).catch(() => {});
 
     return { ok: true, wasEnabled };
   }

@@ -51,14 +51,12 @@ function readObsWebSocketLocalConfig(customRootDir = '') {
  * ("Keine Konfigurations-URL für die aktuelle Plattform verfügbar") popup on Custom RTMP / Simulcast.
  */
 function patchObsProfileIniMultitrack(iniText) {
-  const src = String(iniText || '');
-  if (!src.trim()) return { text: src, changed: false };
-
-  if (/^EnableMultitrackVideo\s*=\s*true\s*$/im.test(src)) {
-    const next = src.replace(/^EnableMultitrackVideo\s*=\s*true\s*$/gim, 'EnableMultitrackVideo=false');
-    return { text: next, changed: next !== src };
-  }
-  return { text: src, changed: false };
+  let next = String(iniText || '');
+  if (!next.trim()) return { text: next, changed: false };
+  const orig = next;
+  next = next.replace(/^EnableMultitrackVideo\s*=\s*true\s*$/gim, 'EnableMultitrackVideo=false');
+  next = next.replace(/^MultitrackVideo\s*=\s*true\s*$/gim, 'MultitrackVideo=false');
+  return { text: next, changed: next !== orig };
 }
 
 /**
