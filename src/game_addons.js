@@ -47,6 +47,18 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
       activeQuestion: { id: '', author: '', platform: '', text: '' },
       qnaQueue: []
     },
+    techtalk: {
+      topic: 'Game Engine Architektur & Live Coding',
+      project: 'GameDev Grid // Unreal / Godot / Custom',
+      stack: 'C++20 • TypeScript • WebGPU • Node.js',
+      phase: 'LIVE CODING',
+      repoUrl: '',
+      bugsFixed: 0,
+      commits: 0,
+      agendaText: 'System-Architektur & Grid-Setup\nLive Coding & Shader-Pipeline\nPerformance-Profiling & Netcode\nDev Q&A (!stack / !repo)',
+      activeAgendaIdx: 0,
+      tickerText: 'GRID ONLINE // !thema • !stack • !repo • !agenda • !bug+ • !commit+'
+    },
     minecraft: { deaths: 0, diamonds: 0, days: 1, mode: 'Survival' },
     souls: { deaths: 0, bosses: 0, run: 'Any%', bossName: 'Aktueller Boss' },
     valorant: { kills: 0, deaths: 0, wins: 0, rank: 'Diamond', agent: 'Jett' }
@@ -92,6 +104,24 @@ const GAME_ADDONS = [
     ],
     chatCommands: ['!thema', '!topic', '!agenda', '!ask', '!frage', '!video', '!react', '!setthema', '!nextq'],
     eventHint: 'Komplett-Set: TV-Bauchbinde (/jc-lowerthird), Viewer Q&A Spotlight (/jc-qna), Themen-Agenda (/game-stats) & Live Chat-Fragen (!ask).'
+  },
+  {
+    id: 'techtalk',
+    name: 'Tech Talk & GameDev — TRON Grid',
+    icon: '💠',
+    accent: '#00f0ff',
+    gameMatches: ['software and game development', 'game development', 'programming', 'coding', 'tech talk', 'gamedev', 'godot', 'unity', 'unreal'],
+    fields: [
+      { key: 'topic', label: '💠 Tech-Thema (TRON Bauchbinde)', type: 'text' },
+      { key: 'project', label: '⚡ Projekt / Engine', type: 'text' },
+      { key: 'stack', label: '🧬 Tech-Stack (!stack)', type: 'text' },
+      { key: 'phase', label: '🚀 Phase / Status', type: 'text' },
+      { key: 'repoUrl', label: '🔗 Repo / Docs-Link (!repo)', type: 'text' },
+      { key: 'bugsFixed', label: '🐛 Bugs gefixt', type: 'number' },
+      { key: 'commits', label: '📦 Commits', type: 'number' }
+    ],
+    chatCommands: ['!thema', '!stack', '!repo', '!agenda', '!bug+', '!commit+', '!setthema', '!setphase', '!nextstep'],
+    eventHint: 'TRON Legacy Suite: Neon-Grid Bauchbinde (/tron-talk), TRON HUD & Kapitel-Agenda (/game-stats), Live Bug/Commit-Counter & Dev Chat-Commands!'
   },
   {
     id: 'cs2',
@@ -203,7 +233,8 @@ const EXTRA_STAT_KEYS = {
     'mapCoverEnabled',
     'mapCoverText'
   ],
-  justchatting: ['agendaText', 'activeAgendaIdx', 'qnaEnabled', 'activeQuestion', 'qnaQueue']
+  justchatting: ['agendaText', 'activeAgendaIdx', 'qnaEnabled', 'activeQuestion', 'qnaQueue'],
+  techtalk: ['agendaText', 'activeAgendaIdx', 'tickerText']
 };
 
 function sanitizeAddonStats(addonId, rawStats = {}) {
@@ -321,6 +352,7 @@ function buildObsGameStatsPayload(cfg = {}) {
   const { addon, stats, ga } = resolveActiveAddon(cfg);
   const lolStats = ga.perAddonStats?.lol || {};
   const jcStats = ga.perAddonStats?.justchatting || {};
+  const ttStats = ga.perAddonStats?.techtalk || {};
 
   const lolMatches = Array.isArray(lolStats.recentMatches) ? lolStats.recentMatches.slice(0, 6) : [];
   const lolWins = lolMatches.filter((m) => m && m.win).length;
@@ -349,6 +381,15 @@ function buildObsGameStatsPayload(cfg = {}) {
       { key: 'step', label: 'Kapitel', value: agenda.length ? `${curStep + 1} / ${agenda.length}` : '—' },
       { key: 'qna', label: 'Offene Fragen', value: qQueue.length }
     ];
+  } else if (addon.id === 'techtalk') {
+    const agenda = parseAgendaItems(stats.agendaText);
+    const curStep = Math.min(Math.max(0, Number(stats.activeAgendaIdx || 0)), Math.max(0, agenda.length - 1));
+    displayStats = [
+      { key: 'phase', label: 'STATUS', value: stats.phase || 'LIVE CODING' },
+      { key: 'bugsFixed', label: 'BUGS FIXED', value: Number(stats.bugsFixed || 0) },
+      { key: 'commits', label: 'COMMITS', value: Number(stats.commits || 0) },
+      { key: 'step', label: 'SECTOR', value: agenda.length ? `${curStep + 1}/${agenda.length}` : '—' }
+    ];
   } else {
     displayStats = addon.fields.map((f) => ({
       key: f.key,
@@ -364,6 +405,8 @@ function buildObsGameStatsPayload(cfg = {}) {
   const agendaItems = parseAgendaItems(jcStats.agendaText);
   const activeAgendaIdx = Math.min(Math.max(0, Number(jcStats.activeAgendaIdx || 0)), Math.max(0, agendaItems.length - 1));
   const qnaQueue = Array.isArray(jcStats.qnaQueue) ? jcStats.qnaQueue : [];
+  const tronAgendaItems = parseAgendaItems(ttStats.agendaText);
+  const tronActiveAgendaIdx = Math.min(Math.max(0, Number(ttStats.activeAgendaIdx || 0)), Math.max(0, tronAgendaItems.length - 1));
 
   return {
     addonId: addon.id,
@@ -408,6 +451,16 @@ function buildObsGameStatsPayload(cfg = {}) {
     jcQnaEnabled: jcStats.qnaEnabled !== false,
     jcActiveQuestion: jcStats.activeQuestion && jcStats.activeQuestion.text ? jcStats.activeQuestion : null,
     jcQnaCount: qnaQueue.length,
+    tronTopic: ttStats.topic || 'Game Engine Architektur & Live Coding',
+    tronProject: ttStats.project || 'GameDev Grid',
+    tronStack: ttStats.stack || 'C++20 • TypeScript • WebGPU',
+    tronPhase: ttStats.phase || 'LIVE CODING',
+    tronRepoUrl: ttStats.repoUrl || '',
+    tronBugsFixed: Number(ttStats.bugsFixed || 0),
+    tronCommits: Number(ttStats.commits || 0),
+    tronAgendaItems,
+    tronActiveAgendaIdx,
+    tronTickerText: ttStats.tickerText || 'GRID ONLINE // !stack • !repo • !agenda',
     stats: displayStats,
     chatCommands: addon.chatCommands
   };
@@ -424,6 +477,72 @@ function handleGameChatCommand(cfg = {}, msg = {}) {
   const isModOrBroadcaster = Boolean(msg.isSelf) || roles.some((r) => ['broadcaster', 'moderator', 'mod'].includes(r));
 
   // === JUST CHATTING COMMAND SUITE ===
+  if (addon.id === 'techtalk') {
+    if ((cmd === '!setthema' || cmd === '!settopic') && isModOrBroadcaster && argText) {
+      stats.topic = argText.slice(0, 140);
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, techtalk: stats } },
+        reply: `💠 TRON Grid Thema aktualisiert: "${stats.topic}"`
+      };
+    }
+    if (cmd === '!setphase' && isModOrBroadcaster && argText) {
+      stats.phase = argText.slice(0, 32).toUpperCase();
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, techtalk: stats } },
+        reply: `🚀 Grid-Status: ${stats.phase}`
+      };
+    }
+    if (cmd === '!bug+' && isModOrBroadcaster) {
+      stats.bugsFixed = Number(stats.bugsFixed || 0) + 1;
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, techtalk: stats } },
+        reply: `🐛 Bug eliminiert! Gesamt heute: ${stats.bugsFixed}`
+      };
+    }
+    if (cmd === '!commit+' && isModOrBroadcaster) {
+      stats.commits = Number(stats.commits || 0) + 1;
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, techtalk: stats } },
+        reply: `📦 Commit gepusht! Gesamt heute: ${stats.commits}`
+      };
+    }
+    if (cmd === '!nextstep' && isModOrBroadcaster) {
+      const items = parseAgendaItems(stats.agendaText);
+      if (items.length) {
+        stats.activeAgendaIdx = (Number(stats.activeAgendaIdx || 0) + 1) % items.length;
+        return {
+          mutated: true,
+          bypassCooldown: true,
+          nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, techtalk: stats } },
+          reply: `💠 Nächster Sektor [${stats.activeAgendaIdx + 1}/${items.length}]: ${items[stats.activeAgendaIdx]}`
+        };
+      }
+    }
+    if (cmd === '!thema' || cmd === '!topic') {
+      return { mutated: false, reply: `💠 Tech Talk: ${stats.topic} (${stats.project} • ${stats.phase})` };
+    }
+    if (cmd === '!stack') {
+      return { mutated: false, reply: `🧬 Tech-Stack: ${stats.stack || '—'} | Projekt: ${stats.project || '—'}` };
+    }
+    if (cmd === '!repo' || cmd === '!code') {
+      return { mutated: false, reply: stats.repoUrl ? `🔗 Repo / Docs: ${stats.repoUrl}` : '🔗 Aktuell kein öffentlicher Repo-Link hinterlegt.' };
+    }
+    if (cmd === '!agenda') {
+      const items = parseAgendaItems(stats.agendaText);
+      const idx = Math.min(Math.max(0, Number(stats.activeAgendaIdx || 0)), Math.max(0, items.length - 1));
+      const formatted = items.map((it, i) => (i === idx ? `▶ ${i + 1}. ${it}` : `${i + 1}. ${it}`)).join(' | ');
+      return { mutated: false, reply: items.length ? `💠 Grid-Agenda: ${formatted}` : '💠 Noch keine Agenda hinterlegt.' };
+    }
+  }
+
   if (addon.id === 'justchatting') {
     if ((cmd === '!setthema' || cmd === '!settopic') && isModOrBroadcaster && argText) {
       stats.topic = argText.slice(0, 140);

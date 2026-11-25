@@ -2176,6 +2176,7 @@
               <option value="auto">🤖 Auto (wechselt nach Twitch/Stream-Manager-Spiel)</option>
               <option value="lol">⚔️ League of Legends — Komplett-Suite</option>
               <option value="justchatting">💬 Just Chatting &amp; Talk Suite</option>
+              <option value="techtalk">💠 Tech Talk &amp; GameDev — TRON Grid</option>
               <option value="cs2">🎯 Counter-Strike 2 (GSI)</option>
               <option value="minecraft">⛏️ Minecraft</option>
               <option value="souls">💀 Elden Ring / Soulsborne</option>
@@ -2246,6 +2247,42 @@
               <button class="btn-sm" id="btnGaCopyJcLtUrl">🔗 OBS /jc-lowerthird (Bauchbinde)</button>
               <button class="btn-sm" id="btnGaCopyJcQnaUrl">🔗 OBS /jc-qna (Q&amp;A Spotlight)</button>
             </div>
+          </div>
+        </div>
+
+        <div id="gaTronControls" class="hidden" style="display: flex; flex-direction: column; gap: 9px; margin-top: 10px; padding: 11px 12px; border-radius: 6px; background: linear-gradient(145deg, rgba(2,14,28,0.9), rgba(4,24,42,0.85)); border: 1.5px solid rgba(0,240,255,0.55); box-shadow: 0 0 18px rgba(0,240,255,0.12);">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 11.5px; font-weight: 800; color: #00f0ff; font-family: ui-monospace, monospace;">💠 TRON GRID LIVE CONTROLS:</span>
+            <button class="btn-sm" id="btnGaTronBugPlus" style="background: rgba(255,106,0,0.22); border-color: #ff6a00; color: #ffb36b; font-weight: 700;">+1 🐛 Bug gefixt</button>
+            <button class="btn-sm" id="btnGaTronCommitPlus" style="background: rgba(0,240,255,0.16); border-color: #00f0ff; color: #7ef9ff; font-weight: 700;">+1 📦 Commit</button>
+          </div>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 10.5px; color: #7dd3fc;">Phase:</span>
+            <button type="button" class="btn-sm ga-tron-phase-btn" data-phase="LIVE CODING">LIVE CODING</button>
+            <button type="button" class="btn-sm ga-tron-phase-btn" data-phase="ARCHITECTURE">ARCHITECTURE</button>
+            <button type="button" class="btn-sm ga-tron-phase-btn" data-phase="GAME DESIGN">GAME DESIGN</button>
+            <button type="button" class="btn-sm ga-tron-phase-btn" data-phase="BUG HUNT">BUG HUNT</button>
+            <button type="button" class="btn-sm ga-tron-phase-btn" data-phase="PLAYTEST">PLAYTEST</button>
+            <button type="button" class="btn-sm ga-tron-phase-btn" data-phase="DEV Q&amp;A">DEV Q&amp;A</button>
+          </div>
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-size: 11px; font-weight: 700; color: #00f0ff;">📡 Grid-Sektoren / Themen-Agenda (1 Zeile pro Punkt)</span>
+              <div style="display: flex; gap: 5px; align-items: center;">
+                <button class="btn-sm" id="btnGaTronPrevStep">◀ Zurück</button>
+                <span id="gaTronStepBadge" style="font-size: 11px; font-weight: 700; color: #7ef9ff; font-family: ui-monospace, monospace;">SECTOR 01</span>
+                <button class="btn-sm" id="btnGaTronNextStep" style="background: rgba(0,240,255,0.2); border-color: #00f0ff; color: #e0fbff;">Nächster Sektor ▶</button>
+              </div>
+            </div>
+            <textarea id="gaTronAgendaText" class="tag-textarea" rows="3" style="margin-top: 5px; font-family: ui-monospace, monospace;" placeholder="System-Architektur &amp; Grid-Setup&#10;Live Coding &amp; Shader-Pipeline&#10;Performance-Profiling &amp; Netcode&#10;Dev Q&amp;A"></textarea>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: #7dd3fc;">⚡ TRON Ticker-Zeile (unterer Rand der Bauchbinde)</label>
+            <input type="text" id="gaTronTickerText" placeholder="GRID ONLINE // !thema • !stack • !repo • !agenda" style="width: 100%; margin-top: 3px; font-family: ui-monospace, monospace;" />
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnGaCopyTronTalkUrl" style="background: rgba(0,240,255,0.18); border-color: #00f0ff; color: #e0fbff; font-weight: 700;">🔗 OBS /tron-talk (TRON Bauchbinde, 980×170)</button>
+            <button class="btn-sm" id="btnGaCopyTronHudUrl">🔗 OBS /game-stats (TRON HUD, 430×310)</button>
           </div>
         </div>
 
