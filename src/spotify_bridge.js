@@ -19,16 +19,30 @@ int main(int argc, char **argv) {
     void *h = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_LAZY);
     if (!h) return 1;
     if (argc > 1) {
+      MRGetNowPlayingClientFn getClient = (MRGetNowPlayingClientFn)dlsym(h, "MRMediaRemoteGetNowPlayingClient");
+      MRClientGetBundleIdFn getBid = (MRClientGetBundleIdFn)dlsym(h, "MRNowPlayingClientGetBundleIdentifier");
+      MRClientGetDisplayNameFn getName = (MRClientGetDisplayNameFn)dlsym(h, "MRNowPlayingClientGetDisplayName");
       MRSendCommandFn sendCmd = (MRSendCommandFn)dlsym(h, "MRMediaRemoteSendCommand");
-      if (!sendCmd) return 1;
+      if (!sendCmd || !getClient) return 1;
       NSString *arg = [NSString stringWithUTF8String:argv[1]];
       int cmd = -1;
-      if ([arg isEqualToString:@"playpause"]) cmd = 2; // kMRTogglePlayPause
-      else if ([arg isEqualToString:@"next"]) cmd = 4; // kMRNextTrack
-      else if ([arg isEqualToString:@"previous"]) cmd = 5; // kMRPreviousTrack
-      if (cmd >= 0) sendCmd(cmd, nil);
-      usleep(120000);
-      return 0;
+      if ([arg isEqualToString:@"playpause"]) cmd = 2;
+      else if ([arg isEqualToString:@"next"]) cmd = 4;
+      else if ([arg isEqualToString:@"previous"]) cmd = 5;
+      if (cmd < 0) return 1;
+      getClient(dispatch_get_main_queue(), ^(id client) {
+        NSString *bid = (client && getBid) ? [(getBid(client) ?: @"") lowercaseString] : @"";
+        NSString *dname = (client && getName) ? [(getName(client) ?: @"") lowercaseString] : @"";
+        BOOL isMusicApp = ([bid containsString:@"spotify"] || [bid containsString:@"amazon"] || [bid containsString:@"com.apple.music"] || [bid containsString:@"com.apple.itunes"] || [dname isEqualToString:@"music"] || [dname containsString:@"spotify"] || [dname containsString:@"amazon music"]);
+        if (!isMusicApp) {
+          exit(2);
+        }
+        sendCmd(cmd, nil);
+        usleep(120000);
+        exit(0);
+      });
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1500 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{ exit(2); });
+      dispatch_main();
     }
 
     MRGetNowPlayingInfoFn getInfo = (MRGetNowPlayingInfoFn)dlsym(h, "MRMediaRemoteGetNowPlayingInfo");
@@ -95,7 +109,7 @@ class SpotifyBridge extends EventEmitter {
     };
     this._lastKey = '';
     this._artworkCache = new Map();
-    this._mrHelperPath = path.join(os.tmpdir(), 'omnigrid_mr_helper_v1');
+    this._mrHelperPath = path.join(os.tmpdir(), 'omnigrid_mr_helper_v2');
     this._mrCompiling = null;
   }
 
@@ -329,45 +343,106 @@ class SpotifyBridge extends EventEmitter {
 
   control(action) {
     return new Promise(async (resolve) => {
-      if (process.platform === 'darwin') {
-        const validActions = ['playpause', 'next', 'previous'];
-        if (!validActions.includes(action)) return resolve({ ok: false });
+      const validActions = ['playpause', 'next', 'previous'];
+      if (!validActions.includes(action)) return resolve({ ok: false });
 
-        // For Amazon Music (or whenever MediaRemote helper is ready), MediaRemote commands control the active player directly
-        if (this.currentTrack?.source === 'Amazon Music' || !this.currentTrack?.source) {
-          const bin = await this._ensureMacMrHelper();
-          if (bin) {
-            execFile(bin, [action], { timeout: 2500 }, (err) => {
-              setTimeout(() => this.pollNow(), 350);
-              resolve({ ok: !err });
-            });
-            return;
-          }
+      if (process.platform === 'darwin') {
+        const cmdMap = { playpause: 'playpause', next: 'next track', previous: 'previous track' };
+        const appleCmd = cmdMap[action];
+        const source = this.currentTrack?.source || '';
+
+        if (source === 'Spotify' || source === 'Apple Music') {
+          const targetApp = source === 'Apple Music' ? 'Music' : 'Spotify';
+          execFile('osascript', ['-e', `tell application "${targetApp}" to ${appleCmd}`], { timeout: 2500 }, (err) => {
+            setTimeout(() => this.pollNow(), 350);
+            resolve({ ok: !err });
+          });
+          return;
         }
 
-        const cmdMap = {
-          playpause: 'playpause',
-          next: 'next track',
-          previous: 'previous track'
-        };
-        const appleCmd = cmdMap[action];
-        const targetApp = this.currentTrack?.source === 'Apple Music' ? 'Music' : 'Spotify';
-        exec(`osascript -e 'tell application "${targetApp}" to ${appleCmd}'`, { timeout: 2500 }, (err) => {
-          setTimeout(() => this.pollNow(), 350);
-          resolve({ ok: !err });
+        if (source === 'Amazon Music') {
+          const bin = await this._ensureMacMrHelper();
+          if (bin) {
+            const mrOk = await new Promise((res) => {
+              execFile(bin, [action], { timeout: 2500 }, (err) => res(!err));
+            });
+            if (mrOk) {
+              setTimeout(() => this.pollNow(), 350);
+              return resolve({ ok: true });
+            }
+          }
+          const menuTargets = {
+            playpause: ['Play', 'Pause', 'Wiedergabe', 'Anhalten'],
+            next: ['Next', 'Next Track', 'Nächster Titel', 'Weiter'],
+            previous: ['Previous', 'Previous Track', 'Vorheriger Titel', 'Zurück']
+          }[action];
+          const azScript = [
+            'tell application "System Events"',
+            '  if not (exists process "Amazon Music") then return "OFF"',
+            '  tell process "Amazon Music"',
+            '    repeat with m in menu bar items of menu bar 1',
+            '      try',
+            '        repeat with mi in menu items of menu 1 of m',
+            '          set n to name of mi',
+            `          if {${menuTargets.map((t) => `"${t}"`).join(', ')}} contains n then`,
+            '            click mi',
+            '            return "OK"',
+            '          end if',
+            '        end repeat',
+            '      end try',
+            '    end repeat',
+            '  end tell',
+            'end tell',
+            'return "MISS"'
+          ].join('\n');
+          execFile('osascript', ['-e', azScript], { timeout: 2500 }, (err, stdout) => {
+            setTimeout(() => this.pollNow(), 350);
+            resolve({ ok: !err && String(stdout || '').trim() === 'OK' });
+          });
+          return;
+        }
+
+        const directScript = [
+          'tell application "System Events"',
+          '  set procNames to (name of processes)',
+          '  set spRun to procNames contains "Spotify"',
+          '  set amRun to procNames contains "Music"',
+          'end tell',
+          `if spRun then`,
+          `  tell application "Spotify" to ${appleCmd}`,
+          '  return "Spotify"',
+          `else if amRun then`,
+          `  tell application "Music" to ${appleCmd}`,
+          '  return "Music"',
+          'end if',
+          'return "NONE"'
+        ].join('\n');
+        execFile('osascript', ['-e', directScript], { timeout: 2500 }, async (err, stdout) => {
+          const out = String(stdout || '').trim();
+          if (!err && (out === 'Spotify' || out === 'Music')) {
+            setTimeout(() => this.pollNow(), 350);
+            return resolve({ ok: true });
+          }
+          const bin = await this._ensureMacMrHelper();
+          if (!bin) return resolve({ ok: false });
+          execFile(bin, [action], { timeout: 2500 }, (mrErr) => {
+            setTimeout(() => this.pollNow(), 350);
+            resolve({ ok: !mrErr });
+          });
         });
       } else if (process.platform === 'win32') {
-        const vkMap = {
-          playpause: 0xB3, // VK_MEDIA_PLAY_PAUSE
-          next: 0xB0,      // VK_MEDIA_NEXT_TRACK
-          previous: 0xB1   // VK_MEDIA_PREV_TRACK
-        };
-        const vk = vkMap[action];
-        if (!vk) return resolve({ ok: false });
-        const ps = `$sig='[DllImport("user32.dll")]public static extern void keybd_event(byte bVk,byte bScan,uint dwFlags,UIntPtr dwExtraInfo);';$t=Add-Type -MemberDefinition $sig -Name K -Namespace W -PassThru;$t::keybd_event(${vk},0,0,[UIntPtr]::Zero);$t::keybd_event(${vk},0,2,[UIntPtr]::Zero);`;
-        exec(`powershell -NoProfile -Command "${ps}"`, { timeout: 2500 }, (err) => {
+        const appCmdMap = { playpause: 14 << 16, next: 11 << 16, previous: 12 << 16 };
+        const lParam = appCmdMap[action];
+        const source = this.currentTrack?.source || '';
+        const procOrder = source === 'Amazon Music'
+          ? '"Amazon Music","Spotify","AppleMusic","iTunes"'
+          : source === 'Apple Music'
+            ? '"AppleMusic","iTunes","Spotify","Amazon Music"'
+            : '"Spotify","Amazon Music","AppleMusic","iTunes"';
+        const ps = `$sig='[DllImport("user32.dll")]public static extern IntPtr SendMessageW(IntPtr hWnd,int Msg,IntPtr wParam,IntPtr lParam);';$t=Add-Type -MemberDefinition $sig -Name M -Namespace W -PassThru;$p=$null;foreach($n in @(${procOrder})){$p=Get-Process -Name $n -ErrorAction SilentlyContinue|Where-Object{$_.MainWindowHandle -ne 0}|Select-Object -First 1;if($p){break}};if($p){$t::SendMessageW($p.MainWindowHandle,0x0319,[IntPtr]::Zero,[IntPtr]${lParam})|Out-Null;'OK'}else{'NONE'}`;
+        exec(`powershell -NoProfile -Command "${ps}"`, { timeout: 2500 }, (err, stdout) => {
           setTimeout(() => this.pollNow(), 350);
-          resolve({ ok: !err });
+          resolve({ ok: !err && String(stdout || '').trim() === 'OK' });
         });
       } else {
         resolve({ ok: false });

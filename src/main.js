@@ -4817,7 +4817,9 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('updater-get-state', () => autoUpdater.getState());
-  ipcMain.handle('updater-check', (_ev, opts = {}) => autoUpdater.checkForUpdates({ autoDownload: opts.autoDownload !== false }));
+  ipcMain.handle('updater-check', (_ev, opts = {}) =>
+    autoUpdater.checkForUpdates({ autoDownload: opts.autoDownload !== false, forceDownload: Boolean(opts.forceDownload) })
+  );
   ipcMain.handle('updater-install', () => autoUpdater.installDownloadedUpdate());
 
   ipcMain.handle('elgato-lights-discover', async () => {
@@ -5375,6 +5377,11 @@ app.whenReady().then(async () => {
       autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});
     }
   }, 4000);
+  setInterval(() => {
+    if (!demoActive) {
+      autoUpdater.checkForUpdates({ autoDownload: true }).catch(() => {});
+    }
+  }, 30 * 60 * 1000);
 });
 
 app.on('before-quit', () => {
