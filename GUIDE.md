@@ -287,8 +287,8 @@ Keep your community updated automatically before, during, and after every stream
 
 OBS only handles **rendering & encoding once (`1×`)**, while OmniGrid Studio distributes the stream locally with **0% extra GPU/CPU encoding load (`-c copy`)** simultaneously to **Twitch**, **YouTube Live**, **TikTok Live**, and **Kick / Custom RTMP**:
 1. **Configure Targets & Stream Keys:** Open **⚙️ Config → 📡 Plattformen** (or click **⚙️ Ziele** in the *Multi-Plattform-Stream* sidebar card). Enable your target platforms and enter your stream keys.
-2. **1-Click OBS Auto-Config:** Click **⚡ OBS automatisch auf OmniGrid-Relay einstellen** to automatically configure OBS (`rtmp://127.0.0.1:1935/live`, key `omnigrid`) via OBS WebSocket v5.
-3. **1-Click Multi-Stream Start:** Click **📡 Multi-Stream Start** in the sidebar — OmniGrid Studio launches the local RTMP relay and automatically starts your OBS stream, showing live bitrate (`kbps`), `FPS`, and active targets.
+2. **Zero-Touch OBS Automation:** OmniGrid automatically reads your local OBS WebSocket port & token from OBS's local config, configures `rtmp://127.0.0.1:1935/live` (`omnigrid`), and **automatically disables OBS's conflicting Enhanced Broadcasting (`EnableMultitrackVideo`) flag** so the *"No configuration URL available for current platform"* popup never occurs.
+3. **1-Click Multi-Stream Start:** Click **📡 Multi-Stream Start** in the sidebar — OmniGrid Studio auto-connects to OBS if needed, configures the stream service, launches the local RTMP relay, and starts your OBS stream automatically, showing live bitrate (`kbps`), `FPS`, and active targets.
 
 ## 23. Feedback, Feature Requests & GitHub Discussions (`💬 Feedback`)
 

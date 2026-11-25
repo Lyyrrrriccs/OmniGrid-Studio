@@ -501,7 +501,8 @@
           <input type="password" id="inputObsWsPass" placeholder="OBS WebSocket-Passwort (falls gesetzt)" style="margin-top: 5px;" />
           <input type="text" id="inputObsWsMic" placeholder="Mikrofon-Quellname (optional, z. B. Mic/Aux)" style="margin-top: 5px;" />
           <div style="display: flex; gap: 6px; margin-top: 6px;">
-            <button class="btn-sm" id="btnObsWsConnect" style="flex: 1;">🔌 Mit OBS verbinden</button>
+            <button class="btn-sm" id="btnObsWsAutoSetup" style="flex: 1.3; background: rgba(16,185,129,0.22); border-color: rgba(16,185,129,0.5); color: #6ee7b7; font-weight: 700;" title="Liest Port &amp; Passwort automatisch aus deiner lokalen OBS-Installation, aktiviert bei Bedarf den WebSocket-Server und behebt den Enhanced-Broadcasting-Konflikt">⚡ OBS automatisch einrichten &amp; verbinden</button>
+            <button class="btn-sm" id="btnObsWsConnect" style="flex: 1;">🔌 Verbinden</button>
             <button class="btn-sm hidden" id="btnObsWsDisconnect">Trennen</button>
           </div>
           <div id="obsWsConfigStatus" style="margin-top: 5px; font-size: 11px; color: #94a3b8;">Nicht verbunden</div>

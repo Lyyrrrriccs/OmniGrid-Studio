@@ -310,7 +310,11 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, currentScene: String(sceneName) };
   }
 
-  async toggleStream() {
+  async toggleStream(prepOpts = {}) {
+    const st = await this.call('GetStreamStatus').catch(() => ({ outputActive: this.state.streamActive }));
+    if (!st.outputActive) {
+      await this.ensureStreamServiceReady(prepOpts);
+    }
     const res = await this.call('ToggleStream');
     this._updateState({ streamActive: Boolean(res.outputActive) });
     return { ok: true, streamActive: Boolean(res.outputActive) };
@@ -786,22 +790,86 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, inputKind, inputSettings, properties, errors };
   }
 
+  async disableMultitrackVideoConflict() {
+    // Prevents OBS Studio 30.2+ / 31+ popup:
+    // "Keine Konfigurations-URL für die aktuelle Plattform verfügbar" ("No configuration URL available")
+    // caused when Twitch Enhanced Broadcasting (EnableMultitrackVideo=true in [Stream1]) remains active
+    // while streaming to Custom RTMP / Simulcast Relay / YouTube / TikTok / Kick.
+    let wasEnabled = false;
+    try {
+      const cur = await this.call('GetProfileParameter', {
+        parameterCategory: 'Stream1',
+        parameterName: 'EnableMultitrackVideo'
+      });
+      wasEnabled = String(cur?.parameterValue || '').toLowerCase() === 'true';
+    } catch (e) {}
+
+    await this.call('SetProfileParameter', {
+      parameterCategory: 'Stream1',
+      parameterName: 'EnableMultitrackVideo',
+      parameterValue: 'false'
+    }).catch(() => {});
+
+    return { ok: true, wasEnabled };
+  }
+
   async configureCustomRtmpService(serverUrl = 'rtmp://127.0.0.1:1935/live', streamKey = 'omnigrid') {
+    const cleanServer = String(serverUrl || 'rtmp://127.0.0.1:1935/live').trim();
+    const cleanKey = String(streamKey || 'omnigrid').trim();
+
+    await this.disableMultitrackVideoConflict();
     await this.call('SetStreamServiceSettings', {
       streamServiceType: 'rtmp_custom',
       streamServiceSettings: {
-        server: String(serverUrl || 'rtmp://127.0.0.1:1935/live').trim(),
-        key: String(streamKey || 'omnigrid').trim(),
-        use_auth: false
+        server: cleanServer,
+        key: cleanKey,
+        use_auth: false,
+        bwtest: false
       }
     });
-    return { ok: true, server: serverUrl, key: streamKey };
+    await this.disableMultitrackVideoConflict();
+
+    return { ok: true, server: cleanServer, key: cleanKey, multitrackDisabled: true };
   }
 
-  async startStream() {
+  async ensureStreamServiceReady({ fallbackServerUrl = '', fallbackStreamKey = '', forceRelayUrl = '', forceRelayKey = '' } = {}) {
+    if (forceRelayUrl && forceRelayKey) {
+      await this.configureCustomRtmpService(forceRelayUrl, forceRelayKey);
+      return { ok: true, mode: 'relay' };
+    }
+
+    let svcType = '';
+    let svcSettings = {};
+    try {
+      const cur = await this.call('GetStreamServiceSettings');
+      svcType = String(cur?.streamServiceType || '');
+      svcSettings = cur?.streamServiceSettings || {};
+    } catch (e) {
+      return { ok: true, mode: 'unchanged' };
+    }
+
+    const isOfficialTwitchService =
+      svcType === 'rtmp_common' && /twitch/i.test(String(svcSettings.service || ''));
+
+    // Automatically clear Enhanced Broadcasting (EnableMultitrackVideo) whenever OBS is NOT on native Twitch service
+    if (!isOfficialTwitchService) {
+      await this.disableMultitrackVideoConflict();
+    }
+
+    const existingKey = String(svcSettings.key || '').trim();
+    if (!existingKey && fallbackServerUrl && fallbackStreamKey) {
+      await this.configureCustomRtmpService(fallbackServerUrl, fallbackStreamKey);
+      return { ok: true, mode: 'fallback-target' };
+    }
+
+    return { ok: true, mode: 'verified' };
+  }
+
+  async startStream(prepOpts = {}) {
     try {
       const st = await this.call('GetStreamStatus');
       if (!st.outputActive) {
+        await this.ensureStreamServiceReady(prepOpts);
         await this.call('StartStream');
       }
       this._updateState({ streamActive: true, streaming: true });

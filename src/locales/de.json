@@ -244,6 +244,8 @@
       "optC": "Option C — OBS Stream-Overlay (Browser-Quelle für Zuschauer):",
       "copyOverlayUrl": "Overlay-URL kopieren",
       "obsWsHeading": "🎛️ OBS WebSocket v5 Verbindung",
+      "obsWsAutoSetupBtn": "⚡ OBS automatisch einrichten & verbinden",
+      "obsWsConnectShort": "🔌 Verbinden",
       "obsWsHint1": "Aktiviere in OBS Studio unter",
       "obsWsHint2": "Werkzeuge → WebSocket-Servereinstellungen",
       "obsWsHint3": "den WebSocket-Server (Standard-Port",

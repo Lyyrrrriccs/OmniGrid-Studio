@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('omnichat', {
   createTwitchClip: () => ipcRenderer.invoke('twitch-create-clip'),
   createTwitchMarker: (description) => ipcRenderer.invoke('twitch-create-marker', description),
   obsWsConnect: (opts) => ipcRenderer.invoke('obs-ws-connect', opts),
+  obsWsAutoSetup: () => ipcRenderer.invoke('obs-ws-auto-setup'),
   obsWsDisconnect: () => ipcRenderer.invoke('obs-ws-disconnect'),
   obsWsAction: (payload) => ipcRenderer.invoke('obs-ws-action', payload),
   onObsWsState: (cb) => ipcRenderer.on('obs-ws-state', (_ev, st) => cb(st)),

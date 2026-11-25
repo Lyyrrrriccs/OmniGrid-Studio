@@ -17,7 +17,8 @@ const elgatoLights = require('./elgato_lights');
 const goveeLights = require('./govee_lights');
 const hueLights = require('./hue_lights');
 const nanoleafLights = require('./nanoleaf_lights');
-const { MultiStreamRelay, normalizeRelayConfig } = require('./multistream_relay');
+const obsAutoConfig = require('./obs_auto_config');
+const { MultiStreamRelay, normalizeRelayConfig, buildActiveDestinations } = require('./multistream_relay');
 
 const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
 const multiRelay = new MultiStreamRelay();
@@ -126,6 +127,98 @@ const tiktok = new TikTokConnector();
 const obsServer = new ObsServer(4588);
 const obsWs = new ObsWsClient();
 const emoteManager = new EmoteManager();
+
+function isLoopbackHost(h) {
+  const clean = String(h || '127.0.0.1').trim().toLowerCase();
+  return clean === '127.0.0.1' || clean === 'localhost' || clean === '::1';
+}
+
+async function ensureObsWsConnected(explicitOpts = null) {
+  if (!explicitOpts && obsWs.getState()?.connected) {
+    return { ok: true, state: obsWs.getState(), reused: true };
+  }
+  const cfg = loadConfig();
+  const savedOw = cfg.obsWs || {};
+  const host = String(explicitOpts?.host || savedOw.host || '127.0.0.1').trim();
+  let port = parseInt(explicitOpts?.port || savedOw.port || '4455', 10) || 4455;
+  let rpcToken = explicitOpts?.password !== undefined ? String(explicitOpts.password) : String(savedOw.password || '');
+  const micName = explicitOpts?.micName !== undefined ? String(explicitOpts.micName).trim() : String(savedOw.micName || '');
+
+  const localInfo = isLoopbackHost(host) ? obsAutoConfig.readObsWebSocketLocalConfig() : { found: false };
+  if (localInfo.found && !rpcToken && localInfo.rpcSecret) {
+    rpcToken = localInfo.rpcSecret;
+    port = localInfo.port || port;
+  }
+
+  const persistObsCfg = (p, tok) => {
+    const fresh = loadConfig();
+    fresh.obsWs = {
+      ...(fresh.obsWs || {}),
+      enabled: true,
+      host,
+      port: p,
+      password: tok,
+      micName
+    };
+    saveConfig(fresh);
+  };
+
+  try {
+    const res = await obsWs.connect({ host, port, rpcToken, micName });
+    persistObsCfg(port, rpcToken);
+    return { ok: true, state: res.state, port };
+  } catch (firstErr) {
+    // Retry automatically with credentials read directly from local OBS installation if they differed
+    if (localInfo.found && (localInfo.port !== port || localInfo.rpcSecret !== rpcToken)) {
+      try {
+        const retryRes = await obsWs.connect({
+          host,
+          port: localInfo.port || 4455,
+          rpcToken: localInfo.rpcSecret || '',
+          micName
+        });
+        persistObsCfg(localInfo.port || 4455, localInfo.rpcSecret || '');
+        appendDiagLog('system', 'info', 'OBS WebSocket Zugangsdaten automatisch aus lokaler OBS-Konfiguration übernommen.');
+        return { ok: true, state: retryRes.state, port: localInfo.port || 4455, autoRecovered: true };
+      } catch (e) {}
+    }
+
+    // Ensure local OBS files are pre-provisioned (WebSocket enabled + EnableMultitrackVideo cleared) for next OBS start
+    if (isLoopbackHost(host)) {
+      obsAutoConfig.autoProvisionObsLocalFiles({ disableMultitrackVideo: true });
+    }
+    return { ok: false, error: firstErr.message, state: obsWs.getState(), localInfo };
+  }
+}
+
+function buildObsStreamPrepOpts(cfg = loadConfig()) {
+  const ms = normalizeRelayConfig(cfg?.multiStream || {});
+  const relaySt = multiRelay.getState();
+  if (relaySt?.active) {
+    return {
+      forceRelayUrl: `rtmp://127.0.0.1:${ms.port}/live`,
+      forceRelayKey: ms.streamKey
+    };
+  }
+  const dests = buildActiveDestinations(ms);
+  if (dests.length >= 2) {
+    const started = multiRelay.start(ms);
+    if (started.ok) {
+      return {
+        forceRelayUrl: `rtmp://127.0.0.1:${ms.port}/live`,
+        forceRelayKey: ms.streamKey
+      };
+    }
+  } else if (dests.length === 1) {
+    const single = ms.targets[dests[0].id] || {};
+    const srv = String(single.serverUrl || '').trim();
+    const k = String(single.streamKey || '').trim();
+    if (srv && k) {
+      return { fallbackServerUrl: srv, fallbackStreamKey: k };
+    }
+  }
+  return {};
+}
 const spotify = new SpotifyBridge();
 let lastSongReplyAt = 0;
 let lastScheduleReplyAt = 0;
@@ -2222,7 +2315,8 @@ app.whenReady().then(async () => {
     }
 
     if (act === 'obs-stream') {
-      return await obsWs.toggleStream();
+      await ensureObsWsConnected().catch(() => {});
+      return await obsWs.toggleStream(buildObsStreamPrepOpts());
     }
 
     if (act === 'obs-record') {
@@ -2553,10 +2647,11 @@ app.whenReady().then(async () => {
       diagnosticLogs
     });
 
-    if (saved.obsWs?.enabled) {
-      obsWs.connect(saved.obsWs).catch((err) => {
-        appendDiagLog('system', 'warn', `OBS WebSocket Auto-Connect fehlgeschlagen: ${err.message}`);
-      });
+    if (saved.obsWs?.enabled !== false) {
+      const localWs = obsAutoConfig.readObsWebSocketLocalConfig();
+      if (saved.obsWs?.enabled || (localWs.found && localWs.serverEnabled)) {
+        ensureObsWsConnected().catch(() => {});
+      }
     }
     syncChatTimer(saved);
     obsServer.setIcsProvider(() => socialSchedule.buildIcsFeed(loadConfig()));
@@ -3171,24 +3266,43 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle('obs-ws-connect', async (_ev, opts) => {
-    const cfg = loadConfig();
-    const nextObsWs = {
-      enabled: true,
-      host: String(opts?.host || cfg.obsWs?.host || '127.0.0.1').trim(),
-      port: parseInt(opts?.port || cfg.obsWs?.port || '4455', 10) || 4455,
-      password: opts?.password !== undefined ? String(opts.password) : (cfg.obsWs?.password || ''),
-      micName: opts?.micName !== undefined ? String(opts.micName).trim() : (cfg.obsWs?.micName || '')
-    };
-    cfg.obsWs = nextObsWs;
-    saveConfig(cfg);
-    try {
-      const res = await obsWs.connect(nextObsWs);
-      appendDiagLog('system', 'info', `OBS WebSocket v5 verbunden (${nextObsWs.host}:${nextObsWs.port}).`);
+    const res = await ensureObsWsConnected(opts || {});
+    if (res.ok) {
+      appendDiagLog('system', 'info', `OBS WebSocket v5 verbunden (${opts?.host || '127.0.0.1'}:${res.port || 4455}).`);
       return res;
-    } catch (err) {
-      appendDiagLog('system', 'error', `OBS WebSocket Fehler: ${err.message}`);
-      return { ok: false, error: err.message };
     }
+    appendDiagLog('system', 'error', `OBS WebSocket Fehler: ${res.error}`);
+    return res;
+  });
+
+  ipcMain.handle('obs-ws-auto-setup', async () => {
+    const prov = obsAutoConfig.autoProvisionObsLocalFiles({ disableMultitrackVideo: true });
+    const conn = await ensureObsWsConnected();
+    if (conn.ok) {
+      await obsWs.disableMultitrackVideoConflict().catch(() => {});
+      return {
+        ok: true,
+        port: conn.port || prov.port || 4455,
+        state: conn.state,
+        message: '✅ OBS automatisch verbunden & Enhanced-Broadcasting-Konflikt bereinigt!'
+      };
+    }
+    if (prov.wsEnabledNow) {
+      return {
+        ok: false,
+        port: prov.port || 4455,
+        state: conn.state,
+        message: '⚡ OBS WebSocket wurde automatisch in OBS aktiviert! Bitte OBS Studio 1× kurz neu starten, danach verbindet sich OmniGrid automatisch.'
+      };
+    }
+    return {
+      ok: false,
+      port: prov.port || 4455,
+      state: conn.state,
+      message: prov.rootExists
+        ? '⏳ OBS-Konfiguration vorbereitet — starte jetzt OBS Studio, OmniGrid verbindet sich automatisch.'
+        : `⚠️ OBS nicht erreichbar (${conn.error || 'bitte OBS Studio starten'}).`
+    };
   });
 
   ipcMain.handle('obs-ws-disconnect', () => {
@@ -3206,7 +3320,7 @@ app.whenReady().then(async () => {
     try {
       const act = payload?.action;
       if (act === 'scene') return await obsWs.setScene(payload.sceneName);
-      if (act === 'toggle-stream') return await obsWs.toggleStream();
+      if (act === 'toggle-stream') return await obsWs.toggleStream(buildObsStreamPrepOpts());
       if (act === 'toggle-record') return await obsWs.toggleRecord();
       if (act === 'save-replay') return await obsWs.saveReplayBuffer();
       if (act === 'toggle-mic') return await obsWs.toggleMicMute(payload.inputName || '');
@@ -4623,6 +4737,14 @@ app.whenReady().then(async () => {
       const cfg = loadConfig();
       const ms = normalizeRelayConfig(payload.multiStream || cfg.multiStream || {});
       const serverUrl = `rtmp://127.0.0.1:${ms.port}/live`;
+      obsAutoConfig.autoProvisionObsLocalFiles({ disableMultitrackVideo: true });
+      const conn = await ensureObsWsConnected();
+      if (!conn.ok) {
+        return {
+          ok: false,
+          error: 'OBS Studio läuft aktuell nicht oder startet gerade erst — lokale OBS-Profile wurden bereits vorab bereinigt.'
+        };
+      }
       const res = await obsWs.configureCustomRtmpService(serverUrl, ms.streamKey);
       return res;
     } catch (err) {
@@ -4636,11 +4758,14 @@ app.whenReady().then(async () => {
     cfg.multiStream = ms;
     saveConfig(cfg);
 
+    obsAutoConfig.autoProvisionObsLocalFiles({ disableMultitrackVideo: true });
+
     const startRes = multiRelay.start(ms);
     if (!startRes.ok) return startRes;
 
     const serverUrl = `rtmp://127.0.0.1:${ms.port}/live`;
-    if (obsWs.getState()?.connected) {
+    const conn = await ensureObsWsConnected();
+    if (conn.ok) {
       if (ms.autoConfigureObs !== false) {
         try {
           await obsWs.configureCustomRtmpService(serverUrl, ms.streamKey);
@@ -4648,7 +4773,9 @@ app.whenReady().then(async () => {
       }
       if (ms.autoStartObsStream !== false) {
         setTimeout(() => {
-          obsWs.startStream().catch(() => {});
+          obsWs
+            .startStream({ forceRelayUrl: serverUrl, forceRelayKey: ms.streamKey })
+            .catch(() => {});
         }, 650);
       }
     }

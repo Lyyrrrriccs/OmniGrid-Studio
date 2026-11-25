@@ -3349,6 +3349,24 @@ function updateObsWsUI(st) {
 
 window.omnichat.onObsWsState?.((st) => updateObsWsUI(st));
 
+document.getElementById('btnObsWsAutoSetup')?.addEventListener('click', async () => {
+  const cfgStatus = document.getElementById('obsWsConfigStatus');
+  if (cfgStatus) {
+    cfgStatus.style.color = '#38bdf8';
+    cfgStatus.textContent = '⚡ Richte OBS automatisch ein & verbinde...';
+  }
+  const res = await window.omnichat.obsWsAutoSetup?.();
+  if (res?.port) {
+    const portInp = document.getElementById('inputObsWsPort');
+    if (portInp) portInp.value = String(res.port);
+  }
+  if (res?.state) updateObsWsUI(res.state);
+  if (cfgStatus && res?.message) {
+    cfgStatus.style.color = res.ok ? '#4ade80' : '#fbbf24';
+    cfgStatus.textContent = res.message;
+  }
+});
+
 document.getElementById('btnObsWsConnect')?.addEventListener('click', async () => {
   const host = document.getElementById('inputObsWsHost')?.value.trim() || '127.0.0.1';
   const port = parseInt(document.getElementById('inputObsWsPort')?.value || '4455', 10) || 4455;
@@ -7393,11 +7411,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (res?.ok) {
       if (statusCfg) {
         statusCfg.style.color = '#4ade80';
-        statusCfg.textContent = `✅ OBS Stream-Server automatisch auf ${res.server} (Key: ${res.key}) gesetzt!`;
+        statusCfg.textContent = `✅ OBS vollautomatisch auf ${res.server} (Key: ${res.key}) eingestellt & Erweitertes-Broadcasting-Konflikt deaktiviert!`;
       }
     } else if (statusCfg) {
       statusCfg.style.color = '#f87171';
-      statusCfg.textContent = `❌ ${res?.error || 'Bitte zuerst OBS WebSocket v5 verbinden.'}`;
+      statusCfg.textContent = `❌ ${res?.error || 'OBS konnte nicht erreicht werden (bitte OBS starten).'}`;
     }
   });
 
