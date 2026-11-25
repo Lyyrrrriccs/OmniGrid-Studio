@@ -4133,46 +4133,97 @@ app.whenReady().then(async () => {
     return { ok: true, config: fresh };
   });
 
+  const isPlainObj = (v) => Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+  const deepMergeConfig = (base, patch) => {
+    if (!isPlainObj(base)) return patch !== undefined ? patch : base;
+    const out = { ...base };
+    if (!isPlainObj(patch)) return out;
+    for (const [k, v] of Object.entries(patch)) {
+      out[k] = isPlainObj(v) && isPlainObj(base[k]) ? deepMergeConfig(base[k], v) : v;
+    }
+    return out;
+  };
+  const summarizeBackupConfig = (cfg = {}) => {
+    const keys = [];
+    if (cfg.twitch?.oauth || cfg.twitch?.clientId || cfg.twitch?.channel) keys.push('Twitch');
+    if (cfg.youtube?.apiKey || cfg.youtube?.oauthClientId || cfg.youtube?.oauthRefreshToken || cfg.youtube?.channel) keys.push('YouTube');
+    if (cfg.tiktok?.channel) keys.push('TikTok');
+    if (cfg.multiStream?.targets) keys.push('Multi-Stream');
+    if (cfg.obsWs?.password || cfg.obsWs?.host) keys.push('OBS');
+    if (cfg.voiceControl?.relayUrl || cfg.voiceControl?.channelId) keys.push('Sprachsteuerung');
+    if (cfg.hueLights?.username || cfg.nanoleafLights?.authToken || cfg.goveeLights?.apiKey || cfg.elgatoLights?.enabled) keys.push('Lichter');
+    return { sectionCount: Object.keys(cfg).length, included: keys };
+  };
+
   ipcMain.handle('export-config', async (_ev) => {
     const { dialog } = require('electron');
     const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    const today = new Date().toISOString().slice(0, 10);
     const res = await dialog.showSaveDialog(win, {
-      title: 'OmniGrid Studio Einstellungen exportieren',
-      defaultPath: 'omnichat-backup.json',
-      filters: [{ name: 'JSON Konfiguration', extensions: ['json'] }]
+      title: 'OmniGrid Studio Komplett-Backup exportieren',
+      defaultPath: `omnigrid-backup-${today}.json`,
+      filters: [{ name: 'OmniGrid Backup (.json)', extensions: ['json'] }]
     });
     if (res.canceled || !res.filePath) return { ok: false, canceled: true };
-    const cfg = { ...loadConfig() };
-    fs.writeFileSync(res.filePath, JSON.stringify(cfg, null, 2), 'utf8');
-    return { ok: true, filePath: res.filePath };
+    const cfg = loadConfig(true);
+    const payload = {
+      format: 'omnigrid-studio-backup',
+      version: 1,
+      appVersion: app.getVersion(),
+      exportedAt: new Date().toISOString(),
+      config: cfg
+    };
+    fs.writeFileSync(res.filePath, JSON.stringify(payload, null, 2), 'utf8');
+    return { ok: true, filePath: res.filePath, summary: summarizeBackupConfig(cfg) };
   });
 
-  ipcMain.handle('import-config', async (_ev) => {
+  ipcMain.handle('import-config', async (_ev, opts = {}) => {
     const { dialog } = require('electron');
     const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
-    const res = await dialog.showOpenDialog(win, {
-      title: 'OmniGrid Studio Einstellungen importieren',
-      properties: ['openFile'],
-      filters: [{ name: 'JSON Konfiguration', extensions: ['json'] }]
-    });
-    if (res.canceled || !res.filePaths?.[0]) return { ok: false, canceled: true };
+    let raw = typeof opts?.rawJson === 'string' ? opts.rawJson : '';
+    let sourceName = String(opts?.fileName || '').trim();
+    if (!raw) {
+      const res = await dialog.showOpenDialog(win, {
+        title: 'OmniGrid Studio Backup importieren',
+        properties: ['openFile'],
+        filters: [{ name: 'OmniGrid Backup (.json)', extensions: ['json'] }]
+      });
+      if (res.canceled || !res.filePaths?.[0]) return { ok: false, canceled: true };
+      raw = fs.readFileSync(res.filePaths[0], 'utf8');
+      sourceName = path.basename(res.filePaths[0]);
+    }
     try {
-      const raw = fs.readFileSync(res.filePaths[0], 'utf8');
       const parsed = JSON.parse(raw);
-      const defaults = getDefaultConfig();
-      const merged = {
-        ...defaults,
-        ...parsed,
-        appearance: { ...defaults.appearance, ...(parsed.appearance || {}) },
-        emoteSettings: { ...defaults.emoteSettings, ...(parsed.emoteSettings || {}) }
-      };
+      const importedCfg = parsed?.format === 'omnigrid-studio-backup' && isPlainObj(parsed.config) ? parsed.config : parsed;
+      if (!isPlainObj(importedCfg) || Object.keys(importedCfg).length === 0) {
+        return { ok: false, error: 'Ungültige Backup-Datei (kein gültiges JSON-Objekt).' };
+      }
+      try {
+        const currentPath = getConfigPath();
+        if (fs.existsSync(currentPath)) {
+          fs.copyFileSync(currentPath, path.join(path.dirname(currentPath), 'config.before-import.json'));
+        }
+      } catch (e) {}
+      const merged = deepMergeConfig(getDefaultConfig(), importedCfg);
       saveConfig(merged);
       emoteManager.updateSettings(merged.emoteSettings);
       obsServer.broadcastAppearance({
         ...merged.appearance,
         platformIndicatorStyle: merged.platformIndicatorStyle
       });
-      return { ok: true, config: merged };
+      syncChatTimer(merged);
+      broadcastScheduleToObs(merged);
+      broadcastGameAddonsState(merged);
+      const nextVoice = normalizeVoiceConfig(merged.voiceControl || {});
+      voiceBridge.setConfig(nextVoice);
+      if (nextVoice.enabled && nextVoice.relayUrl && nextVoice.channelId) voiceBridge.start();
+      else voiceBridge.stop();
+      if (opts?.reloadWindow !== false && mainWindow && !mainWindow.isDestroyed()) {
+        setTimeout(() => {
+          if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
+        }, 550);
+      }
+      return { ok: true, config: merged, fileName: sourceName, summary: summarizeBackupConfig(merged) };
     } catch (err) {
       return { ok: false, error: err.message };
     }

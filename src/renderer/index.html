@@ -1110,6 +1110,26 @@
         </div>
 
         <!-- PERIPHERAL SELECTION: DEDICATED 2ND KEYBOARD & MOUSE + GLOBAL HOTKEYS -->
+        <div class="sidebar-section backup-config-box">
+          <div class="card-header" style="margin-bottom: 6px;">
+            <h3 style="margin: 0;">💾 Komplett-Backup (Export &amp; Import)</h3>
+          </div>
+          <p class="section-hint">
+            Sichere oder übertrage <strong>alle Einstellungen, lokalen API-Keys, OAuth-Tokens, Stream-Keys, OBS-, Lichter- &amp; Sprachsteuerungs-Daten</strong> mit einem Klick als <code>.json</code>-Datei.
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+            <button class="btn-primary btn-sm" id="btnBackupExportAll" style="flex: 1; min-width: 170px;">📤 Alles exportieren (.json)</button>
+            <button class="btn-sm" id="btnBackupImportAll" style="flex: 1; min-width: 170px;">📥 Backup importieren (.json)</button>
+          </div>
+          <div id="backupDropZone" style="margin-top: 8px; padding: 10px; border-radius: 8px; border: 1px dashed rgba(148,163,184,0.35); background: rgba(15,23,42,0.35); text-align: center; font-size: 11px; color: #94a3b8; cursor: pointer;">
+            📂 Oder <strong>.json</strong>-Backup-Datei einfach hier reinziehen
+          </div>
+          <div id="backupStatusMsg" style="font-size: 11px; margin-top: 6px; min-height: 16px; color: #94a3b8;"></div>
+          <div style="font-size: 10px; color: #fbbf24; opacity: 0.85; margin-top: 4px;">
+            🔒 Hinweis: Die Export-Datei enthält deine persönlichen API-Keys &amp; Tokens – bitte lokal und sicher aufbewahren.
+          </div>
+        </div>
+
         <div class="sidebar-section peripherals-box">
           <div class="card-header" style="margin-bottom: 6px;">
             <h3 style="margin: 0;">⌨️ Peripherie-Auswahl (Zweitgeräte)</h3>
