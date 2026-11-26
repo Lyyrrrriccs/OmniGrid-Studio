@@ -137,9 +137,96 @@ function autoProvisionObsLocalFiles({ customRootDir = '', disableMultitrackVideo
   return result;
 }
 
+function patchObsProfileIniVodTrack(iniText) {
+  const lines = String(iniText || '').split(/\r?\n/);
+  const ensureSectionKeys = (inputLines, sectionName, pairs) => {
+    const out = [];
+    let inSection = false;
+    let foundSection = false;
+    const seen = new Set();
+    let changed = false;
+    for (const line of inputLines) {
+      const secMatch = line.match(/^\s*\[([^\]]+)\]\s*$/);
+      if (secMatch) {
+        if (inSection) {
+          for (const [k, v] of pairs) {
+            if (!seen.has(k)) { out.push(`${k}=${v}`); changed = true; }
+          }
+        }
+        inSection = secMatch[1].trim() === sectionName;
+        if (inSection) foundSection = true;
+        out.push(line);
+        continue;
+      }
+      if (inSection) {
+        const kv = line.match(/^\s*([^=]+?)=(.*)$/);
+        if (kv) {
+          const key = kv[1].trim();
+          const matchPair = pairs.find(([k]) => k === key);
+          if (matchPair) {
+            seen.add(key);
+            if (kv[2].trim() !== matchPair[1]) {
+              out.push(`${key}=${matchPair[1]}`);
+              changed = true;
+            } else {
+              out.push(line);
+            }
+            continue;
+          }
+        }
+      }
+      out.push(line);
+    }
+    if (inSection) {
+      for (const [k, v] of pairs) {
+        if (!seen.has(k)) { out.push(`${k}=${v}`); changed = true; }
+      }
+    }
+    if (!foundSection) {
+      out.push('', `[${sectionName}]`, ...pairs.map(([k, v]) => `${k}=${v}`));
+      changed = true;
+    }
+    return { lines: out, changed };
+  };
+
+  const r1 = ensureSectionKeys(lines, 'AdvOut', [
+    ['TrackIndex', '1'],
+    ['VodTrackEnabled', 'true'],
+    ['VodTrackIndex', '2'],
+    ['RecTracks', '2']
+  ]);
+  const r2 = ensureSectionKeys(r1.lines, 'SimpleOutput', [
+    ['UseTwitchVODTrack', 'true']
+  ]);
+  return { text: r2.lines.join('\n'), changed: r1.changed || r2.changed };
+}
+
+function enableObsVodMusicTrack() {
+  const rootDir = getObsConfigRootDir();
+  const profilesDir = path.join(rootDir, 'basic', 'profiles');
+  let profilesPatched = 0;
+  try {
+    if (fs.existsSync(profilesDir)) {
+      for (const entry of fs.readdirSync(profilesDir)) {
+        const iniPath = path.join(profilesDir, entry, 'basic.ini');
+        if (!fs.existsSync(iniPath)) continue;
+        const rawIni = fs.readFileSync(iniPath, 'utf8');
+        const patched = patchObsProfileIniVodTrack(rawIni);
+        if (patched.changed) {
+          fs.writeFileSync(iniPath, patched.text, 'utf8');
+          profilesPatched += 1;
+        }
+      }
+    }
+  } catch (e) {}
+  return { ok: true, profilesPatched };
+}
+
 module.exports = {
   getObsConfigRootDir,
   readObsWebSocketLocalConfig,
   patchObsProfileIniMultitrack,
+  patchObsProfileIniVodTrack,
+  enableObsVodMusicTrack,
   autoProvisionObsLocalFiles
 };

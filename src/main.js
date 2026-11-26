@@ -2049,9 +2049,21 @@ twitch.on('delete-message', (msgId) => {
   conn.on('stats', (st) => forwardStats(st));
 });
 
+let lastVodEnforceAt = 0;
+function triggerAutoMusicVodProtection(force = false) {
+  const now = Date.now();
+  if (!force && now - lastVodEnforceAt < 15000) return;
+  lastVodEnforceAt = now;
+  obsAutoConfig.enableObsVodMusicTrack();
+  if (obsWs.getState()?.connected) {
+    obsWs.enforceMusicVodProtection().catch(() => {});
+  }
+}
+
 obsWs.on('state', (st) => {
   broadcastToWindows('obs-ws-state', st);
   obsServer.broadcastObsWsState(st);
+  if (st?.connected) triggerAutoMusicVodProtection(Boolean(st?.streaming && !lastObsStreaming));
 
   const isStreaming = Boolean(st?.streaming);
   if (isStreaming && !lastObsStreaming) {
@@ -2720,6 +2732,7 @@ app.whenReady().then(async () => {
   spotify.on('track', (track) => {
     obsServer.broadcastSpotify(track);
     broadcastToWindows('spotify-track', track);
+    if (track?.playing) triggerAutoMusicVodProtection(false);
   });
 
   ipcMain.handle('spotify-control', async (_ev, action) => {
@@ -3539,6 +3552,17 @@ app.whenReady().then(async () => {
       }
       if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
       if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
+      if (act === 'set-input-audio-device') return await obsWs.setInputAudioDevice(payload.inputName, payload.deviceId, payload.propertyName || 'device_id');
+      if (act === 'set-input-vod-music-only') return await obsWs.setInputVodMusicOnly(payload.inputName, payload.musicOnly !== false);
+      if (act === 'setup-music-vod-track') {
+        const iniRes = obsAutoConfig.enableObsVodMusicTrack();
+        const wsRes = await obsWs.setupMusicVodTrack({
+          sceneName: payload.sceneName || '',
+          createDedicatedSource: Boolean(payload.createDedicatedSource),
+          musicSourceHint: spotify?.currentTrack?.source || ''
+        });
+        return { ...wsRes, profilesPatched: iniRes.profilesPatched };
+      }
       if (act === 'set-input-volume') return await obsWs.setInputVolume(payload.inputName, payload.volumeMul);
       if (act === 'get-screenshot') return await obsWs.getSceneScreenshot(payload.sceneName || '');
       if (act === 'get-input-kinds') return await obsWs.getInputKinds();

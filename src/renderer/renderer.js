@@ -4604,11 +4604,18 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   }
 
   btnOpen?.addEventListener('click', async () => {
-    modal.classList.remove('hidden');
-    const res = await window.omnichat.giveawayAction({ action: 'get' });
-    if (res?.giveaway) renderGw(res.giveaway);
+    const willOpen = modal.classList.contains('hidden');
+    modal.classList.toggle('hidden', !willOpen);
+    btnOpen.classList.toggle('active', willOpen);
+    if (willOpen) {
+      const res = await window.omnichat.giveawayAction({ action: 'get' });
+      if (res?.giveaway) renderGw(res.giveaway);
+    }
   });
-  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  btnClose?.addEventListener('click', () => {
+    modal.classList.add('hidden');
+    btnOpen?.classList.remove('active');
+  });
 
   document.getElementById('btnGwStart')?.addEventListener('click', async () => {
     const res = await window.omnichat.giveawayAction({
@@ -6330,12 +6337,24 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     const res = await window.omnichat.obsWsAction({ action: 'get-audio-inputs' });
     if (!res?.ok) { audioList.innerHTML = ''; return; }
     audioList.innerHTML = '';
-    (res.inputs || []).forEach((inp) => {
+    const list = res.inputs || [];
+    if (!list.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:11px; color:#94a3b8; padding:6px 4px;';
+      empty.textContent = 'Keine Audio-Geräte in OBS gefunden.';
+      audioList.appendChild(empty);
+      return;
+    }
+    list.forEach((inp) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; flex-direction:column; gap:5px; padding:6px 8px; border-radius:7px; background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.16); font-size:11px;';
+
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.16); font-size:11px;';
+      row.style.cssText = 'display:flex; align-items:center; gap:6px;';
       const lbl = document.createElement('span');
-      lbl.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
-      lbl.textContent = inp.inputName;
+      lbl.style.cssText = 'flex:1; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+      const icon = /output/i.test(inp.inputKind || '') ? '🔊 ' : '🎙️ ';
+      lbl.textContent = icon + inp.inputName;
 
       const slider = document.createElement('input');
       slider.type = 'range';
@@ -6357,10 +6376,72 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         loadAudioInputs();
       });
 
-      row.appendChild(lbl);
-      row.appendChild(slider);
-      row.appendChild(muteBtn);
-      audioList.appendChild(row);
+      const vodBtn = document.createElement('button');
+      vodBtn.className = 'btn-sm';
+      const isMusicLocked = Boolean(inp.isMusicGuess);
+      const isMusicOnly = isMusicLocked || Boolean(inp.vodExcluded);
+      vodBtn.disabled = isMusicLocked;
+      vodBtn.style.cssText = isMusicLocked
+        ? 'padding:2px 6px; font-size:10px; background:rgba(168,85,247,0.28); border-color:#a855f7; color:#e9d5ff; white-space:nowrap; opacity:0.88; cursor:not-allowed;'
+        : isMusicOnly
+          ? 'padding:2px 6px; font-size:10px; background:rgba(168,85,247,0.25); border-color:#a855f7; color:#e9d5ff; white-space:nowrap;'
+          : 'padding:2px 6px; font-size:10px; color:#94a3b8; white-space:nowrap;';
+      vodBtn.textContent = isMusicLocked ? '🔒 Nur Live' : isMusicOnly ? '🎵 Nur Live' : '✅ +VOD';
+      vodBtn.title = isMusicLocked
+        ? 'Musik-Spur fest gesperrt: immer nur im Live-Stream (Spur 1), niemals im VOD (Spur 2)'
+        : isMusicOnly
+          ? 'Spur 1 (Live) AN • Spur 2 (VOD/Abruf) AUS — Musik landet nicht im VOD (klicken zum Ändern)'
+          : 'Spur 1 (Live) & Spur 2 (VOD) AN — klicken, um diese Quelle vom VOD/Abruf auszuschließen (DMCA-Schutz)';
+      if (!isMusicLocked) {
+        vodBtn.addEventListener('click', async () => {
+          const nextMusicOnly = !isMusicOnly;
+          const r = await window.omnichat.obsWsAction({
+            action: 'set-input-vod-music-only',
+            inputName: inp.inputName,
+            musicOnly: nextMusicOnly
+          });
+          if (r?.ok) {
+            setStatus(
+              nextMusicOnly
+                ? `🛡️ „${inp.inputName}“ jetzt auf separater Musik-Spur (Nur Live, NICHT im VOD)!`
+                : `✅ „${inp.inputName}“ wieder im Live-Stream & VOD aktiv.`,
+              nextMusicOnly ? '#c084fc' : '#4ade80'
+            );
+            loadAudioInputs();
+          }
+        });
+      }
+
+      row.append(lbl, slider, muteBtn, vodBtn);
+      wrap.appendChild(row);
+
+      if (Array.isArray(inp.devices) && inp.devices.length) {
+        const devSel = document.createElement('select');
+        devSel.style.cssText = 'width:100%; font-size:10.5px; padding:3px 6px; border-radius:5px;';
+        devSel.title = 'Audio-Gerät für diese OBS-Quelle auswählen';
+        inp.devices.forEach((d) => {
+          const opt = document.createElement('option');
+          opt.value = d.value;
+          opt.textContent = d.name;
+          if (d.value === inp.currentDeviceId) opt.selected = true;
+          devSel.appendChild(opt);
+        });
+        devSel.addEventListener('change', async () => {
+          const r = await window.omnichat.obsWsAction({
+            action: 'set-input-audio-device',
+            inputName: inp.inputName,
+            deviceId: devSel.value,
+            propertyName: inp.devicePropName || 'device_id'
+          });
+          setStatus(
+            r?.ok ? `🎚️ Audio-Gerät für „${inp.inputName}“ gewechselt!` : `⚠️ ${r?.error || 'Gerätewechsel fehlgeschlagen.'}`,
+            r?.ok ? '#4ade80' : '#f87171'
+          );
+        });
+        wrap.appendChild(devSel);
+      }
+
+      audioList.appendChild(wrap);
     });
   }
 
@@ -6720,22 +6801,68 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   document.getElementById('btnSeBundleTron')?.addEventListener('click', () => applyBuiltinBundle('techtalk', '💠 TRON Tech-Talk-Set'));
   document.getElementById('btnSeBundleVal')?.addEventListener('click', () => applyBuiltinBundle('valorant', '🔫 Valorant-Set'));
 
+  document.getElementById('btnSeSetupVodTrack')?.addEventListener('click', async () => {
+    setStatus('⏳ Richte separate Musik-VOD-Spur (Spur 2) in OBS ein...', '#38bdf8');
+    const r = await window.omnichat.obsWsAction({
+      action: 'setup-music-vod-track',
+      sceneName: currentSceneName || '',
+      createDedicatedSource: false
+    });
+    if (r?.ok) {
+      const mList = (r.updatedMusic || []).join(', ');
+      setStatus(
+        `🛡️ VOD-Spur 2 aktiv!${mList ? ` Musik getrennt: ${mList}.` : ' Markiere deine Musik-Quelle unten mit „🎵 Nur Live“.'} (OBS ggf. 1× neu starten, falls VOD-Spur neu aktiviert wurde)`,
+        '#c084fc'
+      );
+      loadAudioInputs();
+    } else {
+      setStatus(`⚠️ ${r?.error || 'Konnte VOD-Spur nicht einrichten.'}`, '#f87171');
+    }
+  });
+
+  document.getElementById('btnSeAddMusicSource')?.addEventListener('click', async () => {
+    if (!currentSceneName) {
+      setStatus('⚠️ Bitte zuerst oben eine OBS-Szene auswählen.', '#fbbf24');
+      return;
+    }
+    setStatus('⏳ Lege dedizierte Musik-Audio-Spur (Nur Live / Kein VOD) an...', '#38bdf8');
+    const r = await window.omnichat.obsWsAction({
+      action: 'setup-music-vod-track',
+      sceneName: currentSceneName,
+      createDedicatedSource: true
+    });
+    if (r?.ok) {
+      setStatus(`🎵 Musik-Spur „${r.createdSource || 'Musik'}“ angelegt (Spur 1 Live AN, Spur 2 VOD AUS)!`, '#4ade80');
+      await loadSceneItems(currentSceneName);
+      loadAudioInputs();
+    } else {
+      setStatus(`⚠️ ${r?.error || 'Konnte Musik-Spur nicht anlegen.'}`, '#f87171');
+    }
+  });
+
   const FRIENDLY_KINDS = {
+    screen_capture: '🖥️ Bildschirm / Fenster / App-Aufnahme (macOS)',
+    window_capture: '🪟 Fensteraufnahme',
+    display_capture: '🖥️ Bildschirmaufnahme',
+    monitor_capture: '🖥️ Bildschirmaufnahme',
+    game_capture: '🎮 Spiel- / Applikationsaufnahme',
+    macos_avcapture: '📷 Videoaufnahmegerät / Kamera (macOS)',
+    av_capture_input_v2: '📷 Videoaufnahmegerät / Kamera (macOS)',
+    av_capture_input: '📷 Videoaufnahmegerät / Kamera',
+    dshow_input: '📷 Videoaufnahmegerät / Kamera (Windows)',
+    v4l2_input: '📷 Videoaufnahmegerät / Kamera',
     browser_source: '🌐 Browser-Quelle (URL)',
     image_source: '🖼️ Bild (PNG/JPG/GIF)',
     ffmpeg_source: '🎬 Video / Medienquelle',
     color_source_v3: '🎨 Farbfläche',
     text_ft2_source_v2: '📝 Text (FreeType 2)',
     text_gdiplus_v3: '📝 Text (GDI+)',
-    screen_capture: '🖥️ Bildschirmaufnahme (macOS)',
-    macos_avcapture: '📷 Kamera / Videoaufnahmegerät',
-    av_capture_input_v2: '📷 Kamera (macOS)',
     coreaudio_input_capture: '🎙️ Mikrofon / Audio-Eingang',
     coreaudio_output_capture: '🔊 Audio-Ausgabe',
-    monitor_capture: '🖥️ Bildschirmaufnahme',
-    window_capture: '🪟 Fensteraufnahme',
-    game_capture: '🎮 Spielaufnahme',
-    dshow_input: '📷 Kamera / Capture-Card'
+    sck_audio_capture: '🎵 Anwendungs-Audioaufnahme (macOS)',
+    wasapi_input_capture: '🎙️ Mikrofon / Audio-Eingang',
+    wasapi_output_capture: '🔊 Desktop-Audio',
+    wasapi_process_output_capture: '🎵 Anwendungs-Audioaufnahme'
   };
 
   const newSourceFileRow = document.getElementById('seNewSourceFileRow');
@@ -6812,29 +6939,48 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     renderNewSourcePickedBadge();
   });
 
-  async function loadInputKinds() {
-    if (!selNewKind || selNewKind.options.length > 0) {
+  let loadedKindsFromObs = false;
+  async function loadInputKinds(force = false) {
+    if (!selNewKind) return;
+    if (loadedKindsFromObs && !force && selNewKind.options.length > 0) {
       updateNewSourceInputMode();
       return;
     }
+    const prevVal = selNewKind.value;
     const res = await window.omnichat.obsWsAction({ action: 'get-input-kinds' });
-    const kinds = res?.ok && Array.isArray(res.kinds) && res.kinds.length
-      ? res.kinds
-      : ['browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_ft2_source_v2'];
+    const isFromObs = Boolean(res?.ok && Array.isArray(res.kinds) && res.kinds.length);
+    if (isFromObs) loadedKindsFromObs = true;
+    const isMac = /mac/i.test(navigator.platform || navigator.userAgent || '');
+    const fallbackKinds = isMac
+      ? ['screen_capture', 'window_capture', 'display_capture', 'macos_avcapture', 'av_capture_input_v2', 'browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_ft2_source_v2', 'coreaudio_input_capture', 'coreaudio_output_capture']
+      : ['window_capture', 'monitor_capture', 'game_capture', 'dshow_input', 'browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_gdiplus_v3', 'wasapi_input_capture', 'wasapi_output_capture'];
+    const kinds = isFromObs ? res.kinds : fallbackKinds;
+    const priority = Object.keys(FRIENDLY_KINDS);
+    const sorted = [...new Set(kinds)].sort((a, b) => {
+      const ia = priority.indexOf(a);
+      const ib = priority.indexOf(b);
+      if (ia >= 0 && ib >= 0) return ia - ib;
+      if (ia >= 0) return -1;
+      if (ib >= 0) return 1;
+      return a.localeCompare(b);
+    });
     selNewKind.innerHTML = '';
-    const sorted = [...kinds].sort((a, b) => (FRIENDLY_KINDS[a] ? 0 : 1) - (FRIENDLY_KINDS[b] ? 0 : 1));
     sorted.forEach((k) => {
       const opt = document.createElement('option');
       opt.value = k;
       opt.textContent = FRIENDLY_KINDS[k] || k;
       selNewKind.appendChild(opt);
     });
+    if (prevVal && sorted.includes(prevVal)) selNewKind.value = prevVal;
     updateNewSourceInputMode();
   }
 
   btnOpen?.addEventListener('click', () => {
-    loadInputKinds();
+    loadInputKinds(true);
     loadBuiltinOverlays();
+  });
+  window.omnichat.onObsWsState?.((st) => {
+    if (st?.connected && !loadedKindsFromObs) loadInputKinds(true);
   });
 
   document.getElementById('btnSeQuickAddFile')?.addEventListener('click', async () => {
@@ -9274,4 +9420,193 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   document.getElementById('btnOpenConfig')?.addEventListener('click', () => setTimeout(renderPreview, 60));
   window.omnichat.onInitState?.(() => setTimeout(renderPreview, 120));
   renderPreview();
+})();
+
+(() => {
+  const videoEl = document.getElementById('clipStudioVideo');
+  const numStart = document.getElementById('numClipStart');
+  const numEnd = document.getElementById('numClipEnd');
+  const rngStart = document.getElementById('rngClipStart');
+  const rngEnd = document.getElementById('rngClipEnd');
+  const selLayout = document.getElementById('selClipLayout');
+  const markersLayer = document.getElementById('clipTimelineMarkersLayer');
+  const listEl = document.getElementById('clipMarkersList');
+  const countEl = document.getElementById('clipMarkerCount');
+  const statusEl = document.getElementById('clipStudioStatus');
+  const btnAddNow = document.getElementById('btnClipAddMarkerNow');
+  const btnAddSeg = document.getElementById('btnClipAddSegment');
+  const btnExpAll = document.getElementById('btnClipExportAllShorts');
+  const btnTrimAll = document.getElementById('btnClipTrimAll');
+  const btnClear = document.getElementById('btnClipClearMarkers');
+  if (!videoEl || !listEl) return;
+
+  let markers = [];
+  let lastVideoSrc = '';
+
+  const fmtTime = (sec) => {
+    const s = Math.max(0, Number(sec) || 0);
+    const m = Math.floor(s / 60);
+    const r = (s % 60).toFixed(1).padStart(4, '0');
+    return `${String(m).padStart(2, '0')}:${r}`;
+  };
+
+  const getActiveFilePath = () => {
+    const raw = videoEl.getAttribute('src') || '';
+    if (!raw) return '';
+    try {
+      const u = new URL(raw);
+      return decodeURIComponent(u.pathname).replace(/^\/([A-Za-z]:)/, '$1');
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const applyRangeToControls = (startSec, endSec) => {
+    const s = Math.max(0, Number(startSec) || 0);
+    const e = Math.max(s + 0.5, Number(endSec) || s + 10);
+    if (numStart) { numStart.value = s.toFixed(1); numStart.dispatchEvent(new Event('input')); }
+    if (numEnd) { numEnd.value = e.toFixed(1); numEnd.dispatchEvent(new Event('input')); }
+    if (rngStart) rngStart.value = s.toFixed(1);
+    if (rngEnd) rngEnd.value = e.toFixed(1);
+  };
+
+  const renderMarkers = () => {
+    const dur = Number.isFinite(videoEl.duration) && videoEl.duration > 0 ? videoEl.duration : 30;
+    if (countEl) countEl.textContent = String(markers.length);
+    if (btnExpAll) btnExpAll.disabled = markers.length === 0;
+    if (btnTrimAll) btnTrimAll.disabled = markers.length === 0;
+    if (btnClear) btnClear.disabled = markers.length === 0;
+
+    if (markersLayer) {
+      markersLayer.innerHTML = '';
+      markers.forEach((m) => {
+        const pin = document.createElement('div');
+        pin.className = 'clip-marker-pin';
+        const leftPct = Math.max(0, Math.min(100, (m.start / dur) * 100));
+        const widthPct = Math.max(1, Math.min(100 - leftPct, ((m.end - m.start) / dur) * 100));
+        pin.style.left = `${leftPct}%`;
+        pin.style.width = `${widthPct}%`;
+        pin.title = `${m.label}: ${fmtTime(m.start)} – ${fmtTime(m.end)}`;
+        markersLayer.appendChild(pin);
+      });
+    }
+
+    listEl.innerHTML = '';
+    if (!markers.length) {
+      const hint = document.createElement('div');
+      hint.style.color = '#64748b';
+      hint.textContent = 'Noch keine Marker gesetzt – spiele das Video ab und klicke „🚩 Marker jetzt“ oder „➕ Auswahl merken“.';
+      listEl.appendChild(hint);
+      return;
+    }
+
+    markers.forEach((m, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(30,41,59,0.78); border: 1px solid rgba(251,191,36,0.25);';
+      const idxEl = document.createElement('span');
+      idxEl.style.cssText = 'font-weight: 800; color: #fde047; font-size: 11px;';
+      idxEl.textContent = `#${idx + 1}`;
+
+      const lblInp = document.createElement('input');
+      lblInp.type = 'text';
+      lblInp.value = m.label;
+      lblInp.style.cssText = 'flex: 1; min-width: 90px; padding: 3px 6px; font-size: 11px;';
+      lblInp.addEventListener('input', () => { m.label = lblInp.value; });
+
+      const timeEl = document.createElement('span');
+      timeEl.style.cssText = 'font-family: ui-monospace, monospace; font-size: 11px; color: #94a3b8; white-space: nowrap;';
+      timeEl.textContent = `${fmtTime(m.start)} – ${fmtTime(m.end)}`;
+
+      const mkBtn = (txt, title, fn) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn-sm';
+        b.style.cssText = 'padding: 2px 6px; font-size: 10.5px;';
+        b.textContent = txt;
+        b.title = title;
+        b.addEventListener('click', fn);
+        return b;
+      };
+
+      const btnPlay = mkBtn('▶', 'Segment anspringen & abspielen', () => {
+        applyRangeToControls(m.start, m.end);
+        document.getElementById('btnClipPlayRange')?.click();
+      });
+      const btnLoad = mkBtn('📍', 'In Timeline-Regler laden', () => applyRangeToControls(m.start, m.end));
+      const btnDel = mkBtn('🗑️', 'Marker entfernen', () => { markers.splice(idx, 1); renderMarkers(); });
+
+      row.append(idxEl, lblInp, timeEl, btnPlay, btnLoad, btnDel);
+      listEl.appendChild(row);
+    });
+  };
+
+  videoEl.addEventListener('loadedmetadata', () => {
+    const src = videoEl.getAttribute('src') || '';
+    if (src && src !== lastVideoSrc) {
+      lastVideoSrc = src;
+      markers = [];
+    }
+    renderMarkers();
+  });
+
+  btnAddNow?.addEventListener('click', () => {
+    const dur = Number.isFinite(videoEl.duration) && videoEl.duration > 0 ? videoEl.duration : 30;
+    const now = Number(videoEl.currentTime || 0);
+    const start = Math.max(0, now - 5);
+    const end = Math.min(dur, Math.max(start + 3, now + 10));
+    markers.push({ id: `m_${Date.now()}`, label: `Highlight ${markers.length + 1}`, start, end });
+    markers.sort((a, b) => a.start - b.start);
+    renderMarkers();
+  });
+
+  btnAddSeg?.addEventListener('click', () => {
+    const start = Math.max(0, parseFloat(numStart?.value || '0') || 0);
+    const end = Math.max(start + 0.5, parseFloat(numEnd?.value || String(start + 10)) || start + 10);
+    markers.push({ id: `m_${Date.now()}`, label: `Clip ${markers.length + 1}`, start, end });
+    markers.sort((a, b) => a.start - b.start);
+    renderMarkers();
+  });
+
+  btnClear?.addEventListener('click', () => {
+    markers = [];
+    renderMarkers();
+  });
+
+  const exportAllMarkers = async (mode) => {
+    const filePath = getActiveFilePath();
+    if (!filePath || !markers.length) return;
+    if (btnExpAll) btnExpAll.disabled = true;
+    if (btnTrimAll) btnTrimAll.disabled = true;
+    let okCount = 0;
+    for (let i = 0; i < markers.length; i++) {
+      const m = markers[i];
+      if (statusEl) {
+        statusEl.style.color = '#38bdf8';
+        statusEl.textContent = `⏳ Exportiere Marker ${i + 1}/${markers.length} (${m.label})...`;
+      }
+      const res = mode === 'short'
+        ? await window.omnichat.clipStudioExportShort({
+            inputPath: filePath,
+            startSec: m.start,
+            durationSec: Math.max(0.5, m.end - m.start),
+            layout: selLayout?.value || 'blur_bg'
+          })
+        : await window.omnichat.clipStudioTrimOriginal({
+            inputPath: filePath,
+            startSec: m.start,
+            durationSec: Math.max(0.5, m.end - m.start)
+          });
+      if (res?.ok) okCount += 1;
+    }
+    if (statusEl) {
+      statusEl.style.color = okCount > 0 ? '#4ade80' : '#f87171';
+      statusEl.textContent = `✅ ${okCount}/${markers.length} Marker erfolgreich exportiert!`;
+    }
+    document.getElementById('btnClipRefresh')?.click();
+    renderMarkers();
+  };
+
+  btnExpAll?.addEventListener('click', () => exportAllMarkers('short'));
+  btnTrimAll?.addEventListener('click', () => exportAllMarkers('trim'));
+  renderMarkers();
 })();

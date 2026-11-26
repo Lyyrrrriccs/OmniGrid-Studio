@@ -1563,6 +1563,57 @@
         <button class="btn-send" id="btnSendReply">Senden ↵</button>
       </footer>
     </main>
+
+    <aside class="gw-side-drawer hidden" id="giveawayModal" aria-label="Live-Giveaway Panel">
+      <div class="config-modal-header" style="padding: 12px 14px;">
+        <div>
+          <h2 style="font-size: 15px;">🎁 Live-Giveaway &amp; Verlosung</h2>
+          <p class="config-modal-sub">Chat bleibt links sichtbar — Zuschauer schreiben das Keyword.</p>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn-help-modal" data-help-sec="18" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖</button>
+          <button class="btn-chip" id="btnCloseGiveaway" style="padding: 5px 10px;">✕</button>
+        </div>
+      </div>
+      <div class="config-modal-body">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <label style="font-size: 11px;">Titel</label>
+            <input type="text" id="gwInputTitle" value="Stream-Verlosung" style="width: 100%;" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="font-size: 11px;">Chat-Keyword</label>
+              <input type="text" id="gwInputKeyword" value="!join" style="width: 100%;" />
+            </div>
+            <div>
+              <label style="font-size: 11px;">Sub/VIP/Mod Chance</label>
+              <select id="gwSelectMult" style="width: 100%;">
+                <option value="1">1× (Normal)</option>
+                <option value="2" selected>2× (Doppelt)</option>
+                <option value="3">3× (Dreifach)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
+          <button class="btn-sm" id="btnGwStart" style="font-weight: 700; background: #10b981; color: #fff;">▶ Starten</button>
+          <button class="btn-sm" id="btnGwStop">⏸ Stoppen</button>
+          <button class="btn-sm" id="btnGwDraw" style="font-weight: 700; background: #8b5cf6; color: #fff;">🎲 Gewinner ziehen!</button>
+          <button class="btn-sm warn" id="btnGwReset">🗑️ Reset</button>
+          <button class="btn-sm" id="btnGwToggleObs">👁️ OBS Overlay</button>
+          <button class="btn-sm" id="btnGwCopyUrl">🔗 /giveaway URL</button>
+        </div>
+
+        <div id="gwWinnerBox" style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,0.75); border: 1px solid rgba(168,85,247,0.35); font-size: 13px;">
+          Status: <strong>Bereit</strong>
+        </div>
+
+        <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #cbd5e1;">Teilnehmer (<span id="gwPartCount">0</span>):</div>
+        <div id="gwPartList" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-height: 36vh; overflow-y: auto;"></div>
+      </div>
+    </aside>
   </div>
 
   <!-- SECTION 7: COMPACT USER & MESSAGE QUICK-ACTION CONTEXT MENU POPOVER -->
@@ -1768,8 +1819,9 @@
           <video id="clipStudioVideo" controls style="width: 100%; max-height: 280px; border-radius: 10px; background: #020617; margin-top: 8px;"></video>
 
           <div class="clip-timeline-wrap" id="clipTimelineWrap" title="Start- (lila) & End-Regler (blau) zum Schneiden ziehen">
-            <div class="clip-timeline-track">
+            <div class="clip-timeline-track" id="clipTimelineTrack">
               <div class="clip-timeline-selection" id="clipTimelineSel"></div>
+              <div id="clipTimelineMarkersLayer"></div>
               <div class="clip-timeline-playhead" id="clipTimelinePlayhead"></div>
             </div>
             <input type="range" class="clip-range-input start" id="rngClipStart" min="0" max="30" step="0.1" value="0" disabled />
@@ -1795,6 +1847,20 @@
               <div id="clipRangeDuration" style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Dauer: 30.0s</div>
               <button class="btn-sm" id="btnClipPlayRange" disabled>▶ Auswahl testen</button>
             </div>
+          </div>
+
+          <div style="margin-top: 10px; padding: 9px 10px; border-radius: 9px; background: rgba(15,23,42,0.72); border: 1px solid rgba(251,191,36,0.32);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <strong style="font-size: 11.5px; color: #fde047;">🚩 Mehrere Clip-Marker &amp; Segmente (<span id="clipMarkerCount">0</span>)</strong>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="btn-sm" id="btnClipAddMarkerNow" style="background: rgba(251,191,36,0.18); border-color: rgba(251,191,36,0.5); color: #fef08a;">🚩 Marker jetzt</button>
+                <button class="btn-sm" id="btnClipAddSegment" style="background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.5); color: #bae6fd;">➕ Auswahl merken</button>
+                <button class="btn-sm" id="btnClipExportAllShorts" disabled style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7;">📱 Alle als 9:16</button>
+                <button class="btn-sm" id="btnClipTrimAll" disabled>✂️ Alle 16:9</button>
+                <button class="btn-sm warn" id="btnClipClearMarkers" disabled>🗑️</button>
+              </div>
+            </div>
+            <div id="clipMarkersList" style="display: flex; flex-direction: column; gap: 5px; margin-top: 7px; max-height: 150px; overflow-y: auto; font-size: 11.5px;"></div>
           </div>
 
           <div style="margin-top: 8px;">
@@ -2032,58 +2098,6 @@
       </div>
 
       <div id="socialScheduleStatus" style="margin-top: 8px; font-size: 12px; color: #94a3b8; word-break: break-word;"></div>
-    </div>
-  </div>
-
-  <!-- LIVE-GIVEAWAY MODAL -->
-  <div class="config-modal-backdrop hidden" id="giveawayModal">
-    <div class="config-modal-card" style="max-width: 920px; width: 94vw; max-height: 92vh; display: flex; flex-direction: column;">
-      <div class="config-modal-header">
-        <div>
-          <h2>🎁 Live-Giveaway &amp; Verlosungs-Rad</h2>
-          <p class="config-modal-sub">Zuschauer schreiben das Keyword in den Twitch-, YouTube- oder TikTok-Chat.</p>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button class="btn-help-modal" data-help-sec="18" title="Anleitung zu diesem Bereich rechts daneben öffnen">📖 Anleitung</button>
-          <button class="btn-chip" id="btnCloseGiveaway" style="padding: 6px 12px;">✕ Schließen</button>
-        </div>
-      </div>
-      <div class="config-modal-body">
-        <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr; gap: 8px;">
-          <div>
-            <label style="font-size: 11px;">Titel</label>
-            <input type="text" id="gwInputTitle" value="Stream-Verlosung" />
-          </div>
-          <div>
-            <label style="font-size: 11px;">Chat-Keyword</label>
-            <input type="text" id="gwInputKeyword" value="!join" />
-          </div>
-          <div>
-            <label style="font-size: 11px;">Sub/VIP/Mod Chance</label>
-            <select id="gwSelectMult" style="width: 100%;">
-              <option value="1">1× (Normal)</option>
-              <option value="2" selected>2× (Doppelt)</option>
-              <option value="3">3× (Dreifach)</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
-          <button class="btn-sm" id="btnGwStart" style="font-weight: 700; background: #10b981; color: #fff;">▶ Starten</button>
-          <button class="btn-sm" id="btnGwStop">⏸ Stoppen</button>
-          <button class="btn-sm" id="btnGwDraw" style="font-weight: 700; background: #8b5cf6; color: #fff;">🎲 Gewinner ziehen!</button>
-          <button class="btn-sm warn" id="btnGwReset">🗑️ Reset</button>
-          <button class="btn-sm" id="btnGwToggleObs">👁️ OBS Overlay</button>
-          <button class="btn-sm" id="btnGwCopyUrl">🔗 /giveaway URL</button>
-        </div>
-
-        <div id="gwWinnerBox" style="margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,0.75); border: 1px solid rgba(168,85,247,0.35); font-size: 13px;">
-          Status: <strong>Bereit</strong>
-        </div>
-
-        <div style="margin-top: 10px; font-size: 12px; font-weight: 700; color: #cbd5e1;">Teilnehmer (<span id="gwPartCount">0</span>):</div>
-        <div id="gwPartList" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; max-height: 150px; overflow-y: auto;"></div>
-      </div>
     </div>
   </div>
 
@@ -2471,7 +2485,13 @@
               <div id="seSourcesList" style="display: flex; flex-direction: column; gap: 5px; overflow-y: auto; flex: 1;"></div>
             </div>
             <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
-              <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">🎚️ OBS Audio-Mixer:</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap;">
+                <div style="font-size: 12px; font-weight: 700; color: #cbd5e1;">🎚️ OBS Audio-Mixer:</div>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  <button class="btn-sm" id="btnSeSetupVodTrack" style="font-size: 10px; padding: 2px 7px; background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.55); color: #e9d5ff;" title="Aktiviert Twitch VOD-Spur 2 in OBS und trennt Musik-Quellen automatisch vom VOD (DMCA-Schutz)">🛡️ Musik-VOD-Spur</button>
+                  <button class="btn-sm" id="btnSeAddMusicSource" style="font-size: 10px; padding: 2px 7px; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.5); color: #bae6fd;" title="Legt eine eigene Audio-Quelle für Spotify/Apple Music an (Spur 1 Live AN, Spur 2 VOD AUS)">➕ Musik-Spur</button>
+                </div>
+              </div>
               <div id="seAudioList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1;"></div>
             </div>
           </div>
