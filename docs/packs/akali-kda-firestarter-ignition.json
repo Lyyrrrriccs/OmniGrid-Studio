@@ -19,6 +19,7 @@
   "mapCoverBadge": "K/DA IGNITION // FIRESTARTER 🔥",
   "skinArt": {
     "championId": "Akali",
-    "skinQuery": "K/DA"
+    "skinQuery": "Firestarter Ignition",
+    "localAsset": "akali-kda-firestarter-ignition.jpg"
   }
 }

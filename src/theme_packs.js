@@ -64,7 +64,10 @@ function sanitizePack(raw = {}) {
     skinArt: raw.skinArt && typeof raw.skinArt === 'object' && /^[A-Za-z0-9]{1,32}$/.test(String(raw.skinArt.championId || ''))
       ? {
           championId: String(raw.skinArt.championId).slice(0, 32),
-          skinQuery: String(raw.skinArt.skinQuery || '').slice(0, 64)
+          skinQuery: String(raw.skinArt.skinQuery || '').slice(0, 64),
+          ...(/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(String(raw.skinArt.localAsset || ''))
+            ? { localAsset: String(raw.skinArt.localAsset).slice(0, 80) }
+            : {})
         }
       : null,
     builtin: Boolean(raw.builtin)

@@ -631,7 +631,7 @@
 
     const SKIN_ART_MAP = {
       'ahri-spirit-blossom': { championId: 'Ahri', skinQuery: 'Spirit Blossom' },
-      'akali-kda-firestarter-ignition': { championId: 'Akali', skinQuery: 'K/DA' },
+      'akali-kda-firestarter-ignition': { championId: 'Akali', skinQuery: 'Firestarter Ignition', directUrl: './assets/akali-kda-firestarter-ignition.jpg' },
       'caitlyn-arcane-prestige': { championId: 'Caitlyn', skinQuery: 'Prestige Arcane Commander' },
       'darius-divine-god-king': { championId: 'Darius', skinQuery: 'God-King' },
       'diana-prestige-dark-cosmic': { championId: 'Diana', skinQuery: 'Dark Cosmic' },
@@ -739,6 +739,9 @@
     async function resolveSkinArt(packId) {
       const art = SKIN_ART_MAP[packId];
       if (!art) return null;
+      if (art.directUrl) {
+        return { splashUrl: art.directUrl, loadingUrl: art.directUrl, fallbackSplash: art.directUrl };
+      }
       if (skinArtCache[packId]) return skinArtCache[packId];
       let num = 0;
       const q = String(art.skinQuery || '').toLowerCase();
