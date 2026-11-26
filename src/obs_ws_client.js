@@ -558,14 +558,19 @@ class ObsWsClient extends EventEmitter {
         const mute = await this.call('GetInputMute', { inputName: inp.inputName });
         let currentDeviceId = '';
         let devices = [];
+        const devicePropName = kind === 'sck_audio_capture'
+          ? 'application'
+          : kind === 'wasapi_process_output_capture'
+            ? 'window'
+            : 'device_id';
         try {
           const settingsRes = await this.call('GetInputSettings', { inputName: inp.inputName });
-          currentDeviceId = String(settingsRes?.inputSettings?.device_id ?? '');
+          currentDeviceId = String(settingsRes?.inputSettings?.[devicePropName] ?? '');
         } catch (e) {}
         try {
           const propRes = await this.call('GetInputPropertiesListPropertyItems', {
             inputName: inp.inputName,
-            propertyName: 'device_id'
+            propertyName: devicePropName
           });
           devices = Array.isArray(propRes?.propertyItems)
             ? propRes.propertyItems
@@ -586,6 +591,7 @@ class ObsWsClient extends EventEmitter {
           volumeMul: typeof vol.inputVolumeMul === 'number' ? vol.inputVolumeMul : 1,
           volumeDb: typeof vol.inputVolumeDb === 'number' ? vol.inputVolumeDb : 0,
           muted: Boolean(mute.inputMuted),
+          devicePropName,
           currentDeviceId,
           devices,
           audioTracks,
@@ -607,7 +613,7 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, inputName: cleanName, vodExcluded: Boolean(musicOnly), audioTracks: tracks };
   }
 
-  async setupMusicVodTrack({ sceneName = '', createDedicatedSource = false } = {}) {
+  async setupMusicVodTrack({ sceneName = '', createDedicatedSource = false, musicSourceHint = '' } = {}) {
     const { inputs } = await this.getAudioInputs();
     const updatedMusic = [];
     const updatedNormal = [];
@@ -629,16 +635,28 @@ class ObsWsClient extends EventEmitter {
         const kindsRes = await this.getInputKinds().catch(() => ({ kinds: [] }));
         const kinds = kindsRes.kinds || [];
         const preferred = process.platform === 'darwin'
-          ? ['coreaudio_output_capture', 'coreaudio_input_capture']
+          ? ['sck_audio_capture', 'coreaudio_output_capture', 'coreaudio_input_capture']
           : process.platform === 'win32'
-            ? ['wasapi_output_capture', 'wasapi_input_capture']
+            ? ['wasapi_process_output_capture', 'wasapi_output_capture']
             : ['pulse_output_capture', 'pulse_input_capture'];
         const chosenKind = preferred.find((k) => kinds.includes(k)) || preferred[0];
+        let settings = {};
+        if (chosenKind === 'sck_audio_capture') {
+          const hint = String(musicSourceHint || '').toLowerCase();
+          const bundleId = hint.includes('apple')
+            ? 'com.apple.Music'
+            : hint.includes('amazon')
+              ? 'com.amazon.music'
+              : hint.includes('spotify')
+                ? 'com.spotify.client'
+                : '';
+          settings = bundleId ? { type: 1, application: bundleId } : { type: 0 };
+        }
         await this.createInput({
           sceneName: targetScene,
           inputName: sourceName,
           inputKind: chosenKind,
-          inputSettings: {}
+          inputSettings: settings
         });
         await new Promise((r) => setTimeout(r, 250));
         await this.setInputVodMusicOnly(sourceName, true);
@@ -651,15 +669,18 @@ class ObsWsClient extends EventEmitter {
     return { ok: true, updatedMusic, updatedNormal, createdSource };
   }
 
-  async setInputAudioDevice(inputName, deviceId) {
+  async setInputAudioDevice(inputName, deviceId, propertyName = 'device_id') {
     const cleanName = String(inputName || '').trim();
     if (!cleanName) throw new Error('Kein Audio-Gerät angegeben.');
+    const prop = ['device_id', 'application', 'window'].includes(propertyName) ? propertyName : 'device_id';
+    const patch = { [prop]: String(deviceId ?? '') };
+    if (prop === 'application' && deviceId) patch.type = 1;
     await this.call('SetInputSettings', {
       inputName: cleanName,
-      inputSettings: { device_id: String(deviceId ?? '') },
+      inputSettings: patch,
       overlay: true
     });
-    return { ok: true, inputName: cleanName, deviceId: String(deviceId ?? '') };
+    return { ok: true, inputName: cleanName, deviceId: String(deviceId ?? ''), propertyName: prop };
   }
 
   async setInputVolume(inputName, volumeMul) {

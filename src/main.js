@@ -3539,13 +3539,14 @@ app.whenReady().then(async () => {
       }
       if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
       if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
-      if (act === 'set-input-audio-device') return await obsWs.setInputAudioDevice(payload.inputName, payload.deviceId);
+      if (act === 'set-input-audio-device') return await obsWs.setInputAudioDevice(payload.inputName, payload.deviceId, payload.propertyName || 'device_id');
       if (act === 'set-input-vod-music-only') return await obsWs.setInputVodMusicOnly(payload.inputName, payload.musicOnly !== false);
       if (act === 'setup-music-vod-track') {
         const iniRes = obsAutoConfig.enableObsVodMusicTrack();
         const wsRes = await obsWs.setupMusicVodTrack({
           sceneName: payload.sceneName || '',
-          createDedicatedSource: Boolean(payload.createDedicatedSource)
+          createDedicatedSource: Boolean(payload.createDedicatedSource),
+          musicSourceHint: spotify?.currentTrack?.source || ''
         });
         return { ...wsRes, profilesPatched: iniRes.profilesPatched };
       }

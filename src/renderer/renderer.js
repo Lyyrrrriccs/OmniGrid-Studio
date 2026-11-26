@@ -6422,7 +6422,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
           const r = await window.omnichat.obsWsAction({
             action: 'set-input-audio-device',
             inputName: inp.inputName,
-            deviceId: devSel.value
+            deviceId: devSel.value,
+            propertyName: inp.devicePropName || 'device_id'
           });
           setStatus(
             r?.ok ? `🎚️ Audio-Gerät für „${inp.inputName}“ gewechselt!` : `⚠️ ${r?.error || 'Gerätewechsel fehlgeschlagen.'}`,
