@@ -548,23 +548,54 @@ class ObsWsClient extends EventEmitter {
   async getAudioInputs() {
     const res = await this.call('GetInputList');
     const inputs = Array.isArray(res.inputs) ? res.inputs : [];
+    const audioKindRe = /(coreaudio|wasapi|pulse|alsa|jack|pipewire|sck_audio|audio_capture|audio_input|audio_output)/i;
     const audioList = [];
     for (const inp of inputs) {
+      const kind = String(inp.inputKind || '');
+      if (!audioKindRe.test(kind)) continue;
       try {
         const vol = await this.call('GetInputVolume', { inputName: inp.inputName });
         const mute = await this.call('GetInputMute', { inputName: inp.inputName });
+        let currentDeviceId = '';
+        let devices = [];
+        try {
+          const settingsRes = await this.call('GetInputSettings', { inputName: inp.inputName });
+          currentDeviceId = String(settingsRes?.inputSettings?.device_id ?? '');
+        } catch (e) {}
+        try {
+          const propRes = await this.call('GetInputPropertiesListPropertyItems', {
+            inputName: inp.inputName,
+            propertyName: 'device_id'
+          });
+          devices = Array.isArray(propRes?.propertyItems)
+            ? propRes.propertyItems
+                .filter((p) => p && p.itemEnabled !== false)
+                .map((p) => ({ name: String(p.itemName || p.itemValue || ''), value: String(p.itemValue ?? '') }))
+            : [];
+        } catch (e) {}
         audioList.push({
           inputName: inp.inputName,
-          inputKind: inp.inputKind || '',
+          inputKind: kind,
           volumeMul: typeof vol.inputVolumeMul === 'number' ? vol.inputVolumeMul : 1,
           volumeDb: typeof vol.inputVolumeDb === 'number' ? vol.inputVolumeDb : 0,
-          muted: Boolean(mute.inputMuted)
+          muted: Boolean(mute.inputMuted),
+          currentDeviceId,
+          devices
         });
-      } catch (e) {
-        // Input has no audio track (e.g. pure Image/Color source) — skip
-      }
+      } catch (e) {}
     }
     return { ok: true, inputs: audioList };
+  }
+
+  async setInputAudioDevice(inputName, deviceId) {
+    const cleanName = String(inputName || '').trim();
+    if (!cleanName) throw new Error('Kein Audio-Gerät angegeben.');
+    await this.call('SetInputSettings', {
+      inputName: cleanName,
+      inputSettings: { device_id: String(deviceId ?? '') },
+      overlay: true
+    });
+    return { ok: true, inputName: cleanName, deviceId: String(deviceId ?? '') };
   }
 
   async setInputVolume(inputName, volumeMul) {

@@ -3539,6 +3539,7 @@ app.whenReady().then(async () => {
       }
       if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
       if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
+      if (act === 'set-input-audio-device') return await obsWs.setInputAudioDevice(payload.inputName, payload.deviceId);
       if (act === 'set-input-volume') return await obsWs.setInputVolume(payload.inputName, payload.volumeMul);
       if (act === 'get-screenshot') return await obsWs.getSceneScreenshot(payload.sceneName || '');
       if (act === 'get-input-kinds') return await obsWs.getInputKinds();

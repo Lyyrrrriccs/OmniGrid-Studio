@@ -6337,12 +6337,24 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     const res = await window.omnichat.obsWsAction({ action: 'get-audio-inputs' });
     if (!res?.ok) { audioList.innerHTML = ''; return; }
     audioList.innerHTML = '';
-    (res.inputs || []).forEach((inp) => {
+    const list = res.inputs || [];
+    if (!list.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:11px; color:#94a3b8; padding:6px 4px;';
+      empty.textContent = 'Keine Audio-Geräte in OBS gefunden.';
+      audioList.appendChild(empty);
+      return;
+    }
+    list.forEach((inp) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; flex-direction:column; gap:5px; padding:6px 8px; border-radius:7px; background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.16); font-size:11px;';
+
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex; align-items:center; gap:6px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.75); border:1px solid rgba(148,163,184,0.16); font-size:11px;';
+      row.style.cssText = 'display:flex; align-items:center; gap:6px;';
       const lbl = document.createElement('span');
-      lbl.style.cssText = 'flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
-      lbl.textContent = inp.inputName;
+      lbl.style.cssText = 'flex:1; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+      const icon = /output/i.test(inp.inputKind || '') ? '🔊 ' : '🎙️ ';
+      lbl.textContent = icon + inp.inputName;
 
       const slider = document.createElement('input');
       slider.type = 'range';
@@ -6364,10 +6376,35 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         loadAudioInputs();
       });
 
-      row.appendChild(lbl);
-      row.appendChild(slider);
-      row.appendChild(muteBtn);
-      audioList.appendChild(row);
+      row.append(lbl, slider, muteBtn);
+      wrap.appendChild(row);
+
+      if (Array.isArray(inp.devices) && inp.devices.length) {
+        const devSel = document.createElement('select');
+        devSel.style.cssText = 'width:100%; font-size:10.5px; padding:3px 6px; border-radius:5px;';
+        devSel.title = 'Audio-Gerät für diese OBS-Quelle auswählen';
+        inp.devices.forEach((d) => {
+          const opt = document.createElement('option');
+          opt.value = d.value;
+          opt.textContent = d.name;
+          if (d.value === inp.currentDeviceId) opt.selected = true;
+          devSel.appendChild(opt);
+        });
+        devSel.addEventListener('change', async () => {
+          const r = await window.omnichat.obsWsAction({
+            action: 'set-input-audio-device',
+            inputName: inp.inputName,
+            deviceId: devSel.value
+          });
+          setStatus(
+            r?.ok ? `🎚️ Audio-Gerät für „${inp.inputName}“ gewechselt!` : `⚠️ ${r?.error || 'Gerätewechsel fehlgeschlagen.'}`,
+            r?.ok ? '#4ade80' : '#f87171'
+          );
+        });
+        wrap.appendChild(devSel);
+      }
+
+      audioList.appendChild(wrap);
     });
   }
 
