@@ -9139,10 +9139,10 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   const btnAdd = document.getElementById('btnPvAddMsg');
   if (!stage || !feed) return;
 
-  let previewMode = 'obs';
+  let previewMode = 'app';
   const sampleMessages = [
-    { platform: 'twitch', author: 'HyperStreamer99', color: '#a970ff', badge: 'MOD', time: '20:14', text: 'Willkommen im Stream! Das neue Chat-Overlay sieht mega clean aus 🔥' },
-    { platform: 'youtube', author: 'PixelArchitect_Dev', color: '#ff4e45', badge: 'MEM', time: '20:14', text: 'Schriftgröße und Kontrast sind perfekt lesbar auf dem Handy!' },
+    { platform: 'twitch', author: 'HyperStreamer99', color: '#a970ff', badge: 'MOD', time: '20:14', text: 'Willkommen im Stream! Der App-Chat sieht mega clean aus 🔥' },
+    { platform: 'youtube', author: 'PixelArchitect_Dev', color: '#ff4e45', badge: 'MEM', time: '20:14', text: 'Schriftgröße, Padding und Kontrast sind perfekt lesbar!' },
     { platform: 'tiktok', author: 'NeonLightcycle', color: '#00f2fe', badge: 'VIP', time: '20:15', text: 'GGs! Die Runde war absolut crazy 🚀' },
     { platform: 'twitch', author: 'SuperLongViewerName1234', color: '#38bdf8', badge: 'SUB', time: '20:15', text: 'Test für abgeschnittene Namen & Trennlinien-Vorschau ✨' }
   ];
@@ -9169,19 +9169,20 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     const showIcons = chkShowPlatIcons ? chkShowPlatIcons.checked : true;
     const showTs = chkShowTimestamps ? chkShowTimestamps.checked : true;
     const platStyle = selPlatStyle?.value || 'icon_only';
-    const colorMode = selNameColorMode?.value || 'user';
+    const colorMode = selUserColorMode?.value || 'user';
     const showSep = chkShowSeparator ? chkShowSeparator.checked : true;
-    const sepCol = clrSepColor?.value || '#ffffff';
+    const sepCol = clrSeparator?.value || '#ffffff';
     const sepOp = parseInt(rngSepOpacity?.value || '10', 10);
-    const bgCol = clrBgColor?.value || '#0b0f19';
+    const sepGap = parseInt(rngSepSpacing?.value || '0', 10);
+    const bgCol = clrChatBg?.value || '#0b0f19';
     const bgOp = previewMode === 'obs'
       ? parseInt(rngObsBgOpacity?.value || '65', 10)
-      : parseInt(rngAppBgOpacity?.value || '90', 10);
+      : parseInt(rngBgOpacity?.value || '90', 10);
 
     stage.style.setProperty('--pv-name-size', `${nameSize}px`);
     stage.style.setProperty('--pv-msg-size', `${msgSize}px`);
     stage.style.setProperty('--pv-pad-v', `${msgPad}px`);
-    stage.style.setProperty('--pv-gap', layoutMode === 'bubbles' ? `${Math.max(3, msgPad)}px` : '0px');
+    stage.style.setProperty('--pv-gap', layoutMode === 'bubbles' ? `${Math.max(3, msgPad)}px` : `${sepGap}px`);
     stage.style.setProperty('--pv-sep-display', showSep ? '1px' : '0px');
     stage.style.setProperty('--pv-sep-color', toRgba(sepCol, sepOp));
     stage.style.setProperty('--pv-item-bg', toRgba(bgCol, bgOp));
@@ -9263,13 +9264,14 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
 
   [
     selLayoutMode, selObsChatTheme, rngNameSize, rngMsgSize, rngMaxNameLen, rngMsgPadding,
-    chkShowPlatIcons, chkShowTimestamps, selPlatStyle, selNameColorMode,
-    chkShowSeparator, clrSepColor, rngSepOpacity, rngSepGap, clrBgColor, rngAppBgOpacity, rngObsBgOpacity
+    chkShowPlatIcons, chkShowTimestamps, selPlatStyle, selUserColorMode,
+    chkShowSeparator, clrSeparator, rngSepOpacity, rngSepSpacing, clrChatBg, rngBgOpacity, rngObsBgOpacity
   ].forEach((el) => {
     el?.addEventListener('input', renderPreview);
     el?.addEventListener('change', renderPreview);
   });
 
+  document.getElementById('btnOpenConfig')?.addEventListener('click', () => setTimeout(renderPreview, 60));
   window.omnichat.onInitState?.(() => setTimeout(renderPreview, 120));
-  setTimeout(renderPreview, 200);
+  renderPreview();
 })();
