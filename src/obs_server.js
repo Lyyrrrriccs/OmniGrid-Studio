@@ -2677,37 +2677,15 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
 
   <div class="frame-layout">
     <div class="frame-left">
-      <div class="slot-box client-slot">
-        <div class="slot-header">
-          <span>⚔️ RIOT / LEAGUE CLIENT</span>
-          <span class="slot-pill">16:9 CLIENT FRAME</span>
-        </div>
-        <div class="slot-placeholder">
-          <span>LEAGUE CLIENT AREA</span>
-          <small>Client-Aufnahme in OBS hier platzieren</small>
-        </div>
-      </div>
+      <div class="slot-box client-slot"></div>
     </div>
     <div class="frame-right">
-      <div class="slot-box cam-slot">
-        <div class="slot-header">
-          <span>📷 WEBCAM</span>
-          <span class="slot-pill">16:9</span>
-        </div>
-        <div class="slot-placeholder"><span>CAM</span></div>
-      </div>
-      <div class="slot-box chat-slot">
-        <div class="slot-header">
-          <span>💬 LIVE CHAT</span>
-          <span class="slot-pill">OMNIGRID</span>
-        </div>
-        <div class="slot-placeholder"><span>CHAT OVERLAY</span></div>
-      </div>
+      <div class="slot-box cam-slot"></div>
+      <div class="slot-box chat-slot"></div>
     </div>
   </div>
 
   <div class="bg-watermark"><span class="bg-dot"></span><span id="bgLabel">⚔️ LEAGUE OF LEGENDS // HEXTECH</span></div>
-  <div class="bg-status-right">● LOBBY / CHAMP SELECT</div>
   <script>
     (function initLolAnimatedBg() {
       const root = document.documentElement;
