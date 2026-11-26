@@ -6841,21 +6841,28 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   });
 
   const FRIENDLY_KINDS = {
+    screen_capture: '🖥️ Bildschirm / Fenster / App-Aufnahme (macOS)',
+    window_capture: '🪟 Fensteraufnahme',
+    display_capture: '🖥️ Bildschirmaufnahme',
+    monitor_capture: '🖥️ Bildschirmaufnahme',
+    game_capture: '🎮 Spiel- / Applikationsaufnahme',
+    macos_avcapture: '📷 Videoaufnahmegerät / Kamera (macOS)',
+    av_capture_input_v2: '📷 Videoaufnahmegerät / Kamera (macOS)',
+    av_capture_input: '📷 Videoaufnahmegerät / Kamera',
+    dshow_input: '📷 Videoaufnahmegerät / Kamera (Windows)',
+    v4l2_input: '📷 Videoaufnahmegerät / Kamera',
     browser_source: '🌐 Browser-Quelle (URL)',
     image_source: '🖼️ Bild (PNG/JPG/GIF)',
     ffmpeg_source: '🎬 Video / Medienquelle',
     color_source_v3: '🎨 Farbfläche',
     text_ft2_source_v2: '📝 Text (FreeType 2)',
     text_gdiplus_v3: '📝 Text (GDI+)',
-    screen_capture: '🖥️ Bildschirmaufnahme (macOS)',
-    macos_avcapture: '📷 Kamera / Videoaufnahmegerät',
-    av_capture_input_v2: '📷 Kamera (macOS)',
     coreaudio_input_capture: '🎙️ Mikrofon / Audio-Eingang',
     coreaudio_output_capture: '🔊 Audio-Ausgabe',
-    monitor_capture: '🖥️ Bildschirmaufnahme',
-    window_capture: '🪟 Fensteraufnahme',
-    game_capture: '🎮 Spielaufnahme',
-    dshow_input: '📷 Kamera / Capture-Card'
+    sck_audio_capture: '🎵 Anwendungs-Audioaufnahme (macOS)',
+    wasapi_input_capture: '🎙️ Mikrofon / Audio-Eingang',
+    wasapi_output_capture: '🔊 Desktop-Audio',
+    wasapi_process_output_capture: '🎵 Anwendungs-Audioaufnahme'
   };
 
   const newSourceFileRow = document.getElementById('seNewSourceFileRow');
@@ -6932,29 +6939,48 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     renderNewSourcePickedBadge();
   });
 
-  async function loadInputKinds() {
-    if (!selNewKind || selNewKind.options.length > 0) {
+  let loadedKindsFromObs = false;
+  async function loadInputKinds(force = false) {
+    if (!selNewKind) return;
+    if (loadedKindsFromObs && !force && selNewKind.options.length > 0) {
       updateNewSourceInputMode();
       return;
     }
+    const prevVal = selNewKind.value;
     const res = await window.omnichat.obsWsAction({ action: 'get-input-kinds' });
-    const kinds = res?.ok && Array.isArray(res.kinds) && res.kinds.length
-      ? res.kinds
-      : ['browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_ft2_source_v2'];
+    const isFromObs = Boolean(res?.ok && Array.isArray(res.kinds) && res.kinds.length);
+    if (isFromObs) loadedKindsFromObs = true;
+    const isMac = /mac/i.test(navigator.platform || navigator.userAgent || '');
+    const fallbackKinds = isMac
+      ? ['screen_capture', 'window_capture', 'display_capture', 'macos_avcapture', 'av_capture_input_v2', 'browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_ft2_source_v2', 'coreaudio_input_capture', 'coreaudio_output_capture']
+      : ['window_capture', 'monitor_capture', 'game_capture', 'dshow_input', 'browser_source', 'image_source', 'ffmpeg_source', 'color_source_v3', 'text_gdiplus_v3', 'wasapi_input_capture', 'wasapi_output_capture'];
+    const kinds = isFromObs ? res.kinds : fallbackKinds;
+    const priority = Object.keys(FRIENDLY_KINDS);
+    const sorted = [...new Set(kinds)].sort((a, b) => {
+      const ia = priority.indexOf(a);
+      const ib = priority.indexOf(b);
+      if (ia >= 0 && ib >= 0) return ia - ib;
+      if (ia >= 0) return -1;
+      if (ib >= 0) return 1;
+      return a.localeCompare(b);
+    });
     selNewKind.innerHTML = '';
-    const sorted = [...kinds].sort((a, b) => (FRIENDLY_KINDS[a] ? 0 : 1) - (FRIENDLY_KINDS[b] ? 0 : 1));
     sorted.forEach((k) => {
       const opt = document.createElement('option');
       opt.value = k;
       opt.textContent = FRIENDLY_KINDS[k] || k;
       selNewKind.appendChild(opt);
     });
+    if (prevVal && sorted.includes(prevVal)) selNewKind.value = prevVal;
     updateNewSourceInputMode();
   }
 
   btnOpen?.addEventListener('click', () => {
-    loadInputKinds();
+    loadInputKinds(true);
     loadBuiltinOverlays();
+  });
+  window.omnichat.onObsWsState?.((st) => {
+    if (st?.connected && !loadedKindsFromObs) loadInputKinds(true);
   });
 
   document.getElementById('btnSeQuickAddFile')?.addEventListener('click', async () => {
