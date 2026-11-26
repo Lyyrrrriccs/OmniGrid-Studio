@@ -2539,7 +2539,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
 
     .frame-layout {
       position: fixed;
-      inset: 34px 36px 34px 36px;
+      inset: 28px 36px 155px 36px;
       display: grid;
       grid-template-columns: 1fr 440px;
       gap: 26px;
@@ -2550,7 +2550,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     .frame-left {
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       min-width: 0;
     }
     .frame-right {
