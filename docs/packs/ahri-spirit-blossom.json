@@ -1,0 +1,20 @@
+{
+  "id": "ahri-spirit-blossom",
+  "name": "Ahri — Spirit Blossom",
+  "icon": "🌸",
+  "championMatch": ["ahri"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "spirit-blossom",
+  "description": "Sakura Pink & Spirit Cyan ether glow, soft blossom gradients and serene spirit-realm framing for all League overlays.",
+  "colors": {
+    "primary": "#f472b6",
+    "secondary": "#67e8f9",
+    "tertiary": "#c084fc",
+    "bgStart": "rgba(24, 14, 38, 0.94)",
+    "bgEnd": "rgba(12, 22, 42, 0.95)",
+    "text": "#fdf2f8",
+    "muted": "#f9a8d4"
+  },
+  "mapCoverBadge": "SPIRIT REALM // NO GHOSTING 🌸"
+}

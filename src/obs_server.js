@@ -3318,12 +3318,40 @@ body.champ-fx-jinx-glitch .gs-lbl { color: var(--ct-primary, #ff2a85) !important
 body.champ-fx-jinx-glitch .gs-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
 body.champ-fx-jinx-glitch .gs-lp-fill,
 body.champ-fx-jinx-glitch .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #ff2a85), var(--ct-secondary, #39ff14)) !important; }
+
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .msg-row {
+  background: linear-gradient(135deg, var(--ct-bg-start, rgba(16, 16, 28, 0.94)), var(--ct-bg-end, rgba(10, 14, 24, 0.95))) !important;
+  border: 1px solid var(--ct-primary, #38bdf8) !important;
+  border-left: 3.5px solid var(--ct-secondary, #a855f7) !important;
+  color: var(--ct-text, #f8fafc) !important;
+  margin-bottom: 5px;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ct-primary, #38bdf8) 28%, transparent);
+}
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .build-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover {
+  background: linear-gradient(145deg, var(--ct-bg-start, rgba(16, 16, 28, 0.96)), var(--ct-bg-end, rgba(10, 14, 24, 0.96))) !important;
+  border: 2px solid var(--ct-primary, #38bdf8) !important;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--ct-primary, #38bdf8) 38%, transparent), inset 0 0 16px color-mix(in srgb, var(--ct-secondary, #a855f7) 16%, transparent) !important;
+}
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lbl { color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-badge { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lp-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
+body.champ-fx-spirit-blossom .msg-row,
+body.champ-fx-spirit-blossom .gs-card { border-radius: 14px !important; }
+body.champ-fx-nightbringer .msg-row,
+body.champ-fx-nightbringer .gs-card,
+body.champ-fx-project-cyber .msg-row,
+body.champ-fx-project-cyber .gs-card { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
 </style>
 <script>
 (function initChampionThemeClient(){
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-neon-pulse');
+    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);
