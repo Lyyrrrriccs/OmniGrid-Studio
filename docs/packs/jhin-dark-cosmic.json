@@ -1,0 +1,20 @@
+{
+  "id": "jhin-dark-cosmic",
+  "name": "Jhin — Dark Cosmic",
+  "icon": "🌌",
+  "championMatch": ["jhin"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "dark-cosmic",
+  "description": "Black-hole singularity void violet, nebula magenta & accretion-disk solar orange with cosmic bevels across all OBS overlays.",
+  "colors": {
+    "primary": "#a855f7",
+    "secondary": "#ff7b29",
+    "tertiary": "#ec4899",
+    "bgStart": "rgba(8, 4, 20, 0.97)",
+    "bgEnd": "rgba(15, 5, 26, 0.98)",
+    "text": "#faf5ff",
+    "muted": "#d8b4fe"
+  },
+  "mapCoverBadge": "FOUR // DARK COSMIC 🌌"
+}
