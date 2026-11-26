@@ -8849,8 +8849,7 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
       ['🟣 Twitch', tw ? `✅ ${tw}${twTok ? ' (+ Schreib-Token)' : ' (Lesen)'}` : '⚪ Nicht eingerichtet'],
       ['🔴 YouTube Live', yt ? `✅ ${yt}${ytAuthorizedNow ? ' (+ OAuth2)' : ' (Lesen)'}` : '⚪ Nicht eingerichtet'],
       ['🎵 TikTok Live', tt ? `✅ ${tt}` : '⚪ Nicht eingerichtet'],
-      ['🎥 OBS Studio', obsConnectedNow ? '✅ Verbunden' : '⚪ Optional (später unter Config → OBS)'],
-      ['🎙️ Sprachsteuerung', document.getElementById('qsVoiceCodeOut')?.textContent ? '✅ Pairing-Code bereit' : '⚪ Optional (Config → Tablet & Stream Deck)']
+      ['🎥 OBS Studio', obsConnectedNow ? '✅ Verbunden' : '⚪ Optional (später unter Config → OBS)']
     ];
     summaryList.innerHTML = '';
     for (const [label, val] of rows) {
