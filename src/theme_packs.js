@@ -61,6 +61,9 @@ function sanitizePack(raw = {}) {
       muted: sanitizeHexOrRgba(c.muted, '#cbd5e1')
     },
     mapCoverBadge: String(raw.mapCoverBadge || '').slice(0, 64),
+    characterArt: /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(raw.characterArt || ''))
+      ? String(raw.characterArt).slice(0, 80)
+      : '',
     skinArt: raw.skinArt && typeof raw.skinArt === 'object' && /^[A-Za-z0-9]{1,32}$/.test(String(raw.skinArt.championId || ''))
       ? {
           championId: String(raw.skinArt.championId).slice(0, 32),
