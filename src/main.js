@@ -163,6 +163,53 @@ let demoActive = process.env.DEMO_MODE === 'true';
 let lastGameCmdAt = 0;
 
 let resolvingInitialLolIcon = false;
+function normalizeSponsorsConfig(raw = {}) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const rawItems = Array.isArray(src.items) ? src.items : [];
+  const items = rawItems.slice(0, 30).map((it, i) => ({
+    id: String(it?.id || `sp_${i + 1}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32) || `sp_${i + 1}`,
+    enabled: it?.enabled !== false,
+    name: String(it?.name || '').trim().slice(0, 80),
+    subtitle: String(it?.subtitle || '').trim().slice(0, 140),
+    badge: String(it?.badge || 'WERBUNG').trim().slice(0, 24) || 'WERBUNG',
+    url: String(it?.url || '').trim().slice(0, 300),
+    imagePath: String(it?.imagePath || '').trim().slice(0, 400),
+    imageUrl: String(it?.imageUrl || '').trim().slice(0, 400),
+    accentColor: /^#[0-9a-fA-F]{6}$/.test(String(it?.accentColor || '')) ? it.accentColor : '#38bdf8',
+    durationSec: Math.max(3, Math.min(600, parseInt(it?.durationSec ?? 15, 10) || 15))
+  }));
+  return {
+    enabled: src.enabled !== false,
+    pauseBetweenSec: Math.max(0, Math.min(300, parseInt(src.pauseBetweenSec ?? 0, 10) || 0)),
+    showQrCode: src.showQrCode !== false,
+    showProgressBar: src.showProgressBar !== false,
+    activeIndex: Math.max(0, parseInt(src.activeIndex ?? 0, 10) || 0),
+    items
+  };
+}
+
+async function broadcastSponsorsToObs(cfg = loadConfig()) {
+  const sp = normalizeSponsorsConfig(cfg.sponsors);
+  const QRCode = require('qrcode');
+  const port = obsServer.port || 4588;
+  const enriched = [];
+  for (const it of sp.items) {
+    let qrDataUrl = '';
+    if (sp.showQrCode && /^https?:\/\//i.test(it.url)) {
+      try {
+        qrDataUrl = await QRCode.toDataURL(it.url, { width: 140, margin: 1 });
+      } catch (e) {}
+    }
+    const resolvedImageUrl = it.imagePath && fs.existsSync(it.imagePath)
+      ? `http://127.0.0.1:${port}/api/sponsor-media/${encodeURIComponent(it.id)}?t=${Date.now()}`
+      : it.imageUrl;
+    enriched.push({ ...it, resolvedImageUrl, qrDataUrl });
+  }
+  const payload = { ...sp, items: enriched, revision: String(Date.now()) };
+  obsServer.broadcastSponsors(payload);
+  return payload;
+}
+
 function broadcastGameAddonsState(cfg) {
   const ga = gameAddons.normalizeGameAddonsConfig(cfg?.gameAddons);
   const obsPayload = gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga });
@@ -422,6 +469,7 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'poll', label: '📊 Live-Umfrage (Poll)', inputName: 'OmniGrid Umfrage', url: `${base}/poll`, width: 460, height: 300, posX: 1430, posY: 355 },
     { id: 'giveaway', label: '🎁 Giveaway / Gewinnspiel', inputName: 'OmniGrid Giveaway', url: `${base}/giveaway`, width: 480, height: 300, posX: 720, posY: 390 },
     { id: 'schedule', label: '📅 Stream-Sendeplan', inputName: 'OmniGrid Sendeplan', url: `${base}/schedule`, width: 620, height: 440, posX: 650, posY: 320 },
+    { id: 'sponsors', label: '🏷️ Werbepartner / Sponsoren-Banner', inputName: 'OmniGrid Werbepartner', url: `${base}/sponsors`, width: 460, height: 175, posX: 1435, posY: 885 },
     { id: 'soundboard', label: '🔊 Soundboard Audio-Player', inputName: 'OmniGrid Soundboard', url: `${base}/soundboard`, width: 320, height: 120, posX: 24, posY: 940, rerouteAudio: true }
   ];
 }
@@ -980,6 +1028,7 @@ function getDefaultConfig() {
     chatDockAlwaysOnTop: true,
     appearance: {
       layoutMode: 'inline',
+      obsChatTheme: 'auto',
       nameFontSize: 13,
       msgFontSize: 13.5,
       maxNameLength: 16,
@@ -2803,6 +2852,12 @@ app.whenReady().then(async () => {
       if (kind === 'audio') return entry.audioPath || null;
       return null;
     });
+    obsServer.setSponsorMediaResolver((id) => {
+      const list = loadConfig().sponsors?.items || [];
+      const found = list.find((s) => s && s.id === id);
+      return found?.imagePath || null;
+    });
+    broadcastSponsorsToObs(saved).catch(() => {});
     broadcastScheduleToObs(saved);
     obsServer.onGameWebhook = handleIncomingGameWebhook;
     broadcastGameAddonsState(saved);
@@ -3512,21 +3567,25 @@ app.whenReady().then(async () => {
           lol: {
             addonMode: 'lol',
             gameName: 'League of Legends',
+            chatTheme: 'lol',
             ids: ['game-stats', 'lol-build', 'lol-map', 'alerts', 'chat']
           },
           justchatting: {
             addonMode: 'justchatting',
             gameName: 'Just Chatting',
+            chatTheme: 'default',
             ids: ['jc-lowerthird', 'jc-qna', 'game-stats', 'spotify', 'alerts', 'chat']
           },
           techtalk: {
             addonMode: 'techtalk',
             gameName: 'Software and Game Development',
+            chatTheme: 'tron',
             ids: ['tron-talk', 'game-stats', 'spotify', 'alerts', 'chat']
           },
           valorant: {
             addonMode: 'valorant',
             gameName: 'Valorant',
+            chatTheme: 'valorant',
             ids: ['game-stats', 'val-bar', 'val-map', 'alerts', 'chat']
           }
         };
@@ -3555,9 +3614,16 @@ app.whenReady().then(async () => {
         ga.currentGameName = bundle.gameName;
         if (bundle.addonMode === 'lol') ga.lolPollingEnabled = true;
         cfg.gameAddons = ga;
+        if (bundle.chatTheme) {
+          cfg.appearance = { ...(cfg.appearance || {}), obsChatTheme: bundle.chatTheme };
+          obsServer.broadcastAppearance({
+            ...cfg.appearance,
+            platformIndicatorStyle: cfg.platformIndicatorStyle || 'icon_badge'
+          });
+        }
         saveConfig(cfg);
         broadcastGameAddonsState(cfg);
-        return { ok: true, added, addonMode: bundle.addonMode };
+        return { ok: true, added, addonMode: bundle.addonMode, chatTheme: bundle.chatTheme || 'auto' };
       }
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
       if (act === 'rename-source') {
@@ -5216,6 +5282,49 @@ app.whenReady().then(async () => {
   ipcMain.handle('voice-test-command', async (_ev, action, payload = {}) => {
     const res = await voiceBridge.executeLocalCommand(action, payload, 'local_ui');
     return { ...res, state: voiceBridge.getPublicState() };
+  });
+
+  ipcMain.handle('sponsors-get', async () => {
+    const cfg = loadConfig();
+    const sp = normalizeSponsorsConfig(cfg.sponsors);
+    return { ok: true, sponsors: sp, overlayUrl: `http://127.0.0.1:${obsServer.port || 4588}/sponsors` };
+  });
+
+  ipcMain.handle('sponsors-save', async (_ev, nextSp = {}) => {
+    const cfg = loadConfig();
+    const sp = normalizeSponsorsConfig(nextSp);
+    cfg.sponsors = sp;
+    saveConfig(cfg);
+    await broadcastSponsorsToObs(cfg);
+    return { ok: true, sponsors: sp };
+  });
+
+  ipcMain.handle('sponsors-jump', async (_ev, index = 0) => {
+    const cfg = loadConfig();
+    const sp = normalizeSponsorsConfig(cfg.sponsors);
+    sp.activeIndex = Math.max(0, Number(index) || 0);
+    cfg.sponsors = sp;
+    saveConfig(cfg);
+    await broadcastSponsorsToObs(cfg);
+    return { ok: true, sponsors: sp };
+  });
+
+  ipcMain.handle('sponsors-post-chat', async (_ev, itemId = '') => {
+    const cfg = loadConfig();
+    const sp = normalizeSponsorsConfig(cfg.sponsors);
+    const item = sp.items.find((x) => x.id === itemId) || sp.items[sp.activeIndex] || sp.items[0];
+    if (!item) return { ok: false, error: 'Kein Werbepartner gefunden.' };
+    const text = `🏷️ [${item.badge || 'WERBUNG'}] ${item.name}${item.subtitle ? ` — ${item.subtitle}` : ''}${item.url ? ` 👉 ${item.url}` : ''}`;
+    const sent = [];
+    if (twitch.canWrite) {
+      try { await twitch.sendMessage(text); sent.push('Twitch'); } catch (e) {}
+    }
+    if (youtube.canWrite) {
+      try { await youtube.sendMessage(text); sent.push('YouTube'); } catch (e) {}
+    }
+    return sent.length
+      ? { ok: true, sent, text }
+      : { ok: false, error: 'Kein schreibfähiger Chat (Twitch Token / YouTube OAuth2) verbunden.', text };
   });
 
   ipcMain.handle('submit-github-feedback', async (_ev, payload = {}) => {

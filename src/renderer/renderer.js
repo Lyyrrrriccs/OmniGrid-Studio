@@ -20,6 +20,7 @@ const chkEnableTiktok = document.getElementById('chkEnableTiktok');
 
 // Section 4: Compact Chat Design & Appearance UI Controls
 const selLayoutMode = document.getElementById('selLayoutMode');
+const selObsChatTheme = document.getElementById('selObsChatTheme');
 const rngNameSize = document.getElementById('rngNameSize');
 const valNameSize = document.getElementById('valNameSize');
 const rngMsgSize = document.getElementById('rngMsgSize');
@@ -625,6 +626,7 @@ function getFormConfig() {
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
     appearance: {
       layoutMode: selLayoutMode?.value || 'inline',
+      obsChatTheme: selObsChatTheme?.value || 'auto',
       nameFontSize: parseFloat(rngNameSize?.value || '13'),
       msgFontSize: parseFloat(rngMsgSize?.value || '13.5'),
       maxNameLength: parseInt(rngMaxNameLen?.value || '16', 10),
@@ -672,6 +674,7 @@ function getFormConfig() {
 // Bind all Section 4, Section 6 & Section 8 Design, Event & Limit Controls
 [
   selLayoutMode,
+  selObsChatTheme,
   rngNameSize,
   rngMsgSize,
   rngMaxNameLen,
@@ -2061,6 +2064,7 @@ function applyConfigToForm(cfg) {
 
   const appCfg = cfg.appearance || {};
   if (selLayoutMode) selLayoutMode.value = appCfg.layoutMode || 'inline';
+  if (selObsChatTheme) selObsChatTheme.value = appCfg.obsChatTheme || 'auto';
   if (rngNameSize) rngNameSize.value = appCfg.nameFontSize ?? 13;
   if (rngMsgSize) rngMsgSize.value = appCfg.msgFontSize ?? 13.5;
   if (rngMaxNameLen) rngMaxNameLen.value = appCfg.maxNameLength ?? 16;
@@ -3173,6 +3177,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.event-settings-box', 'cfgTab_profile'],
     ['.design-settings-box', 'cfgTab_design'],
     ['.emote-settings-box', 'cfgTab_design'],
+    ['.chat-preview-box', 'cfgTab_design'],
     ['.obs-box', 'cfgTab_obs'],
     ['.obs-ws-config-box', 'cfgTab_obs'],
     ['.elgato-lights-box', 'cfgTab_obs'],
@@ -6701,6 +6706,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       bundleId
     });
     if (res?.ok) {
+      if (res.chatTheme && selObsChatTheme) selObsChatTheme.value = res.chatTheme;
       setStatus(`✅ ${label} komplett eingefügt (${(res.added || []).join(', ')})!`, '#4ade80');
       await loadSceneItems(currentSceneName);
       setTimeout(refreshPreview, 450);
@@ -8737,9 +8743,9 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   };
 
   const evaluateSetupStatus = (cfg = null) => {
-    const tw = String(cfg ? cfg.twitch?.channel : document.getElementById('inputTwitchChannel')?.value || '').trim();
-    const yt = String(cfg ? cfg.youtube?.channel : document.getElementById('inputYoutubeChannel')?.value || '').trim();
-    const tt = String(cfg ? cfg.tiktok?.channel : document.getElementById('inputTiktokChannel')?.value || '').trim();
+    const tw = String((cfg ? (cfg.twitchChannel ?? cfg.twitch?.channel) : document.getElementById('inputTwitchChannel')?.value) || '').trim();
+    const yt = String((cfg ? (cfg.youtubeChannel ?? cfg.youtube?.channel) : document.getElementById('inputYoutubeChannel')?.value) || '').trim();
+    const tt = String((cfg ? (cfg.tiktokChannel ?? cfg.tiktok?.channel) : document.getElementById('inputTiktokChannel')?.value) || '').trim();
     const items = [];
     if (tw) items.push(`Twitch (${tw})`);
     if (yt) items.push(`YouTube (${yt})`);
@@ -8911,4 +8917,361 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
       setTimeout(openWizard, 450);
     }
   });
+})();
+
+(() => {
+  const modal = document.getElementById('sponsorsModal');
+  const listEl = document.getElementById('spItemsList');
+  const statusEl = document.getElementById('spStatusMsg');
+  if (!modal || !listEl) return;
+
+  let spState = { enabled: true, pauseBetweenSec: 0, showQrCode: true, showProgressBar: true, activeIndex: 0, items: [] };
+  let overlayUrl = 'http://127.0.0.1:4588/sponsors';
+
+  const setMsg = (text, color = '#94a3b8') => {
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.style.color = color;
+  };
+
+  const readGlobalInputs = () => {
+    spState.enabled = Boolean(document.getElementById('spEnabled')?.checked);
+    spState.showQrCode = Boolean(document.getElementById('spShowQr')?.checked);
+    spState.showProgressBar = Boolean(document.getElementById('spShowProg')?.checked);
+    spState.pauseBetweenSec = Math.max(0, Math.min(300, parseInt(document.getElementById('spPauseSec')?.value || '0', 10) || 0));
+  };
+
+  const renderList = () => {
+    const chkEn = document.getElementById('spEnabled');
+    const chkQr = document.getElementById('spShowQr');
+    const chkPr = document.getElementById('spShowProg');
+    const inpPause = document.getElementById('spPauseSec');
+    if (chkEn) chkEn.checked = spState.enabled !== false;
+    if (chkQr) chkQr.checked = spState.showQrCode !== false;
+    if (chkPr) chkPr.checked = spState.showProgressBar !== false;
+    if (inpPause) inpPause.value = String(spState.pauseBetweenSec ?? 0);
+
+    listEl.innerHTML = '';
+    if (!spState.items.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding: 16px; text-align: center; border-radius: 10px; border: 1px dashed rgba(148,163,184,0.3); color: #94a3b8; font-size: 12px;';
+      empty.textContent = 'Noch keine Werbepartner angelegt. Klicke unten auf „➕ Neuen Werbepartner hinzufügen“.';
+      listEl.appendChild(empty);
+      return;
+    }
+
+    spState.items.forEach((item, idx) => {
+      const nextItem = spState.items.length > 1 ? spState.items[(idx + 1) % spState.items.length] : null;
+      const card = document.createElement('div');
+      card.style.cssText = 'padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,0.82); border: 1px solid rgba(148,163,184,0.22); display: flex; flex-direction: column; gap: 8px;';
+
+      const topRow = document.createElement('div');
+      topRow.style.cssText = 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap;';
+
+      const orderBadge = document.createElement('span');
+      orderBadge.style.cssText = 'font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(56,189,248,0.18); color: #7dd3fc;';
+      orderBadge.textContent = `#${idx + 1}` + (nextItem ? ` → Danach: ${nextItem.name || `#${((idx + 1) % spState.items.length) + 1}`}` : '');
+
+      const chkActiveWrap = document.createElement('label');
+      chkActiveWrap.className = 'checkbox-row';
+      chkActiveWrap.style.margin = '0 4px';
+      const chkActive = document.createElement('input');
+      chkActive.type = 'checkbox';
+      chkActive.checked = item.enabled !== false;
+      chkActive.addEventListener('change', () => { item.enabled = chkActive.checked; });
+      const chkSpan = document.createElement('span');
+      chkSpan.textContent = 'Aktiv';
+      chkActiveWrap.append(chkActive, chkSpan);
+
+      const mkBtn = (label, title, onClick, style = '') => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn-sm';
+        b.textContent = label;
+        b.title = title;
+        if (style) b.style.cssText = style;
+        b.addEventListener('click', onClick);
+        return b;
+      };
+
+      const btnUp = mkBtn('▲', 'In der Reihenfolge nach oben', () => {
+        if (idx === 0) return;
+        [spState.items[idx - 1], spState.items[idx]] = [spState.items[idx], spState.items[idx - 1]];
+        renderList();
+      });
+      btnUp.disabled = idx === 0;
+
+      const btnDown = mkBtn('▼', 'In der Reihenfolge nach unten', () => {
+        if (idx >= spState.items.length - 1) return;
+        [spState.items[idx + 1], spState.items[idx]] = [spState.items[idx], spState.items[idx + 1]];
+        renderList();
+      });
+      btnDown.disabled = idx >= spState.items.length - 1;
+
+      const btnShowNow = mkBtn('▶ Jetzt zeigen', 'Dieses Banner sofort live im OBS-Overlay einblenden', async () => {
+        readGlobalInputs();
+        spState.activeIndex = idx;
+        await window.omnichat.sponsorsSave(spState);
+        setMsg(`▶ Zeige jetzt #${idx + 1} (${item.name || 'Partner'}) im OBS-Overlay!`, '#4ade80');
+      }, 'background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); color: #bae6fd;');
+
+      const btnChat = mkBtn('💬 Link in Chat', 'Klickbaren Partner-Link direkt in Twitch & YouTube Chat posten', async () => {
+        readGlobalInputs();
+        await window.omnichat.sponsorsSave(spState);
+        const r = await window.omnichat.sponsorsPostChat(item.id);
+        setMsg(r?.ok ? `💬 Link in ${r.sent.join(' & ')} gepostet!` : `⚠️ ${r?.error || 'Senden fehlgeschlagen'}`, r?.ok ? '#4ade80' : '#fbbf24');
+      });
+
+      const btnDel = mkBtn('🗑️', 'Werbepartner entfernen', () => {
+        spState.items.splice(idx, 1);
+        renderList();
+      }, 'margin-left: auto; color: #fca5a5;');
+
+      topRow.append(orderBadge, chkActiveWrap, btnUp, btnDown, btnShowNow, btnChat, btnDel);
+
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 7px;';
+
+      const mkField = (label, type, value, placeholder, onInput) => {
+        const w = document.createElement('div');
+        const l = document.createElement('label');
+        l.style.cssText = 'display: block; font-size: 10.5px; color: #94a3b8; margin-bottom: 2px;';
+        l.textContent = label;
+        const inp = document.createElement('input');
+        inp.type = type;
+        inp.value = value;
+        if (placeholder) inp.placeholder = placeholder;
+        inp.style.width = '100%';
+        inp.addEventListener('input', () => onInput(inp.value));
+        w.append(l, inp);
+        return w;
+      };
+
+      grid.append(
+        mkField('Partner-Name', 'text', item.name || '', 'z. B. Holy Energy', (v) => { item.name = v; }),
+        mkField('Untertitel / Rabattcode', 'text', item.subtitle || '', 'z. B. 10% mit Code OMNI10', (v) => { item.subtitle = v; }),
+        mkField('Badge-Text', 'text', item.badge || 'WERBUNG', 'WERBUNG / PARTNER', (v) => { item.badge = v; }),
+        mkField('Anzeigedauer (Sek.)', 'number', String(item.durationSec ?? 15), '15', (v) => { item.durationSec = Math.max(3, parseInt(v || '15', 10) || 15); }),
+        mkField('Klick-URL (Link & QR-Code)', 'text', item.url || '', 'partner-seite.de/ref', (v) => { item.url = v; }),
+        mkField('Akzentfarbe', 'color', item.accentColor || '#38bdf8', '', (v) => { item.accentColor = v; })
+      );
+
+      const mediaRow = document.createElement('div');
+      mediaRow.style.cssText = 'display: flex; gap: 6px; align-items: center; flex-wrap: wrap;';
+      const imgInput = document.createElement('input');
+      imgInput.type = 'text';
+      imgInput.style.flex = '1';
+      imgInput.placeholder = 'Lokale Bilddatei wählen oder Bild-URL eintragen (optional)';
+      imgInput.value = item.imagePath || item.imageUrl || '';
+      imgInput.addEventListener('input', () => {
+        const val = imgInput.value.trim();
+        if (/^https?:\/\//i.test(val)) { item.imageUrl = val; item.imagePath = ''; }
+        else { item.imagePath = val; item.imageUrl = ''; }
+      });
+      const btnPick = mkBtn('🖼️ Bild wählen', 'Lokales Logo/Banner auswählen', async () => {
+        const picked = await window.omnichat.pickLocalFile?.({ kind: 'image' });
+        if (picked?.ok && picked.filePath) {
+          item.imagePath = picked.filePath;
+          item.imageUrl = '';
+          imgInput.value = picked.filePath;
+        }
+      });
+      mediaRow.append(imgInput, btnPick);
+
+      card.append(topRow, grid, mediaRow);
+      listEl.appendChild(card);
+    });
+  };
+
+  document.getElementById('btnOpenSponsors')?.addEventListener('click', async () => {
+    const res = await window.omnichat.sponsorsGet?.();
+    if (res?.ok && res.sponsors) spState = res.sponsors;
+    if (res?.overlayUrl) overlayUrl = res.overlayUrl;
+    renderList();
+    modal.classList.remove('hidden');
+  });
+
+  document.getElementById('btnCloseSponsors')?.addEventListener('click', () => modal.classList.add('hidden'));
+
+  document.getElementById('btnSpAddItem')?.addEventListener('click', () => {
+    spState.items.push({
+      id: `sp_${Date.now().toString(36)}`,
+      enabled: true,
+      name: '',
+      subtitle: '',
+      badge: 'WERBUNG',
+      url: '',
+      imagePath: '',
+      imageUrl: '',
+      accentColor: '#38bdf8',
+      durationSec: 15
+    });
+    renderList();
+  });
+
+  document.getElementById('btnSpSave')?.addEventListener('click', async () => {
+    readGlobalInputs();
+    const res = await window.omnichat.sponsorsSave?.(spState);
+    if (res?.ok) {
+      spState = res.sponsors;
+      renderList();
+      setMsg('✅ Werbepartner gespeichert & live ans OBS-Overlay (/sponsors) gesendet!', '#4ade80');
+    } else {
+      setMsg('⚠️ Speichern fehlgeschlagen.', '#f87171');
+    }
+  });
+
+  document.getElementById('btnSpCopyUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(overlayUrl);
+    setMsg(`🔗 ${overlayUrl} kopiert! (In OBS als Browser-Quelle 460×175 einfügen)`, '#4ade80');
+  });
+
+  document.getElementById('btnSpOpenPreview')?.addEventListener('click', () => {
+    window.omnichat.openExternalUrl?.(overlayUrl);
+  });
+})();
+
+(() => {
+  const stage = document.getElementById('chatPreviewStage');
+  const feed = document.getElementById('chatPreviewFeed');
+  const btnObs = document.getElementById('btnPvModeObs');
+  const btnApp = document.getElementById('btnPvModeApp');
+  const btnAdd = document.getElementById('btnPvAddMsg');
+  if (!stage || !feed) return;
+
+  let previewMode = 'app';
+  const sampleMessages = [
+    { platform: 'twitch', author: 'HyperStreamer99', color: '#a970ff', badge: 'MOD', time: '20:14', text: 'Willkommen im Stream! Der App-Chat sieht mega clean aus 🔥' },
+    { platform: 'youtube', author: 'PixelArchitect_Dev', color: '#ff4e45', badge: 'MEM', time: '20:14', text: 'Schriftgröße, Padding und Kontrast sind perfekt lesbar!' },
+    { platform: 'tiktok', author: 'NeonLightcycle', color: '#00f2fe', badge: 'VIP', time: '20:15', text: 'GGs! Die Runde war absolut crazy 🚀' },
+    { platform: 'twitch', author: 'SuperLongViewerName1234', color: '#38bdf8', badge: 'SUB', time: '20:15', text: 'Test für abgeschnittene Namen & Trennlinien-Vorschau ✨' }
+  ];
+  const extraSamples = [
+    { platform: 'twitch', author: 'ClutchMaster', color: '#4ade80', badge: 'VIP', time: '20:16', text: 'ACE!! Was ein krasser Flick!' },
+    { platform: 'youtube', author: 'CodeWizard', color: '#fbbf24', badge: '', time: '20:16', text: 'Welches Theme nutzt du gerade fürs Overlay?' },
+    { platform: 'tiktok', author: 'StreamFan_DE', color: '#f472b6', badge: '', time: '20:17', text: 'Grüße aus dem TikTok Live! ❤️' }
+  ];
+  let extraIdx = 0;
+
+  const toRgba = (hex, pct) => {
+    const clean = String(hex || '#0b0f19').replace('#', '');
+    const num = parseInt(clean, 16) || 0x0b0f19;
+    return `rgba(${(num >> 16) & 255},${(num >> 8) & 255},${num & 255},${(Math.max(0, Math.min(100, pct)) / 100).toFixed(2)})`;
+  };
+
+  const renderPreview = () => {
+    const layoutMode = selLayoutMode?.value || 'inline';
+    const obsTheme = previewMode === 'obs' ? (selObsChatTheme?.value || 'auto') : 'default';
+    const nameSize = parseFloat(rngNameSize?.value || '13');
+    const msgSize = parseFloat(rngMsgSize?.value || '13.5');
+    const maxNameLen = parseInt(rngMaxNameLen?.value || '16', 10);
+    const msgPad = parseInt(rngMsgPadding?.value || '5', 10);
+    const showIcons = chkShowPlatIcons ? chkShowPlatIcons.checked : true;
+    const showTs = chkShowTimestamps ? chkShowTimestamps.checked : true;
+    const platStyle = selPlatStyle?.value || 'icon_only';
+    const colorMode = selUserColorMode?.value || 'user';
+    const showSep = chkShowSeparator ? chkShowSeparator.checked : true;
+    const sepCol = clrSeparator?.value || '#ffffff';
+    const sepOp = parseInt(rngSepOpacity?.value || '10', 10);
+    const sepGap = parseInt(rngSepSpacing?.value || '0', 10);
+    const bgCol = clrChatBg?.value || '#0b0f19';
+    const bgOp = previewMode === 'obs'
+      ? parseInt(rngObsBgOpacity?.value || '65', 10)
+      : parseInt(rngBgOpacity?.value || '90', 10);
+
+    stage.style.setProperty('--pv-name-size', `${nameSize}px`);
+    stage.style.setProperty('--pv-msg-size', `${msgSize}px`);
+    stage.style.setProperty('--pv-pad-v', `${msgPad}px`);
+    stage.style.setProperty('--pv-gap', layoutMode === 'bubbles' ? `${Math.max(3, msgPad)}px` : `${sepGap}px`);
+    stage.style.setProperty('--pv-sep-display', showSep ? '1px' : '0px');
+    stage.style.setProperty('--pv-sep-color', toRgba(sepCol, sepOp));
+    stage.style.setProperty('--pv-item-bg', toRgba(bgCol, bgOp));
+
+    stage.classList.toggle('pv-bubbles', layoutMode === 'bubbles');
+    stage.classList.toggle('pv-theme-lol', obsTheme === 'lol');
+    stage.classList.toggle('pv-theme-valorant', obsTheme === 'valorant');
+    stage.classList.toggle('pv-theme-tron', obsTheme === 'tron');
+
+    feed.innerHTML = '';
+    const icons = { twitch: '🟣', youtube: '🔴', tiktok: '🎵' };
+    sampleMessages.slice(-6).forEach((m) => {
+      const row = document.createElement('div');
+      row.className = `pv-msg ${m.platform}`;
+      if (showTs) {
+        const ts = document.createElement('span');
+        ts.className = 'pv-time';
+        ts.textContent = m.time;
+        row.appendChild(ts);
+      }
+      if (showIcons) {
+        if (platStyle === 'icon_badge') {
+          const b = document.createElement('span');
+          b.className = `pv-plat-badge ${m.platform}`;
+          b.textContent = `${icons[m.platform] || '💬'} ${m.platform}`;
+          row.appendChild(b);
+        } else {
+          const ic = document.createElement('span');
+          ic.className = 'pv-plat';
+          ic.textContent = icons[m.platform] || '💬';
+          row.appendChild(ic);
+        }
+      }
+      if (m.badge) {
+        const bd = document.createElement('span');
+        bd.className = 'pv-badge';
+        bd.textContent = m.badge;
+        row.appendChild(bd);
+      }
+      const author = document.createElement('span');
+      author.className = 'pv-author';
+      const displayName = maxNameLen > 0 && m.author.length > maxNameLen ? `${m.author.slice(0, maxNameLen)}…` : m.author;
+      author.textContent = `${displayName}:`;
+      author.style.color = colorMode === 'mono'
+        ? '#e2e8f0'
+        : colorMode === 'platform'
+          ? (m.platform === 'twitch' ? '#a970ff' : m.platform === 'youtube' ? '#ff4e45' : '#00f2fe')
+          : m.color;
+      const txt = document.createElement('span');
+      txt.textContent = m.text;
+      row.append(author, txt);
+      feed.appendChild(row);
+    });
+  };
+
+  const setMode = (mode) => {
+    previewMode = mode;
+    if (btnObs) {
+      btnObs.style.background = mode === 'obs' ? 'rgba(56,189,248,0.2)' : '';
+      btnObs.style.borderColor = mode === 'obs' ? 'rgba(56,189,248,0.55)' : '';
+      btnObs.style.color = mode === 'obs' ? '#bae6fd' : '';
+    }
+    if (btnApp) {
+      btnApp.style.background = mode === 'app' ? 'rgba(56,189,248,0.2)' : '';
+      btnApp.style.borderColor = mode === 'app' ? 'rgba(56,189,248,0.55)' : '';
+      btnApp.style.color = mode === 'app' ? '#bae6fd' : '';
+    }
+    renderPreview();
+  };
+
+  btnObs?.addEventListener('click', () => setMode('obs'));
+  btnApp?.addEventListener('click', () => setMode('app'));
+  btnAdd?.addEventListener('click', () => {
+    sampleMessages.push(extraSamples[extraIdx % extraSamples.length]);
+    extraIdx += 1;
+    if (sampleMessages.length > 6) sampleMessages.shift();
+    renderPreview();
+  });
+
+  [
+    selLayoutMode, selObsChatTheme, rngNameSize, rngMsgSize, rngMaxNameLen, rngMsgPadding,
+    chkShowPlatIcons, chkShowTimestamps, selPlatStyle, selUserColorMode,
+    chkShowSeparator, clrSeparator, rngSepOpacity, rngSepSpacing, clrChatBg, rngBgOpacity, rngObsBgOpacity
+  ].forEach((el) => {
+    el?.addEventListener('input', renderPreview);
+    el?.addEventListener('change', renderPreview);
+  });
+
+  document.getElementById('btnOpenConfig')?.addEventListener('click', () => setTimeout(renderPreview, 60));
+  window.omnichat.onInitState?.(() => setTimeout(renderPreview, 120));
+  renderPreview();
 })();

@@ -80,6 +80,98 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
     body.style-bubbles .msg-row.twitch { border-left-color: #9146ff; }
     body.style-bubbles .msg-row.youtube { border-left-color: #ff0033; }
     body.style-bubbles .msg-row.tiktok { border-left-color: #00f2fe; }
+    body.chat-theme-lol #chatList { gap: 5px; }
+    body.chat-theme-lol .msg-row {
+      position: relative;
+      background: linear-gradient(145deg, rgba(9, 20, 40, 0.92) 0%, rgba(1, 10, 19, 0.94) 100%) !important;
+      border: 1px solid rgba(200, 170, 110, 0.52);
+      border-left: 3px solid #0ac8b9;
+      border-radius: 3px;
+      padding: 6px 10px;
+      color: #f0e6d2;
+      box-shadow: inset 0 0 0 1px rgba(200, 170, 110, 0.16), 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+    body.chat-theme-lol .msg-row::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 7px;
+      height: 7px;
+      border-top: 1.5px solid #c8aa6e;
+      border-right: 1.5px solid #c8aa6e;
+      pointer-events: none;
+    }
+    body.chat-theme-lol .author {
+      font-family: Georgia, "Times New Roman", serif;
+      letter-spacing: 0.03em;
+      text-shadow: 0 0 8px rgba(10, 200, 185, 0.35);
+    }
+    body.chat-theme-lol .badge {
+      background: rgba(200, 170, 110, 0.18);
+      border: 1px solid rgba(200, 170, 110, 0.5);
+      color: #f0e6d2;
+    }
+    body.chat-theme-lol #pinnedBox {
+      background: linear-gradient(155deg, rgba(9, 20, 40, 0.96), rgba(1, 10, 19, 0.98));
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+    }
+    body.chat-theme-lol .pin-label { color: #0ac8b9; }
+
+    body.chat-theme-valorant #chatList { gap: 5px; }
+    body.chat-theme-valorant .msg-row {
+      background: linear-gradient(135deg, rgba(15, 25, 35, 0.93) 0%, rgba(19, 28, 39, 0.94) 80%, rgba(45, 16, 22, 0.92) 100%) !important;
+      border: 1px solid rgba(236, 232, 225, 0.16);
+      border-left: 3.5px solid #ff4655;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+      padding: 6px 12px 6px 10px;
+      color: #ece8e1;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+    body.chat-theme-valorant .author {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 900;
+    }
+    body.chat-theme-valorant .badge {
+      background: rgba(255, 70, 85, 0.22);
+      border: 1px solid #ff4655;
+      color: #ff8b94;
+      border-radius: 1px;
+    }
+    body.chat-theme-valorant #pinnedBox {
+      background: linear-gradient(135deg, rgba(15, 25, 35, 0.97), rgba(45, 16, 22, 0.96));
+      border: 2px solid #ff4655;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    }
+    body.chat-theme-valorant .pin-label { color: #ff4655; }
+
+    body.chat-theme-tron #chatList { gap: 5px; }
+    body.chat-theme-tron .msg-row {
+      background: linear-gradient(145deg, rgba(2, 10, 22, 0.92), rgba(4, 20, 36, 0.94)) !important;
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-left: 3px solid #00f0ff;
+      border-radius: 2px;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+      padding: 6px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #e0fbff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.14);
+    }
+    body.chat-theme-tron .badge {
+      background: rgba(255, 106, 0, 0.2);
+      border: 1px solid #ff6a00;
+      color: #ff9f4d;
+    }
+    body.chat-theme-tron #pinnedBox {
+      background: rgba(2, 12, 24, 0.96);
+      border: 1.5px solid #00f0ff;
+      border-radius: 2px;
+    }
+    body.chat-theme-tron .pin-label { color: #00f0ff; }
     .msg-row.highlight {
       background: rgba(245, 158, 11, 0.24) !important;
       border-left: 3px solid #fbbf24;
@@ -153,6 +245,7 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
     const pinnedContent = document.getElementById('pinnedContent');
     let appearance = {
       layoutMode: 'inline',
+      obsChatTheme: 'auto',
       nameFontSize: 13,
       msgFontSize: 13,
       maxNameLength: 16,
@@ -165,7 +258,18 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
       sepOpacity: 10,
       usernameColorMode: 'user'
     };
+    let activeAddonId = '';
     let cachedMessages = [];
+
+    function syncChatThemeClass() {
+      const mode = String(appearance.obsChatTheme || 'auto');
+      const resolved = mode === 'auto'
+        ? (activeAddonId === 'lol' ? 'lol' : activeAddonId === 'valorant' ? 'valorant' : activeAddonId === 'techtalk' ? 'tron' : 'default')
+        : mode;
+      document.body.classList.toggle('chat-theme-lol', resolved === 'lol');
+      document.body.classList.toggle('chat-theme-valorant', resolved === 'valorant');
+      document.body.classList.toggle('chat-theme-tron', resolved === 'tron');
+    }
 
     function hexToRgba(hex, alphaPercent) {
       const clean = (hex || '#ffffff').replace('#', '');
@@ -191,6 +295,7 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
       document.body.classList.toggle('style-bubbles', appearance.layoutMode === 'bubbles');
       document.body.classList.toggle('hide-timestamps', !appearance.showTimestamps);
       document.body.classList.toggle('hide-platicons', appearance.showPlatformIcons === false);
+      syncChatThemeClass();
       rerenderAll();
     }
 
@@ -277,6 +382,9 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
           const payload = JSON.parse(ev.data);
           if (payload.type === 'appearance') {
             applyAppearance(payload.data);
+          } else if (payload.type === 'game-stats') {
+            activeAddonId = String(payload.data?.addonId || '');
+            syncChatThemeClass();
           } else if (payload.type === 'chat') {
             const m = payload.data;
             cachedMessages.push(m);
@@ -2935,6 +3043,226 @@ const OBS_VAL_MAP_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_SPONSORS_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Werbepartner Overlay</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #f8fafc; overflow: hidden; }
+    .sp-wrap { width: 450px; padding: 6px; }
+    .sp-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px 15px;
+      background: linear-gradient(145deg, rgba(10, 15, 28, 0.95), rgba(15, 23, 42, 0.94));
+      border: 1.5px solid var(--sp-accent, #38bdf8);
+      border-radius: 14px;
+      box-shadow: 0 0 26px rgba(56, 189, 248, 0.22), 0 12px 28px rgba(0, 0, 0, 0.55);
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .sp-card.is-hidden { opacity: 0; transform: translateY(10px); pointer-events: none; }
+    .sp-card.is-clickable { cursor: pointer; }
+    .sp-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      object-fit: contain;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+      padding: 4px;
+    }
+    .sp-logo.empty { display: none; }
+    .sp-body { flex: 1; min-width: 0; }
+    .sp-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .sp-badge {
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid var(--sp-accent, #38bdf8);
+      color: var(--sp-accent, #38bdf8);
+    }
+    .sp-next-hint { font-size: 9.5px; color: #94a3b8; margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sp-title { font-size: 17px; font-weight: 900; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sp-sub { font-size: 12.5px; color: #cbd5e1; margin-top: 2px; line-height: 1.3; }
+    .sp-url { font-size: 10.5px; color: var(--sp-accent, #38bdf8); margin-top: 5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sp-qr-box {
+      width: 74px;
+      height: 74px;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 4px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sp-qr-box.hidden { display: none; }
+    .sp-qr-box img { width: 100%; height: 100%; display: block; }
+    .sp-prog-track {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3.5px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .sp-prog-track.hidden { display: none; }
+    .sp-prog-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--sp-accent, #38bdf8);
+    }
+  </style>
+</head>
+<body>
+  <div class="sp-wrap">
+    <a class="sp-card is-hidden" id="spCard" target="_blank" rel="noopener noreferrer">
+      <img class="sp-logo empty" id="spLogo" alt="" />
+      <div class="sp-body">
+        <div class="sp-top">
+          <span class="sp-badge" id="spBadge">WERBUNG</span>
+          <span class="sp-next-hint" id="spCounter"></span>
+        </div>
+        <div class="sp-title" id="spTitle"></div>
+        <div class="sp-sub" id="spSub"></div>
+        <div class="sp-url" id="spUrl"></div>
+      </div>
+      <div class="sp-qr-box hidden" id="spQrBox"><img id="spQrImg" alt="QR" /></div>
+      <div class="sp-prog-track" id="spProgTrack"><div class="sp-prog-fill" id="spProgFill"></div></div>
+    </a>
+  </div>
+  <script>
+    const card = document.getElementById('spCard');
+    const logo = document.getElementById('spLogo');
+    const badge = document.getElementById('spBadge');
+    const counter = document.getElementById('spCounter');
+    const titleEl = document.getElementById('spTitle');
+    const subEl = document.getElementById('spSub');
+    const urlEl = document.getElementById('spUrl');
+    const qrBox = document.getElementById('spQrBox');
+    const qrImg = document.getElementById('spQrImg');
+    const progTrack = document.getElementById('spProgTrack');
+    const progFill = document.getElementById('spProgFill');
+
+    let state = { enabled: true, pauseBetweenSec: 0, showQrCode: true, showProgressBar: true, activeIndex: 0, items: [] };
+    let idx = 0;
+    let rotTimer = null;
+    let pauseTimer = null;
+    let lastRevision = '';
+
+    function clearTimers() {
+      if (rotTimer) { clearTimeout(rotTimer); rotTimer = null; }
+      if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+    }
+
+    function cleanDisplayUrl(raw) {
+      return String(raw || '').replace(/^https?:\\/\\//i, '').replace(/\\/$/, '');
+    }
+
+    function showSlide(nextIdx) {
+      clearTimers();
+      const activeItems = (state.items || []).filter((it) => it && it.enabled !== false && (it.name || it.resolvedImageUrl));
+      if (!state.enabled || !activeItems.length) {
+        card.classList.add('is-hidden');
+        return;
+      }
+      idx = ((nextIdx % activeItems.length) + activeItems.length) % activeItems.length;
+      const item = activeItems[idx];
+      const durationMs = Math.max(3, Math.min(600, Number(item.durationSec || 15))) * 1000;
+      const pauseMs = Math.max(0, Math.min(300, Number(state.pauseBetweenSec || 0))) * 1000;
+
+      card.style.setProperty('--sp-accent', item.accentColor || '#38bdf8');
+      badge.textContent = item.badge || 'WERBUNG';
+      titleEl.textContent = item.name || 'Partner';
+      subEl.textContent = item.subtitle || '';
+      subEl.style.display = item.subtitle ? '' : 'none';
+      counter.textContent = activeItems.length > 1 ? (idx + 1) + ' / ' + activeItems.length : '';
+
+      const safeHref = /^https?:\\/\\//i.test(item.url || '') ? item.url : '';
+      if (safeHref) {
+        card.setAttribute('href', safeHref);
+        card.classList.add('is-clickable');
+        urlEl.textContent = '🔗 ' + cleanDisplayUrl(safeHref);
+        urlEl.style.display = '';
+      } else {
+        card.removeAttribute('href');
+        card.classList.remove('is-clickable');
+        urlEl.textContent = '';
+        urlEl.style.display = 'none';
+      }
+
+      if (item.resolvedImageUrl) {
+        logo.src = item.resolvedImageUrl;
+        logo.classList.remove('empty');
+      } else {
+        logo.removeAttribute('src');
+        logo.classList.add('empty');
+      }
+
+      if (state.showQrCode !== false && item.qrDataUrl && safeHref) {
+        qrImg.src = item.qrDataUrl;
+        qrBox.classList.remove('hidden');
+      } else {
+        qrBox.classList.add('hidden');
+      }
+
+      progTrack.classList.toggle('hidden', state.showProgressBar === false || activeItems.length <= 1);
+      progFill.style.transition = 'none';
+      progFill.style.width = '0%';
+      card.classList.remove('is-hidden');
+      void progFill.offsetWidth;
+      progFill.style.transition = 'width ' + durationMs + 'ms linear';
+      progFill.style.width = '100%';
+
+      if (activeItems.length > 1 || pauseMs > 0) {
+        rotTimer = setTimeout(() => {
+          if (pauseMs > 0) {
+            card.classList.add('is-hidden');
+            pauseTimer = setTimeout(() => showSlide(idx + 1), pauseMs);
+          } else {
+            showSlide(idx + 1);
+          }
+        }, durationMs);
+      }
+    }
+
+    function applyState(next) {
+      if (!next) return;
+      const rev = String(next.revision || '');
+      if (rev && rev === lastRevision) return;
+      lastRevision = rev;
+      state = next;
+      showSlide(Number(next.activeIndex || 0));
+    }
+
+    function fetchLatest() {
+      fetch('/api/sponsors').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d) applyState(d); }).catch(() => {});
+    }
+    function connectWs() {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try { const p = JSON.parse(ev.data); if (p.type === 'sponsors') applyState(p.data); } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+    fetchLatest();
+    connectWs();
+  </script>
+</body>
+</html>`;
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -2952,9 +3280,11 @@ class ObsServer {
     this.currentSchedule = null;
     this.currentGiveaway = null;
     this.currentGameStats = null;
+    this.currentSponsors = null;
     this.currentIcsProvider = null;
     this.soundFileResolver = null;
     this.alertMediaResolver = null;
+    this.sponsorMediaResolver = null;
     this.onClientAction = null;
     this.onStreamDeckApi = null;
     this.onVoiceTestApi = null;
@@ -2974,6 +3304,43 @@ class ObsServer {
             'Cache-Control': 'no-cache'
           });
           res.end(JSON.stringify(this.currentGameStats || {}));
+          return;
+        }
+
+        if (urlPath === '/api/sponsors') {
+          res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'no-cache'
+          });
+          res.end(JSON.stringify(this.currentSponsors || { enabled: false, items: [] }));
+          return;
+        }
+
+        if (urlPath.startsWith('/api/sponsor-media/')) {
+          const safeId = decodeURIComponent(urlPath.replace('/api/sponsor-media/', '')).replace(/[^a-zA-Z0-9_-]/g, '');
+          const filePath = safeId && this.sponsorMediaResolver ? this.sponsorMediaResolver(safeId) : null;
+          if (!filePath || !fs.existsSync(filePath)) {
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+            res.end('Sponsor media not found');
+            return;
+          }
+          const ext = path.extname(filePath).toLowerCase();
+          const mimeMap = {
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+            '.svg': 'image/svg+xml',
+            '.apng': 'image/apng'
+          };
+          res.writeHead(200, {
+            'Content-Type': mimeMap[ext] || 'application/octet-stream',
+            'Cache-Control': 'no-cache',
+            'X-Content-Type-Options': 'nosniff'
+          });
+          fs.createReadStream(filePath).pipe(res);
           return;
         }
 
@@ -3184,6 +3551,8 @@ class ObsServer {
           res.end(OBS_VAL_BAR_HTML);
         } else if (urlPath === '/val-map') {
           res.end(OBS_VAL_MAP_HTML);
+        } else if (urlPath === '/sponsors') {
+          res.end(OBS_SPONSORS_HTML);
         } else {
           res.end(OBS_OVERLAY_HTML);
         }
@@ -3218,6 +3587,9 @@ class ObsServer {
         }
         if (this.currentGameStats) {
           ws.send(JSON.stringify({ type: 'game-stats', data: this.currentGameStats }));
+        }
+        if (this.currentSponsors) {
+          ws.send(JSON.stringify({ type: 'sponsors', data: this.currentSponsors }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -3358,6 +3730,15 @@ class ObsServer {
 
   setAlertMediaResolver(fn) {
     this.alertMediaResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  setSponsorMediaResolver(fn) {
+    this.sponsorMediaResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  broadcastSponsors(payload) {
+    this.currentSponsors = payload;
+    this._broadcast({ type: 'sponsors', data: payload });
   }
 
   setVoiceTestHandler(fn) {

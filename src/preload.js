@@ -147,5 +147,9 @@ contextBridge.exposeInMainWorld('omnichat', {
   voiceSaveConfig: (payload) => ipcRenderer.invoke('voice-save-config', payload),
   voiceGeneratePairing: (payload) => ipcRenderer.invoke('voice-generate-pairing', payload),
   voiceDisconnect: () => ipcRenderer.invoke('voice-disconnect'),
-  voiceTestCommand: (payload) => ipcRenderer.invoke('voice-test-command', payload)
+  voiceTestCommand: (payload) => ipcRenderer.invoke('voice-test-command', payload),
+  sponsorsGet: () => ipcRenderer.invoke('sponsors-get'),
+  sponsorsSave: (sp) => ipcRenderer.invoke('sponsors-save', sp),
+  sponsorsJump: (index) => ipcRenderer.invoke('sponsors-jump', index),
+  sponsorsPostChat: (itemId) => ipcRenderer.invoke('sponsors-post-chat', itemId)
 });

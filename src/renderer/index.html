@@ -65,6 +65,7 @@
       <button class="btn-chip" id="btnOpenHype" title="Chat-Hype-Detektor (Auto-Marker &amp; Auto-Replay)">🔥 Hype</button>
       <button class="btn-chip" id="btnOpenGameAddons" title="Game-Addons, OBS Game-Stats-Overlay (/game-stats) &amp; Auto-Switch">🎮 Game-Addons</button>
       <button class="btn-chip" id="btnOpenSceneEditor" title="OBS Szenen-, Quellen- &amp; Audio-Editor">🎛️ Szenen-Editor</button>
+      <button class="btn-chip" id="btnOpenSponsors" title="Werbepartner- &amp; Sponsoren-Banner Overlay (/sponsors) konfigurieren">🏷️ Partner</button>
       <button class="btn-chip" id="btnOpenHelp" title="Anleitung &amp; Dokumentation in eigenem Fenster öffnen">📖 Anleitung</button>
       <button class="btn-chip" id="btnOpenFeedback" title="Feedback, Feature-Wünsche oder Bugs als GitHub Discussion einreichen">💬 Feedback</button>
       <button class="btn-chip" id="btnOpenPrivacyAudit" title="Datenschutz-, Sicherheits- &amp; Zero-Telemetry-Nachweis (Live Quellcode-Scanner)">🔒 Datenschutz</button>
@@ -83,13 +84,6 @@
     <!-- LEFT STREAMER PROFILE & APPEARANCE SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-scroll">
-        <div class="sidebar-section" id="sidebarQuickSetupBar" style="padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(168,85,247,0.1)); border: 1px solid rgba(56,189,248,0.3);">
-          <div style="min-width: 0;">
-            <div style="font-size: 12px; font-weight: 700; color: #e0f2fe;">🧭 Quick Setup</div>
-            <div id="sidebarQuickSetupStatus" style="font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Prüfe Einrichtung...</div>
-          </div>
-          <button type="button" class="btn-sm" id="btnOpenQuickSetupSidebar" style="flex-shrink: 0; background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); color: #bae6fd; font-weight: 700;">Starten</button>
-        </div>
         <div class="sidebar-section">
           <h3>📡 Plattformen verbinden</h3>
           <p class="section-hint">Jede Plattform läuft isoliert mit Auto-Reconnect & Duplikat-Schutz und lässt sich einzeln aktivieren oder neu verbinden.</p>
@@ -230,6 +224,17 @@
             <select id="selLayoutMode">
               <option value="inline">Inline / Kompakt (Standard – volle Breite)</option>
               <option value="bubbles">Nachrichtenblasen / Cards (Optional)</option>
+            </select>
+          </div>
+
+          <div class="setting-row" style="margin-top: 6px;">
+            <label>OBS Chat-Overlay Stil (Thema)</label>
+            <select id="selObsChatTheme">
+              <option value="auto">🤖 Auto (folgt aktivem Game-Addon / Set)</option>
+              <option value="default">💬 Standard (Modern Dark)</option>
+              <option value="lol">⚔️ League of Legends (Hextech Gold &amp; Teal)</option>
+              <option value="valorant">🔫 Valorant (Tactical Crimson)</option>
+              <option value="tron">💠 TRON Grid (Tech Talk Neon)</option>
             </select>
           </div>
 
@@ -472,6 +477,21 @@
             <input type="checkbox" id="chkAnimateEmotes" checked />
             <span>✨ <strong>Animierte Emotes animiert abspielen</strong> (WebP / GIF)</span>
           </label>
+        </div>
+
+        <div class="sidebar-section chat-preview-box">
+          <div class="card-header" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h3 style="margin: 0;">👁️ Live Chat-Vorschau</h3>
+            <div style="display: flex; gap: 5px; align-items: center; margin-left: auto;">
+              <button type="button" class="btn-sm active" id="btnPvModeApp" style="background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.55); color: #bae6fd;">💬 App Chat</button>
+              <button type="button" class="btn-sm" id="btnPvModeObs">🎥 OBS Overlay</button>
+              <button type="button" class="btn-sm" id="btnPvAddMsg" title="Neue Beispiel-Nachricht in der Vorschau testen">➕ Test</button>
+            </div>
+          </div>
+          <p class="section-hint" style="margin-bottom: 8px;">Zeigt deine Änderungen an Schriftgröße, Abständen, Transparenz, Trennlinien &amp; Theme sofort live an.</p>
+          <div class="chat-preview-stage" id="chatPreviewStage">
+            <div class="chat-preview-feed" id="chatPreviewFeed"></div>
+          </div>
         </div>
 
         <!-- SECTION 5: OBS CUSTOM BROWSER DOCK, STREAM OVERLAY & STANDALONE WINDOW -->
@@ -2720,6 +2740,45 @@
         <button type="button" class="btn-sm" id="btnQsPrev">← Zurück</button>
         <span id="qsStepIndicator" style="font-size: 12px; color: #94a3b8;">Schritt 1 von 5</span>
         <button type="button" class="btn-primary btn-sm" id="btnQsNext">Weiter →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-modal-backdrop hidden" id="sponsorsModal">
+    <div class="config-modal-card" style="max-width: 1120px; width: 95vw; max-height: 93vh; display: flex; flex-direction: column;">
+      <div class="config-modal-header">
+        <div>
+          <h2>🏷️ Werbepartner &amp; Sponsoren-Banner Overlay</h2>
+          <p class="config-modal-sub">Lege Reihenfolge, individuelle Anzeigedauer, Logos, QR-Code &amp; klickbare Links für dein OBS-Overlay (<code>/sponsors</code>) fest.</p>
+        </div>
+        <button class="btn-chip" id="btnCloseSponsors">✕ Schließen</button>
+      </div>
+      <div class="config-modal-body" style="overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,0.75); border: 1px solid rgba(56,189,248,0.28);">
+          <label class="checkbox-row"><input type="checkbox" id="spEnabled" checked /><span>👁️ <strong>Overlay aktiv</strong></span></label>
+          <label class="checkbox-row"><input type="checkbox" id="spShowQr" checked /><span>📱 <strong>QR-Code anzeigen</strong> (im Livestream direkt scannbar)</span></label>
+          <label class="checkbox-row"><input type="checkbox" id="spShowProg" checked /><span>⏳ <strong>Fortschrittsbalken</strong></span></label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+            Pause zwischen Bannern:
+            <input type="number" id="spPauseSec" min="0" max="300" value="0" style="width: 68px;" /> Sek.
+          </label>
+          <div style="margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn-sm" id="btnSpCopyUrl" style="background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.5); color: #bae6fd;">🔗 OBS /sponsors URL kopieren</button>
+            <button class="btn-sm" id="btnSpOpenPreview">🌐 Vorschau öffnen</button>
+          </div>
+        </div>
+
+        <div style="padding: 8px 11px; border-radius: 8px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.22); font-size: 11.5px; color: #cbd5e1;">
+          💡 <strong>Hinweis zur Klickbarkeit im Live-Stream:</strong> Das Overlay selbst ist als klickbarer Link (<code>&lt;a href&gt;</code>) gebaut. Da Twitch/YouTube-Videos technisch nicht direkt im Videobild klickbar sind, erzeugt OmniGrid automatisch einen <strong>lokalen QR-Code</strong> im Banner <em>und</em> bietet pro Partner den Button <strong>„💬 Link in Chat“</strong> für sofort klickbare Chat-Links!
+        </div>
+
+        <div id="spItemsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-top: 6px; border-top: 1px solid rgba(148,163,184,0.18);">
+          <button class="btn-sm" id="btnSpAddItem" style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7; font-weight: 700;">➕ Neuen Werbepartner hinzufügen</button>
+          <button class="btn-primary btn-sm" id="btnSpSave" style="margin-left: auto; padding: 8px 16px; font-weight: 700;">💾 Speichern &amp; live auf OBS anwenden</button>
+        </div>
+        <div id="spStatusMsg" style="font-size: 11.5px; min-height: 16px; color: #94a3b8;"></div>
       </div>
     </div>
   </div>
