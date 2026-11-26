@@ -6770,6 +6770,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         renderCanvasOverlay();
       }
       setTimeout(refreshPreview, 350);
+      setTimeout(refreshPreview, 1300);
     } else {
       setStatus(`❌ ${res?.error || 'Overlay konnte nicht hinzugefügt werden.'}`, '#f87171');
     }
@@ -6791,6 +6792,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       setStatus(`✅ ${label} komplett eingefügt (${(res.added || []).join(', ')})!`, '#4ade80');
       await loadSceneItems(currentSceneName);
       setTimeout(refreshPreview, 450);
+      setTimeout(refreshPreview, 1400);
     } else {
       setStatus(`❌ ${res?.error || 'Set konnte nicht eingefügt werden.'}`, '#f87171');
     }
@@ -6978,6 +6980,9 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnOpen?.addEventListener('click', () => {
     loadInputKinds(true);
     loadBuiltinOverlays();
+    window.omnichat.obsWsAction?.({ action: 'refresh-omnigrid-overlays' }).then(() => {
+      setTimeout(refreshPreview, 900);
+    }).catch(() => {});
   });
   window.omnichat.onObsWsState?.((st) => {
     if (st?.connected && !loadedKindsFromObs) loadInputKinds(true);
@@ -9618,11 +9623,10 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   const renderThemes = (data) => {
     if (!data) return;
     const packs = Array.isArray(data.packs) ? data.packs : [];
-    const mode = data.mode || 'auto';
+    const mode = data.mode && data.mode !== 'auto' ? data.mode : 'none';
     sel.innerHTML = '';
     const opts = [
-      { value: 'auto', label: '🤖 Auto (wechselt nach gespieltem Champion)' },
-      { value: 'none', label: '⚔️ Standard (LoL Hextech)' },
+      { value: 'none', label: '⚔️ Standard-Design (kein Pack aktiv)' },
       ...packs.map((p) => ({ value: p.id, label: `${p.icon || '🎨'} ${p.name}` }))
     ];
     opts.forEach((o) => {
@@ -9644,8 +9648,8 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     if (res?.ok && statusEl) {
       statusEl.style.color = '#ff69b4';
       statusEl.textContent = res.active
-        ? `💥 Champion-Design aktiv: ${res.active.icon} ${res.active.name} (live auf Chat, HUD, Build-Bar & Minimap!)`
-        : '⚔️ Standard LoL Hextech Design aktiv.';
+        ? `💥 Design-Pack aktiv: ${res.active.icon} ${res.active.name} (live auf allen OBS-Overlays!)`
+        : '⚔️ Standard-Design aktiv (kein Champion-Pack ausgewählt).';
     }
   });
 

@@ -128,14 +128,9 @@ function deletePack(userDataDir, packId) {
 }
 
 function resolveActiveChampionTheme(cfg = {}, packs = []) {
-  const mode = String(cfg.championThemeMode || 'auto').trim();
-  if (mode === 'none' || mode === 'default') return null;
-  if (mode !== 'auto') {
-    return packs.find((p) => p.id === mode) || null;
-  }
-  const activeChamp = String(cfg.gameAddons?.perAddonStats?.lol?.champion || '').trim().toLowerCase();
-  if (!activeChamp) return null;
-  return packs.find((p) => Array.isArray(p.championMatch) && p.championMatch.some((m) => activeChamp.includes(m))) || null;
+  const mode = String(cfg.championThemeMode || 'none').trim();
+  if (!mode || mode === 'none' || mode === 'default' || mode === 'auto') return null;
+  return packs.find((p) => p.id === mode) || null;
 }
 
 module.exports = {

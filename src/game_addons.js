@@ -13,7 +13,7 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
       region: 'euw',
       rank: 'Diamond IV',
       lp: 50,
-      role: 'Mid',
+      role: '',
       champion: 'Ahri',
       skinId: 0,
       skinName: '',
@@ -841,7 +841,46 @@ function buildCs2GsiConfig(port = 4588) {
 `;
 }
 
-let cachedDdragon = { version: '', champions: null, skinsById: {} };
+let cachedDdragon = { version: '', champions: null, champByKey: {}, skinsById: {} };
+
+function normalizeLolPosition(rawPos) {
+  const key = String(rawPos || '').trim().toUpperCase();
+  if (!key || key === 'NONE' || key === 'INVALID' || key === 'FILL' || key === 'APEX') return '';
+  const map = {
+    TOP: 'Top',
+    JUNGLE: 'Jungle',
+    JGL: 'Jungle',
+    MIDDLE: 'Mid',
+    MID: 'Mid',
+    BOTTOM: 'ADC',
+    BOT: 'ADC',
+    ADC: 'ADC',
+    CARRY: 'ADC',
+    UTILITY: 'Support',
+    SUPPORT: 'Support',
+    SUP: 'Support'
+  };
+  return map[key] || '';
+}
+
+const LOL_SUPPORT_ITEM_IDS = new Set([
+  3850, 3851, 3853, 3854, 3855, 3857, 3858, 3859, 3860, 3862, 3863, 3864,
+  3865, 3866, 3867, 3869, 3870, 3871, 3876, 3877
+]);
+
+function detectLolRole({ position, lcuPosition, gameMode, spell1, spell2, spell1Raw, spell2Raw, items, fallbackRole } = {}) {
+  const direct = normalizeLolPosition(position) || normalizeLolPosition(lcuPosition);
+  if (direct) return direct;
+  const mode = String(gameMode || '').trim().toUpperCase();
+  if (mode === 'ARAM') return 'ARAM';
+  if (mode === 'CHERRY') return 'Arena';
+  const spellStr = `${spell1 || ''} ${spell2 || ''} ${spell1Raw || ''} ${spell2Raw || ''}`;
+  if (/smite|zerschmettern/i.test(spellStr)) return 'Jungle';
+  if (Array.isArray(items) && items.some((it) => LOL_SUPPORT_ITEM_IDS.has(Number(it?.itemID ?? it?.id ?? 0)))) {
+    return 'Support';
+  }
+  return String(fallbackRole || '').trim();
+}
 
 async function ensureDdragonLoaded() {
   if (cachedDdragon.version && cachedDdragon.champions) return cachedDdragon;
@@ -853,11 +892,13 @@ async function ensureDdragonLoaded() {
     const cResp = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ver}/data/de_DE/champion.json`);
     const cJson = await cResp.json();
     const map = {};
+    const byKey = {};
     for (const champ of Object.values(cJson?.data || {})) {
       map[String(champ.name || '').toLowerCase()] = champ.id;
       map[String(champ.id || '').toLowerCase()] = champ.id;
+      if (champ.key) byKey[String(champ.key)] = { id: champ.id, name: champ.name || champ.id };
     }
-    cachedDdragon = { version: ver, champions: map, skinsById: {} };
+    cachedDdragon = { version: ver, champions: map, champByKey: byKey, skinsById: {} };
   } catch (e) {}
   return cachedDdragon;
 }
@@ -1102,10 +1143,13 @@ async function readLolLcuRankedStats() {
     return { ok: false, error: 'League of Legends Client läuft aktuell nicht (keine LCU-Verbindung auf 127.0.0.1 gefunden).' };
   }
 
-  const [rankedData, summonerData, regionData] = await Promise.all([
+  const [rankedData, summonerData, regionData, matchData, gameflowData, champSelectData] = await Promise.all([
     lcuGetJson(creds.port, creds.token, '/lol-ranked/v1/current-ranked-stats').catch(() => null),
     lcuGetJson(creds.port, creds.token, '/lol-summoner/v1/current-summoner').catch(() => null),
-    lcuGetJson(creds.port, creds.token, '/riotclient/region-locale').catch(() => null)
+    lcuGetJson(creds.port, creds.token, '/riotclient/region-locale').catch(() => null),
+    lcuGetJson(creds.port, creds.token, '/lol-match-history/v1/products/lol/current-summoner/matches?begIndex=0&endIndex=6').catch(() => null),
+    lcuGetJson(creds.port, creds.token, '/lol-gameflow/v1/session').catch(() => null),
+    lcuGetJson(creds.port, creds.token, '/lol-champ-select/v1/session').catch(() => null)
   ]);
 
   if (!rankedData && !summonerData) {
@@ -1137,6 +1181,52 @@ async function readLolLcuRankedStats() {
   const regMap = { euw1: 'euw', eun1: 'eune', na1: 'na', kr: 'kr', br1: 'br', oc1: 'oce', tr1: 'tr', jp1: 'jp' };
   const region = regMap[rawReg] || rawReg || '';
 
+  let lcuRole = '';
+  if (champSelectData && Array.isArray(champSelectData.myTeam)) {
+    const localCell = champSelectData.myTeam.find((m) => Number(m.cellId) === Number(champSelectData.localPlayerCellId));
+    if (localCell?.assignedPosition) lcuRole = normalizeLolPosition(localCell.assignedPosition);
+  }
+  if (!lcuRole && gameflowData?.gameData) {
+    const allTeam = [
+      ...(Array.isArray(gameflowData.gameData.teamOne) ? gameflowData.gameData.teamOne : []),
+      ...(Array.isArray(gameflowData.gameData.teamTwo) ? gameflowData.gameData.teamTwo : [])
+    ];
+    const myPuuid = String(summonerData?.puuid || '');
+    const mySumId = Number(summonerData?.summonerId || 0);
+    const meFlow = allTeam.find((p) => (myPuuid && p.puuid === myPuuid) || (mySumId && Number(p.summonerId) === mySumId));
+    if (meFlow?.selectedPosition) lcuRole = normalizeLolPosition(meFlow.selectedPosition);
+  }
+
+  const rawGames = Array.isArray(matchData?.games?.games) ? matchData.games.games : [];
+  let recentMatches = [];
+  if (rawGames.length) {
+    const dd = await ensureDdragonLoaded();
+    const ver = dd.version || '14.23.1';
+    const myPuuid = String(summonerData?.puuid || '');
+    const mySumId = Number(summonerData?.summonerId || 0);
+    recentMatches = rawGames
+      .slice(0, 6)
+      .map((g) => {
+        const parts = Array.isArray(g?.participants) ? g.participants : [];
+        const ids = Array.isArray(g?.participantIdentities) ? g.participantIdentities : [];
+        const myIdent = ids.find((pi) => (myPuuid && pi?.player?.puuid === myPuuid) || (mySumId && Number(pi?.player?.summonerId) === mySumId));
+        const p = (myIdent ? parts.find((x) => Number(x.participantId) === Number(myIdent.participantId)) : null) || parts[0] || null;
+        if (!p) return null;
+        const cInfo = dd.champByKey?.[String(p.championId)] || null;
+        const champId = cInfo?.id || '';
+        return {
+          champion: cInfo?.name || `Champ #${p.championId || ''}`,
+          championIconUrl: champId ? `https://ddragon.leagueoflegends.com/cdn/${ver}/img/champion/${champId}.png` : '',
+          win: Boolean(p.stats?.win),
+          kills: Number(p.stats?.kills || 0),
+          deaths: Number(p.stats?.deaths || 0),
+          assists: Number(p.stats?.assists || 0),
+          at: Number(g.gameCreation || Date.now())
+        };
+      })
+      .filter(Boolean);
+  }
+
   return {
     ok: true,
     rank: parsed.rank,
@@ -1145,7 +1235,9 @@ async function readLolLcuRankedStats() {
     losses: parsed.losses || 0,
     queueLabel,
     riotId,
-    region
+    region,
+    role: lcuRole,
+    recentMatches
   };
 }
 
@@ -1166,6 +1258,8 @@ module.exports = {
   buildCs2GsiConfig,
   resolveLolDdragonAssets,
   resolveLolItemList,
+  normalizeLolPosition,
+  detectLolRole,
   readLolLcuRankedStats,
   createRiotLocalHttpsAgent
 };

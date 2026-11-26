@@ -800,6 +800,7 @@ class ObsWsClient extends EventEmitter {
           sceneItemEnabled: true
         }).catch(() => {});
       }
+      await this.call('PressInputPropertiesButton', { inputName: name, propertyName: 'refreshnocache' }).catch(() => {});
       return { ok: true, sceneItemId: existingInScene.sceneItemId, inputName: name, reusedInScene: true };
     }
 
@@ -835,7 +836,26 @@ class ObsWsClient extends EventEmitter {
       }).catch(() => {});
     }
 
+    await this.call('PressInputPropertiesButton', { inputName: name, propertyName: 'refreshnocache' }).catch(() => {});
     return { ok: true, sceneItemId, inputName: name, reusedInScene: false };
+  }
+
+  async refreshAllOmniGridOverlays(port = 4588) {
+    if (!this.state.connected) return { ok: false, refreshed: [] };
+    const res = await this.call('GetInputList', { inputKind: 'browser_source' }).catch(() => ({ inputs: [] }));
+    const inputs = Array.isArray(res.inputs) ? res.inputs : [];
+    const refreshed = [];
+    for (const inp of inputs) {
+      try {
+        const st = await this.call('GetInputSettings', { inputName: inp.inputName });
+        const u = String(st?.inputSettings?.url || '');
+        if (u.includes(`127.0.0.1:${port}`) || u.includes(`localhost:${port}`) || String(inp.inputName || '').startsWith('OmniGrid')) {
+          await this.call('PressInputPropertiesButton', { inputName: inp.inputName, propertyName: 'refreshnocache' }).catch(() => {});
+          refreshed.push(inp.inputName);
+        }
+      } catch (e) {}
+    }
+    return { ok: true, refreshed };
   }
 
   async removeSceneItem(sceneName, sceneItemId) {
