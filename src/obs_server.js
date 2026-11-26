@@ -2853,7 +2853,11 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       }
 
       async function resolveSkinSplash(art) {
-        if (!art || !art.championId) return '';
+        if (!art) return '';
+        if (art.localAsset && /^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(String(art.localAsset))) {
+          return '/api/theme-asset/' + encodeURIComponent(String(art.localAsset));
+        }
+        if (!art.championId) return '';
         const cid = String(art.championId).replace(/[^A-Za-z0-9]/g, '');
         if (!cid) return '';
         const q = String(art.skinQuery || '').trim().toLowerCase();
@@ -4749,7 +4753,11 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     return ddVerPromise;
   }
   async function resolvePackSkinSplash(art){
-    if (!art || !art.championId) return '';
+    if (!art) return '';
+    if (art.localAsset && /^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(String(art.localAsset))) {
+      return '/api/theme-asset/' + encodeURIComponent(String(art.localAsset));
+    }
+    if (!art.championId) return '';
     const cid = String(art.championId).replace(/[^A-Za-z0-9]/g, '');
     if (!cid) return '';
     const q = String(art.skinQuery || '').trim().toLowerCase();
@@ -4881,6 +4889,26 @@ class ObsServer {
             'Cache-Control': 'no-cache'
           });
           res.end(JSON.stringify({ pack: this.currentChampionTheme || null }));
+          return;
+        }
+
+        if (urlPath.startsWith('/api/theme-asset/')) {
+          const safeFile = decodeURIComponent(urlPath.replace('/api/theme-asset/', '')).trim();
+          if (!/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(safeFile)) {
+            res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+            res.end('Invalid theme asset');
+            return;
+          }
+          const assetPath = path.join(__dirname, 'assets', 'themes', safeFile);
+          if (!fs.existsSync(assetPath)) {
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+            res.end('Theme asset not found');
+            return;
+          }
+          const ext = path.extname(assetPath).toLowerCase();
+          const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
+          fs.createReadStream(assetPath).pipe(res);
           return;
         }
 
