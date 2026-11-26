@@ -32,14 +32,29 @@ function sanitizeHexOrRgba(val, fallback) {
   return fallback;
 }
 
+const KNOWN_PACK_ASSETS = {
+  'akali-kda-firestarter-ignition': {
+    characterArt: 'akali-ignition-art.png',
+    skinArt: { championId: 'Akali', skinQuery: 'Firestarter Ignition', localAsset: 'akali-kda-firestarter-ignition.jpg' }
+  },
+  'akali-kda-firestarter': {
+    characterArt: 'akali-ignition-art.png',
+    skinArt: { championId: 'Akali', skinQuery: 'Firestarter Ignition', localAsset: 'akali-kda-firestarter-ignition.jpg' }
+  }
+};
+
 function sanitizePack(raw = {}) {
   if (!raw || typeof raw !== 'object') return null;
   const id = String(raw.id || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48);
   const name = String(raw.name || '').trim().slice(0, 80);
   if (!id || !name) return null;
+  const known = KNOWN_PACK_ASSETS[id] || null;
   const c = raw.colors && typeof raw.colors === 'object' ? raw.colors : {};
   const allowedEffects = ['none', 'jinx-glitch', 'kda-firestarter', 'kda-all-out', 'risen-legend', 'inkshadow', 'dark-cosmic', 'black-rose', 'ravenborn', 'elementalist', 'high-noon', 'arcane-prestige', 'prestige-cosmic', 'god-king', 'radiant-cloud', 'soul-fighter', 'blossom-springs', 'spirit-blossom', 'nightbringer', 'project-cyber', 'ruined-mist', 'neon-pulse', 'hextech'];
   const eff = allowedEffects.includes(String(raw.effect || '')) ? String(raw.effect) : 'none';
+  const rawCharArt = String(raw.characterArt || known?.characterArt || '');
+  const rawSkin = raw.skinArt && typeof raw.skinArt === 'object' ? raw.skinArt : (known?.skinArt || null);
+  const resolvedLocal = String(rawSkin?.localAsset || known?.skinArt?.localAsset || '');
   return {
     id,
     name,
@@ -61,15 +76,13 @@ function sanitizePack(raw = {}) {
       muted: sanitizeHexOrRgba(c.muted, '#cbd5e1')
     },
     mapCoverBadge: String(raw.mapCoverBadge || '').slice(0, 64),
-    characterArt: /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(raw.characterArt || ''))
-      ? String(raw.characterArt).slice(0, 80)
-      : '',
-    skinArt: raw.skinArt && typeof raw.skinArt === 'object' && /^[A-Za-z0-9]{1,32}$/.test(String(raw.skinArt.championId || ''))
+    characterArt: /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(rawCharArt) ? rawCharArt.slice(0, 80) : '',
+    skinArt: rawSkin && /^[A-Za-z0-9]{1,32}$/.test(String(rawSkin.championId || ''))
       ? {
-          championId: String(raw.skinArt.championId).slice(0, 32),
-          skinQuery: String(raw.skinArt.skinQuery || '').slice(0, 64),
-          ...(/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(String(raw.skinArt.localAsset || ''))
-            ? { localAsset: String(raw.skinArt.localAsset).slice(0, 80) }
+          championId: String(rawSkin.championId).slice(0, 32),
+          skinQuery: String(rawSkin.skinQuery || '').slice(0, 64),
+          ...(/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(resolvedLocal)
+            ? { localAsset: resolvedLocal.slice(0, 80) }
             : {})
         }
       : null,

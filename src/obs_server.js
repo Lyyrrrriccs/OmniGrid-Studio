@@ -2669,7 +2669,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       height: 295px;
       width: auto;
       display: none;
-      z-index: 4;
+      z-index: 12;
       pointer-events: none;
       filter: drop-shadow(0 0 18px var(--c1)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.85));
       animation: charFloatBg 4.6s ease-in-out infinite;
