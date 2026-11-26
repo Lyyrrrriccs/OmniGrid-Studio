@@ -3202,10 +3202,6 @@ window.omnichat.onChatMessage((msg) => {
   document.getElementById('btnOpenConfigSidebar')?.addEventListener('click', openModal);
   document.getElementById('btnCloseConfig')?.addEventListener('click', closeModal);
 
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
   });
@@ -3824,12 +3820,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     modal.classList.add('hidden');
     if (videoEl) videoEl.pause();
   });
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.add('hidden');
-      if (videoEl) videoEl.pause();
-    }
-  });
 
   document.getElementById('btnClipRefresh')?.addEventListener('click', refreshList);
   document.getElementById('btnClipPickFile')?.addEventListener('click', async () => {
@@ -4256,9 +4246,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnOpenTop?.addEventListener('click', openModal);
   btnOpenSide?.addEventListener('click', openModal);
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.classList.add('hidden');
-  });
 
   document.getElementById('btnSaveSocialConfig')?.addEventListener('click', async () => {
     readConnectionsIntoState();
@@ -4617,7 +4604,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (res?.giveaway) renderGw(res.giveaway);
   });
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
   document.getElementById('btnGwStart')?.addEventListener('click', async () => {
     const res = await window.omnichat.giveawayAction({
@@ -4745,7 +4731,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
   document.getElementById('btnSbAddFile')?.addEventListener('click', async () => {
     const pick = await window.omnichat.soundboardPickFile();
@@ -4813,7 +4798,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
   function readHypeForm() {
     return {
@@ -5118,7 +5102,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   });
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
   document.getElementById('btnGaSave')?.addEventListener('click', saveFromForm);
   document.getElementById('gaOverlayEnabled')?.addEventListener('change', async (e) => {
@@ -6468,7 +6451,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     stopVirtualCamPreview();
   }
   btnClose?.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   window.addEventListener('beforeunload', () => {
     if (vcamStartedByEditor) stopVirtualCamPreview();
   });
@@ -7732,9 +7714,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   }
 
   btnClose?.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
 
   async function submitFeedback(targetType) {
     const title = inpTitle?.value.trim() || '';
@@ -7852,9 +7831,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   }
 
   btnClose?.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
 
   btnRescan?.addEventListener('click', runAudit);
   btnRevealConfig?.addEventListener('click', () => window.omnichat.privacyOpenPath?.('config'));
@@ -8829,7 +8805,6 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   document.getElementById('btnOpenQuickSetupFromConfig')?.addEventListener('click', openWizard);
   document.getElementById('btnOpenQuickSetupSystem')?.addEventListener('click', openWizard);
   document.getElementById('btnQsClose')?.addEventListener('click', () => closeWizard(true));
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeWizard(true); });
   pills.forEach((b) => b.addEventListener('click', () => { syncToMainForm(); goToStep(Number(b.dataset.qsStep)); }));
   btnPrev?.addEventListener('click', () => { syncToMainForm(); goToStep(currentStep - 1); });
   btnNext?.addEventListener('click', async () => {
