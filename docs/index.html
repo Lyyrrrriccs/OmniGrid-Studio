@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="de" class="dark">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OmniGrid Studio — Dein lokales Multi-Plattform Streamer Cockpit</title>
-  <meta name="description" content="Kostenlose Open-Source Streamer-Suite: Multi-Plattform Chat & RTMP-Relay (Twitch, YouTube, TikTok, Kick), OBS Szenen-Editor, Chat Hype Detector, 9:16 Shorts-Pipeline & LoL Game-Addons. Ohne Cloud, ohne Abo." />
+  <title>OmniGrid Studio — Your Local Multi-Platform Streamer Cockpit</title>
+  <meta name="description" content="Free open-source streamer suite: Multi-Platform Chat & Local RTMP Relay (Twitch, YouTube, TikTok, Kick), OBS Scene Editor, Automatic Music VOD Protection, Chat Hype Detector, 9:16 Shorts Pipeline, Sponsor QR Overlays & Esports Game Addons. Zero cloud, zero subscriptions." />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color: #0b0f19; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -15,188 +15,194 @@
 </head>
 <body class="antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- Navbar -->
   <header class="sticky top-0 z-50 glass border-b border-slate-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <span class="text-2xl">⚡</span>
         <span class="font-bold text-lg tracking-tight text-white">OmniGrid Studio</span>
-        <span class="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Open Source • 100 % Lokal</span>
+        <span class="hidden sm:inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" data-en="Open Source • 100% Local" data-de="Open Source • 100 % Lokal">Open Source • 100% Local</span>
       </div>
       <nav class="flex items-center gap-4 text-sm">
-        <a href="#features" class="hidden md:inline text-slate-300 hover:text-white transition" data-de="Features" data-en="Features">Features</a>
-        <a href="#showcase" class="hidden md:inline text-slate-300 hover:text-white transition" data-de="Screenshots" data-en="Screenshots">Screenshots</a>
-        <a href="#compare" class="hidden md:inline text-slate-300 hover:text-white transition" data-de="Vergleich" data-en="Compare">Vergleich</a>
+        <a href="#features" class="hidden md:inline text-slate-300 hover:text-white transition" data-en="Features" data-de="Features">Features</a>
+        <a href="#showcase" class="hidden md:inline text-slate-300 hover:text-white transition" data-en="Screenshots" data-de="Screenshots">Screenshots</a>
+        <a href="#compare" class="hidden md:inline text-slate-300 hover:text-white transition" data-en="Compare" data-de="Vergleich">Compare</a>
         <button id="langToggle" class="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 transition">EN / DE</button>
         <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition">GitHub</a>
       </nav>
     </div>
   </header>
 
-  <!-- Hero Section -->
   <section class="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-28">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-medium mb-6">
-        <span data-de="Kein Abo • Keine Cloud • Volle Kontrolle über deinen Stream" data-en="No Subscription • No Cloud • Full Control Over Your Stream">Kein Abo • Keine Cloud • Volle Kontrolle über deinen Stream</span>
+        <span data-en="No Subscription • No Cloud • Full Control Over Your Stream" data-de="Kein Abo • Keine Cloud • Volle Kontrolle über deinen Stream">No Subscription • No Cloud • Full Control Over Your Stream</span>
       </div>
       <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
-        <span data-de="Dein komplettes" data-en="Your Complete">Dein komplettes</span>
-        <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent"> Multi-Plattform Streamer Cockpit</span>
+        <span data-en="Your Complete" data-de="Dein komplettes">Your Complete</span>
+        <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent" data-en=" Multi-Platform Streamer Cockpit" data-de=" Multi-Plattform Streamer Cockpit"> Multi-Platform Streamer Cockpit</span>
       </h1>
       <p class="mt-6 text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto"
-         data-de="Vereine Twitch, YouTube, TikTok & Kick in einem einzigen lokalen Desktop-Tool: Multi-Chat mit Emotes, lokales RTMP-Relay ohne doppelte GPU-Last, OBS WebSocket-Szeneneditor, Chat Hype Detector, 9:16 Shorts-Pipeline und Game-Addons."
-         data-en="Unify Twitch, YouTube, TikTok & Kick in one local desktop suite: Unified multi-chat with emotes, local RTMP relay with zero extra GPU load, OBS WebSocket scene editor, Chat Hype Detector, 9:16 Shorts pipeline & game addons.">
-        Vereine Twitch, YouTube, TikTok & Kick in einem einzigen lokalen Desktop-Tool: Multi-Chat mit Emotes, lokales RTMP-Relay ohne doppelte GPU-Last, OBS WebSocket-Szeneneditor, Chat Hype Detector, 9:16 Shorts-Pipeline und Game-Addons.
+         data-en="Unify Twitch, YouTube, TikTok & Kick in one local desktop suite: Unified multi-chat with emotes, local RTMP relay with zero extra GPU load, OBS WebSocket scene editor, automatic DMCA music VOD protection, Chat Hype Detector, 9:16 Shorts pipeline & game addons."
+         data-de="Vereine Twitch, YouTube, TikTok & Kick in einem einzigen lokalen Desktop-Tool: Multi-Chat mit Emotes, lokales RTMP-Relay ohne doppelte GPU-Last, OBS WebSocket-Szeneneditor, automatischer DMCA Musik-VOD-Schutz, Chat Hype Detector, 9:16 Shorts-Pipeline und Game-Addons.">
+        Unify Twitch, YouTube, TikTok & Kick in one local desktop suite: Unified multi-chat with emotes, local RTMP relay with zero extra GPU load, OBS WebSocket scene editor, automatic DMCA music VOD protection, Chat Hype Detector, 9:16 Shorts pipeline & game addons.
       </p>
 
-      <!-- CTA Buttons -->
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/releases/latest" target="_blank"
            class="px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-base shadow-lg shadow-indigo-600/25 transition flex items-center gap-2">
           <span>⬇️</span>
-          <span data-de="Kostenlos herunterladen (macOS / Windows)" data-en="Download Free (macOS / Windows)">Kostenlos herunterladen (macOS / Windows)</span>
+          <span data-en="Download Free (macOS / Windows)" data-de="Kostenlos herunterladen (macOS / Windows)">Download Free (macOS / Windows)</span>
         </a>
-        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/blob/main/README.de.md" target="_blank"
+        <a href="https://github.com/Lyyrrrriccs/OmniGrid-Studio/blob/main/README.md" target="_blank"
            class="px-7 py-3.5 rounded-xl glass hover:bg-slate-800/80 text-slate-200 font-semibold text-base transition">
-          <span data-de="📖 Dokumentation (README)" data-en="📖 Documentation (README)">📖 Dokumentation (README)</span>
+          <span data-en="📖 Documentation (README)" data-de="📖 Dokumentation (README)">📖 Documentation (README)</span>
         </a>
       </div>
 
-      <!-- Hero Screenshot -->
       <div class="mt-14 max-w-6xl mx-auto rounded-2xl overflow-hidden border border-slate-700/80 glow">
         <img src="./assets/Omni-Studio-ActiveChat.png" alt="OmniGrid Studio Active Multi-Platform Chat & Streamer Cockpit" class="w-full h-auto block" />
       </div>
     </div>
   </section>
 
-  <!-- Interactive Feature & Screenshot Showcase -->
   <section id="showcase" class="py-20 border-t border-slate-800/80 bg-slate-950/40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center max-w-2xl mx-auto mb-12">
-        <h2 class="text-3xl font-bold text-white" data-de="Ein Blick ins Cockpit" data-en="Inside the Cockpit">Ein Blick ins Cockpit</h2>
-        <p class="mt-3 text-slate-400" data-de="Klicke durch die Module – alles läuft direkt lokal auf deinem Rechner." data-en="Click through the modules — everything runs natively and locally on your machine.">
-          Klicke durch die Module – alles läuft direkt lokal auf deinem Rechner.
+        <h2 class="text-3xl font-bold text-white" data-en="Inside the Cockpit" data-de="Ein Blick ins Cockpit">Inside the Cockpit</h2>
+        <p class="mt-3 text-slate-400" data-en="Click through the modules — everything runs natively and locally on your machine." data-de="Klicke durch die Module – alles läuft direkt lokal auf deinem Rechner.">
+          Click through the modules — everything runs natively and locally on your machine.
         </p>
       </div>
 
-      <!-- Tabs -->
       <div class="flex flex-wrap justify-center gap-2.5 mb-8" id="showcaseTabs">
         <button class="tab-btn active px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium transition"
                 data-img="./assets/Omni-Studio-ActiveChat.png"
-                data-title-de="Unified Multi-Plattform Chat & Live-Statistiken"
+                data-en="💬 Multi-Chat & Events"
+                data-de="💬 Multi-Chat & Events"
                 data-title-en="Unified Multi-Platform Chat & Live Analytics"
-                data-desc-de="Twitch, YouTube und TikTok in einem Stream – inkl. 7TV/BTTV-Emotes, Plattform-Split-Balken, Event-Ticker (Raids, Bits, Subs), Spam-Filter, Chat-Export und direkter Antwort auf ausgewählte Plattformen."
-                data-desc-en="Twitch, YouTube, and TikTok in a single feed — including 7TV/BTTV emotes, platform split bar, event ticker (raids, bits, subs), spam filter, chat export, and multi-platform reply.">
+                data-title-de="Unified Multi-Plattform Chat & Live-Statistiken"
+                data-desc-en="Twitch, YouTube, and TikTok in a single feed — including 7TV/BTTV emotes, platform split bar, event ticker (raids, bits, subs), spam filter, chat export, and multi-platform reply."
+                data-desc-de="Twitch, YouTube und TikTok in einem Stream – inkl. 7TV/BTTV-Emotes, Plattform-Split-Balken, Event-Ticker (Raids, Bits, Subs), Spam-Filter, Chat-Export und direkter Antwort auf ausgewählte Plattformen.">
           💬 Multi-Chat & Events
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-MultiStream-Config.png"
-                data-title-de="Multi-Plattform RTMP-Relay (0 % Extra GPU-Last)"
+                data-en="📡 Multi-Stream Relay"
+                data-de="📡 Multi-Stream Relay"
                 data-title-en="Multi-Platform RTMP Relay (0% Extra GPU Load)"
-                data-desc-de="OBS rendert deinen Stream nur ein einziges Mal lokal an OmniGrid Studio (rtmp://127.0.0.1:1935/live/omnigrid) und OmniGrid verteilt ihn verlustfrei (-c copy) gleichzeitig an Twitch, YouTube, TikTok und Kick."
-                data-desc-en="OBS encodes your stream only once locally to OmniGrid Studio and OmniGrid distributes it losslessly (-c copy) simultaneously to Twitch, YouTube, TikTok, and Kick.">
+                data-title-de="Multi-Plattform RTMP-Relay (0 % Extra GPU-Last)"
+                data-desc-en="OBS encodes your stream only once locally to OmniGrid Studio and OmniGrid distributes it losslessly (-c copy) simultaneously to Twitch, YouTube, TikTok, and Kick."
+                data-desc-de="OBS rendert deinen Stream nur ein einziges Mal lokal an OmniGrid Studio (rtmp://127.0.0.1:1935/live/omnigrid) und OmniGrid verteilt ihn verlustfrei (-c copy) gleichzeitig an Twitch, YouTube, TikTok und Kick.">
           📡 Multi-Stream Relay
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-Scene-Editor.png"
-                data-title-de="OBS Scene & Source Editor (WebSocket v5)"
+                data-en="🎛️ OBS Scene Editor"
+                data-de="🎛️ OBS Szenen-Editor"
                 data-title-en="OBS Scene & Source Editor (WebSocket v5)"
-                data-desc-de="Verschiebe und skaliere OBS-Quellen direkt auf der Live-Vorschau, füge fertige App-Overlays (Multi-Chat, Alerts, Musik-Widget, Game-Stats) per 1-Klick hinzu und steuere den gesamten OBS Audio-Mixer."
-                data-desc-en="Drag and resize OBS sources directly on the live canvas, insert built-in overlays (Multi-Chat, Alerts, Music Widget, Game Stats) in one click, and control the full OBS audio mixer.">
-          🎛️ OBS Szenen-Editor
+                data-title-de="OBS Scene & Source Editor (WebSocket v5)"
+                data-desc-en="Drag and resize OBS sources directly on the live canvas, insert built-in overlays (Multi-Chat, Alerts, Music Widget, Game Stats) in one click, and control the OBS audio mixer with live device switching & DMCA VOD protection."
+                data-desc-de="Verschiebe und skaliere OBS-Quellen direkt auf der Live-Vorschau, füge fertige App-Overlays (Multi-Chat, Alerts, Musik-Widget, Game-Stats) per 1-Klick hinzu und steuere den OBS Audio-Mixer inkl. Gerätewechsel & DMCA-VOD-Schutz.">
+          🎛️ OBS Scene Editor
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/Omni-Studio-HypeDetector.png"
-                data-title-de="Chat Hype Detector (Auto-Marker & Auto-Clip)"
+                data-en="🔥 Chat Hype Detector"
+                data-de="🔥 Chat Hype Detector"
                 data-title-en="Chat Hype Detector (Auto-Marker & Auto-Clip)"
-                data-desc-de="Erkennt automatisch Chat-Spikes und Hype-Keywords (pog, omegalul, clip, hype...), setzt Twitch-Stream-Marker, speichert den OBS Replay-Buffer und erstellt vollautomatisch Twitch-Clips."
-                data-desc-en="Automatically detects chat spikes and hype keywords, sets Twitch stream markers, saves your OBS Replay Buffer, and creates Twitch clips hands-free.">
+                data-title-de="Chat Hype Detector (Auto-Marker & Auto-Clip)"
+                data-desc-en="Automatically detects chat spikes and hype keywords, sets Twitch stream markers, saves your OBS Replay Buffer, and creates Twitch clips hands-free."
+                data-desc-de="Erkennt automatisch Chat-Spikes und Hype-Keywords (pog, omegalul, clip, hype...), setzt Twitch-Stream-Marker, speichert den OBS Replay-Buffer und erstellt vollautomatisch Twitch-Clips.">
           🔥 Chat Hype Detector
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-ClipandReplayStudio.png"
-                data-title-de="Clip- & Replay-Studio (9:16 Shorts-Pipeline)"
-                data-title-en="Clip & Replay Studio (9:16 Shorts Pipeline)"
-                data-desc-de="Schneide deine OBS-Replays direkt in der App per FFmpeg zu und exportiere sie wahlweise in 16:9 oder direkt als fertiges 9:16 Hochformat-Short mit Blur-Hintergrund für YouTube Shorts & TikTok."
-                data-desc-en="Trim your OBS replays right inside the app via FFmpeg and export either in 16:9 or directly as a vertical 9:16 short with blurred background for YouTube Shorts & TikTok.">
-          🎬 9:16 Shorts-Pipeline
+                data-en="🎬 9:16 Shorts Pipeline"
+                data-de="🎬 9:16 Shorts-Pipeline"
+                data-title-en="Clip & Replay Studio (Multi-Marker 9:16 Shorts Pipeline)"
+                data-title-de="Clip- & Replay-Studio (Multi-Marker 9:16 Shorts-Pipeline)"
+                data-desc-en="Set multiple clip markers on one timeline and batch-export your OBS replays via FFmpeg either in 16:9 or as vertical 9:16 shorts with blurred background for YouTube Shorts & TikTok."
+                data-desc-de="Setze mehrere Clip-Marker auf einer Timeline und exportiere deine OBS-Replays per FFmpeg im Batch wahlweise in 16:9 oder direkt als fertige 9:16 Hochformat-Shorts für YouTube Shorts & TikTok.">
+          🎬 9:16 Shorts Pipeline
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-GameAddons.png"
-                data-title-de="Game-Addons, Live Client API & Anti-Ghosting Minimap"
+                data-en="⚔️ Game Addons (LoL / CS2)"
+                data-de="⚔️ Game-Addons (LoL / CS2)"
                 data-title-en="Game Addons, Live Client API & Anti-Ghosting Minimap"
-                data-desc-de="Liest Rank, LP, Champion & Live-Stats automatisch aus der League of Legends Client-API aus, triggert Auto-Clips bei Pentakills, bietet Chat-Commands (!elo, !build, !opgg) und ein Anti-Ghosting Minimap-Overlay."
-                data-desc-en="Automatically reads rank, LP, champion & live stats from the League of Legends Client API, triggers auto-clips on Pentakills, serves chat commands (!elo, !build, !opgg), and provides an anti-ghosting minimap overlay.">
-          ⚔️ Game-Addons (LoL / CS2)
+                data-title-de="Game-Addons, Live Client API & Anti-Ghosting Minimap"
+                data-desc-en="Automatically reads rank, LP, champion & live stats from the League of Legends Client API, triggers auto-clips on Pentakills, serves chat commands (!elo, !build, !opgg), and provides an anti-ghosting minimap overlay."
+                data-desc-de="Liest Rank, LP, Champion & Live-Stats automatisch aus der League of Legends Client-API aus, triggert Auto-Clips bei Pentakills, bietet Chat-Commands (!elo, !build, !opgg) und ein Anti-Ghosting Minimap-Overlay.">
+          ⚔️ Game Addons (LoL / CS2)
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-Main-Window.png"
-                data-title-de="OBS-Dock-Modus, Musik-Widget, Goal-Bar & Live-Polls"
+                data-en="🎵 Widgets & Polls"
+                data-de="🎵 Widgets & Polls"
                 data-title-en="OBS Dock Mode, Music Widget, Goal Bar & Live Polls"
-                data-desc-de="Optimiert als schmales Cockpit links neben OBS: Zeigt den aktuellen Song von Spotify/Apple Music/Amazon Music ohne API-Key, steuert Sub-Goals und startet plattformübergreifende Chat-Umfragen (!vote)."
-                data-desc-en="Optimized as a sleek cockpit docked next to OBS: Displays now-playing tracks from Spotify/Apple Music/Amazon Music without API keys, updates sub goals, and runs cross-platform chat polls.">
+                data-title-de="OBS-Dock-Modus, Musik-Widget, Goal-Bar & Live-Polls"
+                data-desc-en="Optimized as a sleek cockpit docked next to OBS: Displays now-playing tracks from Spotify/Apple Music/Amazon Music without API keys, updates sub goals, and runs cross-platform chat polls."
+                data-desc-de="Optimiert als schmales Cockpit links neben OBS: Zeigt den aktuellen Song von Spotify/Apple Music/Amazon Music ohne API-Key, steuert Sub-Goals und startet plattformübergreifende Chat-Umfragen (!vote).">
           🎵 Widgets & Polls
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-OverlaysShowcase.png"
-                data-title-de="TRON Tech-Talk, Valorant Esports & QR-Sponsor Overlays"
+                data-en="💠 TRON, Valorant & Overlays"
+                data-de="💠 TRON, Valorant & Overlays"
                 data-title-en="TRON Tech Talk, Valorant Esports & QR Sponsor Overlays"
-                data-desc-de="Fertige 1-Klick-Sets für GameDev & Tech Talks im TRON-Stil (/tron-talk & TRON HUD), Valorant Tactical Esports (/val-bar + Anti-Snipe Radar-Cover) und Werbepartner-Banner mit lokal generiertem QR-Code (/sponsors)."
-                data-desc-en="Ready-to-use 1-click sets for TRON-style Tech Talks & GameDev (/tron-talk & TRON HUD), Valorant Tactical Esports (/val-bar + Anti-Snipe radar cover), and rotating sponsor banners with local QR codes (/sponsors).">
+                data-title-de="TRON Tech-Talk, Valorant Esports & QR-Sponsor Overlays"
+                data-desc-en="Ready-to-use 1-click sets for TRON-style Tech Talks & GameDev (/tron-talk & TRON HUD), Valorant Tactical Esports (/val-bar + Anti-Snipe radar cover), and rotating sponsor banners with local QR codes (/sponsors)."
+                data-desc-de="Fertige 1-Klick-Sets für GameDev & Tech Talks im TRON-Stil (/tron-talk & TRON HUD), Valorant Tactical Esports (/val-bar + Anti-Snipe Radar-Cover) und Werbepartner-Banner mit lokal generiertem QR-Code (/sponsors).">
           💠 TRON, Valorant & Overlays
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
-                data-img="./assets/OmniStudio-VoiceControl.png"
-                data-title-de="Kostenlose Sprachsteuerung (Amazon Alexa & Google Home — 0 €)"
-                data-title-en="Zero-Cost Voice Control (Amazon Alexa & Google Home — $0)"
-                data-desc-de="Steuere Clips, Hype-Modus, Multi-Stream, Mikrofon-Mute & Umfragen per Sprache – per 6-stelligem Pairing-Code ohne Portweiterleitung, DynDNS oder laufende Serverkosten."
-                data-desc-en="Trigger clips, Hype Mode, Multi-Stream, mic mute & polls by voice — using a 6-digit pairing code with zero port forwarding, DynDNS, or server costs.">
-          🎙️ Alexa & Google Home
-        </button>
-
-        <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-DesignPreview.png"
-                data-title-de="Live Chat-Vorschau & Gekoppelte Chat-Overlay Themes"
+                data-en="🎨 Live Chat Preview"
+                data-de="🎨 Live Chat-Vorschau"
                 data-title-en="Live Chat Preview & Coupled Chat Overlay Themes"
-                data-desc-de="Teste Schriftgrößen, Abstände, Transparenz und die neuen Chat-Overlay-Stile (League of Legends Hextech, Valorant Tactical Crimson & TRON Neon) direkt in Echtzeit."
-                data-desc-en="Preview font sizes, spacing, opacity, and the new chat overlay themes (League of Legends Hextech, Valorant Tactical Crimson & TRON Neon) in real time.">
-          🎨 Live Chat-Vorschau
+                data-title-de="Live Chat-Vorschau & Gekoppelte Chat-Overlay Themes"
+                data-desc-en="Preview font sizes, spacing, opacity, and the new chat overlay themes (League of Legends Hextech, Valorant Tactical Crimson & TRON Neon) in real time."
+                data-desc-de="Teste Schriftgrößen, Abstände, Transparenz und die neuen Chat-Overlay-Stile (League of Legends Hextech, Valorant Tactical Crimson & TRON Neon) direkt in Echtzeit.">
+          🎨 Live Chat Preview
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-Sponsors.png"
-                data-title-de="Werbepartner- & Sponsoren-Banner mit QR-Code & Chat-Link"
+                data-en="🏷️ Sponsors & QR"
+                data-de="🏷️ Werbepartner & QR"
                 data-title-en="Ad Partner & Sponsor Banners with QR Code & Chat Links"
-                data-desc-de="Lege Reihenfolge, individuelle Anzeigedauer, Logos und Rabattcodes pro Partner fest – inklusive lokal generiertem QR-Code im Overlay und 1-Klick-Link-Post in den Live-Chat."
-                data-desc-en="Configure rotation order, per-banner duration, logos, and promo codes per partner — including locally generated QR codes in the overlay and 1-click clickable chat links.">
-          🏷️ Werbepartner & QR
+                data-title-de="Werbepartner- & Sponsoren-Banner mit QR-Code & Chat-Link"
+                data-desc-en="Configure rotation order, per-banner duration, logos, and promo codes per partner — including locally generated QR codes in the overlay and 1-click clickable chat links."
+                data-desc-de="Lege Reihenfolge, individuelle Anzeigedauer, Logos und Rabattcodes pro Partner fest – inklusive lokal generiertem QR-Code im Overlay und 1-Klick-Link-Post in den Live-Chat.">
+          🏷️ Sponsors & QR
         </button>
 
         <button class="tab-btn px-4 py-2 rounded-lg border border-slate-700 text-sm font-medium bg-slate-900/70 hover:bg-slate-800 transition"
                 data-img="./assets/OmniStudio-QuickSetup.png"
-                data-title-de="5-Schritte Quick-Setup & 1-Klick Komplett-Backup"
+                data-en="🧭 Quick Setup"
+                data-de="🧭 Quick Setup"
                 data-title-en="5-Step Quick Setup & 1-Click Full Backup"
-                data-desc-de="Geführter Einrichtungs-Assistent für Kanäle, Google-JSON OAuth2, OBS Zero-Touch und Sprachsteuerung – plus 1-Klick Export/Import aller Einstellungen & API-Keys als JSON."
-                data-desc-en="Guided setup wizard for channels, Google JSON OAuth2, OBS Zero-Touch, and voice control — plus 1-click JSON export/import of all settings & API keys.">
+                data-title-de="5-Schritte Quick-Setup & 1-Klick Komplett-Backup"
+                data-desc-en="Guided setup wizard for channels, Google JSON OAuth2, and OBS Zero-Touch — plus 1-click JSON export/import of all settings & API keys."
+                data-desc-de="Geführter Einrichtungs-Assistent für Kanäle, Google-JSON OAuth2 und OBS Zero-Touch – plus 1-Klick Export/Import aller Einstellungen & API-Keys als JSON.">
           🧭 Quick Setup
         </button>
       </div>
 
-      <!-- Active Showcase Display -->
       <div class="glass rounded-2xl p-4 sm:p-6 max-w-6xl mx-auto">
         <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h3 id="showcaseTitle" class="text-xl font-bold text-white">Unified Multi-Plattform Chat & Live-Statistiken</h3>
+            <h3 id="showcaseTitle" class="text-xl font-bold text-white">Unified Multi-Platform Chat & Live Analytics</h3>
             <p id="showcaseDesc" class="text-sm text-slate-300 mt-1">
-              Twitch, YouTube und TikTok in einem Stream – inkl. 7TV/BTTV-Emotes, Plattform-Split-Balken, Event-Ticker (Raids, Bits, Subs), Spam-Filter, Chat-Export und direkter Antwort auf ausgewählte Plattformen.
+              Twitch, YouTube, and TikTok in a single feed — including 7TV/BTTV emotes, platform split bar, event ticker (raids, bits, subs), spam filter, chat export, and multi-platform reply.
             </p>
           </div>
         </div>
@@ -207,129 +213,119 @@
     </div>
   </section>
 
-  <!-- Core Feature Grid -->
   <section id="features" class="py-20">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-3xl font-bold text-center text-white mb-12" data-de="Alles drin, was sonst 5 Tools braucht" data-en="Everything You Need — Replacing 5 Separate Tools">
-        Alles drin, was sonst 5 Tools braucht
+      <h2 class="text-3xl font-bold text-center text-white mb-12" data-en="Everything You Need — Replacing 5 Separate Tools" data-de="Alles drin, was sonst 5 Tools braucht">
+        Everything You Need — Replacing 5 Separate Tools
       </h2>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">💬</div>
-          <h3 class="text-lg font-bold text-white" data-de="Multi-Chat ohne API-Key-Hürde" data-en="Multi-Chat Without API Key Hassle">Multi-Chat ohne API-Key-Hürde</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Liest Twitch, YouTube Live-Chat (inkl. SuperChats & Member-Emotes) und TikTok Live gleichzeitig aus – inklusive Top-Chatter- & Emote-Analytics." data-en="Reads Twitch, YouTube Live Chat (including SuperChats & Member emotes), and TikTok Live simultaneously — with top chatter and emote analytics.">
-            Liest Twitch, YouTube Live-Chat (inkl. SuperChats & Member-Emotes) und TikTok Live gleichzeitig aus – inklusive Top-Chatter- & Emote-Analytics.
+          <h3 class="text-lg font-bold text-white" data-en="Multi-Chat Without API Key Hassle" data-de="Multi-Chat ohne API-Key-Hürde">Multi-Chat Without API Key Hassle</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="Reads Twitch, YouTube Live Chat (including SuperChats & Member emotes), and TikTok Live simultaneously — with top chatter and emote analytics." data-de="Liest Twitch, YouTube Live-Chat (inkl. SuperChats & Member-Emotes) und TikTok Live gleichzeitig aus – inklusive Top-Chatter- & Emote-Analytics.">
+            Reads Twitch, YouTube Live Chat (including SuperChats & Member emotes), and TikTok Live simultaneously — with top chatter and emote analytics.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🚀</div>
-          <h3 class="text-lg font-bold text-white" data-de="Lokales Multi-Stream RTMP-Relay" data-en="Local Multi-Stream RTMP Relay">Lokales Multi-Stream RTMP-Relay</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Kein teurer Restream-Cloud-Dienst nötig: OBS sendet 1x lokal an OmniGrid, und das integrierte Relay verteilt den Stream an Twitch, YouTube, TikTok & Kick." data-en="No expensive cloud restreaming service needed: OBS sends once locally to OmniGrid, and the built-in relay distributes to Twitch, YouTube, TikTok & Kick.">
-            Kein teurer Restream-Cloud-Dienst nötig: OBS sendet 1x lokal an OmniGrid, und das integrierte Relay verteilt den Stream an Twitch, YouTube, TikTok & Kick.
+          <h3 class="text-lg font-bold text-white" data-en="Local Multi-Stream RTMP Relay" data-de="Lokales Multi-Stream RTMP-Relay">Local Multi-Stream RTMP Relay</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="No expensive cloud restreaming service needed: OBS sends once locally to OmniGrid, and the built-in relay distributes to Twitch, YouTube, TikTok & Kick." data-de="Kein teurer Restream-Cloud-Dienst nötig: OBS sendet 1x lokal an OmniGrid, und das integrierte Relay verteilt den Stream an Twitch, YouTube, TikTok & Kick.">
+            No expensive cloud restreaming service needed: OBS sends once locally to OmniGrid, and the built-in relay distributes to Twitch, YouTube, TikTok & Kick.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🎬</div>
-          <h3 class="text-lg font-bold text-white" data-de="Auto-Hype & 9:16 Shorts-Exporter" data-en="Auto-Hype & 9:16 Shorts Exporter">Auto-Hype & 9:16 Shorts-Exporter</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Vom Chat-Hype direkt zum fertigen Clip: Replay-Buffer automatisch sichern, zuschneiden und als 9:16 Short mit Blur-Hintergrund exportieren." data-en="From chat hype straight to a finished clip: auto-save replay buffer, trim, and export as a 9:16 short with blurred background.">
-            Vom Chat-Hype direkt zum fertigen Clip: Replay-Buffer automatisch sichern, zuschneiden und als 9:16 Short mit Blur-Hintergrund exportieren.
+          <h3 class="text-lg font-bold text-white" data-en="Auto-Hype & 9:16 Shorts Exporter" data-de="Auto-Hype & 9:16 Shorts-Exporter">Auto-Hype & 9:16 Shorts Exporter</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="From chat hype straight to a finished clip: auto-save replay buffer, place multiple markers, and batch-export vertical 9:16 shorts with blurred background." data-de="Vom Chat-Hype direkt zum fertigen Clip: Replay-Buffer automatisch sichern, mehrere Marker setzen und als 9:16 Shorts mit Blur-Hintergrund exportieren.">
+            From chat hype straight to a finished clip: auto-save replay buffer, place multiple markers, and batch-export vertical 9:16 shorts with blurred background.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🎛️</div>
-          <h3 class="text-lg font-bold text-white" data-de="Visueller OBS Szenen- & Overlay-Editor" data-en="Visual OBS Scene & Overlay Editor">Visueller OBS Szenen- & Overlay-Editor</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Steuere OBS über WebSocket v5: Drag-&-Drop-Layout, 1-Klick-Insertion für Chat-, Alert-, Musik- & Game-Overlays sowie kompletter Audio-Mixer." data-en="Control OBS via WebSocket v5: drag-and-drop canvas, 1-click insertion for chat, alert, music & game overlays, plus full audio mixer.">
-            Steuere OBS über WebSocket v5: Drag-&-Drop-Layout, 1-Klick-Insertion für Chat-, Alert-, Musik- & Game-Overlays sowie kompletter Audio-Mixer.
+          <h3 class="text-lg font-bold text-white" data-en="Visual OBS Scene & Overlay Editor" data-de="Visueller OBS Szenen- & Overlay-Editor">Visual OBS Scene & Overlay Editor</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="Control OBS via WebSocket v5: drag-and-drop canvas, 1-click insertion for chat, alert, music & game overlays, plus full audio mixer with device switching." data-de="Steuere OBS über WebSocket v5: Drag-&-Drop-Layout, 1-Klick-Insertion für Chat-, Alert-, Musik- & Game-Overlays sowie kompletter Audio-Mixer mit Geräteauswahl.">
+            Control OBS via WebSocket v5: drag-and-drop canvas, 1-click insertion for chat, alert, music & game overlays, plus full audio mixer with device switching.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🎮</div>
-          <h3 class="text-lg font-bold text-white" data-de="1-Klick Esports- & Tech-Talk-Sets" data-en="1-Click Esports & Tech Talk Sets">1-Klick Esports- & Tech-Talk-Sets</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Komplett-Suites für League of Legends (Hextech), Valorant (Rank/RR-Bar & Anti-Snipe Radar), CS2 und TRON-Style Tech Talks & GameDev – inklusive passender Chat-Overlay-Themes." data-en="Full suites for League of Legends (Hextech), Valorant (Rank/RR bar & Anti-Snipe radar), CS2, and TRON-style Tech Talks & GameDev — including coupled chat overlay themes.">
-            Komplett-Suites für League of Legends (Hextech), Valorant (Rank/RR-Bar & Anti-Snipe Radar), CS2 und TRON-Style Tech Talks & GameDev – inklusive passender Chat-Overlay-Themes.
+          <h3 class="text-lg font-bold text-white" data-en="1-Click Esports & Tech Talk Sets" data-de="1-Klick Esports- & Tech-Talk-Sets">1-Click Esports & Tech Talk Sets</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="Full suites for League of Legends (Hextech), Valorant (Rank/RR bar & Anti-Snipe radar), CS2, and TRON-style Tech Talks & GameDev — including coupled chat overlay themes." data-de="Komplett-Suites für League of Legends (Hextech), Valorant (Rank/RR-Bar & Anti-Snipe Radar), CS2 und TRON-Style Tech Talks & GameDev – inklusive passender Chat-Overlay-Themes.">
+            Full suites for League of Legends (Hextech), Valorant (Rank/RR bar & Anti-Snipe radar), CS2, and TRON-style Tech Talks & GameDev — including coupled chat overlay themes.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🛡️</div>
-          <h3 class="text-lg font-bold text-white" data-de="Automatischer DMCA & Musik-VOD-Schutz" data-en="Automatic DMCA & Music VOD Protection">Automatischer DMCA & Musik-VOD-Schutz</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Spotify, Apple Music & Amazon Music laufen automatisch auf einer separaten Audio-Spur: im Live-Stream hörbar, im abrufbaren VOD fest gesperrt – plus Live-Gerätewechsel im OBS-Mixer." data-en="Spotify, Apple Music & Amazon Music automatically route to a separate audio track: audible live, locked out of VODs — plus live audio device switching in the OBS mixer.">
-            Spotify, Apple Music & Amazon Music laufen automatisch auf einer separaten Audio-Spur: im Live-Stream hörbar, im abrufbaren VOD fest gesperrt – plus Live-Gerätewechsel im OBS-Mixer.
-          </p>
-        </div>
-
-        <div class="glass rounded-xl p-6">
-          <div class="text-2xl mb-3">🎙️</div>
-          <h3 class="text-lg font-bold text-white" data-de="Alexa & Google Home Sprachsteuerung (0 €)" data-en="Alexa & Google Home Voice Control ($0)">Alexa & Google Home Sprachsteuerung (0 €)</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Clippen, Hype auslösen, Multi-Stream starten/stoppen und Mikrofon muten per Sprache – in 10 Sekunden per 6-stelligem Pairing-Code ohne Portweiterleitung." data-en="Clip, trigger Hype, start/stop Multi-Stream, and mute your mic by voice — paired in 10 seconds with a 6-digit code and zero port forwarding.">
-            Clippen, Hype auslösen, Multi-Stream starten/stoppen und Mikrofon muten per Sprache – in 10 Sekunden per 6-stelligem Pairing-Code ohne Portweiterleitung.
+          <h3 class="text-lg font-bold text-white" data-en="Automatic DMCA & Music VOD Protection" data-de="Automatischer DMCA & Musik-VOD-Schutz">Automatic DMCA & Music VOD Protection</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="Spotify, Apple Music & Amazon Music automatically route to a separate audio track: audible live, locked out of VODs — plus live audio device switching in the OBS mixer." data-de="Spotify, Apple Music & Amazon Music laufen automatisch auf einer separaten Audio-Spur: im Live-Stream hörbar, im abrufbaren VOD fest gesperrt – plus Live-Gerätewechsel im OBS-Mixer.">
+            Spotify, Apple Music & Amazon Music automatically route to a separate audio track: audible live, locked out of VODs — plus live audio device switching in the OBS mixer.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🏷️</div>
-          <h3 class="text-lg font-bold text-white" data-de="Werbepartner-Overlay mit QR & Chat-Links" data-en="Sponsor Banner Overlay with QR & Chat Links">Werbepartner-Overlay mit QR & Chat-Links</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Rotierende Sponsoren-Banner mit individueller Dauer, Reihenfolge, lokal generiertem QR-Code (im Stream scannbar) und 1-Klick-Post klickbarer Links in den Chat." data-en="Rotating sponsor banners with custom duration, queue order, locally generated scannable QR codes, and 1-click clickable link posting into chat.">
-            Rotierende Sponsoren-Banner mit individueller Dauer, Reihenfolge, lokal generiertem QR-Code (im Stream scannbar) und 1-Klick-Post klickbarer Links in den Chat.
+          <h3 class="text-lg font-bold text-white" data-en="Sponsor Banner Overlay with QR & Chat Links" data-de="Werbepartner-Overlay mit QR & Chat-Links">Sponsor Banner Overlay with QR & Chat Links</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="Rotating sponsor banners with custom duration, queue order, locally generated scannable QR codes, and 1-click clickable link posting into chat." data-de="Rotierende Sponsoren-Banner mit individueller Dauer, Reihenfolge, lokal generiertem QR-Code (im Stream scannbar) und 1-Klick-Post klickbarer Links in den Chat.">
+            Rotating sponsor banners with custom duration, queue order, locally generated scannable QR codes, and 1-click clickable link posting into chat.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🧭</div>
-          <h3 class="text-lg font-bold text-white" data-de="Quick-Setup, Multi-Marker & Komplett-Backup" data-en="Quick Setup, Multi-Markers & Full Backup">Quick-Setup, Multi-Marker & Komplett-Backup</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="5-Schritte-Assistent mit OBS Zero-Touch & Google-JSON-Import, Multi-Marker Batch-Export im Clip-Studio, Live-Giveaway Side-Drawer, smarte Stream-Lichter und 1-Klick-Backup." data-en="5-step wizard with OBS Zero-Touch & Google JSON import, multi-marker batch export in Clip Studio, right-side Giveaway drawer, local smart lights, and 1-click full backup.">
-            5-Schritte-Assistent mit OBS Zero-Touch & Google-JSON-Import, Multi-Marker Batch-Export im Clip-Studio, Live-Giveaway Side-Drawer, smarte Stream-Lichter und 1-Klick-Backup.
+          <h3 class="text-lg font-bold text-white" data-en="Quick Setup, Smart Lights & Full Backup" data-de="Quick-Setup, Smarte Lichter & Komplett-Backup">Quick Setup, Smart Lights & Full Backup</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="5-step wizard with OBS Zero-Touch & Google JSON import, right-side Giveaway drawer, local smart lights (Elgato, Hue, Nanoleaf, Govee), and 1-click full backup." data-de="5-Schritte-Assistent mit OBS Zero-Touch & Google-JSON-Import, ausklappbarer Giveaway-Drawer, lokale Stream-Lichter (Elgato, Hue, Nanoleaf, Govee) und 1-Klick-Backup.">
+            5-step wizard with OBS Zero-Touch & Google JSON import, right-side Giveaway drawer, local smart lights (Elgato, Hue, Nanoleaf, Govee), and 1-click full backup.
           </p>
         </div>
 
         <div class="glass rounded-xl p-6">
           <div class="text-2xl mb-3">🔒</div>
-          <h3 class="text-lg font-bold text-white" data-de="100 % Lokal & Open Source" data-en="100% Local & Open Source">100 % Lokal & Open Source</h3>
-          <p class="text-sm text-slate-400 mt-2" data-de="Alle Overlays laufen als lokale Browser-Quellen (127.0.0.1:4588). Keine Telemetrie, kein Account-Zwang, automatische Updates und keine monatlichen Gebühren." data-en="All overlays run as local browser sources (127.0.0.1:4588). Zero telemetry, no mandatory accounts, automatic updates, and no monthly fees.">
-            Alle Overlays laufen als lokale Browser-Quellen (127.0.0.1:4588). Keine Telemetrie, kein Account-Zwang, automatische Updates und keine monatlichen Gebühren.
+          <h3 class="text-lg font-bold text-white" data-en="100% Local & Open Source" data-de="100 % Lokal & Open Source">100% Local & Open Source</h3>
+          <p class="text-sm text-slate-400 mt-2" data-en="All overlays run as local browser sources (127.0.0.1:4588). Zero telemetry, no mandatory accounts, automatic updates, and no monthly fees." data-de="Alle Overlays laufen als lokale Browser-Quellen (127.0.0.1:4588). Keine Telemetrie, kein Account-Zwang, automatische Updates und keine monatlichen Gebühren.">
+            All overlays run as local browser sources (127.0.0.1:4588). Zero telemetry, no mandatory accounts, automatic updates, and no monthly fees.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Comparison Table -->
   <section id="compare" class="py-20 border-t border-slate-800/80 bg-slate-950/40">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 class="text-3xl font-bold text-center text-white mb-10" data-de="Warum OmniGrid Studio?" data-en="Why OmniGrid Studio?">Warum OmniGrid Studio?</h2>
+      <h2 class="text-3xl font-bold text-center text-white mb-10" data-en="Why OmniGrid Studio?" data-de="Warum OmniGrid Studio?">Why OmniGrid Studio?</h2>
       <div class="glass rounded-2xl overflow-hidden">
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-900/90 text-slate-300 border-b border-slate-800">
             <tr>
               <th class="p-4">Feature</th>
               <th class="p-4 text-indigo-400 font-bold">OmniGrid Studio</th>
-              <th class="p-4 text-slate-400" data-de="Cloud-Tools / Abo-Suites" data-en="Cloud Tools / Paid Suites">Cloud-Tools / Abo-Suites</th>
+              <th class="p-4 text-slate-400" data-en="Cloud Tools / Paid Suites" data-de="Cloud-Tools / Abo-Suites">Cloud Tools / Paid Suites</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/80">
             <tr>
-              <td class="p-4 font-medium" data-de="Preis & Lizenz" data-en="Price & License">Preis & Lizenz</td>
-              <td class="p-4 text-emerald-400 font-semibold">0 € (Open Source)</td>
-              <td class="p-4 text-slate-400">15–50 € / Monat</td>
+              <td class="p-4 font-medium" data-en="Price & License" data-de="Preis & Lizenz">Price & License</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-en="$0 (Open Source)" data-de="0 € (Open Source)">$0 (Open Source)</td>
+              <td class="p-4 text-slate-400" data-en="$15–$50 / month" data-de="15–50 € / Monat">$15–$50 / month</td>
             </tr>
             <tr>
-              <td class="p-4 font-medium" data-de="Multi-Stream RTMP-Relay" data-en="Multi-Stream RTMP Relay">Multi-Stream RTMP-Relay</td>
-              <td class="p-4 text-emerald-400 font-semibold" data-de="Lokal integriert (Twitch, YT, TikTok, Kick)" data-en="Built-in locally (Twitch, YT, TikTok, Kick)">Lokal integriert (Twitch, YT, TikTok, Kick)</td>
-              <td class="p-4 text-slate-400" data-de="Nur im teuren Pro-Abo" data-en="Paywalled in Pro tiers">Nur im teuren Pro-Abo</td>
+              <td class="p-4 font-medium" data-en="Multi-Stream RTMP Relay" data-de="Multi-Stream RTMP-Relay">Multi-Stream RTMP Relay</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-en="Built-in locally (Twitch, YT, TikTok, Kick)" data-de="Lokal integriert (Twitch, YT, TikTok, Kick)">Built-in locally (Twitch, YT, TikTok, Kick)</td>
+              <td class="p-4 text-slate-400" data-en="Paywalled in Pro tiers" data-de="Nur im teuren Pro-Abo">Paywalled in Pro tiers</td>
             </tr>
             <tr>
-              <td class="p-4 font-medium" data-de="Daten & Privatsphäre" data-en="Data & Privacy">Daten & Privatsphäre</td>
-              <td class="p-4 text-emerald-400 font-semibold" data-de="100 % lokal auf deinem PC/Mac" data-en="100% local on your PC/Mac">100 % lokal auf deinem PC/Mac</td>
-              <td class="p-4 text-slate-400" data-de="Cloud-Zwang & Tracking" data-en="Cloud lock-in & tracking">Cloud-Zwang & Tracking</td>
+              <td class="p-4 font-medium" data-en="Data & Privacy" data-de="Daten & Privatsphäre">Data & Privacy</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-en="100% local on your PC/Mac" data-de="100 % lokal auf deinem PC/Mac">100% local on your PC/Mac</td>
+              <td class="p-4 text-slate-400" data-en="Cloud lock-in & tracking" data-de="Cloud-Zwang & Tracking">Cloud lock-in & tracking</td>
             </tr>
             <tr>
-              <td class="p-4 font-medium" data-de="9:16 Shorts-Schnitt & Auto-Hype" data-en="9:16 Shorts Cutter & Auto-Hype">9:16 Shorts-Schnitt & Auto-Hype</td>
-              <td class="p-4 text-emerald-400 font-semibold" data-de="Direkt eingebaut (FFmpeg)" data-en="Built right in (FFmpeg)">Direkt eingebaut (FFmpeg)</td>
-              <td class="p-4 text-slate-400" data-de="Externe Zusatz-Tools nötig" data-en="Requires separate tools">Externe Zusatz-Tools nötig</td>
+              <td class="p-4 font-medium" data-en="9:16 Shorts Cutter & Auto-Hype" data-de="9:16 Shorts-Schnitt & Auto-Hype">9:16 Shorts Cutter & Auto-Hype</td>
+              <td class="p-4 text-emerald-400 font-semibold" data-en="Built right in (FFmpeg)" data-de="Direkt eingebaut (FFmpeg)">Built right in (FFmpeg)</td>
+              <td class="p-4 text-slate-400" data-en="Requires separate tools" data-de="Externe Zusatz-Tools nötig">Requires separate tools</td>
             </tr>
           </tbody>
         </table>
@@ -337,7 +333,6 @@
     </div>
   </section>
 
-  <!-- Footer -->
   <footer class="py-12 border-t border-slate-800 text-center text-sm text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>⚡ <strong>OmniGrid Studio</strong> — Open Source Streamer Cockpit</div>
@@ -350,7 +345,7 @@
   </footer>
 
   <script>
-    let currentLang = 'de';
+    let currentLang = 'en';
     const tabs = document.querySelectorAll('.tab-btn');
     const showcaseImg = document.getElementById('showcaseImg');
     const showcaseTitle = document.getElementById('showcaseTitle');
@@ -371,9 +366,9 @@
     tabs.forEach(btn => btn.addEventListener('click', () => updateShowcase(btn)));
 
     document.getElementById('langToggle').addEventListener('click', () => {
-      currentLang = currentLang === 'de' ? 'en' : 'de';
+      currentLang = currentLang === 'en' ? 'de' : 'en';
       document.documentElement.lang = currentLang;
-      document.querySelectorAll('[data-de]').forEach(el => {
+      document.querySelectorAll('[data-en]').forEach(el => {
         el.textContent = currentLang === 'de' ? el.dataset.de : el.dataset.en;
       });
       const activeBtn = document.querySelector('.tab-btn.active');

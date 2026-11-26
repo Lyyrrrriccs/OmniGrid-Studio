@@ -2874,12 +2874,8 @@ app.whenReady().then(async () => {
     broadcastScheduleToObs(saved);
     obsServer.onGameWebhook = handleIncomingGameWebhook;
     broadcastGameAddonsState(saved);
-    obsServer.setVoiceTestHandler((action, payload) => voiceBridge.executeLocalCommand(action, payload, 'local_api'));
-    const savedVoice = normalizeVoiceConfig(saved.voiceControl || {});
-    voiceBridge.setConfig(savedVoice);
-    if (savedVoice.enabled && savedVoice.relayUrl && savedVoice.channelId) {
-      voiceBridge.start();
-    }
+    obsServer.setVoiceTestHandler(null);
+    voiceBridge.stop();
 
     // Optional League of Legends Live Client API (127.0.0.1:2999) + LCU Ranked/LP Poller (lockfile)
     let lastLcuPollAt = 0;
@@ -4318,10 +4314,7 @@ app.whenReady().then(async () => {
       syncChatTimer(merged);
       broadcastScheduleToObs(merged);
       broadcastGameAddonsState(merged);
-      const nextVoice = normalizeVoiceConfig(merged.voiceControl || {});
-      voiceBridge.setConfig(nextVoice);
-      if (nextVoice.enabled && nextVoice.relayUrl && nextVoice.channelId) voiceBridge.start();
-      else voiceBridge.stop();
+      voiceBridge.stop();
       if (opts?.reloadWindow !== false && mainWindow && !mainWindow.isDestroyed()) {
         setTimeout(() => {
           if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
