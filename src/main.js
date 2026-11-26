@@ -2049,9 +2049,21 @@ twitch.on('delete-message', (msgId) => {
   conn.on('stats', (st) => forwardStats(st));
 });
 
+let lastVodEnforceAt = 0;
+function triggerAutoMusicVodProtection(force = false) {
+  const now = Date.now();
+  if (!force && now - lastVodEnforceAt < 15000) return;
+  lastVodEnforceAt = now;
+  obsAutoConfig.enableObsVodMusicTrack();
+  if (obsWs.getState()?.connected) {
+    obsWs.enforceMusicVodProtection().catch(() => {});
+  }
+}
+
 obsWs.on('state', (st) => {
   broadcastToWindows('obs-ws-state', st);
   obsServer.broadcastObsWsState(st);
+  if (st?.connected) triggerAutoMusicVodProtection(Boolean(st?.streaming && !lastObsStreaming));
 
   const isStreaming = Boolean(st?.streaming);
   if (isStreaming && !lastObsStreaming) {
@@ -2720,6 +2732,7 @@ app.whenReady().then(async () => {
   spotify.on('track', (track) => {
     obsServer.broadcastSpotify(track);
     broadcastToWindows('spotify-track', track);
+    if (track?.playing) triggerAutoMusicVodProtection(false);
   });
 
   ipcMain.handle('spotify-control', async (_ev, action) => {

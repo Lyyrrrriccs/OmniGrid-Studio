@@ -602,6 +602,7 @@ class ObsWsClient extends EventEmitter {
             audioTracks = trRes.inputAudioTracks;
           }
         } catch (e) {}
+        const musicRe = /(spotify|apple\s*music|amazon\s*music|youtube\s*music|music|musik|itunes|tidal|deezer|soundcloud|com\.spotify\.client|com\.apple\.music|com\.amazon\.music)/i;
         audioList.push({
           inputName: inp.inputName,
           inputKind: kind,
@@ -613,7 +614,7 @@ class ObsWsClient extends EventEmitter {
           devices,
           audioTracks,
           vodExcluded: audioTracks['2'] === false,
-          isMusicGuess: /(spotify|apple\s*music|amazon\s*music|music|musik|itunes|tidal|deezer|soundcloud)/i.test(inp.inputName)
+          isMusicGuess: musicRe.test(inp.inputName) || musicRe.test(currentDeviceId)
         });
       } catch (e) {}
     }
@@ -698,7 +699,25 @@ class ObsWsClient extends EventEmitter {
       inputSettings: patch,
       overlay: true
     });
+    if (/(spotify|apple\.music|amazon\.music|tidal|deezer|soundcloud|music|musik)/i.test(String(deviceId ?? ''))) {
+      try { await this.setInputVodMusicOnly(cleanName, true); } catch (e) {}
+    }
     return { ok: true, inputName: cleanName, deviceId: String(deviceId ?? ''), propertyName: prop };
+  }
+
+  async enforceMusicVodProtection() {
+    if (!this.state.connected) return { ok: false, enforced: [] };
+    const { inputs } = await this.getAudioInputs();
+    const enforced = [];
+    for (const inp of inputs) {
+      if (inp.isMusicGuess && !inp.vodExcluded) {
+        try {
+          await this.setInputVodMusicOnly(inp.inputName, true);
+          enforced.push(inp.inputName);
+        } catch (e) {}
+      }
+    }
+    return { ok: true, enforced };
   }
 
   async setInputVolume(inputName, volumeMul) {
