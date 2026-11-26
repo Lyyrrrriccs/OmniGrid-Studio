@@ -2539,7 +2539,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
 
     .frame-layout {
       position: fixed;
-      inset: 34px 36px 56px 36px;
+      inset: 34px 36px 34px 36px;
       display: grid;
       grid-template-columns: 1fr 440px;
       gap: 26px;
@@ -2684,13 +2684,10 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       <div class="slot-box chat-slot"></div>
     </div>
   </div>
-
-  <div class="bg-watermark"><span class="bg-dot"></span><span id="bgLabel">⚔️ LEAGUE OF LEGENDS // HEXTECH</span></div>
   <script>
     (function initLolAnimatedBg() {
       const root = document.documentElement;
       const splashEl = document.getElementById('bgSplash');
-      const labelEl = document.getElementById('bgLabel');
       const canvas = document.getElementById('bgParticles');
       const ctx = canvas.getContext('2d');
 
@@ -2899,7 +2896,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
           root.style.setProperty('--bg-a', '#061022');
           root.style.setProperty('--bg-b', '#020814');
           root.style.setProperty('--txt', '#f0e6d2');
-          labelEl.textContent = '⚔️ LEAGUE OF LEGENDS // HEXTECH';
           packSplashUrl = '';
           updateSplash();
           return;
@@ -2918,7 +2914,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         root.style.setProperty('--bg-a', c.bgStart || '#12061a');
         root.style.setProperty('--bg-b', c.bgEnd || '#061216');
         root.style.setProperty('--txt', c.text || '#f8fafc');
-        labelEl.textContent = (pack.icon || '🎨') + ' ' + pack.name;
         if (pack.skinArt && pack.skinArt.championId) {
           resolveSkinSplash(pack.skinArt).then((u) => { packSplashUrl = u; updateSplash(); }).catch(() => {});
         } else {
