@@ -6770,6 +6770,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         renderCanvasOverlay();
       }
       setTimeout(refreshPreview, 350);
+      setTimeout(refreshPreview, 1300);
     } else {
       setStatus(`❌ ${res?.error || 'Overlay konnte nicht hinzugefügt werden.'}`, '#f87171');
     }
@@ -6791,6 +6792,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       setStatus(`✅ ${label} komplett eingefügt (${(res.added || []).join(', ')})!`, '#4ade80');
       await loadSceneItems(currentSceneName);
       setTimeout(refreshPreview, 450);
+      setTimeout(refreshPreview, 1400);
     } else {
       setStatus(`❌ ${res?.error || 'Set konnte nicht eingefügt werden.'}`, '#f87171');
     }
@@ -6978,6 +6980,9 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   btnOpen?.addEventListener('click', () => {
     loadInputKinds(true);
     loadBuiltinOverlays();
+    window.omnichat.obsWsAction?.({ action: 'refresh-omnigrid-overlays' }).then(() => {
+      setTimeout(refreshPreview, 900);
+    }).catch(() => {});
   });
   window.omnichat.onObsWsState?.((st) => {
     if (st?.connected && !loadedKindsFromObs) loadInputKinds(true);

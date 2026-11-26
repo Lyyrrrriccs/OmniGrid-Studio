@@ -2069,10 +2069,19 @@ function triggerAutoMusicVodProtection(force = false) {
   }
 }
 
+let lastObsConnectedState = false;
 obsWs.on('state', (st) => {
   broadcastToWindows('obs-ws-state', st);
   obsServer.broadcastObsWsState(st);
-  if (st?.connected) triggerAutoMusicVodProtection(Boolean(st?.streaming && !lastObsStreaming));
+  if (st?.connected) {
+    triggerAutoMusicVodProtection(Boolean(st?.streaming && !lastObsStreaming));
+    if (!lastObsConnectedState) {
+      setTimeout(() => {
+        obsWs.refreshAllOmniGridOverlays(obsServer.port || 4588).catch(() => {});
+      }, 900);
+    }
+  }
+  lastObsConnectedState = Boolean(st?.connected);
 
   const isStreaming = Boolean(st?.streaming);
   if (isStreaming && !lastObsStreaming) {
@@ -3557,6 +3566,7 @@ app.whenReady().then(async () => {
       }
       if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
       if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
+      if (act === 'refresh-omnigrid-overlays') return await obsWs.refreshAllOmniGridOverlays(obsServer.port || 4588);
       if (act === 'set-input-audio-device') return await obsWs.setInputAudioDevice(payload.inputName, payload.deviceId, payload.propertyName || 'device_id');
       if (act === 'set-input-vod-music-only') return await obsWs.setInputVodMusicOnly(payload.inputName, payload.musicOnly !== false);
       if (act === 'setup-music-vod-track') {
