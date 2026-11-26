@@ -3271,7 +3271,7 @@ const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
 }
 body.champ-fx-jinx-glitch .msg-row {
   background:
-    repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.07) 0 8px, rgba(57, 255, 20, 0.05) 8px 16px, transparent 16px 32px),
+    repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.08) 0 8px, rgba(57, 255, 20, 0.05) 8px 16px, transparent 16px 32px),
     linear-gradient(135deg, var(--ct-bg-start, rgba(18, 6, 26, 0.94)), var(--ct-bg-end, rgba(6, 18, 22, 0.95))) !important;
   border: 1.5px solid var(--ct-primary, #ff2a85) !important;
   border-left: 4px solid var(--ct-secondary, #39ff14) !important;
@@ -3279,7 +3279,7 @@ body.champ-fx-jinx-glitch .msg-row {
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
   color: var(--ct-text, #fff0f7) !important;
   margin-bottom: 5px;
-  box-shadow: 0 0 16px rgba(255, 42, 133, 0.25), -2px 0 0 rgba(57, 255, 20, 0.35);
+  box-shadow: 0 0 16px rgba(255, 42, 133, 0.28), -2px 0 0 rgba(57, 255, 20, 0.35);
 }
 body.champ-fx-jinx-glitch .author {
   text-shadow: 0 0 9px rgba(255, 42, 133, 0.65), 1px 0 0 rgba(57, 255, 20, 0.45);
@@ -3287,7 +3287,7 @@ body.champ-fx-jinx-glitch .author {
 }
 body.champ-fx-jinx-glitch .badge {
   background: rgba(255, 42, 133, 0.24) !important;
-  border: 1px solid var(--ct-secondary, #39ff14);
+  border: 1px solid var(--ct-secondary, #39ff14) !important;
   color: var(--ct-secondary, #39ff14) !important;
 }
 body.champ-fx-jinx-glitch #pinnedBox {
@@ -3298,9 +3298,13 @@ body.champ-fx-jinx-glitch #pinnedBox {
 body.champ-fx-jinx-glitch .pin-label { color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-card,
 body.champ-fx-jinx-glitch .lb-bar,
-body.champ-fx-jinx-glitch .lb-card,
-body.champ-fx-jinx-glitch .build-card,
 body.champ-fx-jinx-glitch .map-cover,
+body.champ-fx-jinx-glitch .sp-card,
+body.champ-fx-jinx-glitch .goal-card,
+body.champ-fx-jinx-glitch .poll-card,
+body.champ-fx-jinx-glitch .gw-card,
+body.champ-fx-jinx-glitch .sched-card,
+body.champ-fx-jinx-glitch .alert-box,
 body.champ-fx-jinx-glitch .cover {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.09) 0 10px, rgba(57, 255, 20, 0.06) 10px 20px, transparent 20px 40px),
@@ -3310,10 +3314,33 @@ body.champ-fx-jinx-glitch .cover {
   clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
   animation: jinxGlitchBorder 4.5s infinite;
 }
-body.champ-fx-jinx-glitch .gs-card::before { border-color: var(--ct-secondary, #39ff14) !important; }
-body.champ-fx-jinx-glitch .gs-card::after { border-color: var(--ct-primary, #ff2a85) !important; }
-body.champ-fx-jinx-glitch .gs-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
-body.champ-fx-jinx-glitch .gs-badge { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-card::before,
+body.champ-fx-jinx-glitch .map-cover::before { border-color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-card::after,
+body.champ-fx-jinx-glitch .map-cover::after { border-color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .gs-head,
+body.champ-fx-jinx-glitch .gs-matches-wrap,
+body.champ-fx-jinx-glitch .lb-elo { border-color: rgba(255, 42, 133, 0.45) !important; }
+body.champ-fx-jinx-glitch .gs-title,
+body.champ-fx-jinx-glitch .gs-champ-name,
+body.champ-fx-jinx-glitch .lb-rank,
+body.champ-fx-jinx-glitch .map-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
+body.champ-fx-jinx-glitch .gs-badge,
+body.champ-fx-jinx-glitch .map-badge { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-skin-name,
+body.champ-fx-jinx-glitch .lb-lp,
+body.champ-fx-jinx-glitch .gs-rank-lp { color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-elo-sub,
+body.champ-fx-jinx-glitch .gs-matches-lbl,
+body.champ-fx-jinx-glitch .lb-meta,
+body.champ-fx-jinx-glitch .map-sub { color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .gs-champ-icon,
+body.champ-fx-jinx-glitch .map-icon,
+body.champ-fx-jinx-glitch .gs-rank-box,
+body.champ-fx-jinx-glitch .lb-slot { border-color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .lb-slot.trinket,
+body.champ-fx-jinx-glitch .gs-match-slot.win { border-color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-match-slot.win .gs-match-badge { background: var(--ct-secondary, #39ff14) !important; color: #05080f !important; }
 body.champ-fx-jinx-glitch .gs-cell { border-color: rgba(255, 42, 133, 0.48) !important; border-left: 3px solid var(--ct-secondary, #39ff14) !important; background: rgba(16, 8, 24, 0.9) !important; }
 body.champ-fx-jinx-glitch .gs-lbl { color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .gs-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
@@ -3322,38 +3349,76 @@ body.champ-fx-jinx-glitch .lb-lp-fill { background: linear-gradient(90deg, var(-
 
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .msg-row {
   background: linear-gradient(135deg, var(--ct-bg-start, rgba(16, 16, 28, 0.94)), var(--ct-bg-end, rgba(10, 14, 24, 0.95))) !important;
-  border: 1px solid var(--ct-primary, #38bdf8) !important;
-  border-left: 3.5px solid var(--ct-secondary, #a855f7) !important;
+  border: 1.5px solid var(--ct-primary, #38bdf8) !important;
+  border-left: 4px solid var(--ct-secondary, #a855f7) !important;
   color: var(--ct-text, #f8fafc) !important;
   margin-bottom: 5px;
-  box-shadow: 0 0 16px color-mix(in srgb, var(--ct-primary, #38bdf8) 28%, transparent);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
 }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) #pinnedBox {
+  background: linear-gradient(135deg, var(--ct-bg-start, rgba(16, 16, 28, 0.96)), var(--ct-bg-end, rgba(10, 14, 24, 0.96))) !important;
+  border: 2px solid var(--ct-primary, #38bdf8) !important;
+}
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .pin-label { color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-bar,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .build-card,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .poll-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .alert-box,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover {
   background: linear-gradient(145deg, var(--ct-bg-start, rgba(16, 16, 28, 0.96)), var(--ct-bg-end, rgba(10, 14, 24, 0.96))) !important;
   border: 2px solid var(--ct-primary, #38bdf8) !important;
-  box-shadow: 0 0 26px color-mix(in srgb, var(--ct-primary, #38bdf8) 38%, transparent), inset 0 0 16px color-mix(in srgb, var(--ct-secondary, #a855f7) 16%, transparent) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.06) !important;
 }
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lbl { color: var(--ct-primary, #38bdf8) !important; }
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-badge { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card::before,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover::before { border-color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card::after,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover::after { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-head,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-matches-wrap,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-elo { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-champ-name,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-rank,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-title { color: var(--ct-text, #f8fafc) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-matches-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-elo-sub,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-meta,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-sub { color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-badge { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-skin-name,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-lp { color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-champ-icon,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-icon,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-box,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-cell { border-color: var(--ct-primary, #38bdf8) !important; border-left: 3px solid var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot.trinket,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-match-slot.win { border-color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lp-fill,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
 body.champ-fx-spirit-blossom .msg-row,
-body.champ-fx-spirit-blossom .gs-card { border-radius: 14px !important; }
+body.champ-fx-spirit-blossom .gs-card,
+body.champ-fx-spirit-blossom .lb-bar { border-radius: 14px !important; }
 body.champ-fx-nightbringer .msg-row,
 body.champ-fx-nightbringer .gs-card,
+body.champ-fx-nightbringer .lb-bar,
 body.champ-fx-project-cyber .msg-row,
-body.champ-fx-project-cyber .gs-card { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
+body.champ-fx-project-cyber .gs-card,
+body.champ-fx-project-cyber .lb-bar { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
 </style>
 <script>
 (function initChampionThemeClient(){
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse');
+    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);
@@ -3366,7 +3431,7 @@ body.champ-fx-project-cyber .gs-card { clip-path: polygon(0 0, calc(100% - 12px)
     if (c.text) r.style.setProperty('--ct-text', c.text);
   }
   function fetchTheme(){
-    fetch('/api/champion-theme').then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});
+    fetch('/api/champion-theme', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});
   }
   function connectThemeWs(){
     try {
@@ -3379,6 +3444,7 @@ body.champ-fx-project-cyber .gs-card { clip-path: polygon(0 0, calc(100% - 12px)
   }
   fetchTheme();
   connectThemeWs();
+  setInterval(fetchTheme, 3500);
 })();
 </script>`;
 
@@ -3654,19 +3720,19 @@ class ObsServer {
         if (urlPath === '/dock') {
           res.end(OBS_CUSTOM_DOCK_HTML);
         } else if (urlPath === '/spotify') {
-          res.end(OBS_SPOTIFY_HTML);
+          res.end(withChampionTheme(OBS_SPOTIFY_HTML));
         } else if (urlPath === '/tablet') {
           res.end(OBS_TABLET_HTML);
         } else if (urlPath === '/alerts') {
-          res.end(OBS_ALERTS_HTML);
+          res.end(withChampionTheme(OBS_ALERTS_HTML));
         } else if (urlPath === '/goals') {
-          res.end(OBS_GOALS_HTML);
+          res.end(withChampionTheme(OBS_GOALS_HTML));
         } else if (urlPath === '/poll') {
-          res.end(OBS_POLL_HTML);
+          res.end(withChampionTheme(OBS_POLL_HTML));
         } else if (urlPath === '/schedule') {
-          res.end(OBS_SCHEDULE_HTML);
+          res.end(withChampionTheme(OBS_SCHEDULE_HTML));
         } else if (urlPath === '/giveaway') {
-          res.end(OBS_GIVEAWAY_HTML);
+          res.end(withChampionTheme(OBS_GIVEAWAY_HTML));
         } else if (urlPath === '/soundboard') {
           res.end(OBS_SOUNDBOARD_HTML);
         } else if (urlPath === '/game-stats') {
@@ -3676,17 +3742,17 @@ class ObsServer {
         } else if (urlPath === '/lol-build') {
           res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {
-          res.end(OBS_JC_LOWERTHIRD_HTML);
+          res.end(withChampionTheme(OBS_JC_LOWERTHIRD_HTML));
         } else if (urlPath === '/jc-qna') {
-          res.end(OBS_JC_QNA_HTML);
+          res.end(withChampionTheme(OBS_JC_QNA_HTML));
         } else if (urlPath === '/tron-talk') {
-          res.end(OBS_TRON_TALK_HTML);
+          res.end(withChampionTheme(OBS_TRON_TALK_HTML));
         } else if (urlPath === '/val-bar') {
-          res.end(OBS_VAL_BAR_HTML);
+          res.end(withChampionTheme(OBS_VAL_BAR_HTML));
         } else if (urlPath === '/val-map') {
-          res.end(OBS_VAL_MAP_HTML);
+          res.end(withChampionTheme(OBS_VAL_MAP_HTML));
         } else if (urlPath === '/sponsors') {
-          res.end(OBS_SPONSORS_HTML);
+          res.end(withChampionTheme(OBS_SPONSORS_HTML));
         } else {
           res.end(withChampionTheme(OBS_OVERLAY_HTML));
         }

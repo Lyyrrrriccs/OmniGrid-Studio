@@ -9623,11 +9623,10 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   const renderThemes = (data) => {
     if (!data) return;
     const packs = Array.isArray(data.packs) ? data.packs : [];
-    const mode = data.mode || 'auto';
+    const mode = data.mode && data.mode !== 'auto' ? data.mode : 'none';
     sel.innerHTML = '';
     const opts = [
-      { value: 'auto', label: '🤖 Auto (wechselt nach gespieltem Champion)' },
-      { value: 'none', label: '⚔️ Standard (LoL Hextech)' },
+      { value: 'none', label: '⚔️ Standard-Design (kein Pack aktiv)' },
       ...packs.map((p) => ({ value: p.id, label: `${p.icon || '🎨'} ${p.name}` }))
     ];
     opts.forEach((o) => {
@@ -9649,8 +9648,8 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     if (res?.ok && statusEl) {
       statusEl.style.color = '#ff69b4';
       statusEl.textContent = res.active
-        ? `💥 Champion-Design aktiv: ${res.active.icon} ${res.active.name} (live auf Chat, HUD, Build-Bar & Minimap!)`
-        : '⚔️ Standard LoL Hextech Design aktiv.';
+        ? `💥 Design-Pack aktiv: ${res.active.icon} ${res.active.name} (live auf allen OBS-Overlays!)`
+        : '⚔️ Standard-Design aktiv (kein Champion-Pack ausgewählt).';
     }
   });
 

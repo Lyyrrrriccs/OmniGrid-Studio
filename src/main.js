@@ -215,7 +215,8 @@ function broadcastChampionThemeToObs(cfg = loadConfig()) {
   const packs = themePacks.listInstalledPacks(app.getPath('userData'));
   const active = themePacks.resolveActiveChampionTheme(cfg, packs);
   obsServer.broadcastChampionTheme(active || null);
-  return { packs, active, mode: cfg.championThemeMode || 'auto' };
+  const rawMode = String(cfg.championThemeMode || 'none').trim();
+  return { packs, active, mode: rawMode === 'auto' ? 'none' : rawMode };
 }
 
 function broadcastGameAddonsState(cfg) {
@@ -5395,14 +5396,17 @@ app.whenReady().then(async () => {
     const cfg = loadConfig();
     const packs = themePacks.listInstalledPacks(app.getPath('userData'));
     const active = themePacks.resolveActiveChampionTheme(cfg, packs);
-    return { ok: true, packs, active, mode: cfg.championThemeMode || 'auto' };
+    const rawMode = String(cfg.championThemeMode || 'none').trim();
+    return { ok: true, packs, active, mode: rawMode === 'auto' ? 'none' : rawMode };
   });
 
-  ipcMain.handle('themes-select', (_ev, mode = 'auto') => {
+  ipcMain.handle('themes-select', (_ev, mode = 'none') => {
     const cfg = loadConfig();
-    cfg.championThemeMode = String(mode || 'auto').trim();
+    const nextMode = String(mode || 'none').trim();
+    cfg.championThemeMode = nextMode === 'auto' ? 'none' : nextMode;
     saveConfig(cfg);
     const res = broadcastChampionThemeToObs(cfg);
+    if (obsWs.connected) obsWs.refreshOmniGridOverlays().catch(() => {});
     return { ok: true, ...res };
   });
 
@@ -5423,6 +5427,7 @@ app.whenReady().then(async () => {
       cfg.championThemeMode = inst.pack.id;
       saveConfig(cfg);
       const state = broadcastChampionThemeToObs(cfg);
+      if (obsWs.connected) obsWs.refreshOmniGridOverlays().catch(() => {});
       return { ok: true, installedPack: inst.pack, ...state };
     } catch (err) {
       return { ok: false, error: err.message };
