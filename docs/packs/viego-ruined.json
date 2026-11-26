@@ -1,0 +1,20 @@
+{
+  "id": "viego-ruined",
+  "name": "Viego — Ruined King",
+  "icon": "👑",
+  "championMatch": ["viego"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "ruined-mist",
+  "description": "Shadow Isles Black Mist & Ruination Emerald aura with spectral breathing glow.",
+  "colors": {
+    "primary": "#10b981",
+    "secondary": "#5eead4",
+    "tertiary": "#047857",
+    "bgStart": "rgba(4, 18, 16, 0.96)",
+    "bgEnd": "rgba(8, 12, 16, 0.97)",
+    "text": "#ecfdf5",
+    "muted": "#6ee7b7"
+  },
+  "mapCoverBadge": "BLACK MIST // RADAR VEILED 👑"
+}

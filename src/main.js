@@ -20,6 +20,7 @@ const nanoleafLights = require('./nanoleaf_lights');
 const obsAutoConfig = require('./obs_auto_config');
 const { MultiStreamRelay, normalizeRelayConfig, buildActiveDestinations } = require('./multistream_relay');
 const { VoiceControlBridge, normalizeVoiceConfig } = require('./voice_control');
+const themePacks = require('./theme_packs');
 
 const autoUpdater = new GitHubAutoUpdater((st) => broadcastToWindows('updater-state', st));
 const multiRelay = new MultiStreamRelay();
@@ -210,10 +211,18 @@ async function broadcastSponsorsToObs(cfg = loadConfig()) {
   return payload;
 }
 
+function broadcastChampionThemeToObs(cfg = loadConfig()) {
+  const packs = themePacks.listInstalledPacks(app.getPath('userData'));
+  const active = themePacks.resolveActiveChampionTheme(cfg, packs);
+  obsServer.broadcastChampionTheme(active || null);
+  return { packs, active, mode: cfg.championThemeMode || 'auto' };
+}
+
 function broadcastGameAddonsState(cfg) {
   const ga = gameAddons.normalizeGameAddonsConfig(cfg?.gameAddons);
   const obsPayload = gameAddons.buildObsGameStatsPayload({ ...cfg, gameAddons: ga });
   obsServer.broadcastGameStats(obsPayload);
+  broadcastChampionThemeToObs({ ...cfg, gameAddons: ga });
   broadcastToWindows('game-addons-updated', {
     gameAddons: ga,
     activeObsPayload: obsPayload,
@@ -5342,6 +5351,67 @@ app.whenReady().then(async () => {
     return sent.length
       ? { ok: true, sent, text }
       : { ok: false, error: 'Kein schreibfähiger Chat (Twitch Token / YouTube OAuth2) verbunden.', text };
+  });
+
+  ipcMain.handle('themes-list', () => {
+    const cfg = loadConfig();
+    const packs = themePacks.listInstalledPacks(app.getPath('userData'));
+    const active = themePacks.resolveActiveChampionTheme(cfg, packs);
+    return { ok: true, packs, active, mode: cfg.championThemeMode || 'auto' };
+  });
+
+  ipcMain.handle('themes-select', (_ev, mode = 'auto') => {
+    const cfg = loadConfig();
+    cfg.championThemeMode = String(mode || 'auto').trim();
+    saveConfig(cfg);
+    const res = broadcastChampionThemeToObs(cfg);
+    return { ok: true, ...res };
+  });
+
+  ipcMain.handle('themes-install-file', async (_ev) => {
+    const { dialog } = require('electron');
+    const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    const pick = await dialog.showOpenDialog(win, {
+      title: 'Champion-Design-Pack (.json) installieren',
+      properties: ['openFile'],
+      filters: [{ name: 'OmniGrid Theme Pack (.json)', extensions: ['json'] }]
+    });
+    if (pick.canceled || !pick.filePaths?.[0]) return { ok: false, canceled: true };
+    try {
+      const raw = fs.readFileSync(pick.filePaths[0], 'utf8');
+      const inst = themePacks.installPackFromJson(app.getPath('userData'), raw);
+      if (!inst.ok) return inst;
+      const cfg = loadConfig();
+      cfg.championThemeMode = inst.pack.id;
+      saveConfig(cfg);
+      const state = broadcastChampionThemeToObs(cfg);
+      return { ok: true, installedPack: inst.pack, ...state };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('themes-export-pack', async (_ev, packId = 'jinx-arcane-zaun') => {
+    const { dialog } = require('electron');
+    const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
+    const packs = themePacks.listInstalledPacks(app.getPath('userData'));
+    const target = packs.find((p) => p.id === packId) || packs[0];
+    if (!target) return { ok: false, error: 'Kein Pack gefunden.' };
+    const save = await dialog.showSaveDialog(win, {
+      title: 'Champion-Design-Pack exportieren',
+      defaultPath: `${target.id}.json`,
+      filters: [{ name: 'OmniGrid Theme Pack (.json)', extensions: ['json'] }]
+    });
+    if (save.canceled || !save.filePath) return { ok: false, canceled: true };
+    fs.writeFileSync(save.filePath, JSON.stringify(target, null, 2) + '\n', 'utf8');
+    return { ok: true, filePath: save.filePath };
+  });
+
+  ipcMain.handle('themes-open-dir', () => {
+    const { shell } = require('electron');
+    const dir = themePacks.getThemesDir(app.getPath('userData'));
+    shell.openPath(dir);
+    return { ok: true, dir };
   });
 
   ipcMain.handle('submit-github-feedback', async (_ev, payload = {}) => {

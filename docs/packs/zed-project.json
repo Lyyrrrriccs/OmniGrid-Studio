@@ -1,0 +1,20 @@
+{
+  "id": "zed-project",
+  "name": "Zed — PROJECT",
+  "icon": "⚡",
+  "championMatch": ["zed"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "project-cyber",
+  "description": "Cybernetic Crimson & Chrome HUD with sharp tactical bevels and digital scanline pulse.",
+  "colors": {
+    "primary": "#ff1e42",
+    "secondary": "#e2e8f0",
+    "tertiary": "#38bdf8",
+    "bgStart": "rgba(12, 12, 18, 0.96)",
+    "bgEnd": "rgba(24, 8, 14, 0.96)",
+    "text": "#f8fafc",
+    "muted": "#fda4af"
+  },
+  "mapCoverBadge": "PROJECT // SHADOW PROTOCOL ⚡"
+}

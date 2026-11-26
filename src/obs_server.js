@@ -3263,6 +3263,127 @@ const OBS_SPONSORS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
+@keyframes jinxGlitchBorder {
+  0%, 92%, 100% { box-shadow: 0 0 22px rgba(255, 42, 133, 0.45), inset 0 0 14px rgba(57, 255, 20, 0.14); border-color: var(--ct-primary, #ff2a85); }
+  94% { box-shadow: -3px 0 26px rgba(57, 255, 20, 0.7), 3px 0 26px rgba(255, 42, 133, 0.7); border-color: var(--ct-secondary, #39ff14); transform: translateX(1px); }
+  96% { box-shadow: 3px 0 24px rgba(0, 245, 212, 0.65), -2px 0 24px rgba(255, 42, 133, 0.7); border-color: var(--ct-tertiary, #00f5d4); transform: translateX(-1px); }
+}
+body.champ-fx-jinx-glitch .msg-row {
+  background:
+    repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.07) 0 8px, rgba(57, 255, 20, 0.05) 8px 16px, transparent 16px 32px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(18, 6, 26, 0.94)), var(--ct-bg-end, rgba(6, 18, 22, 0.95))) !important;
+  border: 1.5px solid var(--ct-primary, #ff2a85) !important;
+  border-left: 4px solid var(--ct-secondary, #39ff14) !important;
+  border-radius: 2px !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  color: var(--ct-text, #fff0f7) !important;
+  margin-bottom: 5px;
+  box-shadow: 0 0 16px rgba(255, 42, 133, 0.25), -2px 0 0 rgba(57, 255, 20, 0.35);
+}
+body.champ-fx-jinx-glitch .author {
+  text-shadow: 0 0 9px rgba(255, 42, 133, 0.65), 1px 0 0 rgba(57, 255, 20, 0.45);
+  letter-spacing: 0.04em;
+}
+body.champ-fx-jinx-glitch .badge {
+  background: rgba(255, 42, 133, 0.24) !important;
+  border: 1px solid var(--ct-secondary, #39ff14);
+  color: var(--ct-secondary, #39ff14) !important;
+}
+body.champ-fx-jinx-glitch #pinnedBox {
+  background: linear-gradient(135deg, rgba(24, 6, 32, 0.97), rgba(8, 22, 24, 0.97)) !important;
+  border: 2px solid var(--ct-primary, #ff2a85) !important;
+  animation: jinxGlitchBorder 4.5s infinite;
+}
+body.champ-fx-jinx-glitch .pin-label { color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-card,
+body.champ-fx-jinx-glitch .lb-card,
+body.champ-fx-jinx-glitch .build-card,
+body.champ-fx-jinx-glitch .map-cover,
+body.champ-fx-jinx-glitch .cover {
+  background:
+    repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.09) 0 10px, rgba(57, 255, 20, 0.06) 10px 20px, transparent 20px 40px),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(18, 6, 26, 0.96)), var(--ct-bg-end, rgba(6, 18, 22, 0.96))) !important;
+  border: 2px solid var(--ct-primary, #ff2a85) !important;
+  border-radius: 3px !important;
+  clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  animation: jinxGlitchBorder 4.5s infinite;
+}
+body.champ-fx-jinx-glitch .gs-card::before { border-color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-card::after { border-color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .gs-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
+body.champ-fx-jinx-glitch .gs-badge { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-cell { border-color: rgba(255, 42, 133, 0.48) !important; border-left: 3px solid var(--ct-secondary, #39ff14) !important; background: rgba(16, 8, 24, 0.9) !important; }
+body.champ-fx-jinx-glitch .gs-lbl { color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .gs-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
+body.champ-fx-jinx-glitch .gs-lp-fill,
+body.champ-fx-jinx-glitch .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #ff2a85), var(--ct-secondary, #39ff14)) !important; }
+
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .msg-row {
+  background: linear-gradient(135deg, var(--ct-bg-start, rgba(16, 16, 28, 0.94)), var(--ct-bg-end, rgba(10, 14, 24, 0.95))) !important;
+  border: 1px solid var(--ct-primary, #38bdf8) !important;
+  border-left: 3.5px solid var(--ct-secondary, #a855f7) !important;
+  color: var(--ct-text, #f8fafc) !important;
+  margin-bottom: 5px;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ct-primary, #38bdf8) 28%, transparent);
+}
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .build-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover {
+  background: linear-gradient(145deg, var(--ct-bg-start, rgba(16, 16, 28, 0.96)), var(--ct-bg-end, rgba(10, 14, 24, 0.96))) !important;
+  border: 2px solid var(--ct-primary, #38bdf8) !important;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--ct-primary, #38bdf8) 38%, transparent), inset 0 0 16px color-mix(in srgb, var(--ct-secondary, #a855f7) 16%, transparent) !important;
+}
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lbl { color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-badge { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lp-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
+body.champ-fx-spirit-blossom .msg-row,
+body.champ-fx-spirit-blossom .gs-card { border-radius: 14px !important; }
+body.champ-fx-nightbringer .msg-row,
+body.champ-fx-nightbringer .gs-card,
+body.champ-fx-project-cyber .msg-row,
+body.champ-fx-project-cyber .gs-card { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
+</style>
+<script>
+(function initChampionThemeClient(){
+  function applyChampPack(pack){
+    const r = document.documentElement;
+    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse');
+    if (!pack || !pack.id) return;
+    document.body.classList.add('champ-pack-active');
+    if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);
+    const c = pack.colors || {};
+    if (c.primary) r.style.setProperty('--ct-primary', c.primary);
+    if (c.secondary) r.style.setProperty('--ct-secondary', c.secondary);
+    if (c.tertiary) r.style.setProperty('--ct-tertiary', c.tertiary);
+    if (c.bgStart) r.style.setProperty('--ct-bg-start', c.bgStart);
+    if (c.bgEnd) r.style.setProperty('--ct-bg-end', c.bgEnd);
+    if (c.text) r.style.setProperty('--ct-text', c.text);
+  }
+  function fetchTheme(){
+    fetch('/api/champion-theme').then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});
+  }
+  function connectThemeWs(){
+    try {
+      const ws = new WebSocket('ws://' + location.host);
+      ws.onmessage = (ev) => {
+        try { const p = JSON.parse(ev.data); if (p.type === 'champion-theme') applyChampPack(p.data); } catch (e) {}
+      };
+      ws.onclose = () => setTimeout(connectThemeWs, 2500);
+    } catch (e) {}
+  }
+  fetchTheme();
+  connectThemeWs();
+})();
+</script>`;
+
+function withChampionTheme(html) {
+  return String(html || '').replace('</body>', `${CHAMPION_THEME_INJECT_SNIPPET}</body>`);
+}
+
 class ObsServer {
   constructor(port = 4588) {
     this.port = port;
@@ -3280,6 +3401,7 @@ class ObsServer {
     this.currentSchedule = null;
     this.currentGiveaway = null;
     this.currentGameStats = null;
+    this.currentChampionTheme = null;
     this.currentSponsors = null;
     this.currentIcsProvider = null;
     this.soundFileResolver = null;
@@ -3314,6 +3436,16 @@ class ObsServer {
             'Cache-Control': 'no-cache'
           });
           res.end(JSON.stringify(this.currentSponsors || { enabled: false, items: [] }));
+          return;
+        }
+
+        if (urlPath === '/api/champion-theme') {
+          res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'no-cache'
+          });
+          res.end(JSON.stringify({ pack: this.currentChampionTheme || null }));
           return;
         }
 
@@ -3536,11 +3668,11 @@ class ObsServer {
         } else if (urlPath === '/soundboard') {
           res.end(OBS_SOUNDBOARD_HTML);
         } else if (urlPath === '/game-stats') {
-          res.end(OBS_GAME_STATS_HTML);
+          res.end(withChampionTheme(OBS_GAME_STATS_HTML));
         } else if (urlPath === '/lol-map') {
-          res.end(OBS_LOL_MAP_HTML);
+          res.end(withChampionTheme(OBS_LOL_MAP_HTML));
         } else if (urlPath === '/lol-build') {
-          res.end(OBS_LOL_BUILD_HTML);
+          res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {
           res.end(OBS_JC_LOWERTHIRD_HTML);
         } else if (urlPath === '/jc-qna') {
@@ -3554,7 +3686,7 @@ class ObsServer {
         } else if (urlPath === '/sponsors') {
           res.end(OBS_SPONSORS_HTML);
         } else {
-          res.end(OBS_OVERLAY_HTML);
+          res.end(withChampionTheme(OBS_OVERLAY_HTML));
         }
       });
 
@@ -3590,6 +3722,9 @@ class ObsServer {
         }
         if (this.currentSponsors) {
           ws.send(JSON.stringify({ type: 'sponsors', data: this.currentSponsors }));
+        }
+        if (this.currentChampionTheme !== undefined) {
+          ws.send(JSON.stringify({ type: 'champion-theme', data: this.currentChampionTheme }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -3739,6 +3874,11 @@ class ObsServer {
   broadcastSponsors(payload) {
     this.currentSponsors = payload;
     this._broadcast({ type: 'sponsors', data: payload });
+  }
+
+  broadcastChampionTheme(pack) {
+    this.currentChampionTheme = pack || null;
+    this._broadcast({ type: 'champion-theme', data: this.currentChampionTheme });
   }
 
   setVoiceTestHandler(fn) {

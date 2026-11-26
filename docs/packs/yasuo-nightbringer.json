@@ -1,0 +1,20 @@
+{
+  "id": "yasuo-nightbringer",
+  "name": "Yasuo — Nightbringer",
+  "icon": "🔥",
+  "championMatch": ["yasuo", "yone"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "nightbringer",
+  "description": "Obsidian steel & molten ember orange with sharp blade-cut edges and fiery glow.",
+  "colors": {
+    "primary": "#ff5500",
+    "secondary": "#ffaa00",
+    "tertiary": "#ff2200",
+    "bgStart": "rgba(22, 8, 6, 0.96)",
+    "bgEnd": "rgba(10, 8, 12, 0.97)",
+    "text": "#fff7ed",
+    "muted": "#fdba74"
+  },
+  "mapCoverBadge": "HASAGI // MINIMAP HIDDEN 🔥"
+}
