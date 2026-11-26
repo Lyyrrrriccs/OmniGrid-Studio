@@ -1,6 +1,6 @@
 {
   "name": "omnigrid-studio",
-  "version": "2026.11.26-1231",
+  "version": "2026.11.26-1239",
   "description": "OmniGrid Studio — Local All-in-One Streaming Suite (Multistream Chat, Clip & 9:16 Shorts Studio, OBS Control & Overlays, Discord/Social & Schedule Studio, Giveaway, Soundboard & Hype Detector)",
   "main": "src/main.js",
   "scripts": {

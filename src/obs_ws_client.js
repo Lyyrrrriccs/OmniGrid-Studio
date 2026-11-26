@@ -629,21 +629,20 @@ class ObsWsClient extends EventEmitter {
         const kindsRes = await this.getInputKinds().catch(() => ({ kinds: [] }));
         const kinds = kindsRes.kinds || [];
         const preferred = process.platform === 'darwin'
-          ? ['sck_audio_capture', 'coreaudio_output_capture', 'coreaudio_input_capture']
+          ? ['coreaudio_output_capture', 'coreaudio_input_capture']
           : process.platform === 'win32'
-            ? ['wasapi_process_output_capture', 'wasapi_output_capture']
-            : ['pulse_output_capture', 'pipewire_audio_capture'];
+            ? ['wasapi_output_capture', 'wasapi_input_capture']
+            : ['pulse_output_capture', 'pulse_input_capture'];
         const chosenKind = preferred.find((k) => kinds.includes(k)) || preferred[0];
-        try {
-          await this.createInput({
-            sceneName: targetScene,
-            inputName: sourceName,
-            inputKind: chosenKind,
-            inputSettings: chosenKind === 'sck_audio_capture' ? { type: 2 } : {}
-          });
-          await this.setInputVodMusicOnly(sourceName, true);
-          createdSource = sourceName;
-        } catch (e) {}
+        await this.createInput({
+          sceneName: targetScene,
+          inputName: sourceName,
+          inputKind: chosenKind,
+          inputSettings: {}
+        });
+        await new Promise((r) => setTimeout(r, 250));
+        await this.setInputVodMusicOnly(sourceName, true);
+        createdSource = sourceName;
       } else if (exists) {
         await this.setInputVodMusicOnly(sourceName, true);
         createdSource = sourceName;
