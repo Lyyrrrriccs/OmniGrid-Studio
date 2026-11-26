@@ -96,6 +96,7 @@ npm run build:win   # Creates dist/OmniGridStudio-win32-x64/OmniGridStudio.exe
 | **OBS Game-Stats / Talk-Agenda** | `http://127.0.0.1:4588/game-stats` | Dynamic Game Stats card (LoL Hextech HUD with Rank & LP bar, Just Chatting Agenda, CS2, Valorant, Souls…) |
 | **OBS LoL Live Build & Elo Bar** | `http://127.0.0.1:4588/lol-build` | Horizontal Hextech bar showing live 6 items + trinket, Rank/LP, Keystone, Gold & Game Time |
 | **OBS LoL Minimap Cover** | `http://127.0.0.1:4588/lol-map` | Anti-ghosting Hextech minimap cover (`280×280`) with live Champion splash |
+| **OBS LoL Client Animated Frame** | `http://127.0.0.1:4588/lol-bg` | `1920×1080` themed Lobby/Client scene frame (16:9 Client, Webcam, Chat + 155 px bottom space) with animated Champion Pack splash & particles (`?layout=clean` for background only) |
 | **OBS Just Chatting Lower Third** | `http://127.0.0.1:4588/jc-lowerthird` | Broadcast lower-third banner (`920×145`) with live topic, vibe chip, clock & social ticker |
 | **OBS Viewer Q&A Spotlight** | `http://127.0.0.1:4588/jc-qna` | Animated spotlight card displaying the active `!ask` viewer question on stream |
 | **OBS Giveaway / Schedule / Soundboard** | `.../giveaway` • `.../schedule` • `.../soundboard` | Live Giveaway prize wheel, upcoming stream schedule & OBS audio player *(all insertable with 1 click in Scene Editor without URLs!)* |

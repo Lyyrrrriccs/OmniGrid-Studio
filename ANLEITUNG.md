@@ -377,12 +377,16 @@ Warum eigene Google-OAuth2-Daten? Google verlangt für zentrale Drittanbieter-Ap
 
 ### ⚔️ League of Legends — Komplett-Suite
 - **Automatisches Auslesen ohne Riot-API-Key (`127.0.0.1`):**
-  1. **League Client (LCU):** Sobald dein LoL-Client geöffnet und eingeloggt ist, liest OmniGrid Studio alle ~12 Sekunden (oder sofort per **`🔄 Rank & LP aus LoL-Client lesen`**) deinen echten **Solo/Duo- bzw. Flex-Rank**, deine **exakten aktuellen LP** sowie deine **Riot-ID (`Name#TAG`) + Region** lokal aus!
-  2. **Live Ingame API (`127.0.0.1:2999`):** Sobald ein Match läuft, werden **Champion + Skin-Splash, Lane/Rolle, K/D/A, CS & CS/m, Level, Gold, Keystone-Rune, Summoner Spells & alle 6 Items + Trinket** live aktualisiert. Bei eigenem Triple/Quadra/Baron wird automatisch ein Twitch-Marker gesetzt — bei einem **PENTAKILL** löst automatisch der **Hype-Clip inkl. Chat-Post** aus!
-- **3 Hextech OBS-Overlays:**
-  - `http://127.0.0.1:4588/game-stats` — Hextech HUD mit Champion-Icon, **Rank- & LP-Box inkl. Fortschrittsbalken rechts daneben**, K/D/A, CS/m, Session-Bilanz & letzten 6 Matches.
+  1. **League Client (LCU):** Sobald dein LoL-Client geöffnet und eingeloggt ist, liest OmniGrid Studio alle ~12 Sekunden (oder sofort per **`🔄 Rank & LP aus LoL-Client lesen`**) deinen echten **Solo/Duo- bzw. Flex-Rank**, deine **exakten aktuellen LP**, deine **zugewiesene Lane**, deine **letzten 6 Matches inkl. Champion-Icons & W/L** sowie deine **Riot-ID (`Name#TAG`) + Region** lokal aus — und schaltet im Modus `Auto` schon in der Lobby auf League of Legends um.
+  2. **Live Ingame API (`127.0.0.1:2999`):** Sobald ein Match läuft, werden **Champion + Skin-Artwork, exakte Lane/Rolle** (Live-Position + LCU + Spielmodus + Smite/Support-Item-Erkennung), **K/D/A, CS & CS/m, Level, Gold, Keystone-Rune, Summoner Spells & alle 6 Items + Trinket** live aktualisiert. Bei eigenem Triple/Quadra/Baron wird automatisch ein Twitch-Marker gesetzt — bei einem **PENTAKILL** löst automatisch der **Hype-Clip inkl. Chat-Post** aus!
+- **4 OBS-Overlays für Ingame & Lobby:**
+  - `http://127.0.0.1:4588/game-stats` — HUD (`430×370`) mit **Champion-Icon (mit Skin)**, **Rang-Abzeichen (Rank Emblem Crest)** + LP-Fortschrittsbalken, K/D/A, CS/m, Session-Bilanz & **letzten 6 Matches** (optional mit `?addon=lol` fest erzwingbar).
   - `http://127.0.0.1:4588/lol-build` — Kompakte Live Item-Build & Elo-Leiste (`550×125`).
   - `http://127.0.0.1:4588/lol-map` — Anti-Ghosting Minimap-Cover (`280×280`).
+  - `http://127.0.0.1:4588/lol-bg` — **Animierter Riot-/League-Client Frame (`1920×1080`)** für deine Lobby-/Champ-Select-Szene: Zeigt das animierte Splash-Art & individuelle Partikel-Animationen des gewählten Champion-Themes mit 3 sauberen Theme-Rahmen (links 16:9 Client-Fenster, oben rechts Webcam, unten rechts Live-Chat) und **155 px Platz unten** für weitere Overlays (Musik, Goals, Sponsoren). Mit `?layout=clean` auch als reiner Vollbild-Hintergrund ohne Rahmen nutzbar.
+- **🎨 Champion Overlay Design-Packs (100 % manuell, alle 16 Overlays):**
+  - Unter **🎮 Game-Addons → Overlay Design-Pack (manuell)** kannst du eigenständige `.json`-Packs (z. B. Jinx, Akali K/DA, Kai'Sa Risen Legend, Master Yi Inkshadow, Dark Cosmic Jhin, Elementalist Lux, High Noon Lucian u. v. m.) per **📥 Pack installieren (.json)** importieren und jederzeit manuell umschalten — unabhängig vom gespielten Champion.
+  - Das aktive Design-Pack wirkt live auf **alle 16 OBS-Overlays** (Chat, Alerts, Musik, Goals, Umfrage, Sendeplan, Giveaway, Sponsoren, Game-Stats, LoL-Build, Minimap, Just Chatting, TRON, Valorant) **sowie auf den animierten Client-Frame (`/lol-bg`)**.
 - **Chat-Commands:** `!elo`, `!lp`, `!rank`, `!opgg`, `!ugg`, `!champ`, `!skin`, `!build`, `!items`, `!runes`, `!mh`.
 
 ### 💬 Just Chatting & Talk Suite

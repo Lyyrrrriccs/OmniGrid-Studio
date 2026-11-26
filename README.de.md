@@ -96,6 +96,7 @@ npm run build:win   # Erstellt dist/OmniGridStudio-win32-x64/OmniGridStudio.exe
 | **OBS Game-Stats / Talk-Agenda** | `http://127.0.0.1:4588/game-stats` | Dynamische Game-Stats-Karte (LoL Hextech HUD mit Rank- & LP-Box, Just-Chatting-Agenda, CS2, Valorant, Souls…) |
 | **OBS LoL Live Item-Build & Elo-Bar** | `http://127.0.0.1:4588/lol-build` | Horizontale Hextech-Leiste mit 6 Live-Items + Trinket, Rank/LP, Keystone, Gold & Spielzeit |
 | **OBS LoL Minimap-Cover** | `http://127.0.0.1:4588/lol-map` | Anti-Ghosting Hextech-Abdeckung (`280×280`) mit Champion-Splash |
+| **OBS LoL-Client Animierter Frame** | `http://127.0.0.1:4588/lol-bg` | `1920×1080` Lobby-/Client-Szene (16:9 Client-, Webcam- & Chat-Rahmen + 155 px Platz unten) mit animiertem Champion-Theme-Splash & Partikeln (`?layout=clean` ohne Rahmen) |
 | **OBS Just Chatting Bauchbinde** | `http://127.0.0.1:4588/jc-lowerthird` | Animierte TV-/Podcast-Bauchbinde (`920×145`) mit Live-Thema, Vibe-Badge, Uhrzeit & Social-Ticker |
 | **OBS Viewer Q&A Spotlight** | `http://127.0.0.1:4588/jc-qna` | Blendet die aktuell ausgewählte `!ask`-Zuschauerfrage prominent im Stream ein |
 | **OBS Giveaway / Schedule / Soundboard** | `.../giveaway` • `.../schedule` • `.../soundboard` | Verlosungs-Rad, Stream-Sendeplan & OBS-Audio-Player *(alle im Szenen-Editor per 1-Klick ohne URL einfügbar!)* |
