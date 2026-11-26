@@ -9609,3 +9609,69 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   btnTrimAll?.addEventListener('click', () => exportAllMarkers('trim'));
   renderMarkers();
 })();
+
+(() => {
+  const sel = document.getElementById('gaChampThemeSelect');
+  const statusEl = document.getElementById('gaStatus');
+  if (!sel) return;
+
+  const renderThemes = (data) => {
+    if (!data) return;
+    const packs = Array.isArray(data.packs) ? data.packs : [];
+    const mode = data.mode || 'auto';
+    sel.innerHTML = '';
+    const opts = [
+      { value: 'auto', label: '🤖 Auto (wechselt nach gespieltem Champion)' },
+      { value: 'none', label: '⚔️ Standard (LoL Hextech)' },
+      ...packs.map((p) => ({ value: p.id, label: `${p.icon || '🎨'} ${p.name}` }))
+    ];
+    opts.forEach((o) => {
+      const el = document.createElement('option');
+      el.value = o.value;
+      el.textContent = o.label;
+      if (o.value === mode) el.selected = true;
+      sel.appendChild(el);
+    });
+  };
+
+  const loadThemes = async () => {
+    const res = await window.omnichat.themesList?.();
+    if (res?.ok) renderThemes(res);
+  };
+
+  sel.addEventListener('change', async () => {
+    const res = await window.omnichat.themesSelect?.(sel.value);
+    if (res?.ok && statusEl) {
+      statusEl.style.color = '#ff69b4';
+      statusEl.textContent = res.active
+        ? `💥 Champion-Design aktiv: ${res.active.icon} ${res.active.name} (live auf Chat, HUD, Build-Bar & Minimap!)`
+        : '⚔️ Standard LoL Hextech Design aktiv.';
+    }
+  });
+
+  document.getElementById('btnGaInstallThemePack')?.addEventListener('click', async () => {
+    const res = await window.omnichat.themesInstallFile?.();
+    if (res?.ok) {
+      renderThemes(res);
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `✅ Champion-Pack "${res.installedPack?.name}" installiert & live aktiviert!`;
+      }
+    } else if (res && !res.canceled && statusEl) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `⚠️ ${res.error || 'Pack konnte nicht installiert werden.'}`;
+    }
+  });
+
+  document.getElementById('btnGaExportThemePack')?.addEventListener('click', async () => {
+    const targetId = sel.value !== 'auto' && sel.value !== 'none' ? sel.value : 'jinx-arcane-zaun';
+    await window.omnichat.themesExportPack?.(targetId);
+  });
+
+  document.getElementById('btnGaOpenThemesDir')?.addEventListener('click', () => {
+    window.omnichat.themesOpenDir?.();
+  });
+
+  document.getElementById('btnOpenGameAddons')?.addEventListener('click', loadThemes);
+  loadThemes();
+})();

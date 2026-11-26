@@ -151,5 +151,10 @@ contextBridge.exposeInMainWorld('omnichat', {
   sponsorsGet: () => ipcRenderer.invoke('sponsors-get'),
   sponsorsSave: (sp) => ipcRenderer.invoke('sponsors-save', sp),
   sponsorsJump: (index) => ipcRenderer.invoke('sponsors-jump', index),
-  sponsorsPostChat: (itemId) => ipcRenderer.invoke('sponsors-post-chat', itemId)
+  sponsorsPostChat: (itemId) => ipcRenderer.invoke('sponsors-post-chat', itemId),
+  themesList: () => ipcRenderer.invoke('themes-list'),
+  themesSelect: (mode) => ipcRenderer.invoke('themes-select', mode),
+  themesInstallFile: () => ipcRenderer.invoke('themes-install-file'),
+  themesExportPack: (packId) => ipcRenderer.invoke('themes-export-pack', packId),
+  themesOpenDir: () => ipcRenderer.invoke('themes-open-dir')
 });
