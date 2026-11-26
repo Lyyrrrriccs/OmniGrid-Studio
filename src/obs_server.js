@@ -3889,8 +3889,8 @@ const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
   96% { box-shadow: 3px 0 24px rgba(0, 245, 212, 0.65), -2px 0 24px rgba(255, 42, 133, 0.7); border-color: var(--ct-tertiary, #00f5d4); transform: translateX(-1px); }
 }
 @keyframes kdaFirePulse {
-  0%, 100% { box-shadow: 0 0 22px rgba(217, 70, 239, 0.52), inset 0 0 16px rgba(0, 245, 255, 0.16); border-color: var(--ct-primary, #d946ef); }
-  50% { box-shadow: 0 0 28px rgba(0, 245, 255, 0.62), 0 0 14px rgba(255, 107, 0, 0.45), inset 0 0 18px rgba(217, 70, 239, 0.22); border-color: var(--ct-secondary, #00f5ff); }
+  0%, 100% { box-shadow: 0 0 24px rgba(255, 59, 92, 0.56), inset 0 0 18px rgba(255, 122, 0, 0.22); border-color: var(--ct-primary, #ff3b5c); }
+  50% { box-shadow: 0 0 32px rgba(255, 122, 0, 0.64), 0 0 18px rgba(0, 245, 255, 0.45), inset 0 0 20px rgba(255, 59, 92, 0.24); border-color: var(--ct-secondary, #ff7a00); }
 }
 @keyframes risenLegendGlow {
   0%, 100% { box-shadow: 0 0 24px rgba(245, 197, 66, 0.48), inset 0 0 16px rgba(255, 46, 85, 0.18); border-color: var(--ct-primary, #f5c542); }
@@ -4145,20 +4145,21 @@ ${['.msg-row', ...ALL_OVERLAY_CARDS_SEL].map((s) => `body.champ-fx-nightbringer 
 
 body.champ-fx-kda-firestarter .msg-row {
   background:
-    linear-gradient(125deg, rgba(217, 70, 239, 0.14), rgba(0, 245, 255, 0.08) 55%, rgba(255, 107, 0, 0.10)),
-    linear-gradient(135deg, var(--ct-bg-start, rgba(12, 6, 28, 0.96)), var(--ct-bg-end, rgba(18, 4, 24, 0.97))) !important;
+    linear-gradient(125deg, rgba(255, 59, 92, 0.18), rgba(255, 122, 0, 0.14) 55%, rgba(0, 245, 255, 0.08)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(22, 6, 20, 0.96)), var(--ct-bg-end, rgba(10, 8, 26, 0.97))) !important;
   clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
   border-radius: 0 !important;
-  box-shadow: 0 0 16px rgba(217, 70, 239, 0.3), -2px 0 0 rgba(0, 245, 255, 0.55) !important;
+  box-shadow: 0 0 18px rgba(255, 59, 92, 0.34), -2px 0 0 rgba(255, 122, 0, 0.65) !important;
 }
 ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-kda-firestarter ${s}`).join(',\n')} {
   background:
-    radial-gradient(circle at 85% 15%, rgba(255, 107, 0, 0.18), transparent 45%),
-    radial-gradient(circle at 15% 85%, rgba(0, 245, 255, 0.14), transparent 50%),
-    linear-gradient(145deg, var(--ct-bg-start, rgba(12, 6, 28, 0.96)), var(--ct-bg-end, rgba(18, 4, 24, 0.97))) !important;
+    radial-gradient(circle at 86% 14%, rgba(255, 122, 0, 0.26), transparent 46%),
+    radial-gradient(circle at 14% 86%, rgba(255, 59, 92, 0.22), transparent 50%),
+    radial-gradient(circle at 50% 10%, rgba(0, 245, 255, 0.12), transparent 48%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(22, 6, 20, 0.96)), var(--ct-bg-end, rgba(10, 8, 26, 0.97))) !important;
   clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
   border-radius: 0 !important;
-  animation: kdaFirePulse 3.6s ease-in-out infinite;
+  animation: kdaFirePulse 3.2s ease-in-out infinite;
 }
 body.champ-fx-kda-firestarter .gs-title,
 body.champ-fx-kda-firestarter .gs-champ-name,
@@ -4172,12 +4173,12 @@ body.champ-fx-kda-firestarter .al-author,
 body.champ-fx-kda-firestarter .lt-topic,
 body.champ-fx-kda-firestarter .qna-author,
 body.champ-fx-kda-firestarter .tron-topic,
-body.champ-fx-kda-firestarter .val-rank-name { text-shadow: 0 0 12px rgba(217, 70, 239, 0.85), 0 0 6px rgba(0, 245, 255, 0.55) !important; }
+body.champ-fx-kda-firestarter .val-rank-name { text-shadow: 0 0 12px rgba(255, 59, 92, 0.88), 0 0 8px rgba(255, 122, 0, 0.65) !important; }
 body.champ-fx-kda-firestarter .gs-lp-fill,
 body.champ-fx-kda-firestarter .lb-lp-fill,
 body.champ-fx-kda-firestarter .goal-fill,
 body.champ-fx-kda-firestarter .sp-prog-fill,
-body.champ-fx-kda-firestarter .val-rr-fill { background: linear-gradient(90deg, #d946ef, #00f5ff, #ff6b00) !important; }
+body.champ-fx-kda-firestarter .val-rr-fill { background: linear-gradient(90deg, #ff3b5c, #ff7a00, #00f5ff) !important; }
 
 body.champ-fx-risen-legend .msg-row {
   background:

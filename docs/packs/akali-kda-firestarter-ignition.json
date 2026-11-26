@@ -1,0 +1,24 @@
+{
+  "id": "akali-kda-firestarter-ignition",
+  "name": "Akali — K/DA Firestarter Ignition",
+  "icon": "🔥",
+  "championMatch": ["akali"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "kda-firestarter",
+  "description": "Blazing K/DA Ignition flame orange, neon crimson-magenta & UV hyper-cyan sparks with sharp kunai-cut edges across all OBS overlays.",
+  "colors": {
+    "primary": "#ff3b5c",
+    "secondary": "#ff7a00",
+    "tertiary": "#00f5ff",
+    "bgStart": "rgba(22, 6, 20, 0.96)",
+    "bgEnd": "rgba(10, 8, 26, 0.97)",
+    "text": "#fff5f7",
+    "muted": "#fda4af"
+  },
+  "mapCoverBadge": "K/DA IGNITION // FIRESTARTER 🔥",
+  "skinArt": {
+    "championId": "Akali",
+    "skinQuery": "K/DA"
+  }
+}
