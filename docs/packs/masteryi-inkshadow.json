@@ -1,0 +1,20 @@
+{
+  "id": "masteryi-inkshadow",
+  "name": "Master Yi — Inkshadow",
+  "icon": "🖌️",
+  "championMatch": ["master yi", "masteryi", "yi"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "inkshadow",
+  "description": "Sumi-e obsidian ink wash, spectral Jade Spirit glow & Vermilion seal accents with sharp katana-cut edges across all OBS overlays.",
+  "colors": {
+    "primary": "#14f1c6",
+    "secondary": "#ff3b4e",
+    "tertiary": "#f8fafc",
+    "bgStart": "rgba(8, 9, 14, 0.97)",
+    "bgEnd": "rgba(14, 12, 22, 0.98)",
+    "text": "#f8fafc",
+    "muted": "#cbd5e1"
+  },
+  "mapCoverBadge": "INKSHADOW // ALPHA STRIKE 🖌️"
+}
