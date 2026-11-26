@@ -1886,16 +1886,16 @@ body.hide-platicons .msg-plat-dot {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 12px;
 }
 .config-modal-backdrop.hidden {
   display: none;
 }
 .config-modal-shell {
-  width: 96vw;
-  max-width: 1600px;
-  height: 92vh;
-  max-height: 92vh;
+  width: 97vw;
+  max-width: 1760px;
+  height: 95vh;
+  max-height: 95vh;
   background: #0f172a;
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 16px;
@@ -2137,8 +2137,8 @@ body.hide-platicons .msg-plat-dot {
 
 
 .qs-modal-shell {
-  width: min(760px, 94vw);
-  max-height: 90vh;
+  width: min(1040px, 95vw);
+  max-height: 93vh;
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, #0f172a 0%, #0b1120 100%);

@@ -61,7 +61,22 @@ const DEFAULT_GAME_ADDONS_CONFIG = {
     },
     minecraft: { deaths: 0, diamonds: 0, days: 1, mode: 'Survival' },
     souls: { deaths: 0, bosses: 0, run: 'Any%', bossName: 'Aktueller Boss' },
-    valorant: { kills: 0, deaths: 0, wins: 0, rank: 'Diamond', agent: 'Jett' }
+    valorant: {
+      riotId: '',
+      rank: 'Diamond II',
+      rr: 62,
+      agent: 'Jett',
+      map: 'Ascent',
+      score: '7 : 5',
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      hsPercent: 28,
+      wins: 0,
+      losses: 0,
+      mapCoverEnabled: false,
+      mapCoverText: 'RADAR VERDECKT // ANTI-SNIPE'
+    }
   }
 };
 
@@ -172,19 +187,26 @@ const GAME_ADDONS = [
   },
   {
     id: 'valorant',
-    name: 'Valorant / Tactical FPS',
+    name: 'Valorant — Tactical Esports Suite',
     icon: '🔫',
-    accent: '#f43f5e',
+    accent: '#ff4655',
     gameMatches: ['valorant', 'apex legends', 'fortnite', 'overwatch', 'call of duty', 'warzone'],
     fields: [
+      { key: 'riotId', label: 'Riot-ID (Name#TAG)', type: 'text' },
+      { key: 'rank', label: 'Rank (z. B. Ascendant II)', type: 'text' },
+      { key: 'rr', label: 'RR (0–100)', type: 'number' },
+      { key: 'agent', label: 'Agent', type: 'text' },
+      { key: 'map', label: 'Map', type: 'text' },
+      { key: 'score', label: 'Score (z. B. 7 : 5)', type: 'text' },
       { key: 'kills', label: 'Kills', type: 'number' },
       { key: 'deaths', label: 'Deaths', type: 'number' },
-      { key: 'wins', label: 'Wins', type: 'number' },
-      { key: 'rank', label: 'Rank', type: 'text' },
-      { key: 'agent', label: 'Agent / Char', type: 'text' }
+      { key: 'assists', label: 'Assists', type: 'number' },
+      { key: 'hsPercent', label: 'HS %', type: 'number' },
+      { key: 'wins', label: 'Session Wins', type: 'number' },
+      { key: 'losses', label: 'Session Losses', type: 'number' }
     ],
-    chatCommands: ['!stats', '!kd', '!rank', '!wins', '!win+'],
-    eventHint: 'Chat-Commands (!stats, !rank, !wins) & Stream Deck Counter.'
+    chatCommands: ['!rank', '!rr', '!agent', '!map', '!kd', '!stats', '!win+', '!loss+', '!kill+', '!death+'],
+    eventHint: 'Komplett-Set: Valorant Tactical HUD (/game-stats), Rank/RR & Match-Bar (/val-bar), Anti-Snipe Radar-Cover (/val-map) & Session W/L-Counter!'
   },
   {
     id: 'universal',
@@ -234,7 +256,8 @@ const EXTRA_STAT_KEYS = {
     'mapCoverText'
   ],
   justchatting: ['agendaText', 'activeAgendaIdx', 'qnaEnabled', 'activeQuestion', 'qnaQueue'],
-  techtalk: ['agendaText', 'activeAgendaIdx', 'tickerText']
+  techtalk: ['agendaText', 'activeAgendaIdx', 'tickerText'],
+  valorant: ['mapCoverEnabled', 'mapCoverText']
 };
 
 function sanitizeAddonStats(addonId, rawStats = {}) {
@@ -353,6 +376,7 @@ function buildObsGameStatsPayload(cfg = {}) {
   const lolStats = ga.perAddonStats?.lol || {};
   const jcStats = ga.perAddonStats?.justchatting || {};
   const ttStats = ga.perAddonStats?.techtalk || {};
+  const valStats = ga.perAddonStats?.valorant || {};
 
   const lolMatches = Array.isArray(lolStats.recentMatches) ? lolStats.recentMatches.slice(0, 6) : [];
   const lolWins = lolMatches.filter((m) => m && m.win).length;
@@ -389,6 +413,17 @@ function buildObsGameStatsPayload(cfg = {}) {
       { key: 'bugsFixed', label: 'BUGS FIXED', value: Number(stats.bugsFixed || 0) },
       { key: 'commits', label: 'COMMITS', value: Number(stats.commits || 0) },
       { key: 'step', label: 'SECTOR', value: agenda.length ? `${curStep + 1}/${agenda.length}` : '—' }
+    ];
+  } else if (addon.id === 'valorant') {
+    const k = Number(stats.kills || 0);
+    const d = Number(stats.deaths || 0);
+    const a = Number(stats.assists || 0);
+    const kd = d > 0 ? (k / d).toFixed(2) : k.toFixed(2);
+    displayStats = [
+      { key: 'kda', label: 'K / D / A', value: `${k}/${d}/${a}` },
+      { key: 'kd', label: 'K/D', value: kd },
+      { key: 'hs', label: 'HS %', value: `${Number(stats.hsPercent || 0)}%` },
+      { key: 'wl', label: 'SESSION', value: `${Number(stats.wins || 0)}W - ${Number(stats.losses || 0)}L` }
     ];
   } else {
     displayStats = addon.fields.map((f) => ({
@@ -461,6 +496,20 @@ function buildObsGameStatsPayload(cfg = {}) {
     tronAgendaItems,
     tronActiveAgendaIdx,
     tronTickerText: ttStats.tickerText || 'GRID ONLINE // !stack • !repo • !agenda',
+    valRiotId: valStats.riotId || '',
+    valRank: valStats.rank || 'Unranked',
+    valRr: Number(valStats.rr || 0),
+    valAgent: valStats.agent || 'Jett',
+    valMap: valStats.map || 'Ascent',
+    valScore: valStats.score || '0 : 0',
+    valKills: Number(valStats.kills || 0),
+    valDeaths: Number(valStats.deaths || 0),
+    valAssists: Number(valStats.assists || 0),
+    valHsPercent: Number(valStats.hsPercent || 0),
+    valWins: Number(valStats.wins || 0),
+    valLosses: Number(valStats.losses || 0),
+    valMapCoverEnabled: Boolean(valStats.mapCoverEnabled),
+    valMapCoverText: String(valStats.mapCoverText || 'RADAR VERDECKT // ANTI-SNIPE'),
     stats: displayStats,
     chatCommands: addon.chatCommands
   };
@@ -475,6 +524,44 @@ function handleGameChatCommand(cfg = {}, msg = {}) {
   const { addon, stats, ga } = resolveActiveAddon(cfg);
   const roles = Array.isArray(msg.roles) ? msg.roles.map((r) => String(r).toLowerCase()) : [];
   const isModOrBroadcaster = Boolean(msg.isSelf) || roles.some((r) => ['broadcaster', 'moderator', 'mod'].includes(r));
+
+  if (addon.id === 'valorant') {
+    if (cmd === '!rank' || cmd === '!rr') {
+      return { mutated: false, reply: `🔫 Valorant Rank: ${stats.rank || 'Unranked'} (${Number(stats.rr || 0)} RR) • Session: ${Number(stats.wins || 0)}W-${Number(stats.losses || 0)}L` };
+    }
+    if (cmd === '!agent') {
+      return { mutated: false, reply: `🔫 Aktueller Agent: ${stats.agent || '—'} auf ${stats.map || '—'} (${stats.score || '0 : 0'})` };
+    }
+    if (cmd === '!win+' && isModOrBroadcaster) {
+      stats.wins = Number(stats.wins || 0) + 1;
+      stats.rr = Math.min(100, Number(stats.rr || 0) + 20);
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, valorant: stats } },
+        reply: `🏆 Valorant Sieg! Session: ${stats.wins}W-${Number(stats.losses || 0)}L (${stats.rank} • ${stats.rr} RR)`
+      };
+    }
+    if (cmd === '!loss+' && isModOrBroadcaster) {
+      stats.losses = Number(stats.losses || 0) + 1;
+      stats.rr = Math.max(0, Number(stats.rr || 0) - 18);
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, valorant: stats } },
+        reply: `💀 Niederlage verbucht. Session: ${Number(stats.wins || 0)}W-${stats.losses}L (${stats.rank} • ${stats.rr} RR)`
+      };
+    }
+    if (cmd === '!kill+' && isModOrBroadcaster) {
+      stats.kills = Number(stats.kills || 0) + 1;
+      return {
+        mutated: true,
+        bypassCooldown: true,
+        nextGameAddons: { ...ga, perAddonStats: { ...ga.perAddonStats, valorant: stats } },
+        reply: `🎯 Kill! Aktuell ${stats.kills}/${Number(stats.deaths || 0)}/${Number(stats.assists || 0)}`
+      };
+    }
+  }
 
   // === JUST CHATTING COMMAND SUITE ===
   if (addon.id === 'techtalk') {
