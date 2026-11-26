@@ -565,19 +565,36 @@ class ObsWsClient extends EventEmitter {
             : 'device_id';
         try {
           const settingsRes = await this.call('GetInputSettings', { inputName: inp.inputName });
-          currentDeviceId = String(settingsRes?.inputSettings?.[devicePropName] ?? '');
+          const st = settingsRes?.inputSettings || {};
+          currentDeviceId = kind === 'sck_audio_capture'
+            ? (Number(st.type) === 0 ? '__desktop__' : String(st.application ?? ''))
+            : String(st[devicePropName] ?? '');
         } catch (e) {}
-        try {
-          const propRes = await this.call('GetInputPropertiesListPropertyItems', {
-            inputName: inp.inputName,
-            propertyName: devicePropName
-          });
-          devices = Array.isArray(propRes?.propertyItems)
-            ? propRes.propertyItems
-                .filter((p) => p && p.itemEnabled !== false)
-                .map((p) => ({ name: String(p.itemName || p.itemValue || ''), value: String(p.itemValue ?? '') }))
-            : [];
-        } catch (e) {}
+        if (kind === 'sck_audio_capture') {
+          devices = [
+            { name: '🖥️ Desktop-Audio (Gesamter Mac)', value: '__desktop__' },
+            { name: '🟢 Spotify', value: 'com.spotify.client' },
+            { name: '🍎 Apple Music', value: 'com.apple.Music' },
+            { name: '🔵 Amazon Music', value: 'com.amazon.music' },
+            { name: '🌐 Google Chrome', value: 'com.google.Chrome' },
+            { name: '🧭 Safari', value: 'com.apple.Safari' }
+          ];
+          if (currentDeviceId && !devices.some((d) => d.value === currentDeviceId)) {
+            devices.push({ name: currentDeviceId, value: currentDeviceId });
+          }
+        } else {
+          try {
+            const propRes = await this.call('GetInputPropertiesListPropertyItems', {
+              inputName: inp.inputName,
+              propertyName: devicePropName
+            });
+            devices = Array.isArray(propRes?.propertyItems)
+              ? propRes.propertyItems
+                  .filter((p) => p && p.itemEnabled !== false)
+                  .map((p) => ({ name: String(p.itemName || p.itemValue || ''), value: String(p.itemValue ?? '') }))
+              : [];
+          } catch (e) {}
+        }
         let audioTracks = { '1': true, '2': true, '3': false, '4': false, '5': false, '6': false };
         try {
           const trRes = await this.call('GetInputAudioTracks', { inputName: inp.inputName });
@@ -673,8 +690,9 @@ class ObsWsClient extends EventEmitter {
     const cleanName = String(inputName || '').trim();
     if (!cleanName) throw new Error('Kein Audio-Gerät angegeben.');
     const prop = ['device_id', 'application', 'window'].includes(propertyName) ? propertyName : 'device_id';
-    const patch = { [prop]: String(deviceId ?? '') };
-    if (prop === 'application' && deviceId) patch.type = 1;
+    const patch = prop === 'application'
+      ? (deviceId === '__desktop__' ? { type: 0 } : { type: 1, application: String(deviceId ?? '') })
+      : { [prop]: String(deviceId ?? '') };
     await this.call('SetInputSettings', {
       inputName: cleanName,
       inputSettings: patch,
