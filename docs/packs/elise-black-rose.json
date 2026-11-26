@@ -2,7 +2,9 @@
   "id": "elise-black-rose",
   "name": "Elise — Masque of the Black Rose",
   "icon": "🥀",
-  "championMatch": ["elise"],
+  "championMatch": [
+    "elise"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "black-rose",
@@ -16,5 +18,9 @@
     "text": "#fff1f2",
     "muted": "#fda4af"
   },
-  "mapCoverBadge": "BLACK ROSE // MASQUERADE 🥀"
+  "mapCoverBadge": "BLACK ROSE // MASQUERADE 🥀",
+  "skinArt": {
+    "championId": "Elise",
+    "skinQuery": "Black Rose"
+  }
 }

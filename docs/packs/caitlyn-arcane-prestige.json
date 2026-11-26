@@ -2,7 +2,9 @@
   "id": "caitlyn-arcane-prestige",
   "name": "Caitlyn — Arcane Prestige Commander",
   "icon": "🎯",
-  "championMatch": ["caitlyn"],
+  "championMatch": [
+    "caitlyn"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "arcane-prestige",
@@ -16,5 +18,9 @@
     "text": "#f8fafc",
     "muted": "#fde68a"
   },
-  "mapCoverBadge": "COMMANDER // PILTOVER PRESTIGE 🎯"
+  "mapCoverBadge": "COMMANDER // PILTOVER PRESTIGE 🎯",
+  "skinArt": {
+    "championId": "Caitlyn",
+    "skinQuery": "Prestige Arcane Commander"
+  }
 }

@@ -2,7 +2,9 @@
   "id": "lucian-high-noon",
   "name": "Lucian — High Noon",
   "icon": "🤠",
-  "championMatch": ["lucian"],
+  "championMatch": [
+    "lucian"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "high-noon",
@@ -16,5 +18,9 @@
     "text": "#fff7ed",
     "muted": "#fdba74"
   },
-  "mapCoverBadge": "HIGH NOON // HELLFIRE 🤠"
+  "mapCoverBadge": "HIGH NOON // HELLFIRE 🤠",
+  "skinArt": {
+    "championId": "Lucian",
+    "skinQuery": "High Noon"
+  }
 }

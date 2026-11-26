@@ -2,7 +2,9 @@
   "id": "akali-kda-firestarter",
   "name": "Akali — K/DA Firestarter",
   "icon": "🐉",
-  "championMatch": ["akali"],
+  "championMatch": [
+    "akali"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "kda-firestarter",
@@ -16,5 +18,9 @@
     "text": "#fdf4ff",
     "muted": "#e879f9"
   },
-  "mapCoverBadge": "K/DA // IN THE SHROUD 🐉"
+  "mapCoverBadge": "K/DA // IN THE SHROUD 🐉",
+  "skinArt": {
+    "championId": "Akali",
+    "skinQuery": "K/DA"
+  }
 }

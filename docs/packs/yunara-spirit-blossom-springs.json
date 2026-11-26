@@ -2,7 +2,9 @@
   "id": "yunara-spirit-blossom-springs",
   "name": "Yunara — Spirit Blossom Springs",
   "icon": "♨️",
-  "championMatch": ["yunara"],
+  "championMatch": [
+    "yunara"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "blossom-springs",
@@ -16,5 +18,9 @@
     "text": "#fff1f2",
     "muted": "#99f6e4"
   },
-  "mapCoverBadge": "SPIRIT BLOSSOM SPRINGS // ONSEN ♨️"
+  "mapCoverBadge": "SPIRIT BLOSSOM SPRINGS // ONSEN ♨️",
+  "skinArt": {
+    "championId": "Yunara",
+    "skinQuery": "Springs"
+  }
 }

@@ -5208,6 +5208,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-build');
     if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🔗 http://127.0.0.1:4588/lol-build kopiert! (Live Item-Build & Elo-Bar, 550×125)'; }
   });
+  document.getElementById('btnGaCopyBgUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-bg');
+    if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🖼️ http://127.0.0.1:4588/lol-bg kopiert! (Animierter LoL-Client-Hintergrund, 1920×1080)'; }
+  });
 
   // Just Chatting Suite Controls
   document.getElementById('gaJcAgendaText')?.addEventListener('change', saveFromForm);

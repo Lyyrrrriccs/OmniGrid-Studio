@@ -2,7 +2,9 @@
   "id": "lux-elementalist",
   "name": "Lux — Elementalist",
   "icon": "💎",
-  "championMatch": ["lux"],
+  "championMatch": [
+    "lux"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "elementalist",
@@ -16,5 +18,9 @@
     "text": "#fefce8",
     "muted": "#bae6fd"
   },
-  "mapCoverBadge": "ELEMENTALIST // PRISM OF LIGHT 💎"
+  "mapCoverBadge": "ELEMENTALIST // PRISM OF LIGHT 💎",
+  "skinArt": {
+    "championId": "Lux",
+    "skinQuery": "Elementalist"
+  }
 }

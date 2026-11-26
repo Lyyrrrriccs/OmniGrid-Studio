@@ -2,7 +2,9 @@
   "id": "leblanc-ravenborn",
   "name": "LeBlanc — Ravenborn",
   "icon": "🪶",
-  "championMatch": ["leblanc"],
+  "championMatch": [
+    "leblanc"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "ravenborn",
@@ -16,5 +18,9 @@
     "text": "#f0fdfa",
     "muted": "#99f6e4"
   },
-  "mapCoverBadge": "RAVENBORN // DECEIVER 🪶"
+  "mapCoverBadge": "RAVENBORN // DECEIVER 🪶",
+  "skinArt": {
+    "championId": "Leblanc",
+    "skinQuery": "Ravenborn"
+  }
 }

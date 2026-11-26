@@ -2,7 +2,9 @@
   "id": "ahri-spirit-blossom",
   "name": "Ahri — Spirit Blossom",
   "icon": "🌸",
-  "championMatch": ["ahri"],
+  "championMatch": [
+    "ahri"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "spirit-blossom",
@@ -16,5 +18,9 @@
     "text": "#fdf2f8",
     "muted": "#f9a8d4"
   },
-  "mapCoverBadge": "SPIRIT REALM // NO GHOSTING 🌸"
+  "mapCoverBadge": "SPIRIT REALM // NO GHOSTING 🌸",
+  "skinArt": {
+    "championId": "Ahri",
+    "skinQuery": "Spirit Blossom"
+  }
 }

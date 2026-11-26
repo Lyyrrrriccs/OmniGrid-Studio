@@ -294,9 +294,9 @@
       <section class="mt-14 glass rounded-2xl p-6 sm:p-8 max-w-4xl mx-auto">
         <h2 class="text-xl font-bold text-white mb-4" data-en="How to Install & Activate a Pack" data-de="So installierst & aktivierst du ein Pack">How to Install & Activate a Pack</h2>
         <ol class="space-y-2.5 text-sm text-slate-300 list-decimal list-inside">
-          <li data-en="Download any .json pack file above." data-de="Lade oben eine beliebige .json-Pack-Datei herunter.">Download any .json pack file above.</li>
+          <li data-en="Download any .json pack file above (or test every pack live in the Interactive Preview — including the animated League Client Scene Frame)." data-de="Lade oben eine beliebige .json-Pack-Datei herunter (oder teste alle Packs inkl. animierter League-Client-Szene vorab in der Live-Vorschau).">Download any .json pack file above (or test every pack live in the Interactive Preview — including the animated League Client Scene Frame).</li>
           <li data-en="In OmniGrid Studio, open 🎮 Game Addons and click 📥 Import Pack (.json) under Overlay Design Pack." data-de="Öffne in OmniGrid Studio 🎮 Game-Addons und klicke unter Overlay Design-Pack auf 📥 Pack installieren (.json).">In OmniGrid Studio, open 🎮 Game Addons and click 📥 Import Pack (.json) under Overlay Design Pack.</li>
-          <li data-en="Select your preferred pack in the dropdown anytime — all connected OBS overlays update live." data-de="Wähle dein gewünschtes Pack jederzeit im Dropdown aus – alle verbundenen OBS-Overlays aktualisieren sich live.">Select your preferred pack in the dropdown anytime — all connected OBS overlays update live.</li>
+          <li data-en="Select your preferred pack in the dropdown anytime — all 16 OBS overlays AND the animated 1920×1080 League Client Frame (/lol-bg) update live." data-de="Wähle dein gewünschtes Pack jederzeit im Dropdown aus – alle 16 OBS-Overlays UND der animierte 1920×1080 League-Client-Frame (/lol-bg) aktualisieren sich live.">Select your preferred pack in the dropdown anytime — all 16 OBS overlays AND the animated 1920×1080 League Client Frame (/lol-bg) update live.</li>
         </ol>
       </section>
     </div>
@@ -314,8 +314,74 @@
   </footer>
 
   <script>
+    const SKIN_ART_MAP = {
+      'ahri-spirit-blossom': { championId: 'Ahri', skinQuery: 'Spirit Blossom' },
+      'akali-kda-firestarter': { championId: 'Akali', skinQuery: 'K/DA' },
+      'caitlyn-arcane-prestige': { championId: 'Caitlyn', skinQuery: 'Prestige Arcane Commander' },
+      'darius-divine-god-king': { championId: 'Darius', skinQuery: 'God-King' },
+      'diana-prestige-dark-cosmic': { championId: 'Diana', skinQuery: 'Dark Cosmic' },
+      'elise-black-rose': { championId: 'Elise', skinQuery: 'Black Rose' },
+      'jhin-dark-cosmic': { championId: 'Jhin', skinQuery: 'Dark Cosmic' },
+      'jinx-arcane-zaun': { championId: 'Jinx', skinQuery: 'Arcane' },
+      'kaisa-risen-legend': { championId: 'Kaisa', skinQuery: 'Risen Legend' },
+      'leblanc-ravenborn': { championId: 'Leblanc', skinQuery: 'Ravenborn' },
+      'lucian-high-noon': { championId: 'Lucian', skinQuery: 'High Noon' },
+      'lux-elementalist': { championId: 'Lux', skinQuery: 'Elementalist' },
+      'masteryi-inkshadow': { championId: 'MasterYi', skinQuery: 'Inkshadow' },
+      'seraphine-kda-all-out': { championId: 'Seraphine', skinQuery: 'K/DA ALL OUT' },
+      'viego-ruined': { championId: 'Viego', skinQuery: 'default' },
+      'viego-soul-fighter': { championId: 'Viego', skinQuery: 'Soul Fighter' },
+      'wukong-radiant': { championId: 'MonkeyKing', skinQuery: 'Radiant' },
+      'yasuo-nightbringer': { championId: 'Yasuo', skinQuery: 'Nightbringer' },
+      'yunara-spirit-blossom-springs': { championId: 'Yunara', skinQuery: 'Springs' },
+      'zed-project': { championId: 'Zed', skinQuery: 'PROJECT' }
+    };
+
+    const ddVerP = fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((a) => (Array.isArray(a) && a[0] ? a[0] : '15.22.1'))
+      .catch(() => '15.22.1');
+
+    async function loadCardSkinSplash(id, imgEl) {
+      const art = SKIN_ART_MAP[id];
+      if (!art) return;
+      let num = 0;
+      const q = String(art.skinQuery || '').toLowerCase();
+      if (q && q !== 'default') {
+        try {
+          const ver = await ddVerP;
+          const r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/en_US/champion/' + art.championId + '.json');
+          if (r.ok) {
+            const j = await r.json();
+            const skins = j?.data?.[art.championId]?.skins || [];
+            const words = q.split(/\s+/).filter(Boolean);
+            const hit = skins.find((s) => String(s.name || '').toLowerCase().includes(q))
+              || skins.find((s) => words.every((w) => String(s.name || '').toLowerCase().includes(w)))
+              || skins.find((s) => words.some((w) => w.length > 3 && String(s.name || '').toLowerCase().includes(w)));
+            if (hit && Number.isFinite(Number(hit.num))) num = Number(hit.num);
+          }
+        } catch (e) {}
+      }
+      const fallback = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + art.championId + '_0.jpg';
+      imgEl.onerror = () => { if (imgEl.src !== fallback) imgEl.src = fallback; };
+      imgEl.src = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + art.championId + '_' + num + '.jpg';
+    }
+
     document.querySelectorAll('a[href^="./packs/"][href$=".json"]').forEach((dl) => {
       const id = dl.getAttribute('href').replace('./packs/', '').replace('.json', '');
+      const card = dl.closest('.glass');
+      if (card && SKIN_ART_MAP[id]) {
+        const banner = document.createElement('a');
+        banner.href = './packs-preview.html?pack=' + encodeURIComponent(id);
+        banner.className = 'block -mx-6 -mt-6 mb-4 h-36 overflow-hidden rounded-t-xl relative bg-slate-900 border-b border-slate-700/60';
+        const img = document.createElement('img');
+        img.alt = id;
+        img.loading = 'lazy';
+        img.className = 'w-full h-full object-cover object-top transition duration-300 hover:scale-105';
+        banner.appendChild(img);
+        card.insertBefore(banner, card.firstChild);
+        loadCardSkinSplash(id, img);
+      }
       const row = document.createElement('div');
       row.className = 'mt-5 flex gap-2';
       dl.classList.remove('mt-5');

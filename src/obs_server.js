@@ -2365,6 +2365,591 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_LOL_BG_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — LoL Client Animated Background</title>
+  <style>
+    :root {
+      --c1: #c8aa6e;
+      --c2: #0ac8b9;
+      --c3: #38bdf8;
+      --bg-a: #061022;
+      --bg-b: #020814;
+      --txt: #f0e6d2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg-b); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--txt); }
+    .bg-root {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255,255,255,0.03), transparent 45%),
+        linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 100%);
+      transition: background 0.8s ease;
+    }
+    @keyframes kenBurns {
+      0% { transform: scale(1.04) translate3d(0%, 0%, 0); }
+      50% { transform: scale(1.12) translate3d(-1.6%, -1.0%, 0); }
+      100% { transform: scale(1.04) translate3d(0%, 0%, 0); }
+    }
+    @keyframes fxGlitchSplash {
+      0%, 91%, 100% { transform: scale(1.07) translate3d(0, 0, 0); filter: blur(1.5px) saturate(1.25) brightness(0.72); }
+      93% { transform: scale(1.08) translate3d(4px, -2px, 0); filter: blur(0.5px) saturate(1.8) hue-rotate(16deg) brightness(0.86); }
+      95% { transform: scale(1.07) translate3d(-4px, 2px, 0); filter: blur(1px) saturate(1.6) hue-rotate(-14deg) brightness(0.8); }
+    }
+    @keyframes fxCosmicSpin {
+      0% { transform: scale(1.10) rotate(-1.4deg); }
+      50% { transform: scale(1.16) rotate(1.4deg); }
+      100% { transform: scale(1.10) rotate(-1.4deg); }
+    }
+    @keyframes fxBreatheZoom {
+      0%, 100% { transform: scale(1.04); filter: blur(1.5px) saturate(1.18) brightness(0.68); }
+      50% { transform: scale(1.11); filter: blur(1px) saturate(1.32) brightness(0.78); }
+    }
+    @keyframes fxPanDrift {
+      0% { transform: scale(1.08) translate3d(-2.2%, 0.6%, 0); }
+      50% { transform: scale(1.11) translate3d(2.2%, -0.8%, 0); }
+      100% { transform: scale(1.08) translate3d(-2.2%, 0.6%, 0); }
+    }
+    @keyframes fxElementalHue {
+      0%, 100% { transform: scale(1.06); filter: blur(1.5px) saturate(1.28) hue-rotate(0deg) brightness(0.74); }
+      50% { transform: scale(1.12); filter: blur(1px) saturate(1.42) hue-rotate(24deg) brightness(0.82); }
+    }
+    @keyframes fxCyberScan {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100vh); }
+    }
+    .bg-splash {
+      position: fixed;
+      inset: -4%;
+      background-size: cover;
+      background-position: center 22%;
+      opacity: 0;
+      filter: blur(1.5px) saturate(1.18) brightness(0.70);
+      animation: kenBurns 28s ease-in-out infinite;
+      transition: opacity 0.9s ease, background-image 0.6s ease;
+      pointer-events: none;
+    }
+    .bg-splash.visible { opacity: 0.46; }
+    body.fx-jinx-glitch .bg-splash,
+    body.fx-soul-fighter .bg-splash { animation: fxGlitchSplash 4.8s infinite; }
+    body.fx-dark-cosmic .bg-splash,
+    body.fx-prestige-cosmic .bg-splash { animation: fxCosmicSpin 26s ease-in-out infinite; }
+    body.fx-elementalist .bg-splash,
+    body.fx-kda-all-out .bg-splash { animation: fxElementalHue 14s ease-in-out infinite; }
+    body.fx-high-noon .bg-splash,
+    body.fx-god-king .bg-splash,
+    body.fx-nightbringer .bg-splash,
+    body.fx-risen-legend .bg-splash,
+    body.fx-kda-firestarter .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
+    body.fx-inkshadow .bg-splash,
+    body.fx-black-rose .bg-splash,
+    body.fx-ravenborn .bg-splash,
+    body.fx-spirit-blossom .bg-splash,
+    body.fx-blossom-springs .bg-splash,
+    body.fx-radiant-cloud .bg-splash,
+    body.fx-ruined-mist .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    .bg-scanline {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent, var(--c2), transparent);
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.fx-project-cyber .bg-scanline,
+    body.fx-jinx-glitch .bg-scanline,
+    body.fx-kda-firestarter .bg-scanline { opacity: 0.14; animation: fxCyberScan 5.5s linear infinite; }
+    .bg-vignette {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, rgba(2, 6, 16, 0.25) 0%, rgba(2, 6, 16, 0.82) 100%),
+        linear-gradient(180deg, rgba(2, 6, 16, 0.45) 0%, transparent 25%, transparent 75%, rgba(2, 6, 16, 0.72) 100%);
+      pointer-events: none;
+    }
+    @keyframes orbFloatA {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(6vw, 4vh, 0) scale(1.14); }
+    }
+    @keyframes orbFloatB {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-6vw, -5vh, 0) scale(1.18); }
+    }
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(110px);
+      opacity: 0.28;
+      pointer-events: none;
+      transition: background 0.8s ease;
+    }
+    .bg-orb-1 { width: 46vw; height: 46vw; top: -16vw; left: -12vw; background: var(--c1); animation: orbFloatA 16s ease-in-out infinite; }
+    .bg-orb-2 { width: 42vw; height: 42vw; bottom: -16vw; right: -10vw; background: var(--c2); animation: orbFloatB 19s ease-in-out infinite; }
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 64px 64px;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    #bgParticles { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .bg-frame {
+      position: fixed;
+      inset: 14px;
+      border: 1.5px solid var(--c1);
+      opacity: 0.36;
+      pointer-events: none;
+      transition: border-color 0.6s ease;
+    }
+    .bg-corner { position: fixed; width: 34px; height: 34px; pointer-events: none; transition: border-color 0.6s ease; }
+    .bg-c-tl { top: 12px; left: 12px; border-top: 3px solid var(--c2); border-left: 3px solid var(--c2); }
+    .bg-c-tr { top: 12px; right: 12px; border-top: 3px solid var(--c1); border-right: 3px solid var(--c1); }
+    .bg-c-bl { bottom: 12px; left: 12px; border-bottom: 3px solid var(--c1); border-left: 3px solid var(--c1); }
+    .bg-c-br { bottom: 12px; right: 12px; border-bottom: 3px solid var(--c2); border-right: 3px solid var(--c2); }
+    .bg-watermark {
+      position: fixed;
+      bottom: 18px;
+      left: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      background: rgba(5, 10, 22, 0.82);
+      border: 1px solid var(--c1);
+      border-left: 4px solid var(--c2);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--txt);
+      text-shadow: 0 0 10px var(--c1);
+      backdrop-filter: blur(8px);
+      transition: all 0.5s ease;
+      z-index: 4;
+    }
+    .bg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c2); box-shadow: 0 0 10px var(--c2); }
+
+    .frame-layout {
+      position: fixed;
+      inset: 28px 36px 155px 36px;
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      gap: 26px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    body.layout-clean .frame-layout { display: none; }
+    .frame-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-width: 0;
+    }
+    .frame-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 0;
+    }
+    .slot-box {
+      position: relative;
+      border: 2.5px solid var(--c1);
+      background: rgba(3, 8, 18, 0.58);
+      box-shadow: 0 0 32px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 22px var(--c1);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.5s ease, box-shadow 0.5s ease;
+    }
+    .slot-box::before,
+    .slot-box::after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--c2);
+      pointer-events: none;
+      z-index: 3;
+      transition: border-color 0.5s ease;
+    }
+    .slot-box::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .slot-box::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+    .client-slot {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cam-slot {
+      width: 100%;
+      height: 248px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .chat-slot {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .slot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: linear-gradient(90deg, rgba(4, 10, 22, 0.90), rgba(4, 10, 22, 0.55));
+      border-bottom: 1px solid var(--c1);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--txt);
+      text-shadow: 0 0 8px var(--c1);
+    }
+    .slot-pill {
+      font-size: 9.5px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--c2);
+      color: var(--c2);
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .slot-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      opacity: 0.28;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--txt);
+      text-align: center;
+    }
+    .slot-placeholder small { font-size: 10px; letter-spacing: 0.1em; color: var(--c2); }
+    .bg-status-right {
+      position: fixed;
+      bottom: 18px;
+      right: 36px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--c2);
+      background: rgba(5, 10, 22, 0.78);
+      border: 1px solid var(--c2);
+      padding: 6px 14px;
+      border-radius: 4px;
+      z-index: 4;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-root"></div>
+  <div class="bg-splash" id="bgSplash"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-scanline"></div>
+  <canvas id="bgParticles"></canvas>
+  <div class="bg-vignette"></div>
+  <div class="bg-frame"></div>
+  <div class="bg-corner bg-c-tl"></div>
+  <div class="bg-corner bg-c-tr"></div>
+  <div class="bg-corner bg-c-bl"></div>
+  <div class="bg-corner bg-c-br"></div>
+
+  <div class="frame-layout">
+    <div class="frame-left">
+      <div class="slot-box client-slot"></div>
+    </div>
+    <div class="frame-right">
+      <div class="slot-box cam-slot"></div>
+      <div class="slot-box chat-slot"></div>
+    </div>
+  </div>
+  <script>
+    (function initLolAnimatedBg() {
+      const root = document.documentElement;
+      const splashEl = document.getElementById('bgSplash');
+      const canvas = document.getElementById('bgParticles');
+      const ctx = canvas.getContext('2d');
+
+      let palette = ['#c8aa6e', '#0ac8b9', '#38bdf8'];
+      let packSplashUrl = '';
+      let activeMode = 'motes';
+      let ddVerPromise = null;
+      const skinCache = {};
+
+      const MODE_BY_EFFECT = {
+        'jinx-glitch': 'sparks',
+        'soul-fighter': 'sparks',
+        'kda-firestarter': 'embers',
+        'high-noon': 'embers',
+        'nightbringer': 'embers',
+        'god-king': 'embers',
+        'risen-legend': 'streaks',
+        'kda-all-out': 'stars',
+        'dark-cosmic': 'orbit',
+        'prestige-cosmic': 'orbit',
+        'black-rose': 'petals',
+        'spirit-blossom': 'petals',
+        'blossom-springs': 'bubbles',
+        'ravenborn': 'feathers',
+        'inkshadow': 'ink',
+        'elementalist': 'orbs',
+        'radiant-cloud': 'orbs',
+        'arcane-prestige': 'diamonds',
+        'project-cyber': 'cyber',
+        'ruined-mist': 'mist'
+      };
+
+      function resize() {
+        canvas.width = window.innerWidth || 1920;
+        canvas.height = window.innerHeight || 1080;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const particles = Array.from({ length: 64 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: 1.6 + Math.random() * 3.8,
+        speed: 0.4 + Math.random() * 1.4,
+        vx: (Math.random() - 0.5) * 0.6,
+        phase: Math.random() * Math.PI * 2,
+        angle: Math.random() * Math.PI * 2,
+        orbitR: 120 + Math.random() * (Math.max(canvas.width, canvas.height) * 0.48),
+        ci: Math.floor(Math.random() * 3),
+        alpha: 0.28 + Math.random() * 0.65
+      }));
+
+      function tick() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.5;
+
+        for (const p of particles) {
+          const col = palette[p.ci % palette.length];
+          p.phase += 0.02;
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = col;
+          ctx.fillStyle = col;
+          ctx.strokeStyle = col;
+
+          if (activeMode === 'orbit') {
+            p.angle += 0.0018 * p.speed;
+            const ox = cx + Math.cos(p.angle) * p.orbitR;
+            const oy = cy + Math.sin(p.angle) * (p.orbitR * 0.58);
+            ctx.beginPath();
+            ctx.arc(ox, oy, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (activeMode === 'petals' || activeMode === 'feathers') {
+            p.y += p.speed * 0.85;
+            p.x += Math.sin(p.phase) * 0.9 + 0.35;
+            if (p.y > h + 20) { p.y = -20; p.x = Math.random() * w; }
+            if (p.x > w + 20) p.x = -20;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.sin(p.phase) * 0.8);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.r * (activeMode === 'feathers' ? 2.6 : 1.7), p.r * 0.75, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (activeMode === 'sparks' || activeMode === 'streaks') {
+            p.y -= p.speed * 2.2;
+            p.x += (activeMode === 'sparks' ? p.vx * 3.2 : p.speed * 0.8);
+            if (p.y < -30 || p.x < -30 || p.x > w + 30) { p.y = h + 20; p.x = Math.random() * w; }
+            ctx.lineWidth = Math.max(1.5, p.r * 0.55);
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - (activeMode === 'sparks' ? p.vx * 14 : 10), p.y + 18);
+            ctx.stroke();
+          } else if (activeMode === 'cyber') {
+            p.y += p.speed * 2.6;
+            if (p.y > h + 40) { p.y = -40; p.x = Math.floor(Math.random() * (w / 32)) * 32; }
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x, p.y - 24 * p.speed);
+            ctx.stroke();
+          } else if (activeMode === 'stars' || activeMode === 'diamonds') {
+            p.y -= p.speed * 0.4;
+            if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
+            const tw = 0.45 + 0.55 * Math.abs(Math.sin(p.phase * 1.4));
+            ctx.globalAlpha = p.alpha * tw;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.PI / 4);
+            const sz = p.r * 1.6;
+            ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
+          } else if (activeMode === 'bubbles') {
+            p.y -= p.speed * 0.65;
+            p.x += Math.sin(p.phase) * 0.5;
+            if (p.y < -25) { p.y = h + 25; p.x = Math.random() * w; }
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * 1.8, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (activeMode === 'ink' || activeMode === 'mist' || activeMode === 'orbs') {
+            p.x += activeMode === 'ink' ? p.speed * 1.1 : Math.sin(p.phase) * 0.55;
+            p.y += activeMode === 'mist' ? -p.speed * 0.25 : -p.speed * 0.55;
+            if (p.y < -40 || p.x > w + 40) { p.y = activeMode === 'mist' ? h - Math.random() * 260 : h + 30; p.x = activeMode === 'ink' ? -30 : Math.random() * w; }
+            ctx.globalAlpha = p.alpha * (activeMode === 'mist' ? 0.25 : 0.45);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * (activeMode === 'mist' ? 5.5 : 3.2), 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            p.y -= p.speed * (activeMode === 'embers' ? 1.45 : 0.65);
+            p.x += p.vx + Math.sin(p.phase) * (activeMode === 'embers' ? 0.75 : 0.35);
+            if (p.y < -15) { p.y = h + 15; p.x = Math.random() * w; }
+            if (p.x < -15) p.x = w + 15;
+            if (p.x > w + 15) p.x = -15;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      function updateSplash() {
+        if (packSplashUrl) {
+          splashEl.style.backgroundImage = 'url("' + packSplashUrl + '")';
+          splashEl.classList.add('visible');
+        } else {
+          splashEl.style.backgroundImage = 'none';
+          splashEl.classList.remove('visible');
+        }
+      }
+
+      function getDdVer() {
+        if (!ddVerPromise) {
+          ddVerPromise = fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((a) => (Array.isArray(a) && a[0] ? a[0] : '15.22.1'))
+            .catch(() => '15.22.1');
+        }
+        return ddVerPromise;
+      }
+
+      async function resolveSkinSplash(art) {
+        if (!art || !art.championId) return '';
+        const cid = String(art.championId).replace(/[^A-Za-z0-9]/g, '');
+        if (!cid) return '';
+        const q = String(art.skinQuery || '').trim().toLowerCase();
+        const key = cid + ':' + q;
+        if (skinCache[key]) return skinCache[key];
+        let num = 0;
+        if (q && q !== 'default') {
+          try {
+            const ver = await getDdVer();
+            const r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/en_US/champion/' + cid + '.json');
+            if (r.ok) {
+              const j = await r.json();
+              const skins = j && j.data && j.data[cid] && Array.isArray(j.data[cid].skins) ? j.data[cid].skins : [];
+              const words = q.split(/\s+/).filter(Boolean);
+              const hit = skins.find((s) => String(s.name || '').toLowerCase().includes(q))
+                || skins.find((s) => words.every((w) => String(s.name || '').toLowerCase().includes(w)))
+                || skins.find((s) => words.some((w) => w.length > 3 && String(s.name || '').toLowerCase().includes(w)));
+              if (hit && Number.isFinite(Number(hit.num))) num = Number(hit.num);
+            }
+          } catch (e) {}
+        }
+        const url = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + cid + '_' + num + '.jpg';
+        skinCache[key] = url;
+        return url;
+      }
+
+      const isCleanLayout = new URLSearchParams(location.search).get('layout') === 'clean';
+      function clearFxClasses() {
+        document.body.className = isCleanLayout ? 'layout-clean' : '';
+      }
+
+      function applyPack(pack) {
+        clearFxClasses();
+        if (!pack || !pack.id) {
+          palette = ['#c8aa6e', '#0ac8b9', '#38bdf8'];
+          activeMode = 'motes';
+          root.style.setProperty('--c1', '#c8aa6e');
+          root.style.setProperty('--c2', '#0ac8b9');
+          root.style.setProperty('--c3', '#38bdf8');
+          root.style.setProperty('--bg-a', '#061022');
+          root.style.setProperty('--bg-b', '#020814');
+          root.style.setProperty('--txt', '#f0e6d2');
+          packSplashUrl = '';
+          updateSplash();
+          return;
+        }
+        const eff = String(pack.effect || 'none');
+        if (eff && eff !== 'none') document.body.classList.add('fx-' + eff);
+        activeMode = MODE_BY_EFFECT[eff] || 'motes';
+        const c = pack.colors || {};
+        const c1 = c.primary || '#ff2a85';
+        const c2 = c.secondary || '#39ff14';
+        const c3 = c.tertiary || '#00f5d4';
+        palette = [c1, c2, c3];
+        root.style.setProperty('--c1', c1);
+        root.style.setProperty('--c2', c2);
+        root.style.setProperty('--c3', c3);
+        root.style.setProperty('--bg-a', c.bgStart || '#12061a');
+        root.style.setProperty('--bg-b', c.bgEnd || '#061216');
+        root.style.setProperty('--txt', c.text || '#f8fafc');
+        if (pack.skinArt && pack.skinArt.championId) {
+          resolveSkinSplash(pack.skinArt).then((u) => { packSplashUrl = u; updateSplash(); }).catch(() => {});
+        } else {
+          packSplashUrl = '';
+          updateSplash();
+        }
+      }
+
+      function fetchTheme() {
+        fetch('/api/champion-theme', { cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => applyPack(d && d.pack ? d.pack : null))
+          .catch(() => {});
+      }
+
+      function connectWs() {
+        try {
+          const ws = new WebSocket('ws://' + location.host);
+          ws.onmessage = (ev) => {
+            try {
+              const p = JSON.parse(ev.data);
+              if (p.type === 'champion-theme') applyPack(p.data);
+            } catch (e) {}
+          };
+          ws.onclose = () => setTimeout(connectWs, 2500);
+        } catch (e) {}
+      }
+
+      fetchTheme();
+      connectWs();
+      setInterval(fetchTheme, 4000);
+    })();
+  </script>
+</body>
+</html>`;
+
 const OBS_LOL_MAP_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -4140,12 +4725,59 @@ body.champ-fx-blossom-springs .lb-lp-fill,
 body.champ-fx-blossom-springs .goal-fill,
 body.champ-fx-blossom-springs .sp-prog-fill,
 body.champ-fx-blossom-springs .val-rr-fill { background: linear-gradient(90deg, #5eead4, #fb7185, #fde68a) !important; }
+body.champ-has-skin-art .gs-splash,
+body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
+${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').map((s) => `body.champ-has-skin-art ${s}`).join(',\n')} {
+  background-image: linear-gradient(145deg, var(--ct-bg-start, rgba(12, 12, 24, 0.86)), var(--ct-bg-end, rgba(8, 10, 20, 0.90))), var(--ct-skin-splash) !important;
+  background-size: cover !important;
+  background-position: center 22% !important;
+  background-blend-mode: multiply !important;
+}
 </style>
 <script>
 (function initChampionThemeClient(){
+  let ddVerPromise = null;
+  const skinUrlCache = {};
+  function getDdVer(){
+    if (!ddVerPromise) {
+      ddVerPromise = fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((arr) => (Array.isArray(arr) && arr[0] ? arr[0] : '15.22.1'))
+        .catch(() => '15.22.1');
+    }
+    return ddVerPromise;
+  }
+  async function resolvePackSkinSplash(art){
+    if (!art || !art.championId) return '';
+    const cid = String(art.championId).replace(/[^A-Za-z0-9]/g, '');
+    if (!cid) return '';
+    const q = String(art.skinQuery || '').trim().toLowerCase();
+    const key = cid + ':' + q;
+    if (skinUrlCache[key]) return skinUrlCache[key];
+    let num = 0;
+    if (q && q !== 'default') {
+      try {
+        const ver = await getDdVer();
+        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/en_US/champion/' + cid + '.json');
+        if (res.ok) {
+          const j = await res.json();
+          const skins = j && j.data && j.data[cid] && Array.isArray(j.data[cid].skins) ? j.data[cid].skins : [];
+          const words = q.split(/\s+/).filter(Boolean);
+          const hit = skins.find((s) => String(s.name || '').toLowerCase().includes(q))
+            || skins.find((s) => words.every((w) => String(s.name || '').toLowerCase().includes(w)))
+            || skins.find((s) => words.some((w) => w.length > 3 && String(s.name || '').toLowerCase().includes(w)));
+          if (hit && Number.isFinite(Number(hit.num))) num = Number(hit.num);
+        }
+      } catch (e) {}
+    }
+    const url = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + cid + '_' + num + '.jpg';
+    skinUrlCache[key] = url;
+    return url;
+  }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);
@@ -4156,6 +4788,13 @@ body.champ-fx-blossom-springs .val-rr-fill { background: linear-gradient(90deg, 
     if (c.bgStart) r.style.setProperty('--ct-bg-start', c.bgStart);
     if (c.bgEnd) r.style.setProperty('--ct-bg-end', c.bgEnd);
     if (c.text) r.style.setProperty('--ct-text', c.text);
+    if (pack.skinArt && pack.skinArt.championId) {
+      resolvePackSkinSplash(pack.skinArt).then((url) => {
+        if (!url) return;
+        r.style.setProperty('--ct-skin-splash', 'url("' + url + '")');
+        document.body.classList.add('champ-has-skin-art');
+      }).catch(() => {});
+    }
   }
   function fetchTheme(){
     fetch('/api/champion-theme', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});
@@ -4466,6 +5105,8 @@ class ObsServer {
           res.end(withChampionTheme(OBS_GAME_STATS_HTML));
         } else if (urlPath === '/lol-map') {
           res.end(withChampionTheme(OBS_LOL_MAP_HTML));
+        } else if (urlPath === '/lol-bg') {
+          res.end(OBS_LOL_BG_HTML);
         } else if (urlPath === '/lol-build') {
           res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {

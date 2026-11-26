@@ -20,7 +20,8 @@ const BUILTIN_CHAMPION_PACKS = [
       text: '#fff0f7',
       muted: '#f9a8d4'
     },
-    mapCoverBadge: 'POW-POW // DON\'T PEEK! 💥'
+    mapCoverBadge: 'POW-POW // DON\'T PEEK! 💥',
+    skinArt: { championId: 'Jinx', skinQuery: 'Arcane' }
   }
 ];
 
@@ -60,6 +61,12 @@ function sanitizePack(raw = {}) {
       muted: sanitizeHexOrRgba(c.muted, '#cbd5e1')
     },
     mapCoverBadge: String(raw.mapCoverBadge || '').slice(0, 64),
+    skinArt: raw.skinArt && typeof raw.skinArt === 'object' && /^[A-Za-z0-9]{1,32}$/.test(String(raw.skinArt.championId || ''))
+      ? {
+          championId: String(raw.skinArt.championId).slice(0, 32),
+          skinQuery: String(raw.skinArt.skinQuery || '').slice(0, 64)
+        }
+      : null,
     builtin: Boolean(raw.builtin)
   };
 }

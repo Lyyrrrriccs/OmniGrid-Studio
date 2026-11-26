@@ -2,7 +2,10 @@
   "id": "yasuo-nightbringer",
   "name": "Yasuo — Nightbringer",
   "icon": "🔥",
-  "championMatch": ["yasuo", "yone"],
+  "championMatch": [
+    "yasuo",
+    "yone"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "nightbringer",
@@ -16,5 +19,9 @@
     "text": "#fff7ed",
     "muted": "#fdba74"
   },
-  "mapCoverBadge": "HASAGI // MINIMAP HIDDEN 🔥"
+  "mapCoverBadge": "HASAGI // MINIMAP HIDDEN 🔥",
+  "skinArt": {
+    "championId": "Yasuo",
+    "skinQuery": "Nightbringer"
+  }
 }

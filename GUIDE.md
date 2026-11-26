@@ -375,12 +375,16 @@ Open **🎮 Game Addons** in the top cockpit bar to pick a game addon manually o
 
 ### ⚔️ League of Legends — Complete Suite
 - **Zero-Key Local Auto-Reading (`127.0.0.1`):**
-  1. **League Client (LCU):** Whenever your League of Legends Client is open and signed in, OmniGrid automatically reads your live **Solo/Duo (or Flex) Rank**, **exact current LP**, and **Riot ID (`Name#TAG`) + Region** locally every ~12s (or immediately on click via **`🔄 Read Rank & LP from LoL Client`**).
-  2. **Live In-Game API (`127.0.0.1:2999`):** During a match, **Champion + Skin splash, Role/Lane, K/D/A, CS & CS/m, Level, Gold, Keystone Rune, Summoner Spells, and all 6 Items + Trinket** update live. Scoring a Triple/Quadra/Baron automatically sets a Twitch Stream Marker — scoring a **PENTAKILL** automatically triggers a **Hype Clip + Chat Link**!
-- **3 Hextech OBS Overlays:**
-  - `http://127.0.0.1:4588/game-stats` — Hextech HUD with Champion icon, **Rank & LP Box with progress bar to the right**, K/D/A, CS/m, session W-L & last 6 matches.
+  1. **League Client (LCU):** Whenever your League of Legends Client is open and signed in, OmniGrid automatically reads your live **Solo/Duo (or Flex) Rank**, **exact current LP**, **assigned lane**, **last 6 matches with champion icons & W/L**, and **Riot ID (`Name#TAG`) + Region** locally every ~12s (or immediately on click via **`🔄 Read Rank & LP from LoL Client`**) — and auto-switches to League of Legends already in the lobby when `Auto` mode is active.
+  2. **Live In-Game API (`127.0.0.1:2999`):** During a match, **Champion + Skin art, accurate Role/Lane** (Live API + LCU + Game Mode + Smite/Support item detection), **K/D/A, CS & CS/m, Level, Gold, Keystone Rune, Summoner Spells, and all 6 Items + Trinket** update live. Scoring a Triple/Quadra/Baron automatically sets a Twitch Stream Marker — scoring a **PENTAKILL** automatically triggers a **Hype Clip + Chat Link**!
+- **4 OBS Overlays for In-Game & Lobby:**
+  - `http://127.0.0.1:4588/game-stats` — HUD (`430×370`) with **Champion Icon (with Skin)**, **Rank Emblem Crest** + LP progress bar, K/D/A, CS/m, session W-L & **last 6 matches** (append `?addon=lol` to force LoL layout).
   - `http://127.0.0.1:4588/lol-build` — Compact horizontal Live Item Build & Elo Bar (`550×125`).
   - `http://127.0.0.1:4588/lol-map` — Anti-Ghosting Minimap Cover (`280×280`).
+  - `http://127.0.0.1:4588/lol-bg` — **Animated Riot/League Client Frame (`1920×1080`)** for your Lobby / Champ Select scene: displays the animated splash art and unique per-theme particle effects of your active Champion Design Pack with 3 clean themed frames (16:9 Client Frame top-left, Webcam top-right, Live Chat bottom-right) plus **155 px bottom space** for extra overlays (Music, Goals, Sponsors). Append `?layout=clean` for a full-screen background without frames.
+- **🎨 Champion Overlay Design Packs (100% User-Selected, All 16 Overlays):**
+  - Open **🎮 Game Addons → Overlay Design Pack (manual)** to import standalone `.json` packs via **📥 Import Pack (.json)** and switch themes manually anytime — completely independent of the champion you play.
+  - The selected pack applies live to **all 16 OBS overlays** (Chat, Alerts, Music, Goals, Poll, Schedule, Giveaway, Sponsors, Game Stats, LoL Build, Minimap, Just Chatting, TRON, Valorant) **and the animated Client Frame (`/lol-bg`)**.
 - **Chat Commands:** `!elo`, `!lp`, `!rank`, `!opgg`, `!ugg`, `!champ`, `!skin`, `!build`, `!items`, `!runes`, `!mh`.
 
 ### 💬 Just Chatting & Talk Suite

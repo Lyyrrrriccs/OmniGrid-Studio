@@ -2,7 +2,9 @@
   "id": "jinx-arcane-zaun",
   "name": "Jinx — Arcane / Zaun",
   "icon": "💥",
-  "championMatch": ["jinx"],
+  "championMatch": [
+    "jinx"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "jinx-glitch",
@@ -16,5 +18,9 @@
     "text": "#fff0f7",
     "muted": "#f9a8d4"
   },
-  "mapCoverBadge": "POW-POW // DON'T PEEK! 💥"
+  "mapCoverBadge": "POW-POW // DON'T PEEK! 💥",
+  "skinArt": {
+    "championId": "Jinx",
+    "skinQuery": "Arcane"
+  }
 }
