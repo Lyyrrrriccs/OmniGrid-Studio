@@ -20,6 +20,7 @@ const chkEnableTiktok = document.getElementById('chkEnableTiktok');
 
 // Section 4: Compact Chat Design & Appearance UI Controls
 const selLayoutMode = document.getElementById('selLayoutMode');
+const selObsChatTheme = document.getElementById('selObsChatTheme');
 const rngNameSize = document.getElementById('rngNameSize');
 const valNameSize = document.getElementById('valNameSize');
 const rngMsgSize = document.getElementById('rngMsgSize');
@@ -625,6 +626,7 @@ function getFormConfig() {
     platformIndicatorStyle: selPlatStyle?.value || 'icon_only',
     appearance: {
       layoutMode: selLayoutMode?.value || 'inline',
+      obsChatTheme: selObsChatTheme?.value || 'auto',
       nameFontSize: parseFloat(rngNameSize?.value || '13'),
       msgFontSize: parseFloat(rngMsgSize?.value || '13.5'),
       maxNameLength: parseInt(rngMaxNameLen?.value || '16', 10),
@@ -672,6 +674,7 @@ function getFormConfig() {
 // Bind all Section 4, Section 6 & Section 8 Design, Event & Limit Controls
 [
   selLayoutMode,
+  selObsChatTheme,
   rngNameSize,
   rngMsgSize,
   rngMaxNameLen,
@@ -2061,6 +2064,7 @@ function applyConfigToForm(cfg) {
 
   const appCfg = cfg.appearance || {};
   if (selLayoutMode) selLayoutMode.value = appCfg.layoutMode || 'inline';
+  if (selObsChatTheme) selObsChatTheme.value = appCfg.obsChatTheme || 'auto';
   if (rngNameSize) rngNameSize.value = appCfg.nameFontSize ?? 13;
   if (rngMsgSize) rngMsgSize.value = appCfg.msgFontSize ?? 13.5;
   if (rngMaxNameLen) rngMaxNameLen.value = appCfg.maxNameLength ?? 16;
@@ -6701,6 +6705,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       bundleId
     });
     if (res?.ok) {
+      if (res.chatTheme && selObsChatTheme) selObsChatTheme.value = res.chatTheme;
       setStatus(`✅ ${label} komplett eingefügt (${(res.added || []).join(', ')})!`, '#4ade80');
       await loadSceneItems(currentSceneName);
       setTimeout(refreshPreview, 450);

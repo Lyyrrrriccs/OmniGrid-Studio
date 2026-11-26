@@ -980,6 +980,7 @@ function getDefaultConfig() {
     chatDockAlwaysOnTop: true,
     appearance: {
       layoutMode: 'inline',
+      obsChatTheme: 'auto',
       nameFontSize: 13,
       msgFontSize: 13.5,
       maxNameLength: 16,
@@ -3512,21 +3513,25 @@ app.whenReady().then(async () => {
           lol: {
             addonMode: 'lol',
             gameName: 'League of Legends',
+            chatTheme: 'lol',
             ids: ['game-stats', 'lol-build', 'lol-map', 'alerts', 'chat']
           },
           justchatting: {
             addonMode: 'justchatting',
             gameName: 'Just Chatting',
+            chatTheme: 'default',
             ids: ['jc-lowerthird', 'jc-qna', 'game-stats', 'spotify', 'alerts', 'chat']
           },
           techtalk: {
             addonMode: 'techtalk',
             gameName: 'Software and Game Development',
+            chatTheme: 'tron',
             ids: ['tron-talk', 'game-stats', 'spotify', 'alerts', 'chat']
           },
           valorant: {
             addonMode: 'valorant',
             gameName: 'Valorant',
+            chatTheme: 'valorant',
             ids: ['game-stats', 'val-bar', 'val-map', 'alerts', 'chat']
           }
         };
@@ -3555,9 +3560,16 @@ app.whenReady().then(async () => {
         ga.currentGameName = bundle.gameName;
         if (bundle.addonMode === 'lol') ga.lolPollingEnabled = true;
         cfg.gameAddons = ga;
+        if (bundle.chatTheme) {
+          cfg.appearance = { ...(cfg.appearance || {}), obsChatTheme: bundle.chatTheme };
+          obsServer.broadcastAppearance({
+            ...cfg.appearance,
+            platformIndicatorStyle: cfg.platformIndicatorStyle || 'icon_badge'
+          });
+        }
         saveConfig(cfg);
         broadcastGameAddonsState(cfg);
-        return { ok: true, added, addonMode: bundle.addonMode };
+        return { ok: true, added, addonMode: bundle.addonMode, chatTheme: bundle.chatTheme || 'auto' };
       }
       if (act === 'remove-scene-item') return await obsWs.removeSceneItem(payload.sceneName, payload.sceneItemId);
       if (act === 'rename-source') {

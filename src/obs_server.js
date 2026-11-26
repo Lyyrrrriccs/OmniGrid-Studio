@@ -80,6 +80,98 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
     body.style-bubbles .msg-row.twitch { border-left-color: #9146ff; }
     body.style-bubbles .msg-row.youtube { border-left-color: #ff0033; }
     body.style-bubbles .msg-row.tiktok { border-left-color: #00f2fe; }
+    body.chat-theme-lol #chatList { gap: 5px; }
+    body.chat-theme-lol .msg-row {
+      position: relative;
+      background: linear-gradient(145deg, rgba(9, 20, 40, 0.92) 0%, rgba(1, 10, 19, 0.94) 100%) !important;
+      border: 1px solid rgba(200, 170, 110, 0.52);
+      border-left: 3px solid #0ac8b9;
+      border-radius: 3px;
+      padding: 6px 10px;
+      color: #f0e6d2;
+      box-shadow: inset 0 0 0 1px rgba(200, 170, 110, 0.16), 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+    body.chat-theme-lol .msg-row::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 7px;
+      height: 7px;
+      border-top: 1.5px solid #c8aa6e;
+      border-right: 1.5px solid #c8aa6e;
+      pointer-events: none;
+    }
+    body.chat-theme-lol .author {
+      font-family: Georgia, "Times New Roman", serif;
+      letter-spacing: 0.03em;
+      text-shadow: 0 0 8px rgba(10, 200, 185, 0.35);
+    }
+    body.chat-theme-lol .badge {
+      background: rgba(200, 170, 110, 0.18);
+      border: 1px solid rgba(200, 170, 110, 0.5);
+      color: #f0e6d2;
+    }
+    body.chat-theme-lol #pinnedBox {
+      background: linear-gradient(155deg, rgba(9, 20, 40, 0.96), rgba(1, 10, 19, 0.98));
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+    }
+    body.chat-theme-lol .pin-label { color: #0ac8b9; }
+
+    body.chat-theme-valorant #chatList { gap: 5px; }
+    body.chat-theme-valorant .msg-row {
+      background: linear-gradient(135deg, rgba(15, 25, 35, 0.93) 0%, rgba(19, 28, 39, 0.94) 80%, rgba(45, 16, 22, 0.92) 100%) !important;
+      border: 1px solid rgba(236, 232, 225, 0.16);
+      border-left: 3.5px solid #ff4655;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+      padding: 6px 12px 6px 10px;
+      color: #ece8e1;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+    body.chat-theme-valorant .author {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 900;
+    }
+    body.chat-theme-valorant .badge {
+      background: rgba(255, 70, 85, 0.22);
+      border: 1px solid #ff4655;
+      color: #ff8b94;
+      border-radius: 1px;
+    }
+    body.chat-theme-valorant #pinnedBox {
+      background: linear-gradient(135deg, rgba(15, 25, 35, 0.97), rgba(45, 16, 22, 0.96));
+      border: 2px solid #ff4655;
+      border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    }
+    body.chat-theme-valorant .pin-label { color: #ff4655; }
+
+    body.chat-theme-tron #chatList { gap: 5px; }
+    body.chat-theme-tron .msg-row {
+      background: linear-gradient(145deg, rgba(2, 10, 22, 0.92), rgba(4, 20, 36, 0.94)) !important;
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-left: 3px solid #00f0ff;
+      border-radius: 2px;
+      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+      padding: 6px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #e0fbff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.14);
+    }
+    body.chat-theme-tron .badge {
+      background: rgba(255, 106, 0, 0.2);
+      border: 1px solid #ff6a00;
+      color: #ff9f4d;
+    }
+    body.chat-theme-tron #pinnedBox {
+      background: rgba(2, 12, 24, 0.96);
+      border: 1.5px solid #00f0ff;
+      border-radius: 2px;
+    }
+    body.chat-theme-tron .pin-label { color: #00f0ff; }
     .msg-row.highlight {
       background: rgba(245, 158, 11, 0.24) !important;
       border-left: 3px solid #fbbf24;
@@ -153,6 +245,7 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
     const pinnedContent = document.getElementById('pinnedContent');
     let appearance = {
       layoutMode: 'inline',
+      obsChatTheme: 'auto',
       nameFontSize: 13,
       msgFontSize: 13,
       maxNameLength: 16,
@@ -165,7 +258,18 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
       sepOpacity: 10,
       usernameColorMode: 'user'
     };
+    let activeAddonId = '';
     let cachedMessages = [];
+
+    function syncChatThemeClass() {
+      const mode = String(appearance.obsChatTheme || 'auto');
+      const resolved = mode === 'auto'
+        ? (activeAddonId === 'lol' ? 'lol' : activeAddonId === 'valorant' ? 'valorant' : activeAddonId === 'techtalk' ? 'tron' : 'default')
+        : mode;
+      document.body.classList.toggle('chat-theme-lol', resolved === 'lol');
+      document.body.classList.toggle('chat-theme-valorant', resolved === 'valorant');
+      document.body.classList.toggle('chat-theme-tron', resolved === 'tron');
+    }
 
     function hexToRgba(hex, alphaPercent) {
       const clean = (hex || '#ffffff').replace('#', '');
@@ -191,6 +295,7 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
       document.body.classList.toggle('style-bubbles', appearance.layoutMode === 'bubbles');
       document.body.classList.toggle('hide-timestamps', !appearance.showTimestamps);
       document.body.classList.toggle('hide-platicons', appearance.showPlatformIcons === false);
+      syncChatThemeClass();
       rerenderAll();
     }
 
@@ -277,6 +382,9 @@ const OBS_OVERLAY_HTML = `<!DOCTYPE html>
           const payload = JSON.parse(ev.data);
           if (payload.type === 'appearance') {
             applyAppearance(payload.data);
+          } else if (payload.type === 'game-stats') {
+            activeAddonId = String(payload.data?.addonId || '');
+            syncChatThemeClass();
           } else if (payload.type === 'chat') {
             const m = payload.data;
             cachedMessages.push(m);
