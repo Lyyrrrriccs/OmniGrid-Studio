@@ -8917,3 +8917,215 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     }
   });
 })();
+
+(() => {
+  const modal = document.getElementById('sponsorsModal');
+  const listEl = document.getElementById('spItemsList');
+  const statusEl = document.getElementById('spStatusMsg');
+  if (!modal || !listEl) return;
+
+  let spState = { enabled: true, pauseBetweenSec: 0, showQrCode: true, showProgressBar: true, activeIndex: 0, items: [] };
+  let overlayUrl = 'http://127.0.0.1:4588/sponsors';
+
+  const setMsg = (text, color = '#94a3b8') => {
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.style.color = color;
+  };
+
+  const readGlobalInputs = () => {
+    spState.enabled = Boolean(document.getElementById('spEnabled')?.checked);
+    spState.showQrCode = Boolean(document.getElementById('spShowQr')?.checked);
+    spState.showProgressBar = Boolean(document.getElementById('spShowProg')?.checked);
+    spState.pauseBetweenSec = Math.max(0, Math.min(300, parseInt(document.getElementById('spPauseSec')?.value || '0', 10) || 0));
+  };
+
+  const renderList = () => {
+    const chkEn = document.getElementById('spEnabled');
+    const chkQr = document.getElementById('spShowQr');
+    const chkPr = document.getElementById('spShowProg');
+    const inpPause = document.getElementById('spPauseSec');
+    if (chkEn) chkEn.checked = spState.enabled !== false;
+    if (chkQr) chkQr.checked = spState.showQrCode !== false;
+    if (chkPr) chkPr.checked = spState.showProgressBar !== false;
+    if (inpPause) inpPause.value = String(spState.pauseBetweenSec ?? 0);
+
+    listEl.innerHTML = '';
+    if (!spState.items.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'padding: 16px; text-align: center; border-radius: 10px; border: 1px dashed rgba(148,163,184,0.3); color: #94a3b8; font-size: 12px;';
+      empty.textContent = 'Noch keine Werbepartner angelegt. Klicke unten auf „➕ Neuen Werbepartner hinzufügen“.';
+      listEl.appendChild(empty);
+      return;
+    }
+
+    spState.items.forEach((item, idx) => {
+      const nextItem = spState.items.length > 1 ? spState.items[(idx + 1) % spState.items.length] : null;
+      const card = document.createElement('div');
+      card.style.cssText = 'padding: 10px 12px; border-radius: 10px; background: rgba(15,23,42,0.82); border: 1px solid rgba(148,163,184,0.22); display: flex; flex-direction: column; gap: 8px;';
+
+      const topRow = document.createElement('div');
+      topRow.style.cssText = 'display: flex; align-items: center; gap: 6px; flex-wrap: wrap;';
+
+      const orderBadge = document.createElement('span');
+      orderBadge.style.cssText = 'font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: rgba(56,189,248,0.18); color: #7dd3fc;';
+      orderBadge.textContent = `#${idx + 1}` + (nextItem ? ` → Danach: ${nextItem.name || `#${((idx + 1) % spState.items.length) + 1}`}` : '');
+
+      const chkActiveWrap = document.createElement('label');
+      chkActiveWrap.className = 'checkbox-row';
+      chkActiveWrap.style.margin = '0 4px';
+      const chkActive = document.createElement('input');
+      chkActive.type = 'checkbox';
+      chkActive.checked = item.enabled !== false;
+      chkActive.addEventListener('change', () => { item.enabled = chkActive.checked; });
+      const chkSpan = document.createElement('span');
+      chkSpan.textContent = 'Aktiv';
+      chkActiveWrap.append(chkActive, chkSpan);
+
+      const mkBtn = (label, title, onClick, style = '') => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn-sm';
+        b.textContent = label;
+        b.title = title;
+        if (style) b.style.cssText = style;
+        b.addEventListener('click', onClick);
+        return b;
+      };
+
+      const btnUp = mkBtn('▲', 'In der Reihenfolge nach oben', () => {
+        if (idx === 0) return;
+        [spState.items[idx - 1], spState.items[idx]] = [spState.items[idx], spState.items[idx - 1]];
+        renderList();
+      });
+      btnUp.disabled = idx === 0;
+
+      const btnDown = mkBtn('▼', 'In der Reihenfolge nach unten', () => {
+        if (idx >= spState.items.length - 1) return;
+        [spState.items[idx + 1], spState.items[idx]] = [spState.items[idx], spState.items[idx + 1]];
+        renderList();
+      });
+      btnDown.disabled = idx >= spState.items.length - 1;
+
+      const btnShowNow = mkBtn('▶ Jetzt zeigen', 'Dieses Banner sofort live im OBS-Overlay einblenden', async () => {
+        readGlobalInputs();
+        spState.activeIndex = idx;
+        await window.omnichat.sponsorsSave(spState);
+        setMsg(`▶ Zeige jetzt #${idx + 1} (${item.name || 'Partner'}) im OBS-Overlay!`, '#4ade80');
+      }, 'background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); color: #bae6fd;');
+
+      const btnChat = mkBtn('💬 Link in Chat', 'Klickbaren Partner-Link direkt in Twitch & YouTube Chat posten', async () => {
+        readGlobalInputs();
+        await window.omnichat.sponsorsSave(spState);
+        const r = await window.omnichat.sponsorsPostChat(item.id);
+        setMsg(r?.ok ? `💬 Link in ${r.sent.join(' & ')} gepostet!` : `⚠️ ${r?.error || 'Senden fehlgeschlagen'}`, r?.ok ? '#4ade80' : '#fbbf24');
+      });
+
+      const btnDel = mkBtn('🗑️', 'Werbepartner entfernen', () => {
+        spState.items.splice(idx, 1);
+        renderList();
+      }, 'margin-left: auto; color: #fca5a5;');
+
+      topRow.append(orderBadge, chkActiveWrap, btnUp, btnDown, btnShowNow, btnChat, btnDel);
+
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 7px;';
+
+      const mkField = (label, type, value, placeholder, onInput) => {
+        const w = document.createElement('div');
+        const l = document.createElement('label');
+        l.style.cssText = 'display: block; font-size: 10.5px; color: #94a3b8; margin-bottom: 2px;';
+        l.textContent = label;
+        const inp = document.createElement('input');
+        inp.type = type;
+        inp.value = value;
+        if (placeholder) inp.placeholder = placeholder;
+        inp.style.width = '100%';
+        inp.addEventListener('input', () => onInput(inp.value));
+        w.append(l, inp);
+        return w;
+      };
+
+      grid.append(
+        mkField('Partner-Name', 'text', item.name || '', 'z. B. Holy Energy', (v) => { item.name = v; }),
+        mkField('Untertitel / Rabattcode', 'text', item.subtitle || '', 'z. B. 10% mit Code OMNI10', (v) => { item.subtitle = v; }),
+        mkField('Badge-Text', 'text', item.badge || 'WERBUNG', 'WERBUNG / PARTNER', (v) => { item.badge = v; }),
+        mkField('Anzeigedauer (Sek.)', 'number', String(item.durationSec ?? 15), '15', (v) => { item.durationSec = Math.max(3, parseInt(v || '15', 10) || 15); }),
+        mkField('Klick-URL (Link & QR-Code)', 'text', item.url || '', 'partner-seite.de/ref', (v) => { item.url = v; }),
+        mkField('Akzentfarbe', 'color', item.accentColor || '#38bdf8', '', (v) => { item.accentColor = v; })
+      );
+
+      const mediaRow = document.createElement('div');
+      mediaRow.style.cssText = 'display: flex; gap: 6px; align-items: center; flex-wrap: wrap;';
+      const imgInput = document.createElement('input');
+      imgInput.type = 'text';
+      imgInput.style.flex = '1';
+      imgInput.placeholder = 'Lokale Bilddatei wählen oder Bild-URL eintragen (optional)';
+      imgInput.value = item.imagePath || item.imageUrl || '';
+      imgInput.addEventListener('input', () => {
+        const val = imgInput.value.trim();
+        if (/^https?:\/\//i.test(val)) { item.imageUrl = val; item.imagePath = ''; }
+        else { item.imagePath = val; item.imageUrl = ''; }
+      });
+      const btnPick = mkBtn('🖼️ Bild wählen', 'Lokales Logo/Banner auswählen', async () => {
+        const picked = await window.omnichat.pickLocalFile?.({ kind: 'image' });
+        if (picked?.ok && picked.filePath) {
+          item.imagePath = picked.filePath;
+          item.imageUrl = '';
+          imgInput.value = picked.filePath;
+        }
+      });
+      mediaRow.append(imgInput, btnPick);
+
+      card.append(topRow, grid, mediaRow);
+      listEl.appendChild(card);
+    });
+  };
+
+  document.getElementById('btnOpenSponsors')?.addEventListener('click', async () => {
+    const res = await window.omnichat.sponsorsGet?.();
+    if (res?.ok && res.sponsors) spState = res.sponsors;
+    if (res?.overlayUrl) overlayUrl = res.overlayUrl;
+    renderList();
+    modal.classList.remove('hidden');
+  });
+
+  document.getElementById('btnCloseSponsors')?.addEventListener('click', () => modal.classList.add('hidden'));
+
+  document.getElementById('btnSpAddItem')?.addEventListener('click', () => {
+    spState.items.push({
+      id: `sp_${Date.now().toString(36)}`,
+      enabled: true,
+      name: '',
+      subtitle: '',
+      badge: 'WERBUNG',
+      url: '',
+      imagePath: '',
+      imageUrl: '',
+      accentColor: '#38bdf8',
+      durationSec: 15
+    });
+    renderList();
+  });
+
+  document.getElementById('btnSpSave')?.addEventListener('click', async () => {
+    readGlobalInputs();
+    const res = await window.omnichat.sponsorsSave?.(spState);
+    if (res?.ok) {
+      spState = res.sponsors;
+      renderList();
+      setMsg('✅ Werbepartner gespeichert & live ans OBS-Overlay (/sponsors) gesendet!', '#4ade80');
+    } else {
+      setMsg('⚠️ Speichern fehlgeschlagen.', '#f87171');
+    }
+  });
+
+  document.getElementById('btnSpCopyUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(overlayUrl);
+    setMsg(`🔗 ${overlayUrl} kopiert! (In OBS als Browser-Quelle 460×175 einfügen)`, '#4ade80');
+  });
+
+  document.getElementById('btnSpOpenPreview')?.addEventListener('click', () => {
+    window.omnichat.openExternalUrl?.(overlayUrl);
+  });
+})();
