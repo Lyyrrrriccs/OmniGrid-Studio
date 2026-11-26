@@ -467,7 +467,7 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'chat', label: '💬 Multi-Chat Overlay (Twitch / YT / TikTok)', inputName: 'OmniGrid Chat', url: `${base}/`, width: 450, height: 700, posX: 24, posY: 340 },
     { id: 'alerts', label: '🔔 Stream-Alerts (Follow, Sub, Bits, Raid)', inputName: 'OmniGrid Alerts', url: `${base}/alerts`, width: 720, height: 260, posX: 600, posY: 40, rerouteAudio: true },
     { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
-    { id: 'game-stats', label: '🎮 Game-Stats / LoL Champion, Skin & Letzte 6 Games', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 345, posX: 1460, posY: 24 },
+    { id: 'game-stats', label: '🎮 Game-Stats / LoL Champion, Skin & Letzte 6 Games', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 370, posX: 1460, posY: 24 },
     { id: 'lol-build', label: '⚔️ LoL Live Item-Build & Elo-Bar', inputName: 'OmniGrid LoL-Build', url: `${base}/lol-build`, width: 550, height: 125, posX: 685, posY: 940 },
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
     { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
@@ -2920,7 +2920,10 @@ app.whenReady().then(async () => {
         (lcu.region && prev.region !== lcu.region) ||
         (lcu.role && prev.role !== lcu.role) ||
         matchesChanged;
-      if (changed || force) {
+      if (changed || force || (ga.selectedMode === 'auto' && !ga.currentGameName)) {
+        if (ga.selectedMode === 'auto' && !ga.currentGameName) {
+          ga.currentGameName = 'League of Legends';
+        }
         ga.perAddonStats.lol = {
           ...prev,
           rank: lcu.rank,
@@ -2943,7 +2946,9 @@ app.whenReady().then(async () => {
       const { addon, ga } = gameAddons.resolveActiveAddon(cfg);
       if (!ga.lolPollingEnabled) return;
       if (addon.id !== 'lol' && ga.selectedMode !== 'auto') return;
-      if (addon.id === 'lol') syncLcuIntoConfig(false).catch(() => {});
+      if (addon.id === 'lol' || (ga.selectedMode === 'auto' && !ga.currentGameName)) {
+        syncLcuIntoConfig(false).catch(() => {});
+      }
       try {
         const https = require('https');
         const agent = gameAddons.createRiotLocalHttpsAgent();

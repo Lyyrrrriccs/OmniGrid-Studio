@@ -2085,22 +2085,21 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     .gs-elo-sub { font-size: 10px; color: #c8aa6e; font-weight: 700; margin-top: 2px; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gs-rank-box {
       flex-shrink: 0;
-      min-width: 132px;
-      padding: 6px 10px;
+      min-width: 148px;
+      padding: 6px 9px;
       border-radius: 4px;
-      background: linear-gradient(160deg, rgba(14, 30, 56, 0.92) 0%, rgba(5, 13, 26, 0.96) 100%);
+      background: linear-gradient(160deg, rgba(14, 30, 56, 0.94) 0%, rgba(5, 13, 26, 0.97) 100%);
       border: 1.5px solid var(--tier-color, #c8aa6e);
       box-shadow: inset 0 0 10px rgba(0,0,0,0.55), 0 0 14px rgba(10,200,185,0.18);
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
-      text-align: right;
+      align-items: center;
+      gap: 8px;
     }
-    .gs-rank-top { display: flex; align-items: center; gap: 5px; }
-    .gs-rank-crest { width: 14px; height: 14px; flex-shrink: 0; filter: drop-shadow(0 0 4px var(--tier-color, #38bdf8)); }
-    .gs-rank-tier { font-family: Georgia, "Times New Roman", serif; font-size: 12.5px; font-weight: 900; color: #f0e6d2; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
-    .gs-rank-lp { font-size: 13.5px; font-weight: 900; color: var(--tier-color, #0ac8b9); margin-top: 1px; line-height: 1.1; text-shadow: 0 1px 6px rgba(0,0,0,0.85); }
+    .gs-rank-emblem { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 6px var(--tier-color, #38bdf8)); }
+    .gs-rank-emblem svg { width: 36px; height: 36px; display: block; }
+    .gs-rank-info { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; text-align: right; flex: 1; min-width: 0; }
+    .gs-rank-tier { font-family: Georgia, "Times New Roman", serif; font-size: 12px; font-weight: 900; color: #f0e6d2; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+    .gs-rank-lp { font-size: 13px; font-weight: 900; color: var(--tier-color, #0ac8b9); margin-top: 1px; line-height: 1.1; text-shadow: 0 1px 6px rgba(0,0,0,0.85); }
     .gs-lp-track { width: 100%; height: 4px; border-radius: 999px; background: rgba(148, 163, 184, 0.22); margin-top: 4px; overflow: hidden; }
     .gs-lp-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c8aa6e, var(--tier-color, #0ac8b9)); transition: width 0.35s ease; }
 
@@ -2139,15 +2138,12 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
           </div>
         </div>
         <div class="gs-rank-box" id="gsRankBox">
-          <div class="gs-rank-top">
-            <svg class="gs-rank-crest" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L20 7V15L12 22L4 15V7L12 2Z" stroke="currentColor" stroke-width="2" fill="rgba(200,170,110,0.18)"/>
-              <path d="M12 6L16.5 9V14L12 18L7.5 14V9L12 6Z" fill="currentColor"/>
-            </svg>
+          <div class="gs-rank-emblem" id="gsRankEmblem"></div>
+          <div class="gs-rank-info">
             <span class="gs-rank-tier" id="gsRankTier">DIAMOND IV</span>
+            <div class="gs-rank-lp" id="gsRankLp">50 LP</div>
+            <div class="gs-lp-track"><div class="gs-lp-fill" id="gsLpFill" style="width: 50%;"></div></div>
           </div>
-          <div class="gs-rank-lp" id="gsRankLp">50 LP</div>
-          <div class="gs-lp-track"><div class="gs-lp-fill" id="gsLpFill" style="width: 50%;"></div></div>
         </div>
       </div>
       <div class="gs-grid" id="gsGrid"></div>
@@ -2169,6 +2165,7 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     const skinNameEl = document.getElementById('gsSkinName');
     const eloSubEl = document.getElementById('gsEloSub');
     const rankBoxEl = document.getElementById('gsRankBox');
+    const rankEmblemEl = document.getElementById('gsRankEmblem');
     const rankTierEl = document.getElementById('gsRankTier');
     const rankLpEl = document.getElementById('gsRankLp');
     const lpFillEl = document.getElementById('gsLpFill');
@@ -2177,36 +2174,63 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
     const matchesLblEl = document.getElementById('gsMatchesLbl');
     const matchesRowEl = document.getElementById('gsMatchesRow');
 
-    function resolveTierColor(rankStr) {
+    function resolveTierMeta(rankStr) {
       const r = String(rankStr || '').toLowerCase();
-      if (r.includes('challenger')) return '#facc15';
-      if (r.includes('grandmaster') || r.includes('großmeister')) return '#f43f5e';
-      if (r.includes('master') || r.includes('meister')) return '#c084fc';
-      if (r.includes('diamond') || r.includes('diamant')) return '#38bdf8';
-      if (r.includes('emerald') || r.includes('smaragd')) return '#10b981';
-      if (r.includes('platin')) return '#2dd4bf';
-      if (r.includes('gold')) return '#f59e0b';
-      if (r.includes('silver') || r.includes('silber')) return '#cbd5e1';
-      if (r.includes('bronze')) return '#d97706';
-      if (r.includes('iron') || r.includes('eisen')) return '#94a3b8';
-      return '#0ac8b9';
+      if (r.includes('challenger')) return { color: '#facc15', accent: '#38bdf8', crown: true, tag: 'C' };
+      if (r.includes('grandmaster') || r.includes('großmeister')) return { color: '#f43f5e', accent: '#fbbf24', crown: true, tag: 'GM' };
+      if (r.includes('master') || r.includes('meister')) return { color: '#c084fc', accent: '#f0abfc', crown: true, tag: 'M' };
+      if (r.includes('diamond') || r.includes('diamant')) return { color: '#38bdf8', accent: '#bae6fd', crown: false, tag: 'D' };
+      if (r.includes('emerald') || r.includes('smaragd')) return { color: '#10b981', accent: '#6ee7b7', crown: false, tag: 'E' };
+      if (r.includes('platin')) return { color: '#2dd4bf', accent: '#99f6e4', crown: false, tag: 'P' };
+      if (r.includes('gold')) return { color: '#f59e0b', accent: '#fde68a', crown: false, tag: 'G' };
+      if (r.includes('silver') || r.includes('silber')) return { color: '#cbd5e1', accent: '#f1f5f9', crown: false, tag: 'S' };
+      if (r.includes('bronze')) return { color: '#d97706', accent: '#fcd34d', crown: false, tag: 'B' };
+      if (r.includes('iron') || r.includes('eisen')) return { color: '#94a3b8', accent: '#cbd5e1', crown: false, tag: 'I' };
+      return { color: '#c8aa6e', accent: '#0ac8b9', crown: false, tag: 'U' };
     }
+
+    function buildRankEmblemSvg(rankStr) {
+      const m = resolveTierMeta(rankStr);
+      const crownPath = m.crown
+        ? '<path d="M11 8L15 3L20 7L25 3L29 8L27 11H13L11 8Z" fill="' + m.accent + '" stroke="#091428" stroke-width="1"/>'
+        : '<path d="M20 4L24 9H16L20 4Z" fill="' + m.accent + '"/>';
+      return '<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">'
+        + '<path d="M4 13L11 10L10 21L5 18L4 13Z" fill="' + m.color + '" opacity="0.72"/>'
+        + '<path d="M36 13L29 10L30 21L35 18L36 13Z" fill="' + m.color + '" opacity="0.72"/>'
+        + crownPath
+        + '<path d="M20 8L31 13V24.5L20 36L9 24.5V13L20 8Z" fill="#091428" stroke="' + m.color + '" stroke-width="2.4"/>'
+        + '<path d="M20 12.5L27 16V23.2L20 31L13 23.2V16L20 12.5Z" fill="' + m.color + '" fill-opacity="0.28" stroke="' + m.accent + '" stroke-width="1.3"/>'
+        + '<text x="20" y="24.5" text-anchor="middle" font-family="Georgia,serif" font-size="10.5" font-weight="900" fill="#f8fafc">' + m.tag + '</text>'
+        + '</svg>';
+    }
+
+    function fallbackChampIcon(champName) {
+      const raw = String(champName || '').trim();
+      if (!raw || raw === '—') return '';
+      const alias = { wukong: 'MonkeyKing', 'nunu & willump': 'Nunu', 'renata glasc': 'Renata' };
+      const id = alias[raw.toLowerCase()] || raw.replace(/[^a-zA-Z0-9]/g, '');
+      return id ? 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/champion/' + id + '.png' : '';
+    }
+
+    const forceLolMode = new URLSearchParams(location.search).get('addon') === 'lol';
 
     function renderStats(data) {
       if (!data) return;
       card.style.display = data.overlayEnabled === false ? 'none' : '';
       if (data.overlayEnabled === false) return;
-      const isLol = data.addonId === 'lol';
-      const isJc = data.addonId === 'justchatting';
-      const isTron = data.addonId === 'techtalk';
-      const isVal = data.addonId === 'valorant';
+      const isLol = forceLolMode || data.addonId === 'lol';
+      const isJc = !isLol && data.addonId === 'justchatting';
+      const isTron = !isLol && data.addonId === 'techtalk';
+      const isVal = !isLol && data.addonId === 'valorant';
       card.classList.toggle('theme-lol', isLol);
       card.classList.toggle('theme-jc', isJc);
       card.classList.toggle('theme-tron', isTron);
       card.classList.toggle('theme-val', isVal);
       card.style.setProperty('--accent', data.accent || '#38bdf8');
-      const cleanTitle = String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').replace(/—.*/, '').trim();
-      titleEl.textContent = (data.icon || '🎮') + ' ' + cleanTitle;
+      const cleanTitle = isLol
+        ? 'League of Legends'
+        : String(data.addonName || 'Game Stats').replace(/\s*\([^)]*\)/g, '').replace(/—.*/, '').trim();
+      titleEl.textContent = (isLol ? '⚔️' : (data.icon || '🎮')) + ' ' + cleanTitle;
       if (isLol) {
         badgeEl.textContent = data.riotId || (data.lolRole ? data.lolRole.toUpperCase() : 'RANKED');
       } else if (isJc) {
@@ -2219,14 +2243,16 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
         badgeEl.textContent = data.currentGameName || (data.selectedMode === 'auto' ? 'Auto' : data.addonId);
       }
 
-      const iconUrl = data.skinIconUrl || data.championIconUrl;
+      const fallbackIcon = fallbackChampIcon(data.champion);
+      const iconUrl = data.skinIconUrl || data.championIconUrl || fallbackIcon;
       if (isLol) {
         lolHeroEl.classList.add('visible');
         if (iconUrl) {
           champIconEl.style.display = 'block';
           champIconEl.onerror = () => {
-            if (data.championIconUrl && champIconEl.src !== data.championIconUrl) {
-              champIconEl.src = data.championIconUrl;
+            const nextFallback = data.championIconUrl || fallbackIcon;
+            if (nextFallback && champIconEl.src !== nextFallback) {
+              champIconEl.src = nextFallback;
             }
           };
           champIconEl.src = iconUrl;
@@ -2243,11 +2269,12 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
 
         const rankText = String(data.lolRank || 'Unranked').trim();
         const lpVal = Number(data.lolLp || 0);
-        const tierCol = resolveTierColor(rankText);
+        const tierCol = resolveTierMeta(rankText).color;
         if (rankBoxEl) {
           rankBoxEl.style.setProperty('--tier-color', tierCol);
           rankBoxEl.style.color = tierCol;
         }
+        if (rankEmblemEl) rankEmblemEl.innerHTML = buildRankEmblemSvg(rankText);
         if (rankTierEl) rankTierEl.textContent = rankText;
         if (rankLpEl) rankLpEl.textContent = lpVal + ' LP';
         if (lpFillEl) lpFillEl.style.width = Math.max(4, Math.min(100, lpVal % 100 === 0 && lpVal > 0 ? 100 : lpVal % 100)) + '%';
@@ -2301,7 +2328,8 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
           const slot = document.createElement('div');
           if (m) {
             slot.className = 'gs-match-slot ' + (m.win ? 'win' : 'loss');
-            const safeUrl = String(m.championIconUrl || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const rawUrl = m.championIconUrl || fallbackChampIcon(m.champion);
+            const safeUrl = String(rawUrl || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const img = safeUrl ? '<img src="' + safeUrl + '" alt="" />' : '';
             slot.innerHTML = img + '<span class="gs-match-badge">' + (m.win ? 'W' : 'L') + '</span>';
           } else {

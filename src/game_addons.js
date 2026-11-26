@@ -1147,7 +1147,7 @@ async function readLolLcuRankedStats() {
     lcuGetJson(creds.port, creds.token, '/lol-ranked/v1/current-ranked-stats').catch(() => null),
     lcuGetJson(creds.port, creds.token, '/lol-summoner/v1/current-summoner').catch(() => null),
     lcuGetJson(creds.port, creds.token, '/riotclient/region-locale').catch(() => null),
-    lcuGetJson(creds.port, creds.token, '/lol-match-history/v1/products/lol/current-summoner/matches?begIndex=0&endIndex=5').catch(() => null),
+    lcuGetJson(creds.port, creds.token, '/lol-match-history/v1/products/lol/current-summoner/matches?begIndex=0&endIndex=6').catch(() => null),
     lcuGetJson(creds.port, creds.token, '/lol-gameflow/v1/session').catch(() => null),
     lcuGetJson(creds.port, creds.token, '/lol-champ-select/v1/session').catch(() => null)
   ]);
@@ -1202,10 +1202,15 @@ async function readLolLcuRankedStats() {
   if (rawGames.length) {
     const dd = await ensureDdragonLoaded();
     const ver = dd.version || '14.23.1';
+    const myPuuid = String(summonerData?.puuid || '');
+    const mySumId = Number(summonerData?.summonerId || 0);
     recentMatches = rawGames
       .slice(0, 6)
       .map((g) => {
-        const p = Array.isArray(g?.participants) ? g.participants[0] : null;
+        const parts = Array.isArray(g?.participants) ? g.participants : [];
+        const ids = Array.isArray(g?.participantIdentities) ? g.participantIdentities : [];
+        const myIdent = ids.find((pi) => (myPuuid && pi?.player?.puuid === myPuuid) || (mySumId && Number(pi?.player?.summonerId) === mySumId));
+        const p = (myIdent ? parts.find((x) => Number(x.participantId) === Number(myIdent.participantId)) : null) || parts[0] || null;
         if (!p) return null;
         const cInfo = dd.champByKey?.[String(p.championId)] || null;
         const champId = cInfo?.id || '';
