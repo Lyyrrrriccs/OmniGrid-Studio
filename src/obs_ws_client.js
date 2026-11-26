@@ -573,6 +573,13 @@ class ObsWsClient extends EventEmitter {
                 .map((p) => ({ name: String(p.itemName || p.itemValue || ''), value: String(p.itemValue ?? '') }))
             : [];
         } catch (e) {}
+        let audioTracks = { '1': true, '2': true, '3': false, '4': false, '5': false, '6': false };
+        try {
+          const trRes = await this.call('GetInputAudioTracks', { inputName: inp.inputName });
+          if (trRes?.inputAudioTracks && typeof trRes.inputAudioTracks === 'object') {
+            audioTracks = trRes.inputAudioTracks;
+          }
+        } catch (e) {}
         audioList.push({
           inputName: inp.inputName,
           inputKind: kind,
@@ -580,11 +587,69 @@ class ObsWsClient extends EventEmitter {
           volumeDb: typeof vol.inputVolumeDb === 'number' ? vol.inputVolumeDb : 0,
           muted: Boolean(mute.inputMuted),
           currentDeviceId,
-          devices
+          devices,
+          audioTracks,
+          vodExcluded: audioTracks['2'] === false,
+          isMusicGuess: /(spotify|apple\s*music|amazon\s*music|music|musik|itunes|tidal|deezer|soundcloud)/i.test(inp.inputName)
         });
       } catch (e) {}
     }
     return { ok: true, inputs: audioList };
+  }
+
+  async setInputVodMusicOnly(inputName, musicOnly = true) {
+    const cleanName = String(inputName || '').trim();
+    if (!cleanName) throw new Error('Kein Audio-Gerät angegeben.');
+    const tracks = musicOnly
+      ? { '1': true, '2': false, '3': true, '4': false, '5': false, '6': false }
+      : { '1': true, '2': true, '3': false, '4': false, '5': false, '6': false };
+    await this.call('SetInputAudioTracks', { inputName: cleanName, inputAudioTracks: tracks });
+    return { ok: true, inputName: cleanName, vodExcluded: Boolean(musicOnly), audioTracks: tracks };
+  }
+
+  async setupMusicVodTrack({ sceneName = '', createDedicatedSource = false } = {}) {
+    const { inputs } = await this.getAudioInputs();
+    const updatedMusic = [];
+    const updatedNormal = [];
+    for (const inp of inputs) {
+      if (inp.isMusicGuess) {
+        await this.setInputVodMusicOnly(inp.inputName, true);
+        updatedMusic.push(inp.inputName);
+      } else if (!inp.vodExcluded) {
+        await this.setInputVodMusicOnly(inp.inputName, false);
+        updatedNormal.push(inp.inputName);
+      }
+    }
+    let createdSource = '';
+    if (createDedicatedSource) {
+      const targetScene = String(sceneName || this.state.currentScene || '').trim();
+      const sourceName = '🎵 Musik (Nur Live / Kein VOD)';
+      const exists = inputs.some((i) => i.inputName === sourceName);
+      if (!exists && targetScene) {
+        const kindsRes = await this.getInputKinds().catch(() => ({ kinds: [] }));
+        const kinds = kindsRes.kinds || [];
+        const preferred = process.platform === 'darwin'
+          ? ['sck_audio_capture', 'coreaudio_output_capture', 'coreaudio_input_capture']
+          : process.platform === 'win32'
+            ? ['wasapi_process_output_capture', 'wasapi_output_capture']
+            : ['pulse_output_capture', 'pipewire_audio_capture'];
+        const chosenKind = preferred.find((k) => kinds.includes(k)) || preferred[0];
+        try {
+          await this.createInput({
+            sceneName: targetScene,
+            inputName: sourceName,
+            inputKind: chosenKind,
+            inputSettings: chosenKind === 'sck_audio_capture' ? { type: 2 } : {}
+          });
+          await this.setInputVodMusicOnly(sourceName, true);
+          createdSource = sourceName;
+        } catch (e) {}
+      } else if (exists) {
+        await this.setInputVodMusicOnly(sourceName, true);
+        createdSource = sourceName;
+      }
+    }
+    return { ok: true, updatedMusic, updatedNormal, createdSource };
   }
 
   async setInputAudioDevice(inputName, deviceId) {

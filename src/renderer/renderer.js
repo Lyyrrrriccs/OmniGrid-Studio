@@ -6376,7 +6376,35 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         loadAudioInputs();
       });
 
-      row.append(lbl, slider, muteBtn);
+      const vodBtn = document.createElement('button');
+      vodBtn.className = 'btn-sm';
+      const isMusicOnly = Boolean(inp.vodExcluded);
+      vodBtn.style.cssText = isMusicOnly
+        ? 'padding:2px 6px; font-size:10px; background:rgba(168,85,247,0.25); border-color:#a855f7; color:#e9d5ff; white-space:nowrap;'
+        : 'padding:2px 6px; font-size:10px; color:#94a3b8; white-space:nowrap;';
+      vodBtn.textContent = isMusicOnly ? '🎵 Nur Live' : '✅ +VOD';
+      vodBtn.title = isMusicOnly
+        ? 'Spur 1 (Live) AN • Spur 2 (VOD/Abruf) AUS — Musik landet nicht im VOD (klicken zum Ändern)'
+        : 'Spur 1 (Live) & Spur 2 (VOD) AN — klicken, um diese Quelle vom VOD/Abruf auszuschließen (DMCA-Schutz)';
+      vodBtn.addEventListener('click', async () => {
+        const nextMusicOnly = !isMusicOnly;
+        const r = await window.omnichat.obsWsAction({
+          action: 'set-input-vod-music-only',
+          inputName: inp.inputName,
+          musicOnly: nextMusicOnly
+        });
+        if (r?.ok) {
+          setStatus(
+            nextMusicOnly
+              ? `🛡️ „${inp.inputName}“ jetzt auf separater Musik-Spur (Nur Live, NICHT im VOD)!`
+              : `✅ „${inp.inputName}“ wieder im Live-Stream & VOD aktiv.`,
+            nextMusicOnly ? '#c084fc' : '#4ade80'
+          );
+          loadAudioInputs();
+        }
+      });
+
+      row.append(lbl, slider, muteBtn, vodBtn);
       wrap.appendChild(row);
 
       if (Array.isArray(inp.devices) && inp.devices.length) {
@@ -6763,6 +6791,45 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   document.getElementById('btnSeBundleJc')?.addEventListener('click', () => applyBuiltinBundle('justchatting', '💬 Just-Chatting-Set'));
   document.getElementById('btnSeBundleTron')?.addEventListener('click', () => applyBuiltinBundle('techtalk', '💠 TRON Tech-Talk-Set'));
   document.getElementById('btnSeBundleVal')?.addEventListener('click', () => applyBuiltinBundle('valorant', '🔫 Valorant-Set'));
+
+  document.getElementById('btnSeSetupVodTrack')?.addEventListener('click', async () => {
+    setStatus('⏳ Richte separate Musik-VOD-Spur (Spur 2) in OBS ein...', '#38bdf8');
+    const r = await window.omnichat.obsWsAction({
+      action: 'setup-music-vod-track',
+      sceneName: currentSceneName || '',
+      createDedicatedSource: false
+    });
+    if (r?.ok) {
+      const mList = (r.updatedMusic || []).join(', ');
+      setStatus(
+        `🛡️ VOD-Spur 2 aktiv!${mList ? ` Musik getrennt: ${mList}.` : ' Markiere deine Musik-Quelle unten mit „🎵 Nur Live“.'} (OBS ggf. 1× neu starten, falls VOD-Spur neu aktiviert wurde)`,
+        '#c084fc'
+      );
+      loadAudioInputs();
+    } else {
+      setStatus(`⚠️ ${r?.error || 'Konnte VOD-Spur nicht einrichten.'}`, '#f87171');
+    }
+  });
+
+  document.getElementById('btnSeAddMusicSource')?.addEventListener('click', async () => {
+    if (!currentSceneName) {
+      setStatus('⚠️ Bitte zuerst oben eine OBS-Szene auswählen.', '#fbbf24');
+      return;
+    }
+    setStatus('⏳ Lege dedizierte Musik-Audio-Spur (Nur Live / Kein VOD) an...', '#38bdf8');
+    const r = await window.omnichat.obsWsAction({
+      action: 'setup-music-vod-track',
+      sceneName: currentSceneName,
+      createDedicatedSource: true
+    });
+    if (r?.ok) {
+      setStatus(`🎵 Musik-Spur „${r.createdSource || 'Musik'}“ angelegt (Spur 1 Live AN, Spur 2 VOD AUS)!`, '#4ade80');
+      await loadSceneItems(currentSceneName);
+      loadAudioInputs();
+    } else {
+      setStatus(`⚠️ ${r?.error || 'Konnte Musik-Spur nicht anlegen.'}`, '#f87171');
+    }
+  });
 
   const FRIENDLY_KINDS = {
     browser_source: '🌐 Browser-Quelle (URL)',

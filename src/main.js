@@ -3540,6 +3540,15 @@ app.whenReady().then(async () => {
       if (act === 'create-scene') return await obsWs.createScene(payload.sceneName);
       if (act === 'get-audio-inputs') return await obsWs.getAudioInputs();
       if (act === 'set-input-audio-device') return await obsWs.setInputAudioDevice(payload.inputName, payload.deviceId);
+      if (act === 'set-input-vod-music-only') return await obsWs.setInputVodMusicOnly(payload.inputName, payload.musicOnly !== false);
+      if (act === 'setup-music-vod-track') {
+        const iniRes = obsAutoConfig.enableObsVodMusicTrack();
+        const wsRes = await obsWs.setupMusicVodTrack({
+          sceneName: payload.sceneName || '',
+          createDedicatedSource: Boolean(payload.createDedicatedSource)
+        });
+        return { ...wsRes, profilesPatched: iniRes.profilesPatched };
+      }
       if (act === 'set-input-volume') return await obsWs.setInputVolume(payload.inputName, payload.volumeMul);
       if (act === 'get-screenshot') return await obsWs.getSceneScreenshot(payload.sceneName || '');
       if (act === 'get-input-kinds') return await obsWs.getInputKinds();

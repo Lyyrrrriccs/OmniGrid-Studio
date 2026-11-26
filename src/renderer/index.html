@@ -2485,7 +2485,13 @@
               <div id="seSourcesList" style="display: flex; flex-direction: column; gap: 5px; overflow-y: auto; flex: 1;"></div>
             </div>
             <div style="flex: 0.85; display: flex; flex-direction: column; min-height: 0;">
-              <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">🎚️ OBS Audio-Mixer:</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap;">
+                <div style="font-size: 12px; font-weight: 700; color: #cbd5e1;">🎚️ OBS Audio-Mixer:</div>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  <button class="btn-sm" id="btnSeSetupVodTrack" style="font-size: 10px; padding: 2px 7px; background: rgba(168,85,247,0.2); border-color: rgba(168,85,247,0.55); color: #e9d5ff;" title="Aktiviert Twitch VOD-Spur 2 in OBS und trennt Musik-Quellen automatisch vom VOD (DMCA-Schutz)">🛡️ Musik-VOD-Spur</button>
+                  <button class="btn-sm" id="btnSeAddMusicSource" style="font-size: 10px; padding: 2px 7px; background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.5); color: #bae6fd;" title="Legt eine eigene Audio-Quelle für Spotify/Apple Music an (Spur 1 Live AN, Spur 2 VOD AUS)">➕ Musik-Spur</button>
+                </div>
+              </div>
               <div id="seAudioList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1;"></div>
             </div>
           </div>
