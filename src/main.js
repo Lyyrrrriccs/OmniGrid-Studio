@@ -466,7 +466,7 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'chat', label: '💬 Multi-Chat Overlay (Twitch / YT / TikTok)', inputName: 'OmniGrid Chat', url: `${base}/`, width: 450, height: 700, posX: 24, posY: 340 },
     { id: 'alerts', label: '🔔 Stream-Alerts (Follow, Sub, Bits, Raid)', inputName: 'OmniGrid Alerts', url: `${base}/alerts`, width: 720, height: 260, posX: 600, posY: 40, rerouteAudio: true },
     { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
-    { id: 'game-stats', label: '🎮 Game-Addons / Talk-Agenda Card', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 310, posX: 1460, posY: 24 },
+    { id: 'game-stats', label: '🎮 Game-Stats / LoL Champion, Skin & Letzte 6 Games', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 345, posX: 1460, posY: 24 },
     { id: 'lol-build', label: '⚔️ LoL Live Item-Build & Elo-Bar', inputName: 'OmniGrid LoL-Build', url: `${base}/lol-build`, width: 550, height: 125, posX: 685, posY: 940 },
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
     { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
@@ -2903,21 +2903,31 @@ app.whenReady().then(async () => {
       lastLcuPollAt = now;
       const lcu = await gameAddons.readLolLcuRankedStats();
       if (!lcu?.ok) return lcu;
+      if (lcu.role) global.__lastLcuLolRole = lcu.role;
       const cfg = loadConfig();
       const ga = gameAddons.normalizeGameAddonsConfig(cfg.gameAddons);
       const prev = ga.perAddonStats.lol || {};
+      const nextMatches = Array.isArray(lcu.recentMatches) && lcu.recentMatches.length
+        ? lcu.recentMatches.slice(0, 6)
+        : (Array.isArray(prev.recentMatches) ? prev.recentMatches.slice(0, 6) : []);
+      const matchesChanged = nextMatches.length !== (prev.recentMatches?.length || 0)
+        || (nextMatches[0]?.at && nextMatches[0].at !== prev.recentMatches?.[0]?.at);
       const changed =
         prev.rank !== lcu.rank ||
         Number(prev.lp) !== Number(lcu.lp) ||
         (lcu.riotId && prev.riotId !== lcu.riotId) ||
-        (lcu.region && prev.region !== lcu.region);
+        (lcu.region && prev.region !== lcu.region) ||
+        (lcu.role && prev.role !== lcu.role) ||
+        matchesChanged;
       if (changed || force) {
         ga.perAddonStats.lol = {
           ...prev,
           rank: lcu.rank,
           lp: lcu.lp,
+          role: lcu.role || prev.role || '',
           riotId: lcu.riotId || prev.riotId || '',
-          region: lcu.region || prev.region || 'euw'
+          region: lcu.region || prev.region || 'euw',
+          recentMatches: nextMatches
         };
         cfg.gameAddons = ga;
         saveConfig(cfg);
@@ -2930,8 +2940,9 @@ app.whenReady().then(async () => {
     setInterval(async () => {
       const cfg = loadConfig();
       const { addon, ga } = gameAddons.resolveActiveAddon(cfg);
-      if (!ga.lolPollingEnabled || addon.id !== 'lol') return;
-      syncLcuIntoConfig(false).catch(() => {});
+      if (!ga.lolPollingEnabled) return;
+      if (addon.id !== 'lol' && ga.selectedMode !== 'auto') return;
+      if (addon.id === 'lol') syncLcuIntoConfig(false).catch(() => {});
       try {
         const https = require('https');
         const agent = gameAddons.createRiotLocalHttpsAgent();
@@ -2948,16 +2959,24 @@ app.whenReady().then(async () => {
         });
         const ap = data?.activePlayer || {};
         const players = Array.isArray(data?.allPlayers) ? data.allPlayers : [];
-        const apRiot = String(ap.riotId || '').toLowerCase();
-        const apGame = String(ap.riotIdGameName || '').toLowerCase();
-        const apSum = String(ap.summonerName || '').toLowerCase();
+        const normName = (v) => String(v || '').trim().toLowerCase();
+        const stripTag = (v) => normName(v).split('#')[0];
+        const apRiot = normName(ap.riotId);
+        const apGame = normName(ap.riotIdGameName);
+        const apSum = normName(ap.summonerName);
+        const apBase = stripTag(ap.riotId || ap.riotIdGameName || ap.summonerName);
         const me = players.find((p) => {
-          if (apRiot && String(p.riotId || '').toLowerCase() === apRiot) return true;
-          if (apGame && String(p.riotIdGameName || '').toLowerCase() === apGame) return true;
-          if (apSum && String(p.summonerName || '').toLowerCase() === apSum) return true;
+          if (apRiot && normName(p.riotId) === apRiot) return true;
+          if (apGame && normName(p.riotIdGameName) === apGame) return true;
+          if (apSum && normName(p.summonerName) === apSum) return true;
+          if (apBase && (stripTag(p.riotId) === apBase || stripTag(p.summonerName) === apBase)) return true;
           return false;
         }) || players[0];
         if (me) {
+          if (ga.selectedMode === 'auto' && addon.id !== 'lol') {
+            ga.currentGameName = 'League of Legends';
+            syncLcuIntoConfig(false).catch(() => {});
+          }
           const skinNum = Number(me.skinID ?? me.skinId ?? 0);
           const ddAssets = await gameAddons.resolveLolDdragonAssets(me.championName || '', skinNum, me.skinName || '');
           const liveItems = await gameAddons.resolveLolItemList(me.items || []);
@@ -3022,8 +3041,17 @@ app.whenReady().then(async () => {
             '';
           const spell1 = me?.summonerSpells?.summonerSpellOne?.displayName || prevLol.spell1 || '';
           const spell2 = me?.summonerSpells?.summonerSpellTwo?.displayName || prevLol.spell2 || '';
-          const posMap = { TOP: 'Top', JUNGLE: 'Jungle', MIDDLE: 'Mid', BOTTOM: 'ADC', UTILITY: 'Support' };
-          const liveRole = posMap[String(me.position || '').toUpperCase()] || prevLol.role || 'Mid';
+          const liveRole = gameAddons.detectLolRole({
+            position: me.position,
+            lcuPosition: global.__lastLcuLolRole || '',
+            gameMode: data?.gameData?.gameMode,
+            spell1,
+            spell2,
+            spell1Raw: me?.summonerSpells?.summonerSpellOne?.rawDisplayName,
+            spell2Raw: me?.summonerSpells?.summonerSpellTwo?.rawDisplayName,
+            items: me.items,
+            fallbackRole: prevLol.role
+          });
 
           ga.perAddonStats.lol = {
             ...prevLol,

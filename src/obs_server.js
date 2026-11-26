@@ -3297,6 +3297,7 @@ body.champ-fx-jinx-glitch #pinnedBox {
 }
 body.champ-fx-jinx-glitch .pin-label { color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-card,
+body.champ-fx-jinx-glitch .lb-bar,
 body.champ-fx-jinx-glitch .lb-card,
 body.champ-fx-jinx-glitch .build-card,
 body.champ-fx-jinx-glitch .map-cover,
@@ -3328,6 +3329,7 @@ body.champ-pack-active:not(.champ-fx-jinx-glitch) .msg-row {
   box-shadow: 0 0 16px color-mix(in srgb, var(--ct-primary, #38bdf8) 28%, transparent);
 }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-bar,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-card,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .build-card,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover,
