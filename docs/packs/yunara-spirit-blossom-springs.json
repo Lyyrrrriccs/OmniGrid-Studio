@@ -1,0 +1,20 @@
+{
+  "id": "yunara-spirit-blossom-springs",
+  "name": "Yunara — Spirit Blossom Springs",
+  "icon": "♨️",
+  "championMatch": ["yunara"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "blossom-springs",
+  "description": "Serene onsen hot-spring aqua, warm sakura-peach petals & golden lantern mist with soft organic framing across all OBS overlays.",
+  "colors": {
+    "primary": "#5eead4",
+    "secondary": "#fb7185",
+    "tertiary": "#fde68a",
+    "bgStart": "rgba(10, 18, 28, 0.94)",
+    "bgEnd": "rgba(22, 12, 26, 0.95)",
+    "text": "#fff1f2",
+    "muted": "#99f6e4"
+  },
+  "mapCoverBadge": "SPIRIT BLOSSOM SPRINGS // ONSEN ♨️"
+}
