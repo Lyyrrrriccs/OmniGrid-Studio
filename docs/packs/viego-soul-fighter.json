@@ -1,0 +1,20 @@
+{
+  "id": "viego-soul-fighter",
+  "name": "Viego — Soul Fighter",
+  "icon": "⚔️",
+  "championMatch": ["viego"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "soul-fighter",
+  "description": "Anime fighting-game cel-shaded comic shadows, electric soul-cyan, tournament hot magenta & KO gold across all OBS overlays.",
+  "colors": {
+    "primary": "#22d3ee",
+    "secondary": "#ff1f71",
+    "tertiary": "#facc15",
+    "bgStart": "rgba(11, 8, 22, 0.97)",
+    "bgEnd": "rgba(20, 6, 22, 0.98)",
+    "text": "#f8fafc",
+    "muted": "#a5f3fc"
+  },
+  "mapCoverBadge": "SOUL FIGHTER // TOURNAMENT ⚔️"
+}

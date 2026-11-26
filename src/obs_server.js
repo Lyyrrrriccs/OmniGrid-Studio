@@ -3291,11 +3291,78 @@ const OBS_SPONSORS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const ALL_OVERLAY_CARDS_SEL = [
+  '.gs-card', '.lb-bar', '.map-cover', '.sp-card', '.goal-wrap', '.poll-card',
+  '.gw-card', '.sched-card', '.alert-card', '.lt-wrap', '.qna-card',
+  '.tron-bar', '.val-bar', '.cover'
+];
+
 const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
 @keyframes jinxGlitchBorder {
   0%, 92%, 100% { box-shadow: 0 0 22px rgba(255, 42, 133, 0.45), inset 0 0 14px rgba(57, 255, 20, 0.14); border-color: var(--ct-primary, #ff2a85); }
   94% { box-shadow: -3px 0 26px rgba(57, 255, 20, 0.7), 3px 0 26px rgba(255, 42, 133, 0.7); border-color: var(--ct-secondary, #39ff14); transform: translateX(1px); }
   96% { box-shadow: 3px 0 24px rgba(0, 245, 212, 0.65), -2px 0 24px rgba(255, 42, 133, 0.7); border-color: var(--ct-tertiary, #00f5d4); transform: translateX(-1px); }
+}
+@keyframes kdaFirePulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(217, 70, 239, 0.52), inset 0 0 16px rgba(0, 245, 255, 0.16); border-color: var(--ct-primary, #d946ef); }
+  50% { box-shadow: 0 0 28px rgba(0, 245, 255, 0.62), 0 0 14px rgba(255, 107, 0, 0.45), inset 0 0 18px rgba(217, 70, 239, 0.22); border-color: var(--ct-secondary, #00f5ff); }
+}
+@keyframes risenLegendGlow {
+  0%, 100% { box-shadow: 0 0 24px rgba(245, 197, 66, 0.48), inset 0 0 16px rgba(255, 46, 85, 0.18); border-color: var(--ct-primary, #f5c542); }
+  50% { box-shadow: 0 0 30px rgba(255, 46, 85, 0.55), 0 0 18px rgba(245, 197, 66, 0.55), inset 0 0 18px rgba(245, 197, 66, 0.2); border-color: #ffe07d; }
+}
+@keyframes inkshadowPulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(20, 241, 198, 0.42), inset 0 0 18px rgba(255, 59, 78, 0.14); border-color: var(--ct-primary, #14f1c6); }
+  50% { box-shadow: 0 0 28px rgba(255, 59, 78, 0.48), 0 0 14px rgba(20, 241, 198, 0.45), inset 0 0 20px rgba(20, 241, 198, 0.18); border-color: var(--ct-secondary, #ff3b4e); }
+}
+@keyframes kdaAllOutShimmer {
+  0%, 100% { box-shadow: 0 0 24px rgba(103, 232, 249, 0.48), inset 0 0 18px rgba(244, 114, 182, 0.18); border-color: var(--ct-primary, #67e8f9); }
+  50% { box-shadow: 0 0 30px rgba(244, 114, 182, 0.55), 0 0 18px rgba(196, 181, 253, 0.5), inset 0 0 20px rgba(103, 232, 249, 0.22); border-color: var(--ct-secondary, #f472b6); }
+}
+@keyframes darkCosmicPulse {
+  0%, 100% { box-shadow: 0 0 26px rgba(168, 85, 247, 0.52), inset 0 0 20px rgba(255, 123, 41, 0.16); border-color: var(--ct-primary, #a855f7); }
+  50% { box-shadow: 0 0 32px rgba(255, 123, 41, 0.52), 0 0 20px rgba(236, 72, 153, 0.48), inset 0 0 22px rgba(168, 85, 247, 0.24); border-color: var(--ct-secondary, #ff7b29); }
+}
+@keyframes blackRosePulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(225, 29, 72, 0.48), inset 0 0 18px rgba(212, 175, 55, 0.16); border-color: var(--ct-primary, #e11d48); }
+  50% { box-shadow: 0 0 30px rgba(212, 175, 55, 0.5), 0 0 16px rgba(225, 29, 72, 0.5), inset 0 0 20px rgba(225, 29, 72, 0.2); border-color: var(--ct-secondary, #d4af37); }
+}
+@keyframes ravenbornPulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(45, 212, 191, 0.45), inset 0 0 18px rgba(139, 92, 246, 0.18); border-color: var(--ct-primary, #2dd4bf); }
+  50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.52), 0 0 16px rgba(45, 212, 191, 0.45), inset 0 0 20px rgba(45, 212, 191, 0.2); border-color: var(--ct-secondary, #8b5cf6); }
+}
+@keyframes elementalistCycle {
+  0%, 100% { box-shadow: 0 0 26px rgba(253, 224, 71, 0.48), inset 0 0 18px rgba(56, 189, 248, 0.18); border-color: #fde047; }
+  33% { box-shadow: 0 0 28px rgba(56, 189, 248, 0.52), inset 0 0 18px rgba(232, 121, 249, 0.2); border-color: #38bdf8; }
+  66% { box-shadow: 0 0 28px rgba(232, 121, 249, 0.52), inset 0 0 18px rgba(253, 224, 71, 0.2); border-color: #e879f9; }
+}
+@keyframes highNoonEmber {
+  0%, 100% { box-shadow: 0 0 24px rgba(255, 90, 31, 0.52), inset 0 0 18px rgba(245, 158, 11, 0.18); border-color: var(--ct-primary, #ff5a1f); }
+  50% { box-shadow: 0 0 32px rgba(220, 38, 38, 0.55), 0 0 18px rgba(245, 158, 11, 0.5), inset 0 0 20px rgba(255, 90, 31, 0.24); border-color: var(--ct-secondary, #f59e0b); }
+}
+@keyframes arcanePrestigeGlow {
+  0%, 100% { box-shadow: 0 0 24px rgba(243, 207, 122, 0.48), inset 0 0 18px rgba(56, 189, 248, 0.16); border-color: var(--ct-primary, #f3cf7a); }
+  50% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.52), 0 0 18px rgba(243, 207, 122, 0.45), inset 0 0 20px rgba(243, 207, 122, 0.2); border-color: #fef08a; }
+}
+@keyframes prestigeCosmicGlow {
+  0%, 100% { box-shadow: 0 0 26px rgba(250, 204, 21, 0.48), inset 0 0 18px rgba(192, 132, 252, 0.18); border-color: var(--ct-primary, #facc15); }
+  50% { box-shadow: 0 0 32px rgba(192, 132, 252, 0.55), 0 0 18px rgba(250, 204, 21, 0.5), inset 0 0 20px rgba(224, 231, 255, 0.2); border-color: var(--ct-secondary, #c084fc); }
+}
+@keyframes godKingAura {
+  0%, 100% { box-shadow: 0 0 26px rgba(239, 68, 68, 0.54), inset 0 0 18px rgba(251, 191, 36, 0.20); border-color: var(--ct-primary, #ef4444); }
+  50% { box-shadow: 0 0 34px rgba(251, 191, 36, 0.54), 0 0 18px rgba(239, 68, 68, 0.54), inset 0 0 22px rgba(239, 68, 68, 0.24); border-color: var(--ct-secondary, #fbbf24); }
+}
+@keyframes radiantCloudGlow {
+  0%, 100% { box-shadow: 0 0 26px rgba(251, 191, 36, 0.50), inset 0 0 18px rgba(52, 211, 153, 0.18); border-color: var(--ct-primary, #fbbf24); }
+  50% { box-shadow: 0 0 32px rgba(52, 211, 153, 0.52), 0 0 18px rgba(244, 63, 94, 0.42), inset 0 0 20px rgba(251, 191, 36, 0.22); border-color: var(--ct-secondary, #34d399); }
+}
+@keyframes soulFighterPulse {
+  0%, 100% { box-shadow: 4px 4px 0 rgba(255, 31, 113, 0.85), 0 0 24px rgba(34, 211, 238, 0.50); border-color: var(--ct-primary, #22d3ee); }
+  50% { box-shadow: 4px 4px 0 rgba(34, 211, 238, 0.90), 0 0 28px rgba(255, 31, 113, 0.55); border-color: var(--ct-secondary, #ff1f71); }
+}
+@keyframes blossomSpringsGlow {
+  0%, 100% { box-shadow: 0 0 24px rgba(94, 234, 212, 0.45), inset 0 0 20px rgba(251, 113, 133, 0.16); border-color: var(--ct-primary, #5eead4); }
+  50% { box-shadow: 0 0 30px rgba(251, 113, 133, 0.48), 0 0 18px rgba(253, 230, 138, 0.40), inset 0 0 22px rgba(94, 234, 212, 0.20); border-color: var(--ct-secondary, #fb7185); }
 }
 body.champ-fx-jinx-glitch .msg-row {
   background:
@@ -3309,31 +3376,15 @@ body.champ-fx-jinx-glitch .msg-row {
   margin-bottom: 5px;
   box-shadow: 0 0 16px rgba(255, 42, 133, 0.28), -2px 0 0 rgba(57, 255, 20, 0.35);
 }
-body.champ-fx-jinx-glitch .author {
-  text-shadow: 0 0 9px rgba(255, 42, 133, 0.65), 1px 0 0 rgba(57, 255, 20, 0.45);
-  letter-spacing: 0.04em;
-}
-body.champ-fx-jinx-glitch .badge {
-  background: rgba(255, 42, 133, 0.24) !important;
-  border: 1px solid var(--ct-secondary, #39ff14) !important;
-  color: var(--ct-secondary, #39ff14) !important;
-}
+body.champ-fx-jinx-glitch .author { text-shadow: 0 0 9px rgba(255, 42, 133, 0.65), 1px 0 0 rgba(57, 255, 20, 0.45); letter-spacing: 0.04em; }
+body.champ-fx-jinx-glitch .badge { background: rgba(255, 42, 133, 0.24) !important; border: 1px solid var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch #pinnedBox {
   background: linear-gradient(135deg, rgba(24, 6, 32, 0.97), rgba(8, 22, 24, 0.97)) !important;
   border: 2px solid var(--ct-primary, #ff2a85) !important;
   animation: jinxGlitchBorder 4.5s infinite;
 }
 body.champ-fx-jinx-glitch .pin-label { color: var(--ct-secondary, #39ff14) !important; }
-body.champ-fx-jinx-glitch .gs-card,
-body.champ-fx-jinx-glitch .lb-bar,
-body.champ-fx-jinx-glitch .map-cover,
-body.champ-fx-jinx-glitch .sp-card,
-body.champ-fx-jinx-glitch .goal-card,
-body.champ-fx-jinx-glitch .poll-card,
-body.champ-fx-jinx-glitch .gw-card,
-body.champ-fx-jinx-glitch .sched-card,
-body.champ-fx-jinx-glitch .alert-box,
-body.champ-fx-jinx-glitch .cover {
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-jinx-glitch ${s}`).join(',\n')} {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.09) 0 10px, rgba(57, 255, 20, 0.06) 10px 20px, transparent 20px 40px),
     linear-gradient(145deg, var(--ct-bg-start, rgba(18, 6, 26, 0.96)), var(--ct-bg-end, rgba(6, 18, 22, 0.96))) !important;
@@ -3348,32 +3399,73 @@ body.champ-fx-jinx-glitch .gs-card::after,
 body.champ-fx-jinx-glitch .map-cover::after { border-color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .gs-head,
 body.champ-fx-jinx-glitch .gs-matches-wrap,
-body.champ-fx-jinx-glitch .lb-elo { border-color: rgba(255, 42, 133, 0.45) !important; }
+body.champ-fx-jinx-glitch .lb-elo,
+body.champ-fx-jinx-glitch .sched-head { border-color: rgba(255, 42, 133, 0.45) !important; }
 body.champ-fx-jinx-glitch .gs-title,
 body.champ-fx-jinx-glitch .gs-champ-name,
 body.champ-fx-jinx-glitch .lb-rank,
-body.champ-fx-jinx-glitch .map-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
+body.champ-fx-jinx-glitch .map-title,
+body.champ-fx-jinx-glitch .sp-title,
+body.champ-fx-jinx-glitch .goal-title,
+body.champ-fx-jinx-glitch .poll-q,
+body.champ-fx-jinx-glitch .gw-title,
+body.champ-fx-jinx-glitch .sched-title,
+body.champ-fx-jinx-glitch .al-author,
+body.champ-fx-jinx-glitch .lt-topic,
+body.champ-fx-jinx-glitch .qna-author,
+body.champ-fx-jinx-glitch .tron-topic,
+body.champ-fx-jinx-glitch .val-rank-name,
+body.champ-fx-jinx-glitch .cover-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
 body.champ-fx-jinx-glitch .gs-badge,
-body.champ-fx-jinx-glitch .map-badge { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .map-badge,
+body.champ-fx-jinx-glitch .sp-badge,
+body.champ-fx-jinx-glitch .sp-tag,
+body.champ-fx-jinx-glitch .gw-badge,
+body.champ-fx-jinx-glitch .lt-live,
+body.champ-fx-jinx-glitch .lt-mood,
+body.champ-fx-jinx-glitch .qna-pill,
+body.champ-fx-jinx-glitch .tron-phase { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-skin-name,
 body.champ-fx-jinx-glitch .lb-lp,
-body.champ-fx-jinx-glitch .gs-rank-lp { color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-rank-lp,
+body.champ-fx-jinx-glitch .goal-pct,
+body.champ-fx-jinx-glitch .gw-winner,
+body.champ-fx-jinx-glitch .sched-next,
+body.champ-fx-jinx-glitch .sp-url,
+body.champ-fx-jinx-glitch .lt-ticker,
+body.champ-fx-jinx-glitch .tron-ticker { color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-elo-sub,
 body.champ-fx-jinx-glitch .gs-matches-lbl,
 body.champ-fx-jinx-glitch .lb-meta,
-body.champ-fx-jinx-glitch .map-sub { color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .map-sub,
+body.champ-fx-jinx-glitch .sp-artist,
+body.champ-fx-jinx-glitch .goal-nums,
+body.champ-fx-jinx-glitch .lt-sub,
+body.champ-fx-jinx-glitch .val-rank-lbl,
+body.champ-fx-jinx-glitch .val-box-lbl,
+body.champ-fx-jinx-glitch .tron-m-lbl,
+body.champ-fx-jinx-glitch .cover-sub { color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .gs-champ-icon,
 body.champ-fx-jinx-glitch .map-icon,
 body.champ-fx-jinx-glitch .gs-rank-box,
-body.champ-fx-jinx-glitch .lb-slot { border-color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .lb-slot,
+body.champ-fx-jinx-glitch .sp-cover,
+body.champ-fx-jinx-glitch .gw-slot,
+body.champ-fx-jinx-glitch .val-box,
+body.champ-fx-jinx-glitch .tron-metric { border-color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .lb-slot.trinket,
 body.champ-fx-jinx-glitch .gs-match-slot.win { border-color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-match-slot.win .gs-match-badge { background: var(--ct-secondary, #39ff14) !important; color: #05080f !important; }
 body.champ-fx-jinx-glitch .gs-cell { border-color: rgba(255, 42, 133, 0.48) !important; border-left: 3px solid var(--ct-secondary, #39ff14) !important; background: rgba(16, 8, 24, 0.9) !important; }
 body.champ-fx-jinx-glitch .gs-lbl { color: var(--ct-primary, #ff2a85) !important; }
-body.champ-fx-jinx-glitch .gs-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
+body.champ-fx-jinx-glitch .gs-val,
+body.champ-fx-jinx-glitch .val-box-val,
+body.champ-fx-jinx-glitch .tron-m-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
 body.champ-fx-jinx-glitch .gs-lp-fill,
-body.champ-fx-jinx-glitch .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #ff2a85), var(--ct-secondary, #39ff14)) !important; }
+body.champ-fx-jinx-glitch .lb-lp-fill,
+body.champ-fx-jinx-glitch .goal-fill,
+body.champ-fx-jinx-glitch .sp-prog-fill,
+body.champ-fx-jinx-glitch .val-rr-fill { background: linear-gradient(90deg, var(--ct-primary, #ff2a85), var(--ct-secondary, #39ff14)) !important; }
 
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .msg-row {
   background: linear-gradient(135deg, var(--ct-bg-start, rgba(16, 16, 28, 0.94)), var(--ct-bg-end, rgba(10, 14, 24, 0.95))) !important;
@@ -3388,16 +3480,7 @@ body.champ-pack-active:not(.champ-fx-jinx-glitch) #pinnedBox {
   border: 2px solid var(--ct-primary, #38bdf8) !important;
 }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .pin-label { color: var(--ct-secondary, #a855f7) !important; }
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-bar,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .poll-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .alert-box,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover {
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-pack-active:not(.champ-fx-jinx-glitch) ${s}`).join(',\n')} {
   background: linear-gradient(145deg, var(--ct-bg-start, rgba(16, 16, 28, 0.96)), var(--ct-bg-end, rgba(10, 14, 24, 0.96))) !important;
   border: 2px solid var(--ct-primary, #38bdf8) !important;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.06) !important;
@@ -3408,45 +3491,661 @@ body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card::after,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover::after { border-color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-head,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-matches-wrap,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-elo { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-elo,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-head { border-color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-title,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-champ-name,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-rank,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-title { color: var(--ct-text, #f8fafc) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .poll-q,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .al-author,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-topic,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .qna-author,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-topic,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-rank-name,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover-title { color: var(--ct-text, #f8fafc) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lbl,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-matches-lbl,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-elo-sub,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-meta,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-sub { color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-sub,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-artist,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-nums,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-sub,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-rank-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-box-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-m-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover-sub { color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-badge,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-badge { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-tag,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-live,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-mood,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .qna-pill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-phase { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-skin-name,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-lp { color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-lp,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-pct,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-winner,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-next,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-url,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-ticker,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-ticker { color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-champ-icon,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-icon,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-box,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-cover,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-slot,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-box,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-metric { border-color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-cell { border-color: var(--ct-primary, #38bdf8) !important; border-left: 3px solid var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot.trinket,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-match-slot.win { border-color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lp-fill,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
-body.champ-fx-spirit-blossom .msg-row,
-body.champ-fx-spirit-blossom .gs-card,
-body.champ-fx-spirit-blossom .lb-bar { border-radius: 14px !important; }
-body.champ-fx-nightbringer .msg-row,
-body.champ-fx-nightbringer .gs-card,
-body.champ-fx-nightbringer .lb-bar,
-body.champ-fx-project-cyber .msg-row,
-body.champ-fx-project-cyber .gs-card,
-body.champ-fx-project-cyber .lb-bar { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-prog-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-rr-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
+
+${['.msg-row', ...ALL_OVERLAY_CARDS_SEL].map((s) => `body.champ-fx-spirit-blossom ${s}`).join(',\n')} { border-radius: 14px !important; }
+${['.msg-row', ...ALL_OVERLAY_CARDS_SEL].map((s) => `body.champ-fx-nightbringer ${s},\nbody.champ-fx-project-cyber ${s}`).join(',\n')} { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
+
+body.champ-fx-kda-firestarter .msg-row {
+  background:
+    linear-gradient(125deg, rgba(217, 70, 239, 0.14), rgba(0, 245, 255, 0.08) 55%, rgba(255, 107, 0, 0.10)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(12, 6, 28, 0.96)), var(--ct-bg-end, rgba(18, 4, 24, 0.97))) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.3), -2px 0 0 rgba(0, 245, 255, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-kda-firestarter ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 107, 0, 0.18), transparent 45%),
+    radial-gradient(circle at 15% 85%, rgba(0, 245, 255, 0.14), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(12, 6, 28, 0.96)), var(--ct-bg-end, rgba(18, 4, 24, 0.97))) !important;
+  clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  border-radius: 0 !important;
+  animation: kdaFirePulse 3.6s ease-in-out infinite;
+}
+body.champ-fx-kda-firestarter .gs-title,
+body.champ-fx-kda-firestarter .gs-champ-name,
+body.champ-fx-kda-firestarter .lb-rank,
+body.champ-fx-kda-firestarter .sp-title,
+body.champ-fx-kda-firestarter .goal-title,
+body.champ-fx-kda-firestarter .poll-q,
+body.champ-fx-kda-firestarter .gw-title,
+body.champ-fx-kda-firestarter .sched-title,
+body.champ-fx-kda-firestarter .al-author,
+body.champ-fx-kda-firestarter .lt-topic,
+body.champ-fx-kda-firestarter .qna-author,
+body.champ-fx-kda-firestarter .tron-topic,
+body.champ-fx-kda-firestarter .val-rank-name { text-shadow: 0 0 12px rgba(217, 70, 239, 0.85), 0 0 6px rgba(0, 245, 255, 0.55) !important; }
+body.champ-fx-kda-firestarter .gs-lp-fill,
+body.champ-fx-kda-firestarter .lb-lp-fill,
+body.champ-fx-kda-firestarter .goal-fill,
+body.champ-fx-kda-firestarter .sp-prog-fill,
+body.champ-fx-kda-firestarter .val-rr-fill { background: linear-gradient(90deg, #d946ef, #00f5ff, #ff6b00) !important; }
+
+body.champ-fx-risen-legend .msg-row {
+  background:
+    linear-gradient(125deg, rgba(245, 197, 66, 0.14), rgba(255, 46, 85, 0.10) 60%, rgba(192, 132, 252, 0.08)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(18, 7, 14, 0.96)), var(--ct-bg-end, rgba(9, 8, 18, 0.97))) !important;
+  border: 1.5px solid var(--ct-primary, #f5c542) !important;
+  border-left: 4px solid var(--ct-secondary, #ff2e55) !important;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(245, 197, 66, 0.28), -2px 0 0 rgba(255, 46, 85, 0.5) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-risen-legend ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(245, 197, 66, 0.22), transparent 46%),
+    radial-gradient(circle at 12% 88%, rgba(255, 46, 85, 0.18), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(18, 7, 14, 0.96)), var(--ct-bg-end, rgba(9, 8, 18, 0.97))) !important;
+  border: 2px solid var(--ct-primary, #f5c542) !important;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  border-radius: 0 !important;
+  animation: risenLegendGlow 3.8s ease-in-out infinite;
+}
+body.champ-fx-risen-legend .gs-title,
+body.champ-fx-risen-legend .gs-champ-name,
+body.champ-fx-risen-legend .lb-rank,
+body.champ-fx-risen-legend .sp-title,
+body.champ-fx-risen-legend .goal-title,
+body.champ-fx-risen-legend .poll-q,
+body.champ-fx-risen-legend .gw-title,
+body.champ-fx-risen-legend .sched-title,
+body.champ-fx-risen-legend .al-author,
+body.champ-fx-risen-legend .lt-topic,
+body.champ-fx-risen-legend .qna-author,
+body.champ-fx-risen-legend .tron-topic,
+body.champ-fx-risen-legend .val-rank-name { color: #fff8e7 !important; text-shadow: 0 0 12px rgba(245, 197, 66, 0.8), 0 0 6px rgba(255, 46, 85, 0.45) !important; }
+body.champ-fx-risen-legend .gs-lp-fill,
+body.champ-fx-risen-legend .lb-lp-fill,
+body.champ-fx-risen-legend .goal-fill,
+body.champ-fx-risen-legend .sp-prog-fill,
+body.champ-fx-risen-legend .val-rr-fill { background: linear-gradient(90deg, #ff2e55, #f5c542, #ffe07d) !important; }
+
+body.champ-fx-inkshadow .msg-row {
+  background:
+    repeating-linear-gradient(-35deg, rgba(20, 241, 198, 0.06) 0 6px, rgba(255, 59, 78, 0.04) 6px 12px, transparent 12px 28px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(8, 9, 14, 0.97)), var(--ct-bg-end, rgba(14, 12, 22, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #14f1c6) !important;
+  border-left: 4px solid var(--ct-secondary, #ff3b4e) !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 8px, 100% 100%, 12px 100%, 0 calc(100% - 8px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(20, 241, 198, 0.24), -2px 0 0 rgba(255, 59, 78, 0.5) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-inkshadow ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(20, 241, 198, 0.16), transparent 45%),
+    radial-gradient(circle at 88% 82%, rgba(255, 59, 78, 0.16), transparent 48%),
+    repeating-linear-gradient(-40deg, rgba(248, 250, 252, 0.03) 0 4px, transparent 4px 22px),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(8, 9, 14, 0.97)), var(--ct-bg-end, rgba(14, 12, 22, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #14f1c6) !important;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 12px, 100% 100%, 16px 100%, 0 calc(100% - 12px));
+  border-radius: 0 !important;
+  animation: inkshadowPulse 4s ease-in-out infinite;
+}
+body.champ-fx-inkshadow .gs-title,
+body.champ-fx-inkshadow .gs-champ-name,
+body.champ-fx-inkshadow .lb-rank,
+body.champ-fx-inkshadow .sp-title,
+body.champ-fx-inkshadow .goal-title,
+body.champ-fx-inkshadow .poll-q,
+body.champ-fx-inkshadow .gw-title,
+body.champ-fx-inkshadow .sched-title,
+body.champ-fx-inkshadow .al-author,
+body.champ-fx-inkshadow .lt-topic,
+body.champ-fx-inkshadow .qna-author,
+body.champ-fx-inkshadow .tron-topic,
+body.champ-fx-inkshadow .val-rank-name { color: #f8fafc !important; text-shadow: 0 0 12px rgba(20, 241, 198, 0.72), 1px 0 0 rgba(255, 59, 78, 0.55) !important; }
+body.champ-fx-inkshadow .gs-lp-fill,
+body.champ-fx-inkshadow .lb-lp-fill,
+body.champ-fx-inkshadow .goal-fill,
+body.champ-fx-inkshadow .sp-prog-fill,
+body.champ-fx-inkshadow .val-rr-fill { background: linear-gradient(90deg, #14f1c6, #f8fafc, #ff3b4e) !important; }
+
+body.champ-fx-kda-all-out .msg-row {
+  background:
+    linear-gradient(125deg, rgba(103, 232, 249, 0.14), rgba(196, 181, 253, 0.12) 50%, rgba(244, 114, 182, 0.14)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(14, 10, 32, 0.95)), var(--ct-bg-end, rgba(10, 18, 38, 0.96))) !important;
+  border: 1.5px solid var(--ct-primary, #67e8f9) !important;
+  border-left: 4px solid var(--ct-secondary, #f472b6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.25), inset 0 0 10px rgba(244, 114, 182, 0.12) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-kda-all-out ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(103, 232, 249, 0.22), transparent 46%),
+    radial-gradient(circle at 86% 85%, rgba(244, 114, 182, 0.22), transparent 48%),
+    radial-gradient(circle at 55% 45%, rgba(196, 181, 253, 0.10), transparent 60%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(14, 10, 32, 0.95)), var(--ct-bg-end, rgba(10, 18, 38, 0.96))) !important;
+  border: 2px solid var(--ct-primary, #67e8f9) !important;
+  border-radius: 14px !important;
+  animation: kdaAllOutShimmer 3.8s ease-in-out infinite;
+}
+body.champ-fx-kda-all-out .gs-title,
+body.champ-fx-kda-all-out .gs-champ-name,
+body.champ-fx-kda-all-out .lb-rank,
+body.champ-fx-kda-all-out .sp-title,
+body.champ-fx-kda-all-out .goal-title,
+body.champ-fx-kda-all-out .poll-q,
+body.champ-fx-kda-all-out .gw-title,
+body.champ-fx-kda-all-out .sched-title,
+body.champ-fx-kda-all-out .al-author,
+body.champ-fx-kda-all-out .lt-topic,
+body.champ-fx-kda-all-out .qna-author,
+body.champ-fx-kda-all-out .tron-topic,
+body.champ-fx-kda-all-out .val-rank-name { color: #f8fbff !important; text-shadow: 0 0 12px rgba(103, 232, 249, 0.8), 0 0 8px rgba(244, 114, 182, 0.55) !important; }
+body.champ-fx-kda-all-out .gs-lp-fill,
+body.champ-fx-kda-all-out .lb-lp-fill,
+body.champ-fx-kda-all-out .goal-fill,
+body.champ-fx-kda-all-out .sp-prog-fill,
+body.champ-fx-kda-all-out .val-rr-fill { background: linear-gradient(90deg, #67e8f9, #c4b5fd, #f472b6) !important; }
+
+body.champ-fx-dark-cosmic .msg-row {
+  background:
+    radial-gradient(circle at 92% 50%, rgba(255, 123, 41, 0.18), transparent 48%),
+    linear-gradient(125deg, rgba(168, 85, 247, 0.16), rgba(236, 72, 153, 0.10) 55%, rgba(8, 4, 20, 0.96)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(8, 4, 20, 0.97)), var(--ct-bg-end, rgba(15, 5, 26, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #a855f7) !important;
+  border-left: 4px solid var(--ct-secondary, #ff7b29) !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  border-radius: 0 !important;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.3), -2px 0 0 rgba(255, 123, 41, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-dark-cosmic ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 84% 18%, rgba(255, 123, 41, 0.24), transparent 42%),
+    radial-gradient(circle at 18% 82%, rgba(236, 72, 153, 0.22), transparent 48%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.14), transparent 62%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(8, 4, 20, 0.97)), var(--ct-bg-end, rgba(15, 5, 26, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #a855f7) !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  border-radius: 0 !important;
+  animation: darkCosmicPulse 4s ease-in-out infinite;
+}
+body.champ-fx-dark-cosmic .gs-title,
+body.champ-fx-dark-cosmic .gs-champ-name,
+body.champ-fx-dark-cosmic .lb-rank,
+body.champ-fx-dark-cosmic .sp-title,
+body.champ-fx-dark-cosmic .goal-title,
+body.champ-fx-dark-cosmic .poll-q,
+body.champ-fx-dark-cosmic .gw-title,
+body.champ-fx-dark-cosmic .sched-title,
+body.champ-fx-dark-cosmic .al-author,
+body.champ-fx-dark-cosmic .lt-topic,
+body.champ-fx-dark-cosmic .qna-author,
+body.champ-fx-dark-cosmic .tron-topic,
+body.champ-fx-dark-cosmic .val-rank-name { color: #faf5ff !important; text-shadow: 0 0 12px rgba(168, 85, 247, 0.85), 0 0 8px rgba(255, 123, 41, 0.55) !important; }
+body.champ-fx-dark-cosmic .gs-lp-fill,
+body.champ-fx-dark-cosmic .lb-lp-fill,
+body.champ-fx-dark-cosmic .goal-fill,
+body.champ-fx-dark-cosmic .sp-prog-fill,
+body.champ-fx-dark-cosmic .val-rr-fill { background: linear-gradient(90deg, #9333ea, #ec4899, #ff7b29) !important; }
+
+body.champ-fx-black-rose .msg-row {
+  background:
+    linear-gradient(125deg, rgba(225, 29, 72, 0.16), rgba(212, 175, 55, 0.08) 55%, rgba(147, 51, 234, 0.10)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(16, 4, 10, 0.97)), var(--ct-bg-end, rgba(10, 4, 14, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #e11d48) !important;
+  border-left: 4px solid var(--ct-secondary, #d4af37) !important;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(225, 29, 72, 0.28), -2px 0 0 rgba(212, 175, 55, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-black-rose ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 86% 14%, rgba(212, 175, 55, 0.18), transparent 44%),
+    radial-gradient(circle at 14% 86%, rgba(225, 29, 72, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(16, 4, 10, 0.97)), var(--ct-bg-end, rgba(10, 4, 14, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #e11d48) !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  border-radius: 0 !important;
+  animation: blackRosePulse 4s ease-in-out infinite;
+}
+body.champ-fx-black-rose .gs-title,
+body.champ-fx-black-rose .gs-champ-name,
+body.champ-fx-black-rose .lb-rank,
+body.champ-fx-black-rose .sp-title,
+body.champ-fx-black-rose .goal-title,
+body.champ-fx-black-rose .poll-q,
+body.champ-fx-black-rose .gw-title,
+body.champ-fx-black-rose .sched-title,
+body.champ-fx-black-rose .al-author,
+body.champ-fx-black-rose .lt-topic,
+body.champ-fx-black-rose .qna-author,
+body.champ-fx-black-rose .tron-topic,
+body.champ-fx-black-rose .val-rank-name { color: #fff1f2 !important; text-shadow: 0 0 12px rgba(225, 29, 72, 0.8), 0 0 6px rgba(212, 175, 55, 0.55) !important; }
+body.champ-fx-black-rose .gs-lp-fill,
+body.champ-fx-black-rose .lb-lp-fill,
+body.champ-fx-black-rose .goal-fill,
+body.champ-fx-black-rose .sp-prog-fill,
+body.champ-fx-black-rose .val-rr-fill { background: linear-gradient(90deg, #9f1239, #e11d48, #d4af37) !important; }
+
+body.champ-fx-ravenborn .msg-row {
+  background:
+    linear-gradient(125deg, rgba(45, 212, 191, 0.14), rgba(139, 92, 246, 0.14) 60%, rgba(7, 10, 20, 0.96)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(7, 10, 20, 0.97)), var(--ct-bg-end, rgba(12, 7, 24, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #2dd4bf) !important;
+  border-left: 4px solid var(--ct-secondary, #8b5cf6) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.24), -2px 0 0 rgba(139, 92, 246, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-ravenborn ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(45, 212, 191, 0.20), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(139, 92, 246, 0.22), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(7, 10, 20, 0.97)), var(--ct-bg-end, rgba(12, 7, 24, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #2dd4bf) !important;
+  clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+  border-radius: 0 !important;
+  animation: ravenbornPulse 4s ease-in-out infinite;
+}
+body.champ-fx-ravenborn .gs-title,
+body.champ-fx-ravenborn .gs-champ-name,
+body.champ-fx-ravenborn .lb-rank,
+body.champ-fx-ravenborn .sp-title,
+body.champ-fx-ravenborn .goal-title,
+body.champ-fx-ravenborn .poll-q,
+body.champ-fx-ravenborn .gw-title,
+body.champ-fx-ravenborn .sched-title,
+body.champ-fx-ravenborn .al-author,
+body.champ-fx-ravenborn .lt-topic,
+body.champ-fx-ravenborn .qna-author,
+body.champ-fx-ravenborn .tron-topic,
+body.champ-fx-ravenborn .val-rank-name { color: #f0fdfa !important; text-shadow: 0 0 12px rgba(45, 212, 191, 0.8), 0 0 8px rgba(139, 92, 246, 0.6) !important; }
+body.champ-fx-ravenborn .gs-lp-fill,
+body.champ-fx-ravenborn .lb-lp-fill,
+body.champ-fx-ravenborn .goal-fill,
+body.champ-fx-ravenborn .sp-prog-fill,
+body.champ-fx-ravenborn .val-rr-fill { background: linear-gradient(90deg, #2dd4bf, #8b5cf6, #e2e8f0) !important; }
+
+body.champ-fx-elementalist .msg-row {
+  background:
+    linear-gradient(125deg, rgba(253, 224, 71, 0.14), rgba(56, 189, 248, 0.12) 50%, rgba(232, 121, 249, 0.14)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(10, 14, 34, 0.95)), var(--ct-bg-end, rgba(18, 12, 36, 0.96))) !important;
+  border: 1.5px solid var(--ct-primary, #fde047) !important;
+  border-left: 4px solid var(--ct-secondary, #38bdf8) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 16px rgba(253, 224, 71, 0.24), inset 0 0 10px rgba(56, 189, 248, 0.14) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-elementalist ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 14%, rgba(253, 224, 71, 0.22), transparent 44%),
+    radial-gradient(circle at 86% 20%, rgba(56, 189, 248, 0.20), transparent 46%),
+    radial-gradient(circle at 50% 88%, rgba(232, 121, 249, 0.20), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(10, 14, 34, 0.95)), var(--ct-bg-end, rgba(18, 12, 36, 0.96))) !important;
+  border: 2px solid #fde047 !important;
+  border-radius: 12px !important;
+  animation: elementalistCycle 6s ease-in-out infinite;
+}
+body.champ-fx-elementalist .gs-title,
+body.champ-fx-elementalist .gs-champ-name,
+body.champ-fx-elementalist .lb-rank,
+body.champ-fx-elementalist .sp-title,
+body.champ-fx-elementalist .goal-title,
+body.champ-fx-elementalist .poll-q,
+body.champ-fx-elementalist .gw-title,
+body.champ-fx-elementalist .sched-title,
+body.champ-fx-elementalist .al-author,
+body.champ-fx-elementalist .lt-topic,
+body.champ-fx-elementalist .qna-author,
+body.champ-fx-elementalist .tron-topic,
+body.champ-fx-elementalist .val-rank-name { color: #fefce8 !important; text-shadow: 0 0 12px rgba(253, 224, 71, 0.78), 0 0 8px rgba(56, 189, 248, 0.55) !important; }
+body.champ-fx-elementalist .gs-lp-fill,
+body.champ-fx-elementalist .lb-lp-fill,
+body.champ-fx-elementalist .goal-fill,
+body.champ-fx-elementalist .sp-prog-fill,
+body.champ-fx-elementalist .val-rr-fill { background: linear-gradient(90deg, #fde047, #38bdf8, #e879f9, #fb7185) !important; }
+
+body.champ-fx-high-noon .msg-row {
+  background:
+    linear-gradient(125deg, rgba(255, 90, 31, 0.16), rgba(245, 158, 11, 0.10) 55%, rgba(220, 38, 38, 0.14)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(20, 8, 5, 0.97)), var(--ct-bg-end, rgba(12, 6, 5, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #ff5a1f) !important;
+  border-left: 4px solid var(--ct-secondary, #f59e0b) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 8px, 100% 100%, 10px 100%, 0 calc(100% - 8px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(255, 90, 31, 0.28), -2px 0 0 rgba(245, 158, 11, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-high-noon ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 86% 16%, rgba(245, 158, 11, 0.22), transparent 46%),
+    radial-gradient(circle at 14% 86%, rgba(220, 38, 38, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(20, 8, 5, 0.97)), var(--ct-bg-end, rgba(12, 6, 5, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #ff5a1f) !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  border-radius: 0 !important;
+  animation: highNoonEmber 3.4s ease-in-out infinite;
+}
+body.champ-fx-high-noon .gs-title,
+body.champ-fx-high-noon .gs-champ-name,
+body.champ-fx-high-noon .lb-rank,
+body.champ-fx-high-noon .sp-title,
+body.champ-fx-high-noon .goal-title,
+body.champ-fx-high-noon .poll-q,
+body.champ-fx-high-noon .gw-title,
+body.champ-fx-high-noon .sched-title,
+body.champ-fx-high-noon .al-author,
+body.champ-fx-high-noon .lt-topic,
+body.champ-fx-high-noon .qna-author,
+body.champ-fx-high-noon .tron-topic,
+body.champ-fx-high-noon .val-rank-name { color: #fff7ed !important; text-shadow: 0 0 12px rgba(255, 90, 31, 0.85), 0 0 6px rgba(245, 158, 11, 0.6) !important; }
+body.champ-fx-high-noon .gs-lp-fill,
+body.champ-fx-high-noon .lb-lp-fill,
+body.champ-fx-high-noon .goal-fill,
+body.champ-fx-high-noon .sp-prog-fill,
+body.champ-fx-high-noon .val-rr-fill { background: linear-gradient(90deg, #dc2626, #ff5a1f, #f59e0b) !important; }
+
+body.champ-fx-arcane-prestige .msg-row {
+  background:
+    linear-gradient(125deg, rgba(243, 207, 122, 0.14), rgba(56, 189, 248, 0.12) 60%, rgba(9, 14, 30, 0.96)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(9, 14, 30, 0.96)), var(--ct-bg-end, rgba(15, 20, 38, 0.97))) !important;
+  border: 1.5px solid var(--ct-primary, #f3cf7a) !important;
+  border-left: 4px solid var(--ct-secondary, #38bdf8) !important;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(243, 207, 122, 0.24), -2px 0 0 rgba(56, 189, 248, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-arcane-prestige ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 14%, rgba(243, 207, 122, 0.22), transparent 46%),
+    radial-gradient(circle at 86% 86%, rgba(56, 189, 248, 0.20), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(9, 14, 30, 0.96)), var(--ct-bg-end, rgba(15, 20, 38, 0.97))) !important;
+  border: 2px solid var(--ct-primary, #f3cf7a) !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  border-radius: 0 !important;
+  animation: arcanePrestigeGlow 4s ease-in-out infinite;
+}
+body.champ-fx-arcane-prestige .gs-title,
+body.champ-fx-arcane-prestige .gs-champ-name,
+body.champ-fx-arcane-prestige .lb-rank,
+body.champ-fx-arcane-prestige .sp-title,
+body.champ-fx-arcane-prestige .goal-title,
+body.champ-fx-arcane-prestige .poll-q,
+body.champ-fx-arcane-prestige .gw-title,
+body.champ-fx-arcane-prestige .sched-title,
+body.champ-fx-arcane-prestige .al-author,
+body.champ-fx-arcane-prestige .lt-topic,
+body.champ-fx-arcane-prestige .qna-author,
+body.champ-fx-arcane-prestige .tron-topic,
+body.champ-fx-arcane-prestige .val-rank-name { color: #fefce8 !important; text-shadow: 0 0 12px rgba(243, 207, 122, 0.8), 0 0 8px rgba(56, 189, 248, 0.55) !important; }
+body.champ-fx-arcane-prestige .gs-lp-fill,
+body.champ-fx-arcane-prestige .lb-lp-fill,
+body.champ-fx-arcane-prestige .goal-fill,
+body.champ-fx-arcane-prestige .sp-prog-fill,
+body.champ-fx-arcane-prestige .val-rr-fill { background: linear-gradient(90deg, #38bdf8, #f3cf7a, #fef9c3) !important; }
+
+body.champ-fx-prestige-cosmic .msg-row {
+  background:
+    linear-gradient(125deg, rgba(250, 204, 21, 0.14), rgba(192, 132, 252, 0.14) 55%, rgba(224, 231, 255, 0.08)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(10, 7, 24, 0.97)), var(--ct-bg-end, rgba(16, 10, 32, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #facc15) !important;
+  border-left: 4px solid var(--ct-secondary, #c084fc) !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  border-radius: 0 !important;
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.26), -2px 0 0 rgba(192, 132, 252, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-prestige-cosmic ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 86% 14%, rgba(250, 204, 21, 0.24), transparent 44%),
+    radial-gradient(circle at 14% 86%, rgba(192, 132, 252, 0.24), transparent 48%),
+    radial-gradient(circle at 50% 50%, rgba(224, 231, 255, 0.08), transparent 60%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(10, 7, 24, 0.97)), var(--ct-bg-end, rgba(16, 10, 32, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #facc15) !important;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  border-radius: 0 !important;
+  animation: prestigeCosmicGlow 3.8s ease-in-out infinite;
+}
+body.champ-fx-prestige-cosmic .gs-title,
+body.champ-fx-prestige-cosmic .gs-champ-name,
+body.champ-fx-prestige-cosmic .lb-rank,
+body.champ-fx-prestige-cosmic .sp-title,
+body.champ-fx-prestige-cosmic .goal-title,
+body.champ-fx-prestige-cosmic .poll-q,
+body.champ-fx-prestige-cosmic .gw-title,
+body.champ-fx-prestige-cosmic .sched-title,
+body.champ-fx-prestige-cosmic .al-author,
+body.champ-fx-prestige-cosmic .lt-topic,
+body.champ-fx-prestige-cosmic .qna-author,
+body.champ-fx-prestige-cosmic .tron-topic,
+body.champ-fx-prestige-cosmic .val-rank-name { color: #faf5ff !important; text-shadow: 0 0 12px rgba(250, 204, 21, 0.8), 0 0 8px rgba(192, 132, 252, 0.65) !important; }
+body.champ-fx-prestige-cosmic .gs-lp-fill,
+body.champ-fx-prestige-cosmic .lb-lp-fill,
+body.champ-fx-prestige-cosmic .goal-fill,
+body.champ-fx-prestige-cosmic .sp-prog-fill,
+body.champ-fx-prestige-cosmic .val-rr-fill { background: linear-gradient(90deg, #c084fc, #facc15, #e0e7ff) !important; }
+
+body.champ-fx-god-king .msg-row {
+  background:
+    linear-gradient(125deg, rgba(239, 68, 68, 0.18), rgba(251, 191, 36, 0.12) 60%, rgba(18, 6, 8, 0.97)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(18, 6, 8, 0.97)), var(--ct-bg-end, rgba(12, 8, 12, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #ef4444) !important;
+  border-left: 4px solid var(--ct-secondary, #fbbf24) !important;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 10px, 100% 100%, 12px 100%, 0 calc(100% - 10px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.30), -2px 0 0 rgba(251, 191, 36, 0.6) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-god-king ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 86% 14%, rgba(251, 191, 36, 0.24), transparent 46%),
+    radial-gradient(circle at 14% 86%, rgba(239, 68, 68, 0.26), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(18, 6, 8, 0.97)), var(--ct-bg-end, rgba(12, 8, 12, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #ef4444) !important;
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 14px, 100% 100%, 16px 100%, 0 calc(100% - 14px));
+  border-radius: 0 !important;
+  animation: godKingAura 3.4s ease-in-out infinite;
+}
+body.champ-fx-god-king .gs-title,
+body.champ-fx-god-king .gs-champ-name,
+body.champ-fx-god-king .lb-rank,
+body.champ-fx-god-king .sp-title,
+body.champ-fx-god-king .goal-title,
+body.champ-fx-god-king .poll-q,
+body.champ-fx-god-king .gw-title,
+body.champ-fx-god-king .sched-title,
+body.champ-fx-god-king .al-author,
+body.champ-fx-god-king .lt-topic,
+body.champ-fx-god-king .qna-author,
+body.champ-fx-god-king .tron-topic,
+body.champ-fx-god-king .val-rank-name { color: #fef3c7 !important; text-shadow: 0 0 12px rgba(239, 68, 68, 0.85), 0 0 8px rgba(251, 191, 36, 0.65) !important; }
+body.champ-fx-god-king .gs-lp-fill,
+body.champ-fx-god-king .lb-lp-fill,
+body.champ-fx-god-king .goal-fill,
+body.champ-fx-god-king .sp-prog-fill,
+body.champ-fx-god-king .val-rr-fill { background: linear-gradient(90deg, #b91c1c, #ef4444, #fbbf24, #fef3c7) !important; }
+
+body.champ-fx-radiant-cloud .msg-row {
+  background:
+    linear-gradient(125deg, rgba(251, 191, 36, 0.14), rgba(52, 211, 153, 0.12) 55%, rgba(244, 63, 94, 0.10)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(8, 18, 16, 0.96)), var(--ct-bg-end, rgba(20, 13, 8, 0.97))) !important;
+  border: 1.5px solid var(--ct-primary, #fbbf24) !important;
+  border-left: 4px solid var(--ct-secondary, #34d399) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.26), inset 0 0 10px rgba(52, 211, 153, 0.14) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-radiant-cloud ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 14%, rgba(251, 191, 36, 0.24), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(52, 211, 153, 0.20), transparent 48%),
+    radial-gradient(circle at 84% 18%, rgba(244, 63, 94, 0.14), transparent 42%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(8, 18, 16, 0.96)), var(--ct-bg-end, rgba(20, 13, 8, 0.97))) !important;
+  border: 2px solid var(--ct-primary, #fbbf24) !important;
+  border-radius: 10px !important;
+  animation: radiantCloudGlow 3.8s ease-in-out infinite;
+}
+body.champ-fx-radiant-cloud .gs-title,
+body.champ-fx-radiant-cloud .gs-champ-name,
+body.champ-fx-radiant-cloud .lb-rank,
+body.champ-fx-radiant-cloud .sp-title,
+body.champ-fx-radiant-cloud .goal-title,
+body.champ-fx-radiant-cloud .poll-q,
+body.champ-fx-radiant-cloud .gw-title,
+body.champ-fx-radiant-cloud .sched-title,
+body.champ-fx-radiant-cloud .al-author,
+body.champ-fx-radiant-cloud .lt-topic,
+body.champ-fx-radiant-cloud .qna-author,
+body.champ-fx-radiant-cloud .tron-topic,
+body.champ-fx-radiant-cloud .val-rank-name { color: #fefce8 !important; text-shadow: 0 0 12px rgba(251, 191, 36, 0.85), 0 0 8px rgba(52, 211, 153, 0.55) !important; }
+body.champ-fx-radiant-cloud .gs-lp-fill,
+body.champ-fx-radiant-cloud .lb-lp-fill,
+body.champ-fx-radiant-cloud .goal-fill,
+body.champ-fx-radiant-cloud .sp-prog-fill,
+body.champ-fx-radiant-cloud .val-rr-fill { background: linear-gradient(90deg, #10b981, #fbbf24, #f43f5e) !important; }
+
+body.champ-fx-soul-fighter .msg-row {
+  background:
+    repeating-linear-gradient(-45deg, rgba(34, 211, 238, 0.08) 0 6px, rgba(255, 31, 113, 0.06) 6px 12px, transparent 12px 24px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(11, 8, 22, 0.97)), var(--ct-bg-end, rgba(20, 6, 22, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #22d3ee) !important;
+  border-left: 5px solid var(--ct-secondary, #ff1f71) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 rgba(255, 31, 113, 0.78) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-soul-fighter ${s}`).join(',\n')} {
+  background:
+    repeating-linear-gradient(-45deg, rgba(34, 211, 238, 0.06) 0 8px, rgba(255, 31, 113, 0.05) 8px 16px, transparent 16px 32px),
+    radial-gradient(circle at 86% 14%, rgba(255, 31, 113, 0.22), transparent 46%),
+    radial-gradient(circle at 14% 86%, rgba(34, 211, 238, 0.20), transparent 48%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(11, 8, 22, 0.97)), var(--ct-bg-end, rgba(20, 6, 22, 0.98))) !important;
+  border: 2.5px solid var(--ct-primary, #22d3ee) !important;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  border-radius: 0 !important;
+  animation: soulFighterPulse 3.2s ease-in-out infinite;
+}
+body.champ-fx-soul-fighter .gs-title,
+body.champ-fx-soul-fighter .gs-champ-name,
+body.champ-fx-soul-fighter .lb-rank,
+body.champ-fx-soul-fighter .sp-title,
+body.champ-fx-soul-fighter .goal-title,
+body.champ-fx-soul-fighter .poll-q,
+body.champ-fx-soul-fighter .gw-title,
+body.champ-fx-soul-fighter .sched-title,
+body.champ-fx-soul-fighter .al-author,
+body.champ-fx-soul-fighter .lt-topic,
+body.champ-fx-soul-fighter .qna-author,
+body.champ-fx-soul-fighter .tron-topic,
+body.champ-fx-soul-fighter .val-rank-name { color: #ffffff !important; text-shadow: 2px 2px 0 rgba(255, 31, 113, 0.9), 0 0 10px rgba(34, 211, 238, 0.75) !important; }
+body.champ-fx-soul-fighter .gs-lp-fill,
+body.champ-fx-soul-fighter .lb-lp-fill,
+body.champ-fx-soul-fighter .goal-fill,
+body.champ-fx-soul-fighter .sp-prog-fill,
+body.champ-fx-soul-fighter .val-rr-fill { background: linear-gradient(90deg, #22d3ee, #ff1f71, #facc15) !important; }
+
+body.champ-fx-blossom-springs .msg-row {
+  background:
+    linear-gradient(125deg, rgba(94, 234, 212, 0.14), rgba(251, 113, 133, 0.12) 55%, rgba(253, 230, 138, 0.10)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(10, 18, 28, 0.94)), var(--ct-bg-end, rgba(22, 12, 26, 0.95))) !important;
+  border: 1.5px solid var(--ct-primary, #5eead4) !important;
+  border-left: 4px solid var(--ct-secondary, #fb7185) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 18px rgba(94, 234, 212, 0.24), inset 0 0 12px rgba(251, 113, 133, 0.12) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-blossom-springs ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 16% 16%, rgba(94, 234, 212, 0.22), transparent 48%),
+    radial-gradient(circle at 86% 84%, rgba(251, 113, 133, 0.22), transparent 50%),
+    radial-gradient(circle at 82% 16%, rgba(253, 230, 138, 0.16), transparent 44%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(10, 18, 28, 0.94)), var(--ct-bg-end, rgba(22, 12, 26, 0.95))) !important;
+  border: 2px solid var(--ct-primary, #5eead4) !important;
+  border-radius: 16px !important;
+  animation: blossomSpringsGlow 4.4s ease-in-out infinite;
+}
+body.champ-fx-blossom-springs .gs-title,
+body.champ-fx-blossom-springs .gs-champ-name,
+body.champ-fx-blossom-springs .lb-rank,
+body.champ-fx-blossom-springs .sp-title,
+body.champ-fx-blossom-springs .goal-title,
+body.champ-fx-blossom-springs .poll-q,
+body.champ-fx-blossom-springs .gw-title,
+body.champ-fx-blossom-springs .sched-title,
+body.champ-fx-blossom-springs .al-author,
+body.champ-fx-blossom-springs .lt-topic,
+body.champ-fx-blossom-springs .qna-author,
+body.champ-fx-blossom-springs .tron-topic,
+body.champ-fx-blossom-springs .val-rank-name { color: #fff1f2 !important; text-shadow: 0 0 12px rgba(94, 234, 212, 0.78), 0 0 8px rgba(251, 113, 133, 0.55) !important; }
+body.champ-fx-blossom-springs .gs-lp-fill,
+body.champ-fx-blossom-springs .lb-lp-fill,
+body.champ-fx-blossom-springs .goal-fill,
+body.champ-fx-blossom-springs .sp-prog-fill,
+body.champ-fx-blossom-springs .val-rr-fill { background: linear-gradient(90deg, #5eead4, #fb7185, #fde68a) !important; }
 </style>
 <script>
 (function initChampionThemeClient(){
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);

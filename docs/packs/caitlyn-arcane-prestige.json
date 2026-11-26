@@ -1,0 +1,20 @@
+{
+  "id": "caitlyn-arcane-prestige",
+  "name": "Caitlyn — Arcane Prestige Commander",
+  "icon": "🎯",
+  "championMatch": ["caitlyn"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "arcane-prestige",
+  "description": "Piltover Commander royal navy, Prestige champagne gold & Hextech sapphire precision framing across all OBS overlays.",
+  "colors": {
+    "primary": "#f3cf7a",
+    "secondary": "#38bdf8",
+    "tertiary": "#fef9c3",
+    "bgStart": "rgba(9, 14, 30, 0.96)",
+    "bgEnd": "rgba(15, 20, 38, 0.97)",
+    "text": "#f8fafc",
+    "muted": "#fde68a"
+  },
+  "mapCoverBadge": "COMMANDER // PILTOVER PRESTIGE 🎯"
+}

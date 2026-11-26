@@ -1,0 +1,20 @@
+{
+  "id": "elise-black-rose",
+  "name": "Elise — Masque of the Black Rose",
+  "icon": "🥀",
+  "championMatch": ["elise"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "black-rose",
+  "description": "Noxian velvet crimson, antique masquerade gold & shadow-rose plum with gothic diamond edges across all OBS overlays.",
+  "colors": {
+    "primary": "#e11d48",
+    "secondary": "#d4af37",
+    "tertiary": "#9333ea",
+    "bgStart": "rgba(16, 4, 10, 0.97)",
+    "bgEnd": "rgba(10, 4, 14, 0.98)",
+    "text": "#fff1f2",
+    "muted": "#fda4af"
+  },
+  "mapCoverBadge": "BLACK ROSE // MASQUERADE 🥀"
+}

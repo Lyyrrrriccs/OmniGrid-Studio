@@ -1,0 +1,20 @@
+{
+  "id": "diana-prestige-dark-cosmic",
+  "name": "Diana — Prestige Dark Cosmic",
+  "icon": "🌙",
+  "championMatch": ["diana"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "prestige-cosmic",
+  "description": "Celestial eclipse gold, astral amethyst & starlight platinum with lunar prestige bevels across all OBS overlays.",
+  "colors": {
+    "primary": "#facc15",
+    "secondary": "#c084fc",
+    "tertiary": "#e0e7ff",
+    "bgStart": "rgba(10, 7, 24, 0.97)",
+    "bgEnd": "rgba(16, 10, 32, 0.98)",
+    "text": "#faf5ff",
+    "muted": "#fde68a"
+  },
+  "mapCoverBadge": "PRESTIGE // DARK COSMIC 🌙"
+}
