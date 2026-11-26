@@ -37,7 +37,7 @@ function sanitizePack(raw = {}) {
   const name = String(raw.name || '').trim().slice(0, 80);
   if (!id || !name) return null;
   const c = raw.colors && typeof raw.colors === 'object' ? raw.colors : {};
-  const allowedEffects = ['none', 'jinx-glitch', 'kda-firestarter', 'kda-all-out', 'risen-legend', 'inkshadow', 'dark-cosmic', 'black-rose', 'spirit-blossom', 'nightbringer', 'project-cyber', 'ruined-mist', 'neon-pulse', 'hextech'];
+  const allowedEffects = ['none', 'jinx-glitch', 'kda-firestarter', 'kda-all-out', 'risen-legend', 'inkshadow', 'dark-cosmic', 'black-rose', 'ravenborn', 'spirit-blossom', 'nightbringer', 'project-cyber', 'ruined-mist', 'neon-pulse', 'hextech'];
   const eff = allowedEffects.includes(String(raw.effect || '')) ? String(raw.effect) : 'none';
   return {
     id,

@@ -1,0 +1,20 @@
+{
+  "id": "leblanc-ravenborn",
+  "name": "LeBlanc — Ravenborn",
+  "icon": "🪶",
+  "championMatch": ["leblanc"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "ravenborn",
+  "description": "Gothic raven-feather indigo, spectral arcane teal glow & moonlit silver edges across all OBS overlays.",
+  "colors": {
+    "primary": "#2dd4bf",
+    "secondary": "#8b5cf6",
+    "tertiary": "#e2e8f0",
+    "bgStart": "rgba(7, 10, 20, 0.97)",
+    "bgEnd": "rgba(12, 7, 24, 0.98)",
+    "text": "#f0fdfa",
+    "muted": "#99f6e4"
+  },
+  "mapCoverBadge": "RAVENBORN // DECEIVER 🪶"
+}
