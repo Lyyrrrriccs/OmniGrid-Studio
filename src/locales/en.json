@@ -933,7 +933,14 @@
       "pv_title": "👁️ Live Chat Preview",
       "pv_hint": "Shows your changes to font size, spacing, opacity, dividers & theme live immediately.",
       "pv_obs": "🎥 OBS Overlay",
-      "pv_app": "💬 App Chat"
+      "pv_app": "💬 App Chat",
+      "gw_drawer_title": "🎁 Live Giveaway & Raffle",
+      "gw_drawer_sub": "Chat stays visible on the left — viewers type the keyword.",
+      "cm_title": "🚩 Multiple Clip Markers & Segments (",
+      "cm_now": "🚩 Mark Now",
+      "cm_seg": "➕ Save Range",
+      "cm_all916": "📱 Export All 9:16",
+      "cm_all169": "✂️ Trim All 16:9"
     }
   },
   "titles": {

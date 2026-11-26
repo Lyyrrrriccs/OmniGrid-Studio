@@ -4604,11 +4604,18 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   }
 
   btnOpen?.addEventListener('click', async () => {
-    modal.classList.remove('hidden');
-    const res = await window.omnichat.giveawayAction({ action: 'get' });
-    if (res?.giveaway) renderGw(res.giveaway);
+    const willOpen = modal.classList.contains('hidden');
+    modal.classList.toggle('hidden', !willOpen);
+    btnOpen.classList.toggle('active', willOpen);
+    if (willOpen) {
+      const res = await window.omnichat.giveawayAction({ action: 'get' });
+      if (res?.giveaway) renderGw(res.giveaway);
+    }
   });
-  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  btnClose?.addEventListener('click', () => {
+    modal.classList.add('hidden');
+    btnOpen?.classList.remove('active');
+  });
 
   document.getElementById('btnGwStart')?.addEventListener('click', async () => {
     const res = await window.omnichat.giveawayAction({
@@ -9274,4 +9281,193 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   document.getElementById('btnOpenConfig')?.addEventListener('click', () => setTimeout(renderPreview, 60));
   window.omnichat.onInitState?.(() => setTimeout(renderPreview, 120));
   renderPreview();
+})();
+
+(() => {
+  const videoEl = document.getElementById('clipStudioVideo');
+  const numStart = document.getElementById('numClipStart');
+  const numEnd = document.getElementById('numClipEnd');
+  const rngStart = document.getElementById('rngClipStart');
+  const rngEnd = document.getElementById('rngClipEnd');
+  const selLayout = document.getElementById('selClipLayout');
+  const markersLayer = document.getElementById('clipTimelineMarkersLayer');
+  const listEl = document.getElementById('clipMarkersList');
+  const countEl = document.getElementById('clipMarkerCount');
+  const statusEl = document.getElementById('clipStudioStatus');
+  const btnAddNow = document.getElementById('btnClipAddMarkerNow');
+  const btnAddSeg = document.getElementById('btnClipAddSegment');
+  const btnExpAll = document.getElementById('btnClipExportAllShorts');
+  const btnTrimAll = document.getElementById('btnClipTrimAll');
+  const btnClear = document.getElementById('btnClipClearMarkers');
+  if (!videoEl || !listEl) return;
+
+  let markers = [];
+  let lastVideoSrc = '';
+
+  const fmtTime = (sec) => {
+    const s = Math.max(0, Number(sec) || 0);
+    const m = Math.floor(s / 60);
+    const r = (s % 60).toFixed(1).padStart(4, '0');
+    return `${String(m).padStart(2, '0')}:${r}`;
+  };
+
+  const getActiveFilePath = () => {
+    const raw = videoEl.getAttribute('src') || '';
+    if (!raw) return '';
+    try {
+      const u = new URL(raw);
+      return decodeURIComponent(u.pathname).replace(/^\/([A-Za-z]:)/, '$1');
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const applyRangeToControls = (startSec, endSec) => {
+    const s = Math.max(0, Number(startSec) || 0);
+    const e = Math.max(s + 0.5, Number(endSec) || s + 10);
+    if (numStart) { numStart.value = s.toFixed(1); numStart.dispatchEvent(new Event('input')); }
+    if (numEnd) { numEnd.value = e.toFixed(1); numEnd.dispatchEvent(new Event('input')); }
+    if (rngStart) rngStart.value = s.toFixed(1);
+    if (rngEnd) rngEnd.value = e.toFixed(1);
+  };
+
+  const renderMarkers = () => {
+    const dur = Number.isFinite(videoEl.duration) && videoEl.duration > 0 ? videoEl.duration : 30;
+    if (countEl) countEl.textContent = String(markers.length);
+    if (btnExpAll) btnExpAll.disabled = markers.length === 0;
+    if (btnTrimAll) btnTrimAll.disabled = markers.length === 0;
+    if (btnClear) btnClear.disabled = markers.length === 0;
+
+    if (markersLayer) {
+      markersLayer.innerHTML = '';
+      markers.forEach((m) => {
+        const pin = document.createElement('div');
+        pin.className = 'clip-marker-pin';
+        const leftPct = Math.max(0, Math.min(100, (m.start / dur) * 100));
+        const widthPct = Math.max(1, Math.min(100 - leftPct, ((m.end - m.start) / dur) * 100));
+        pin.style.left = `${leftPct}%`;
+        pin.style.width = `${widthPct}%`;
+        pin.title = `${m.label}: ${fmtTime(m.start)} – ${fmtTime(m.end)}`;
+        markersLayer.appendChild(pin);
+      });
+    }
+
+    listEl.innerHTML = '';
+    if (!markers.length) {
+      const hint = document.createElement('div');
+      hint.style.color = '#64748b';
+      hint.textContent = 'Noch keine Marker gesetzt – spiele das Video ab und klicke „🚩 Marker jetzt“ oder „➕ Auswahl merken“.';
+      listEl.appendChild(hint);
+      return;
+    }
+
+    markers.forEach((m, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(30,41,59,0.78); border: 1px solid rgba(251,191,36,0.25);';
+      const idxEl = document.createElement('span');
+      idxEl.style.cssText = 'font-weight: 800; color: #fde047; font-size: 11px;';
+      idxEl.textContent = `#${idx + 1}`;
+
+      const lblInp = document.createElement('input');
+      lblInp.type = 'text';
+      lblInp.value = m.label;
+      lblInp.style.cssText = 'flex: 1; min-width: 90px; padding: 3px 6px; font-size: 11px;';
+      lblInp.addEventListener('input', () => { m.label = lblInp.value; });
+
+      const timeEl = document.createElement('span');
+      timeEl.style.cssText = 'font-family: ui-monospace, monospace; font-size: 11px; color: #94a3b8; white-space: nowrap;';
+      timeEl.textContent = `${fmtTime(m.start)} – ${fmtTime(m.end)}`;
+
+      const mkBtn = (txt, title, fn) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn-sm';
+        b.style.cssText = 'padding: 2px 6px; font-size: 10.5px;';
+        b.textContent = txt;
+        b.title = title;
+        b.addEventListener('click', fn);
+        return b;
+      };
+
+      const btnPlay = mkBtn('▶', 'Segment anspringen & abspielen', () => {
+        applyRangeToControls(m.start, m.end);
+        document.getElementById('btnClipPlayRange')?.click();
+      });
+      const btnLoad = mkBtn('📍', 'In Timeline-Regler laden', () => applyRangeToControls(m.start, m.end));
+      const btnDel = mkBtn('🗑️', 'Marker entfernen', () => { markers.splice(idx, 1); renderMarkers(); });
+
+      row.append(idxEl, lblInp, timeEl, btnPlay, btnLoad, btnDel);
+      listEl.appendChild(row);
+    });
+  };
+
+  videoEl.addEventListener('loadedmetadata', () => {
+    const src = videoEl.getAttribute('src') || '';
+    if (src && src !== lastVideoSrc) {
+      lastVideoSrc = src;
+      markers = [];
+    }
+    renderMarkers();
+  });
+
+  btnAddNow?.addEventListener('click', () => {
+    const dur = Number.isFinite(videoEl.duration) && videoEl.duration > 0 ? videoEl.duration : 30;
+    const now = Number(videoEl.currentTime || 0);
+    const start = Math.max(0, now - 5);
+    const end = Math.min(dur, Math.max(start + 3, now + 10));
+    markers.push({ id: `m_${Date.now()}`, label: `Highlight ${markers.length + 1}`, start, end });
+    markers.sort((a, b) => a.start - b.start);
+    renderMarkers();
+  });
+
+  btnAddSeg?.addEventListener('click', () => {
+    const start = Math.max(0, parseFloat(numStart?.value || '0') || 0);
+    const end = Math.max(start + 0.5, parseFloat(numEnd?.value || String(start + 10)) || start + 10);
+    markers.push({ id: `m_${Date.now()}`, label: `Clip ${markers.length + 1}`, start, end });
+    markers.sort((a, b) => a.start - b.start);
+    renderMarkers();
+  });
+
+  btnClear?.addEventListener('click', () => {
+    markers = [];
+    renderMarkers();
+  });
+
+  const exportAllMarkers = async (mode) => {
+    const filePath = getActiveFilePath();
+    if (!filePath || !markers.length) return;
+    if (btnExpAll) btnExpAll.disabled = true;
+    if (btnTrimAll) btnTrimAll.disabled = true;
+    let okCount = 0;
+    for (let i = 0; i < markers.length; i++) {
+      const m = markers[i];
+      if (statusEl) {
+        statusEl.style.color = '#38bdf8';
+        statusEl.textContent = `⏳ Exportiere Marker ${i + 1}/${markers.length} (${m.label})...`;
+      }
+      const res = mode === 'short'
+        ? await window.omnichat.clipStudioExportShort({
+            inputPath: filePath,
+            startSec: m.start,
+            durationSec: Math.max(0.5, m.end - m.start),
+            layout: selLayout?.value || 'blur_bg'
+          })
+        : await window.omnichat.clipStudioTrimOriginal({
+            inputPath: filePath,
+            startSec: m.start,
+            durationSec: Math.max(0.5, m.end - m.start)
+          });
+      if (res?.ok) okCount += 1;
+    }
+    if (statusEl) {
+      statusEl.style.color = okCount > 0 ? '#4ade80' : '#f87171';
+      statusEl.textContent = `✅ ${okCount}/${markers.length} Marker erfolgreich exportiert!`;
+    }
+    document.getElementById('btnClipRefresh')?.click();
+    renderMarkers();
+  };
+
+  btnExpAll?.addEventListener('click', () => exportAllMarkers('short'));
+  btnTrimAll?.addEventListener('click', () => exportAllMarkers('trim'));
+  renderMarkers();
 })();
