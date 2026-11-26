@@ -455,6 +455,7 @@
             <span data-en="155 px Open Overlay Space (Music, Goals, Sponsors, Build Bar)" data-de="155 px freier Platz unten (Musik, Goals, Sponsoren, Build-Bar)">155 px Open Overlay Space (Music, Goals, Sponsors, Build Bar)</span>
             <span id="csAnimBadge" class="text-xs font-bold text-pink-300">✨ motes</span>
           </div>
+          <img id="csCharArt" alt="" class="hidden absolute right-3 bottom-1 h-44 w-auto z-10 pointer-events-none" style="filter: drop-shadow(0 0 14px var(--ct-primary, #ff3b5c)) drop-shadow(0 6px 12px rgba(0,0,0,0.85));" />
         </div>
 
         <div id="skinBannerWrap" class="pv-skin-banner hidden">
@@ -631,7 +632,7 @@
 
     const SKIN_ART_MAP = {
       'ahri-spirit-blossom': { championId: 'Ahri', skinQuery: 'Spirit Blossom' },
-      'akali-kda-firestarter-ignition': { championId: 'Akali', skinQuery: 'Firestarter Ignition', directUrl: './assets/akali-kda-firestarter-ignition.jpg' },
+      'akali-kda-firestarter-ignition': { championId: 'Akali', skinQuery: 'Firestarter Ignition', directUrl: './assets/akali-kda-firestarter-ignition.jpg', charArtUrl: './assets/akali-ignition-art.png' },
       'caitlyn-arcane-prestige': { championId: 'Caitlyn', skinQuery: 'Prestige Arcane Commander' },
       'darius-divine-god-king': { championId: 'Darius', skinQuery: 'God-King' },
       'diana-prestige-dark-cosmic': { championId: 'Diana', skinQuery: 'Dark Cosmic' },
@@ -658,6 +659,7 @@
     const pvMapSplash = document.getElementById('pvMapSplash');
     const clientSceneStage = document.getElementById('clientSceneStage');
     const csSplash = document.getElementById('csSplash');
+    const csCharArt = document.getElementById('csCharArt');
     const csCanvas = document.getElementById('csCanvas');
     const csCtx = csCanvas.getContext('2d');
     const csAnimBadge = document.getElementById('csAnimBadge');
@@ -782,6 +784,7 @@
       pvMapSplash.style.backgroundImage = 'none';
       csSplash.style.backgroundImage = 'none';
       csSplash.classList.remove('visible');
+      csCharArt.classList.add('hidden');
       skinBannerWrap.classList.add('hidden');
       const parts = pack.name.split('—').map((s) => s.trim());
       pvChampName.textContent = isDefault ? 'Jinx • ADC' : (parts[0] + ' • LIVE');
@@ -809,6 +812,11 @@
         btnDownload.download = pack.id + '.json';
         btnDownload.classList.remove('hidden');
 
+        const artCfg = SKIN_ART_MAP[pack.id];
+        if (artCfg && artCfg.charArtUrl) {
+          csCharArt.src = artCfg.charArtUrl;
+          csCharArt.classList.remove('hidden');
+        }
         resolveSkinArt(pack.id).then((art) => {
           if (!art || seq !== activeApplySeq) return;
           skinBannerImg.onerror = () => {
