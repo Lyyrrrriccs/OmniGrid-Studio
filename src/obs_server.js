@@ -3291,11 +3291,21 @@ const OBS_SPONSORS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const ALL_OVERLAY_CARDS_SEL = [
+  '.gs-card', '.lb-bar', '.map-cover', '.sp-card', '.goal-wrap', '.poll-card',
+  '.gw-card', '.sched-card', '.alert-card', '.lt-wrap', '.qna-card',
+  '.tron-bar', '.val-bar', '.cover'
+];
+
 const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
 @keyframes jinxGlitchBorder {
   0%, 92%, 100% { box-shadow: 0 0 22px rgba(255, 42, 133, 0.45), inset 0 0 14px rgba(57, 255, 20, 0.14); border-color: var(--ct-primary, #ff2a85); }
   94% { box-shadow: -3px 0 26px rgba(57, 255, 20, 0.7), 3px 0 26px rgba(255, 42, 133, 0.7); border-color: var(--ct-secondary, #39ff14); transform: translateX(1px); }
   96% { box-shadow: 3px 0 24px rgba(0, 245, 212, 0.65), -2px 0 24px rgba(255, 42, 133, 0.7); border-color: var(--ct-tertiary, #00f5d4); transform: translateX(-1px); }
+}
+@keyframes kdaFirePulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(217, 70, 239, 0.52), inset 0 0 16px rgba(0, 245, 255, 0.16); border-color: var(--ct-primary, #d946ef); }
+  50% { box-shadow: 0 0 28px rgba(0, 245, 255, 0.62), 0 0 14px rgba(255, 107, 0, 0.45), inset 0 0 18px rgba(217, 70, 239, 0.22); border-color: var(--ct-secondary, #00f5ff); }
 }
 body.champ-fx-jinx-glitch .msg-row {
   background:
@@ -3309,31 +3319,15 @@ body.champ-fx-jinx-glitch .msg-row {
   margin-bottom: 5px;
   box-shadow: 0 0 16px rgba(255, 42, 133, 0.28), -2px 0 0 rgba(57, 255, 20, 0.35);
 }
-body.champ-fx-jinx-glitch .author {
-  text-shadow: 0 0 9px rgba(255, 42, 133, 0.65), 1px 0 0 rgba(57, 255, 20, 0.45);
-  letter-spacing: 0.04em;
-}
-body.champ-fx-jinx-glitch .badge {
-  background: rgba(255, 42, 133, 0.24) !important;
-  border: 1px solid var(--ct-secondary, #39ff14) !important;
-  color: var(--ct-secondary, #39ff14) !important;
-}
+body.champ-fx-jinx-glitch .author { text-shadow: 0 0 9px rgba(255, 42, 133, 0.65), 1px 0 0 rgba(57, 255, 20, 0.45); letter-spacing: 0.04em; }
+body.champ-fx-jinx-glitch .badge { background: rgba(255, 42, 133, 0.24) !important; border: 1px solid var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch #pinnedBox {
   background: linear-gradient(135deg, rgba(24, 6, 32, 0.97), rgba(8, 22, 24, 0.97)) !important;
   border: 2px solid var(--ct-primary, #ff2a85) !important;
   animation: jinxGlitchBorder 4.5s infinite;
 }
 body.champ-fx-jinx-glitch .pin-label { color: var(--ct-secondary, #39ff14) !important; }
-body.champ-fx-jinx-glitch .gs-card,
-body.champ-fx-jinx-glitch .lb-bar,
-body.champ-fx-jinx-glitch .map-cover,
-body.champ-fx-jinx-glitch .sp-card,
-body.champ-fx-jinx-glitch .goal-card,
-body.champ-fx-jinx-glitch .poll-card,
-body.champ-fx-jinx-glitch .gw-card,
-body.champ-fx-jinx-glitch .sched-card,
-body.champ-fx-jinx-glitch .alert-box,
-body.champ-fx-jinx-glitch .cover {
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-jinx-glitch ${s}`).join(',\n')} {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.09) 0 10px, rgba(57, 255, 20, 0.06) 10px 20px, transparent 20px 40px),
     linear-gradient(145deg, var(--ct-bg-start, rgba(18, 6, 26, 0.96)), var(--ct-bg-end, rgba(6, 18, 22, 0.96))) !important;
@@ -3348,32 +3342,73 @@ body.champ-fx-jinx-glitch .gs-card::after,
 body.champ-fx-jinx-glitch .map-cover::after { border-color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .gs-head,
 body.champ-fx-jinx-glitch .gs-matches-wrap,
-body.champ-fx-jinx-glitch .lb-elo { border-color: rgba(255, 42, 133, 0.45) !important; }
+body.champ-fx-jinx-glitch .lb-elo,
+body.champ-fx-jinx-glitch .sched-head { border-color: rgba(255, 42, 133, 0.45) !important; }
 body.champ-fx-jinx-glitch .gs-title,
 body.champ-fx-jinx-glitch .gs-champ-name,
 body.champ-fx-jinx-glitch .lb-rank,
-body.champ-fx-jinx-glitch .map-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
+body.champ-fx-jinx-glitch .map-title,
+body.champ-fx-jinx-glitch .sp-title,
+body.champ-fx-jinx-glitch .goal-title,
+body.champ-fx-jinx-glitch .poll-q,
+body.champ-fx-jinx-glitch .gw-title,
+body.champ-fx-jinx-glitch .sched-title,
+body.champ-fx-jinx-glitch .al-author,
+body.champ-fx-jinx-glitch .lt-topic,
+body.champ-fx-jinx-glitch .qna-author,
+body.champ-fx-jinx-glitch .tron-topic,
+body.champ-fx-jinx-glitch .val-rank-name,
+body.champ-fx-jinx-glitch .cover-title { color: #ffffff !important; text-shadow: 0 0 12px rgba(255, 42, 133, 0.8), 2px 0 0 rgba(57, 255, 20, 0.55) !important; }
 body.champ-fx-jinx-glitch .gs-badge,
-body.champ-fx-jinx-glitch .map-badge { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .map-badge,
+body.champ-fx-jinx-glitch .sp-badge,
+body.champ-fx-jinx-glitch .sp-tag,
+body.champ-fx-jinx-glitch .gw-badge,
+body.champ-fx-jinx-glitch .lt-live,
+body.champ-fx-jinx-glitch .lt-mood,
+body.champ-fx-jinx-glitch .qna-pill,
+body.champ-fx-jinx-glitch .tron-phase { background: rgba(57, 255, 20, 0.16) !important; border-color: var(--ct-secondary, #39ff14) !important; color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-skin-name,
 body.champ-fx-jinx-glitch .lb-lp,
-body.champ-fx-jinx-glitch .gs-rank-lp { color: var(--ct-secondary, #39ff14) !important; }
+body.champ-fx-jinx-glitch .gs-rank-lp,
+body.champ-fx-jinx-glitch .goal-pct,
+body.champ-fx-jinx-glitch .gw-winner,
+body.champ-fx-jinx-glitch .sched-next,
+body.champ-fx-jinx-glitch .sp-url,
+body.champ-fx-jinx-glitch .lt-ticker,
+body.champ-fx-jinx-glitch .tron-ticker { color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-elo-sub,
 body.champ-fx-jinx-glitch .gs-matches-lbl,
 body.champ-fx-jinx-glitch .lb-meta,
-body.champ-fx-jinx-glitch .map-sub { color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .map-sub,
+body.champ-fx-jinx-glitch .sp-artist,
+body.champ-fx-jinx-glitch .goal-nums,
+body.champ-fx-jinx-glitch .lt-sub,
+body.champ-fx-jinx-glitch .val-rank-lbl,
+body.champ-fx-jinx-glitch .val-box-lbl,
+body.champ-fx-jinx-glitch .tron-m-lbl,
+body.champ-fx-jinx-glitch .cover-sub { color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .gs-champ-icon,
 body.champ-fx-jinx-glitch .map-icon,
 body.champ-fx-jinx-glitch .gs-rank-box,
-body.champ-fx-jinx-glitch .lb-slot { border-color: var(--ct-primary, #ff2a85) !important; }
+body.champ-fx-jinx-glitch .lb-slot,
+body.champ-fx-jinx-glitch .sp-cover,
+body.champ-fx-jinx-glitch .gw-slot,
+body.champ-fx-jinx-glitch .val-box,
+body.champ-fx-jinx-glitch .tron-metric { border-color: var(--ct-primary, #ff2a85) !important; }
 body.champ-fx-jinx-glitch .lb-slot.trinket,
 body.champ-fx-jinx-glitch .gs-match-slot.win { border-color: var(--ct-secondary, #39ff14) !important; }
 body.champ-fx-jinx-glitch .gs-match-slot.win .gs-match-badge { background: var(--ct-secondary, #39ff14) !important; color: #05080f !important; }
 body.champ-fx-jinx-glitch .gs-cell { border-color: rgba(255, 42, 133, 0.48) !important; border-left: 3px solid var(--ct-secondary, #39ff14) !important; background: rgba(16, 8, 24, 0.9) !important; }
 body.champ-fx-jinx-glitch .gs-lbl { color: var(--ct-primary, #ff2a85) !important; }
-body.champ-fx-jinx-glitch .gs-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
+body.champ-fx-jinx-glitch .gs-val,
+body.champ-fx-jinx-glitch .val-box-val,
+body.champ-fx-jinx-glitch .tron-m-val { color: #ffffff !important; text-shadow: 0 0 8px rgba(0, 245, 212, 0.55); }
 body.champ-fx-jinx-glitch .gs-lp-fill,
-body.champ-fx-jinx-glitch .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #ff2a85), var(--ct-secondary, #39ff14)) !important; }
+body.champ-fx-jinx-glitch .lb-lp-fill,
+body.champ-fx-jinx-glitch .goal-fill,
+body.champ-fx-jinx-glitch .sp-prog-fill,
+body.champ-fx-jinx-glitch .val-rr-fill { background: linear-gradient(90deg, var(--ct-primary, #ff2a85), var(--ct-secondary, #39ff14)) !important; }
 
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .msg-row {
   background: linear-gradient(135deg, var(--ct-bg-start, rgba(16, 16, 28, 0.94)), var(--ct-bg-end, rgba(10, 14, 24, 0.95))) !important;
@@ -3388,16 +3423,7 @@ body.champ-pack-active:not(.champ-fx-jinx-glitch) #pinnedBox {
   border: 2px solid var(--ct-primary, #38bdf8) !important;
 }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .pin-label { color: var(--ct-secondary, #a855f7) !important; }
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-bar,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .poll-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-card,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .alert-box,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover {
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-pack-active:not(.champ-fx-jinx-glitch) ${s}`).join(',\n')} {
   background: linear-gradient(145deg, var(--ct-bg-start, rgba(16, 16, 28, 0.96)), var(--ct-bg-end, rgba(10, 14, 24, 0.96))) !important;
   border: 2px solid var(--ct-primary, #38bdf8) !important;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.06) !important;
@@ -3408,43 +3434,73 @@ body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-card::after,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-cover::after { border-color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-head,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-matches-wrap,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-elo { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-elo,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-head { border-color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-title,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-champ-name,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-rank,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-title { color: var(--ct-text, #f8fafc) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .poll-q,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-title,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .al-author,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-topic,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .qna-author,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-topic,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-rank-name,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover-title { color: var(--ct-text, #f8fafc) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lbl,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-matches-lbl,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-elo-sub,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-meta,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-sub { color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-sub,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-artist,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-nums,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-sub,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-rank-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-box-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-m-lbl,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .cover-sub { color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-badge,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-badge { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-tag,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-badge,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-live,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-mood,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .qna-pill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-phase { border-color: var(--ct-secondary, #a855f7) !important; color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-skin-name,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-lp { color: var(--ct-secondary, #a855f7) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-lp,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-pct,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-winner,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sched-next,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-url,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lt-ticker,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-ticker { color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-champ-icon,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .map-icon,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-rank-box,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot { border-color: var(--ct-primary, #38bdf8) !important; }
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-cover,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .gw-slot,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-box,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .tron-metric { border-color: var(--ct-primary, #38bdf8) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-cell { border-color: var(--ct-primary, #38bdf8) !important; border-left: 3px solid var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-slot.trinket,
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-match-slot.win { border-color: var(--ct-secondary, #a855f7) !important; }
 body.champ-pack-active:not(.champ-fx-jinx-glitch) .gs-lp-fill,
-body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
-body.champ-fx-spirit-blossom .msg-row,
-body.champ-fx-spirit-blossom .gs-card,
-body.champ-fx-spirit-blossom .lb-bar { border-radius: 14px !important; }
-body.champ-fx-nightbringer .msg-row,
-body.champ-fx-nightbringer .gs-card,
-body.champ-fx-nightbringer .lb-bar,
-body.champ-fx-project-cyber .msg-row,
-body.champ-fx-project-cyber .gs-card,
-body.champ-fx-project-cyber .lb-bar { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
-@keyframes kdaFirePulse {
-  0%, 100% { box-shadow: 0 0 22px rgba(217, 70, 239, 0.52), inset 0 0 16px rgba(0, 245, 255, 0.16); border-color: var(--ct-primary, #d946ef); }
-  50% { box-shadow: 0 0 28px rgba(0, 245, 255, 0.62), 0 0 14px rgba(255, 107, 0, 0.45), inset 0 0 18px rgba(217, 70, 239, 0.22); border-color: var(--ct-secondary, #00f5ff); }
-}
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .lb-lp-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .goal-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .sp-prog-fill,
+body.champ-pack-active:not(.champ-fx-jinx-glitch) .val-rr-fill { background: linear-gradient(90deg, var(--ct-primary, #38bdf8), var(--ct-secondary, #a855f7)) !important; }
+
+${['.msg-row', ...ALL_OVERLAY_CARDS_SEL].map((s) => `body.champ-fx-spirit-blossom ${s}`).join(',\n')} { border-radius: 14px !important; }
+${['.msg-row', ...ALL_OVERLAY_CARDS_SEL].map((s) => `body.champ-fx-nightbringer ${s},\nbody.champ-fx-project-cyber ${s}`).join(',\n')} { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-radius: 0 !important; }
+
 body.champ-fx-kda-firestarter .msg-row {
   background:
     linear-gradient(125deg, rgba(217, 70, 239, 0.14), rgba(0, 245, 255, 0.08) 55%, rgba(255, 107, 0, 0.10)),
@@ -3453,16 +3509,7 @@ body.champ-fx-kda-firestarter .msg-row {
   border-radius: 0 !important;
   box-shadow: 0 0 16px rgba(217, 70, 239, 0.3), -2px 0 0 rgba(0, 245, 255, 0.55) !important;
 }
-body.champ-fx-kda-firestarter .gs-card,
-body.champ-fx-kda-firestarter .lb-bar,
-body.champ-fx-kda-firestarter .map-cover,
-body.champ-fx-kda-firestarter .sp-card,
-body.champ-fx-kda-firestarter .goal-card,
-body.champ-fx-kda-firestarter .poll-card,
-body.champ-fx-kda-firestarter .gw-card,
-body.champ-fx-kda-firestarter .sched-card,
-body.champ-fx-kda-firestarter .alert-box,
-body.champ-fx-kda-firestarter .cover {
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-kda-firestarter ${s}`).join(',\n')} {
   background:
     radial-gradient(circle at 85% 15%, rgba(255, 107, 0, 0.18), transparent 45%),
     radial-gradient(circle at 15% 85%, rgba(0, 245, 255, 0.14), transparent 50%),
@@ -3473,9 +3520,22 @@ body.champ-fx-kda-firestarter .cover {
 }
 body.champ-fx-kda-firestarter .gs-title,
 body.champ-fx-kda-firestarter .gs-champ-name,
-body.champ-fx-kda-firestarter .lb-rank { text-shadow: 0 0 12px rgba(217, 70, 239, 0.85), 0 0 6px rgba(0, 245, 255, 0.55) !important; }
+body.champ-fx-kda-firestarter .lb-rank,
+body.champ-fx-kda-firestarter .sp-title,
+body.champ-fx-kda-firestarter .goal-title,
+body.champ-fx-kda-firestarter .poll-q,
+body.champ-fx-kda-firestarter .gw-title,
+body.champ-fx-kda-firestarter .sched-title,
+body.champ-fx-kda-firestarter .al-author,
+body.champ-fx-kda-firestarter .lt-topic,
+body.champ-fx-kda-firestarter .qna-author,
+body.champ-fx-kda-firestarter .tron-topic,
+body.champ-fx-kda-firestarter .val-rank-name { text-shadow: 0 0 12px rgba(217, 70, 239, 0.85), 0 0 6px rgba(0, 245, 255, 0.55) !important; }
 body.champ-fx-kda-firestarter .gs-lp-fill,
-body.champ-fx-kda-firestarter .lb-lp-fill { background: linear-gradient(90deg, #d946ef, #00f5ff, #ff6b00) !important; }
+body.champ-fx-kda-firestarter .lb-lp-fill,
+body.champ-fx-kda-firestarter .goal-fill,
+body.champ-fx-kda-firestarter .sp-prog-fill,
+body.champ-fx-kda-firestarter .val-rr-fill { background: linear-gradient(90deg, #d946ef, #00f5ff, #ff6b00) !important; }
 </style>
 <script>
 (function initChampionThemeClient(){
