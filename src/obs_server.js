@@ -3315,6 +3315,10 @@ const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
   0%, 100% { box-shadow: 0 0 22px rgba(20, 241, 198, 0.42), inset 0 0 18px rgba(255, 59, 78, 0.14); border-color: var(--ct-primary, #14f1c6); }
   50% { box-shadow: 0 0 28px rgba(255, 59, 78, 0.48), 0 0 14px rgba(20, 241, 198, 0.45), inset 0 0 20px rgba(20, 241, 198, 0.18); border-color: var(--ct-secondary, #ff3b4e); }
 }
+@keyframes kdaAllOutShimmer {
+  0%, 100% { box-shadow: 0 0 24px rgba(103, 232, 249, 0.48), inset 0 0 18px rgba(244, 114, 182, 0.18); border-color: var(--ct-primary, #67e8f9); }
+  50% { box-shadow: 0 0 30px rgba(244, 114, 182, 0.55), 0 0 18px rgba(196, 181, 253, 0.5), inset 0 0 20px rgba(103, 232, 249, 0.22); border-color: var(--ct-secondary, #f472b6); }
+}
 body.champ-fx-jinx-glitch .msg-row {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.08) 0 8px, rgba(57, 255, 20, 0.05) 8px 16px, transparent 16px 32px),
@@ -3623,12 +3627,50 @@ body.champ-fx-inkshadow .lb-lp-fill,
 body.champ-fx-inkshadow .goal-fill,
 body.champ-fx-inkshadow .sp-prog-fill,
 body.champ-fx-inkshadow .val-rr-fill { background: linear-gradient(90deg, #14f1c6, #f8fafc, #ff3b4e) !important; }
+
+body.champ-fx-kda-all-out .msg-row {
+  background:
+    linear-gradient(125deg, rgba(103, 232, 249, 0.14), rgba(196, 181, 253, 0.12) 50%, rgba(244, 114, 182, 0.14)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(14, 10, 32, 0.95)), var(--ct-bg-end, rgba(10, 18, 38, 0.96))) !important;
+  border: 1.5px solid var(--ct-primary, #67e8f9) !important;
+  border-left: 4px solid var(--ct-secondary, #f472b6) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 18px rgba(103, 232, 249, 0.25), inset 0 0 10px rgba(244, 114, 182, 0.12) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-kda-all-out ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(103, 232, 249, 0.22), transparent 46%),
+    radial-gradient(circle at 86% 85%, rgba(244, 114, 182, 0.22), transparent 48%),
+    radial-gradient(circle at 55% 45%, rgba(196, 181, 253, 0.10), transparent 60%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(14, 10, 32, 0.95)), var(--ct-bg-end, rgba(10, 18, 38, 0.96))) !important;
+  border: 2px solid var(--ct-primary, #67e8f9) !important;
+  border-radius: 14px !important;
+  animation: kdaAllOutShimmer 3.8s ease-in-out infinite;
+}
+body.champ-fx-kda-all-out .gs-title,
+body.champ-fx-kda-all-out .gs-champ-name,
+body.champ-fx-kda-all-out .lb-rank,
+body.champ-fx-kda-all-out .sp-title,
+body.champ-fx-kda-all-out .goal-title,
+body.champ-fx-kda-all-out .poll-q,
+body.champ-fx-kda-all-out .gw-title,
+body.champ-fx-kda-all-out .sched-title,
+body.champ-fx-kda-all-out .al-author,
+body.champ-fx-kda-all-out .lt-topic,
+body.champ-fx-kda-all-out .qna-author,
+body.champ-fx-kda-all-out .tron-topic,
+body.champ-fx-kda-all-out .val-rank-name { color: #f8fbff !important; text-shadow: 0 0 12px rgba(103, 232, 249, 0.8), 0 0 8px rgba(244, 114, 182, 0.55) !important; }
+body.champ-fx-kda-all-out .gs-lp-fill,
+body.champ-fx-kda-all-out .lb-lp-fill,
+body.champ-fx-kda-all-out .goal-fill,
+body.champ-fx-kda-all-out .sp-prog-fill,
+body.champ-fx-kda-all-out .val-rr-fill { background: linear-gradient(90deg, #67e8f9, #c4b5fd, #f472b6) !important; }
 </style>
 <script>
 (function initChampionThemeClient(){
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);

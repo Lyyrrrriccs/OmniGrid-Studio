@@ -1,0 +1,20 @@
+{
+  "id": "seraphine-kda-all-out",
+  "name": "Seraphine — K/DA ALL OUT",
+  "icon": "✨",
+  "championMatch": ["seraphine"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "kda-all-out",
+  "description": "Iridescent K/DA ALL OUT crystal prism, starlight pink & holographic ice-cyan stage glow across all OBS overlays.",
+  "colors": {
+    "primary": "#67e8f9",
+    "secondary": "#f472b6",
+    "tertiary": "#c4b5fd",
+    "bgStart": "rgba(14, 10, 32, 0.95)",
+    "bgEnd": "rgba(10, 18, 38, 0.96)",
+    "text": "#f8fbff",
+    "muted": "#bae6fd"
+  },
+  "mapCoverBadge": "K/DA ALL OUT // SUPERSTAR ✨"
+}
