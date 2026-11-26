@@ -1,0 +1,20 @@
+{
+  "id": "kaisa-risen-legend",
+  "name": "Kai'Sa — Risen Legend",
+  "icon": "🏆",
+  "championMatch": ["kaisa", "kai'sa"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "risen-legend",
+  "description": "Hall of Legends Obsidian, Imperial Gold & Royal Crimson plasma aura with prestige diamond-cut edges across all OBS overlays.",
+  "colors": {
+    "primary": "#f5c542",
+    "secondary": "#ff2e55",
+    "tertiary": "#c084fc",
+    "bgStart": "rgba(18, 7, 14, 0.96)",
+    "bgEnd": "rgba(9, 8, 18, 0.97)",
+    "text": "#fff8e7",
+    "muted": "#fde68a"
+  },
+  "mapCoverBadge": "HALL OF LEGENDS // RISEN LEGEND 🏆"
+}
