@@ -6378,31 +6378,39 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
       const vodBtn = document.createElement('button');
       vodBtn.className = 'btn-sm';
-      const isMusicOnly = Boolean(inp.vodExcluded);
-      vodBtn.style.cssText = isMusicOnly
-        ? 'padding:2px 6px; font-size:10px; background:rgba(168,85,247,0.25); border-color:#a855f7; color:#e9d5ff; white-space:nowrap;'
-        : 'padding:2px 6px; font-size:10px; color:#94a3b8; white-space:nowrap;';
-      vodBtn.textContent = isMusicOnly ? '🎵 Nur Live' : '✅ +VOD';
-      vodBtn.title = isMusicOnly
-        ? 'Spur 1 (Live) AN • Spur 2 (VOD/Abruf) AUS — Musik landet nicht im VOD (klicken zum Ändern)'
-        : 'Spur 1 (Live) & Spur 2 (VOD) AN — klicken, um diese Quelle vom VOD/Abruf auszuschließen (DMCA-Schutz)';
-      vodBtn.addEventListener('click', async () => {
-        const nextMusicOnly = !isMusicOnly;
-        const r = await window.omnichat.obsWsAction({
-          action: 'set-input-vod-music-only',
-          inputName: inp.inputName,
-          musicOnly: nextMusicOnly
+      const isMusicLocked = Boolean(inp.isMusicGuess);
+      const isMusicOnly = isMusicLocked || Boolean(inp.vodExcluded);
+      vodBtn.disabled = isMusicLocked;
+      vodBtn.style.cssText = isMusicLocked
+        ? 'padding:2px 6px; font-size:10px; background:rgba(168,85,247,0.28); border-color:#a855f7; color:#e9d5ff; white-space:nowrap; opacity:0.88; cursor:not-allowed;'
+        : isMusicOnly
+          ? 'padding:2px 6px; font-size:10px; background:rgba(168,85,247,0.25); border-color:#a855f7; color:#e9d5ff; white-space:nowrap;'
+          : 'padding:2px 6px; font-size:10px; color:#94a3b8; white-space:nowrap;';
+      vodBtn.textContent = isMusicLocked ? '🔒 Nur Live' : isMusicOnly ? '🎵 Nur Live' : '✅ +VOD';
+      vodBtn.title = isMusicLocked
+        ? 'Musik-Spur fest gesperrt: immer nur im Live-Stream (Spur 1), niemals im VOD (Spur 2)'
+        : isMusicOnly
+          ? 'Spur 1 (Live) AN • Spur 2 (VOD/Abruf) AUS — Musik landet nicht im VOD (klicken zum Ändern)'
+          : 'Spur 1 (Live) & Spur 2 (VOD) AN — klicken, um diese Quelle vom VOD/Abruf auszuschließen (DMCA-Schutz)';
+      if (!isMusicLocked) {
+        vodBtn.addEventListener('click', async () => {
+          const nextMusicOnly = !isMusicOnly;
+          const r = await window.omnichat.obsWsAction({
+            action: 'set-input-vod-music-only',
+            inputName: inp.inputName,
+            musicOnly: nextMusicOnly
+          });
+          if (r?.ok) {
+            setStatus(
+              nextMusicOnly
+                ? `🛡️ „${inp.inputName}“ jetzt auf separater Musik-Spur (Nur Live, NICHT im VOD)!`
+                : `✅ „${inp.inputName}“ wieder im Live-Stream & VOD aktiv.`,
+              nextMusicOnly ? '#c084fc' : '#4ade80'
+            );
+            loadAudioInputs();
+          }
         });
-        if (r?.ok) {
-          setStatus(
-            nextMusicOnly
-              ? `🛡️ „${inp.inputName}“ jetzt auf separater Musik-Spur (Nur Live, NICHT im VOD)!`
-              : `✅ „${inp.inputName}“ wieder im Live-Stream & VOD aktiv.`,
-            nextMusicOnly ? '#c084fc' : '#4ade80'
-          );
-          loadAudioInputs();
-        }
-      });
+      }
 
       row.append(lbl, slider, muteBtn, vodBtn);
       wrap.appendChild(row);

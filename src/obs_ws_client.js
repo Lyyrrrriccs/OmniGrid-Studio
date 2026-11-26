@@ -624,11 +624,21 @@ class ObsWsClient extends EventEmitter {
   async setInputVodMusicOnly(inputName, musicOnly = true) {
     const cleanName = String(inputName || '').trim();
     if (!cleanName) throw new Error('Kein Audio-Gerät angegeben.');
-    const tracks = musicOnly
+    const musicRe = /(spotify|apple\s*music|amazon\s*music|youtube\s*music|music|musik|itunes|tidal|deezer|soundcloud|com\.spotify\.client|com\.apple\.music|com\.amazon\.music)/i;
+    let lockedMusic = musicRe.test(cleanName);
+    if (!lockedMusic) {
+      try {
+        const stRes = await this.call('GetInputSettings', { inputName: cleanName });
+        const st = stRes?.inputSettings || {};
+        lockedMusic = musicRe.test(String(st.application || st.device_id || st.window || ''));
+      } catch (e) {}
+    }
+    const effectiveMusicOnly = lockedMusic ? true : Boolean(musicOnly);
+    const tracks = effectiveMusicOnly
       ? { '1': true, '2': false, '3': true, '4': false, '5': false, '6': false }
       : { '1': true, '2': true, '3': false, '4': false, '5': false, '6': false };
     await this.call('SetInputAudioTracks', { inputName: cleanName, inputAudioTracks: tracks });
-    return { ok: true, inputName: cleanName, vodExcluded: Boolean(musicOnly), audioTracks: tracks };
+    return { ok: true, inputName: cleanName, vodExcluded: effectiveMusicOnly, locked: lockedMusic, audioTracks: tracks };
   }
 
   async setupMusicVodTrack({ sceneName = '', createDedicatedSource = false, musicSourceHint = '' } = {}) {
