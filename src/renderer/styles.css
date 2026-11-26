@@ -1969,6 +1969,88 @@ body.hide-platicons .msg-plat-dot {
   min-width: 0;
   overflow: hidden;
 }
+#cfgTab_design .design-settings-box {
+  grid-row: span 2;
+}
+.chat-preview-stage {
+  position: relative;
+  min-height: 360px;
+  border-radius: 10px;
+  padding: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%, transparent 75%, rgba(148, 163, 184, 0.08) 75%),
+    linear-gradient(45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%, transparent 75%, rgba(148, 163, 184, 0.08) 75%),
+    radial-gradient(circle at 20% 15%, rgba(56, 189, 248, 0.16), transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.14), transparent 50%),
+    #070b14;
+  background-size: 20px 20px, 20px 20px, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 0 0, 10px 10px, 0 0, 0 0, 0 0;
+}
+.chat-preview-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pv-gap, 0px);
+}
+.pv-msg {
+  padding: var(--pv-pad-v, 4px) 9px;
+  font-size: var(--pv-msg-size, 14px);
+  line-height: 1.38;
+  color: #f8fafc;
+  border-bottom: var(--pv-sep-display, 1px) solid var(--pv-sep-color, rgba(255, 255, 255, 0.12));
+  background: var(--pv-item-bg, rgba(13, 17, 26, 0.65));
+  word-break: break-word;
+}
+.chat-preview-stage.pv-bubbles .pv-msg {
+  border-radius: 8px;
+  border-left: 3px solid #9146ff;
+  border-bottom: none;
+}
+.chat-preview-stage.pv-bubbles .pv-msg.twitch { border-left-color: #9146ff; }
+.chat-preview-stage.pv-bubbles .pv-msg.youtube { border-left-color: #ff0033; }
+.chat-preview-stage.pv-bubbles .pv-msg.tiktok { border-left-color: #00f2fe; }
+.chat-preview-stage.pv-theme-lol .chat-preview-feed { gap: 5px; }
+.chat-preview-stage.pv-theme-lol .pv-msg {
+  position: relative;
+  background: linear-gradient(145deg, rgba(9, 20, 40, 0.92), rgba(1, 10, 19, 0.95));
+  border: 1px solid rgba(200, 170, 110, 0.55);
+  border-left: 3px solid #0ac8b9;
+  border-radius: 3px;
+  color: #f0e6d2;
+}
+.chat-preview-stage.pv-theme-lol .pv-author { font-family: Georgia, "Times New Roman", serif; }
+.chat-preview-stage.pv-theme-valorant .chat-preview-feed { gap: 5px; }
+.chat-preview-stage.pv-theme-valorant .pv-msg {
+  background: linear-gradient(135deg, rgba(15, 25, 35, 0.94), rgba(19, 28, 39, 0.94) 80%, rgba(45, 16, 22, 0.92));
+  border: 1px solid rgba(236, 232, 225, 0.16);
+  border-left: 3.5px solid #ff4655;
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  color: #ece8e1;
+}
+.chat-preview-stage.pv-theme-valorant .pv-author { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900; }
+.chat-preview-stage.pv-theme-tron .chat-preview-feed { gap: 5px; }
+.chat-preview-stage.pv-theme-tron .pv-msg {
+  background: linear-gradient(145deg, rgba(2, 10, 22, 0.92), rgba(4, 20, 36, 0.94));
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  border-left: 3px solid #00f0ff;
+  border-radius: 2px;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #e0fbff;
+}
+.pv-time { font-size: 0.8em; color: #94a3b8; margin-right: 5px; }
+.pv-plat { font-size: 0.85em; font-weight: 800; margin-right: 5px; }
+.pv-plat-badge { font-size: 0.72em; font-weight: 800; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; margin-right: 5px; }
+.pv-plat-badge.twitch { background: #9146ff; color: #fff; }
+.pv-plat-badge.youtube { background: #ff0033; color: #fff; }
+.pv-plat-badge.tiktok { background: #00f2fe; color: #000; }
+.pv-author { font-size: var(--pv-name-size, 14px); font-weight: 800; margin-right: 5px; }
+.pv-badge { font-size: 0.72em; font-weight: 700; background: rgba(255, 255, 255, 0.16); padding: 1px 4px; border-radius: 3px; margin-right: 4px; }
 #goveeEventRows > div {
   grid-template-columns: 108px minmax(0, 0.85fr) minmax(0, 1.15fr) auto !important;
   min-width: 0;

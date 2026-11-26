@@ -929,7 +929,11 @@
       "rf_152": "📂 Google „Download JSON“-Datei importieren & anmelden…",
       "rf_153": "📖 Schritt-für-Schritt OAuth2-Anleitung",
       "rf_154": "Transparenz",
-      "rf_155": "Umbenennen"
+      "rf_155": "Umbenennen",
+      "pv_title": "👁️ Live Chat-Vorschau",
+      "pv_hint": "Zeigt deine Änderungen an Schriftgröße, Abständen, Transparenz, Trennlinien & Theme sofort live an.",
+      "pv_obs": "🎥 OBS Overlay",
+      "pv_app": "💬 App Chat"
     }
   },
   "titles": {
@@ -1070,7 +1074,8 @@
     "t_rf_16": "75% Transparenz (25% sichtbar)",
     "t_rf_17": "Fügt TRON Tech-Talk Bauchbinde, TRON HUD/Agenda, Musik, Alerts & Chat fertig positioniert ein",
     "t_rf_18": "Fügt Valorant Tactical HUD, Rank/RR Match-Bar, Radar Anti-Snipe Cover, Alerts & Chat fertig positioniert ein",
-    "t_rf_19": "Assistent schließen"
+    "t_rf_19": "Assistent schließen",
+    "t_pv_add": "Neue Beispiel-Nachricht in der Vorschau testen"
   },
   "placeholders": {
     "p_1": "z.B. DeinName",

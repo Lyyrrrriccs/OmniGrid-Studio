@@ -479,6 +479,21 @@
           </label>
         </div>
 
+        <div class="sidebar-section chat-preview-box">
+          <div class="card-header" style="margin-bottom: 6px; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h3 style="margin: 0;">👁️ Live Chat-Vorschau</h3>
+            <div style="display: flex; gap: 5px; align-items: center; margin-left: auto;">
+              <button type="button" class="btn-sm active" id="btnPvModeObs" style="background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.55); color: #bae6fd;">🎥 OBS Overlay</button>
+              <button type="button" class="btn-sm" id="btnPvModeApp">💬 App Chat</button>
+              <button type="button" class="btn-sm" id="btnPvAddMsg" title="Neue Beispiel-Nachricht in der Vorschau testen">➕ Test</button>
+            </div>
+          </div>
+          <p class="section-hint" style="margin-bottom: 8px;">Zeigt deine Änderungen an Schriftgröße, Abständen, Transparenz, Trennlinien &amp; Theme sofort live an.</p>
+          <div class="chat-preview-stage" id="chatPreviewStage">
+            <div class="chat-preview-feed" id="chatPreviewFeed"></div>
+          </div>
+        </div>
+
         <!-- SECTION 5: OBS CUSTOM BROWSER DOCK, STREAM OVERLAY & STANDALONE WINDOW -->
         <div class="sidebar-section obs-box">
           <h3>🎥 5. OBS-Integration & Desktopfenster</h3>

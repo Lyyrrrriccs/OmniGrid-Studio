@@ -3177,6 +3177,7 @@ window.omnichat.onChatMessage((msg) => {
     ['.event-settings-box', 'cfgTab_profile'],
     ['.design-settings-box', 'cfgTab_design'],
     ['.emote-settings-box', 'cfgTab_design'],
+    ['.chat-preview-box', 'cfgTab_design'],
     ['.obs-box', 'cfgTab_obs'],
     ['.obs-ws-config-box', 'cfgTab_obs'],
     ['.elgato-lights-box', 'cfgTab_obs'],
@@ -9128,4 +9129,147 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   document.getElementById('btnSpOpenPreview')?.addEventListener('click', () => {
     window.omnichat.openExternalUrl?.(overlayUrl);
   });
+})();
+
+(() => {
+  const stage = document.getElementById('chatPreviewStage');
+  const feed = document.getElementById('chatPreviewFeed');
+  const btnObs = document.getElementById('btnPvModeObs');
+  const btnApp = document.getElementById('btnPvModeApp');
+  const btnAdd = document.getElementById('btnPvAddMsg');
+  if (!stage || !feed) return;
+
+  let previewMode = 'obs';
+  const sampleMessages = [
+    { platform: 'twitch', author: 'HyperStreamer99', color: '#a970ff', badge: 'MOD', time: '20:14', text: 'Willkommen im Stream! Das neue Chat-Overlay sieht mega clean aus 🔥' },
+    { platform: 'youtube', author: 'PixelArchitect_Dev', color: '#ff4e45', badge: 'MEM', time: '20:14', text: 'Schriftgröße und Kontrast sind perfekt lesbar auf dem Handy!' },
+    { platform: 'tiktok', author: 'NeonLightcycle', color: '#00f2fe', badge: 'VIP', time: '20:15', text: 'GGs! Die Runde war absolut crazy 🚀' },
+    { platform: 'twitch', author: 'SuperLongViewerName1234', color: '#38bdf8', badge: 'SUB', time: '20:15', text: 'Test für abgeschnittene Namen & Trennlinien-Vorschau ✨' }
+  ];
+  const extraSamples = [
+    { platform: 'twitch', author: 'ClutchMaster', color: '#4ade80', badge: 'VIP', time: '20:16', text: 'ACE!! Was ein krasser Flick!' },
+    { platform: 'youtube', author: 'CodeWizard', color: '#fbbf24', badge: '', time: '20:16', text: 'Welches Theme nutzt du gerade fürs Overlay?' },
+    { platform: 'tiktok', author: 'StreamFan_DE', color: '#f472b6', badge: '', time: '20:17', text: 'Grüße aus dem TikTok Live! ❤️' }
+  ];
+  let extraIdx = 0;
+
+  const toRgba = (hex, pct) => {
+    const clean = String(hex || '#0b0f19').replace('#', '');
+    const num = parseInt(clean, 16) || 0x0b0f19;
+    return `rgba(${(num >> 16) & 255},${(num >> 8) & 255},${num & 255},${(Math.max(0, Math.min(100, pct)) / 100).toFixed(2)})`;
+  };
+
+  const renderPreview = () => {
+    const layoutMode = selLayoutMode?.value || 'inline';
+    const obsTheme = previewMode === 'obs' ? (selObsChatTheme?.value || 'auto') : 'default';
+    const nameSize = parseFloat(rngNameSize?.value || '13');
+    const msgSize = parseFloat(rngMsgSize?.value || '13.5');
+    const maxNameLen = parseInt(rngMaxNameLen?.value || '16', 10);
+    const msgPad = parseInt(rngMsgPadding?.value || '5', 10);
+    const showIcons = chkShowPlatIcons ? chkShowPlatIcons.checked : true;
+    const showTs = chkShowTimestamps ? chkShowTimestamps.checked : true;
+    const platStyle = selPlatStyle?.value || 'icon_only';
+    const colorMode = selNameColorMode?.value || 'user';
+    const showSep = chkShowSeparator ? chkShowSeparator.checked : true;
+    const sepCol = clrSepColor?.value || '#ffffff';
+    const sepOp = parseInt(rngSepOpacity?.value || '10', 10);
+    const bgCol = clrBgColor?.value || '#0b0f19';
+    const bgOp = previewMode === 'obs'
+      ? parseInt(rngObsBgOpacity?.value || '65', 10)
+      : parseInt(rngAppBgOpacity?.value || '90', 10);
+
+    stage.style.setProperty('--pv-name-size', `${nameSize}px`);
+    stage.style.setProperty('--pv-msg-size', `${msgSize}px`);
+    stage.style.setProperty('--pv-pad-v', `${msgPad}px`);
+    stage.style.setProperty('--pv-gap', layoutMode === 'bubbles' ? `${Math.max(3, msgPad)}px` : '0px');
+    stage.style.setProperty('--pv-sep-display', showSep ? '1px' : '0px');
+    stage.style.setProperty('--pv-sep-color', toRgba(sepCol, sepOp));
+    stage.style.setProperty('--pv-item-bg', toRgba(bgCol, bgOp));
+
+    stage.classList.toggle('pv-bubbles', layoutMode === 'bubbles');
+    stage.classList.toggle('pv-theme-lol', obsTheme === 'lol');
+    stage.classList.toggle('pv-theme-valorant', obsTheme === 'valorant');
+    stage.classList.toggle('pv-theme-tron', obsTheme === 'tron');
+
+    feed.innerHTML = '';
+    const icons = { twitch: '🟣', youtube: '🔴', tiktok: '🎵' };
+    sampleMessages.slice(-6).forEach((m) => {
+      const row = document.createElement('div');
+      row.className = `pv-msg ${m.platform}`;
+      if (showTs) {
+        const ts = document.createElement('span');
+        ts.className = 'pv-time';
+        ts.textContent = m.time;
+        row.appendChild(ts);
+      }
+      if (showIcons) {
+        if (platStyle === 'icon_badge') {
+          const b = document.createElement('span');
+          b.className = `pv-plat-badge ${m.platform}`;
+          b.textContent = `${icons[m.platform] || '💬'} ${m.platform}`;
+          row.appendChild(b);
+        } else {
+          const ic = document.createElement('span');
+          ic.className = 'pv-plat';
+          ic.textContent = icons[m.platform] || '💬';
+          row.appendChild(ic);
+        }
+      }
+      if (m.badge) {
+        const bd = document.createElement('span');
+        bd.className = 'pv-badge';
+        bd.textContent = m.badge;
+        row.appendChild(bd);
+      }
+      const author = document.createElement('span');
+      author.className = 'pv-author';
+      const displayName = maxNameLen > 0 && m.author.length > maxNameLen ? `${m.author.slice(0, maxNameLen)}…` : m.author;
+      author.textContent = `${displayName}:`;
+      author.style.color = colorMode === 'mono'
+        ? '#e2e8f0'
+        : colorMode === 'platform'
+          ? (m.platform === 'twitch' ? '#a970ff' : m.platform === 'youtube' ? '#ff4e45' : '#00f2fe')
+          : m.color;
+      const txt = document.createElement('span');
+      txt.textContent = m.text;
+      row.append(author, txt);
+      feed.appendChild(row);
+    });
+  };
+
+  const setMode = (mode) => {
+    previewMode = mode;
+    if (btnObs) {
+      btnObs.style.background = mode === 'obs' ? 'rgba(56,189,248,0.2)' : '';
+      btnObs.style.borderColor = mode === 'obs' ? 'rgba(56,189,248,0.55)' : '';
+      btnObs.style.color = mode === 'obs' ? '#bae6fd' : '';
+    }
+    if (btnApp) {
+      btnApp.style.background = mode === 'app' ? 'rgba(56,189,248,0.2)' : '';
+      btnApp.style.borderColor = mode === 'app' ? 'rgba(56,189,248,0.55)' : '';
+      btnApp.style.color = mode === 'app' ? '#bae6fd' : '';
+    }
+    renderPreview();
+  };
+
+  btnObs?.addEventListener('click', () => setMode('obs'));
+  btnApp?.addEventListener('click', () => setMode('app'));
+  btnAdd?.addEventListener('click', () => {
+    sampleMessages.push(extraSamples[extraIdx % extraSamples.length]);
+    extraIdx += 1;
+    if (sampleMessages.length > 6) sampleMessages.shift();
+    renderPreview();
+  });
+
+  [
+    selLayoutMode, selObsChatTheme, rngNameSize, rngMsgSize, rngMaxNameLen, rngMsgPadding,
+    chkShowPlatIcons, chkShowTimestamps, selPlatStyle, selNameColorMode,
+    chkShowSeparator, clrSepColor, rngSepOpacity, rngSepGap, clrBgColor, rngAppBgOpacity, rngObsBgOpacity
+  ].forEach((el) => {
+    el?.addEventListener('input', renderPreview);
+    el?.addEventListener('change', renderPreview);
+  });
+
+  window.omnichat.onInitState?.(() => setTimeout(renderPreview, 120));
+  setTimeout(renderPreview, 200);
 })();

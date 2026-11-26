@@ -929,7 +929,11 @@
       "rf_152": "📂 Import Google \"Download JSON\" file & Sign In…",
       "rf_153": "📖 Step-by-Step OAuth2 Guide",
       "rf_154": "Transparency",
-      "rf_155": "Rename"
+      "rf_155": "Rename",
+      "pv_title": "👁️ Live Chat Preview",
+      "pv_hint": "Shows your changes to font size, spacing, opacity, dividers & theme live immediately.",
+      "pv_obs": "🎥 OBS Overlay",
+      "pv_app": "💬 App Chat"
     }
   },
   "titles": {
@@ -1070,7 +1074,8 @@
     "t_rf_16": "75% transparency (25% visible)",
     "t_rf_17": "Adds TRON Tech-Talk lower third, TRON HUD/Agenda, Music, Alerts & Chat pre-positioned",
     "t_rf_18": "Adds Valorant Tactical HUD, Rank/RR Match Bar, Radar Anti-Snipe Cover, Alerts & Chat pre-positioned",
-    "t_rf_19": "Close wizard"
+    "t_rf_19": "Close wizard",
+    "t_pv_add": "Add sample message to preview"
   },
   "placeholders": {
     "p_1": "e.g. YourName",
