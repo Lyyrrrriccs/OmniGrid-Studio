@@ -2391,8 +2391,35 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     }
     @keyframes kenBurns {
       0% { transform: scale(1.04) translate3d(0%, 0%, 0); }
-      50% { transform: scale(1.13) translate3d(-1.8%, -1.2%, 0); }
+      50% { transform: scale(1.12) translate3d(-1.6%, -1.0%, 0); }
       100% { transform: scale(1.04) translate3d(0%, 0%, 0); }
+    }
+    @keyframes fxGlitchSplash {
+      0%, 91%, 100% { transform: scale(1.07) translate3d(0, 0, 0); filter: blur(1.5px) saturate(1.25) brightness(0.72); }
+      93% { transform: scale(1.08) translate3d(4px, -2px, 0); filter: blur(0.5px) saturate(1.8) hue-rotate(16deg) brightness(0.86); }
+      95% { transform: scale(1.07) translate3d(-4px, 2px, 0); filter: blur(1px) saturate(1.6) hue-rotate(-14deg) brightness(0.8); }
+    }
+    @keyframes fxCosmicSpin {
+      0% { transform: scale(1.10) rotate(-1.4deg); }
+      50% { transform: scale(1.16) rotate(1.4deg); }
+      100% { transform: scale(1.10) rotate(-1.4deg); }
+    }
+    @keyframes fxBreatheZoom {
+      0%, 100% { transform: scale(1.04); filter: blur(1.5px) saturate(1.18) brightness(0.68); }
+      50% { transform: scale(1.11); filter: blur(1px) saturate(1.32) brightness(0.78); }
+    }
+    @keyframes fxPanDrift {
+      0% { transform: scale(1.08) translate3d(-2.2%, 0.6%, 0); }
+      50% { transform: scale(1.11) translate3d(2.2%, -0.8%, 0); }
+      100% { transform: scale(1.08) translate3d(-2.2%, 0.6%, 0); }
+    }
+    @keyframes fxElementalHue {
+      0%, 100% { transform: scale(1.06); filter: blur(1.5px) saturate(1.28) hue-rotate(0deg) brightness(0.74); }
+      50% { transform: scale(1.12); filter: blur(1px) saturate(1.42) hue-rotate(24deg) brightness(0.82); }
+    }
+    @keyframes fxCyberScan {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100vh); }
     }
     .bg-splash {
       position: fixed;
@@ -2400,12 +2427,42 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       background-size: cover;
       background-position: center 22%;
       opacity: 0;
-      filter: blur(2px) saturate(1.18) brightness(0.68);
+      filter: blur(1.5px) saturate(1.18) brightness(0.70);
       animation: kenBurns 28s ease-in-out infinite;
       transition: opacity 0.9s ease, background-image 0.6s ease;
       pointer-events: none;
     }
-    .bg-splash.visible { opacity: 0.42; }
+    .bg-splash.visible { opacity: 0.46; }
+    body.fx-jinx-glitch .bg-splash,
+    body.fx-soul-fighter .bg-splash { animation: fxGlitchSplash 4.8s infinite; }
+    body.fx-dark-cosmic .bg-splash,
+    body.fx-prestige-cosmic .bg-splash { animation: fxCosmicSpin 26s ease-in-out infinite; }
+    body.fx-elementalist .bg-splash,
+    body.fx-kda-all-out .bg-splash { animation: fxElementalHue 14s ease-in-out infinite; }
+    body.fx-high-noon .bg-splash,
+    body.fx-god-king .bg-splash,
+    body.fx-nightbringer .bg-splash,
+    body.fx-risen-legend .bg-splash,
+    body.fx-kda-firestarter .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
+    body.fx-inkshadow .bg-splash,
+    body.fx-black-rose .bg-splash,
+    body.fx-ravenborn .bg-splash,
+    body.fx-spirit-blossom .bg-splash,
+    body.fx-blossom-springs .bg-splash,
+    body.fx-radiant-cloud .bg-splash,
+    body.fx-ruined-mist .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    .bg-scanline {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent, var(--c2), transparent);
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.fx-project-cyber .bg-scanline,
+    body.fx-jinx-glitch .bg-scanline,
+    body.fx-kda-firestarter .bg-scanline { opacity: 0.14; animation: fxCyberScan 5.5s linear infinite; }
     .bg-vignette {
       position: fixed;
       inset: 0;
@@ -2486,6 +2543,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
   <div class="bg-orb bg-orb-1"></div>
   <div class="bg-orb bg-orb-2"></div>
   <div class="bg-grid"></div>
+  <div class="bg-scanline"></div>
   <canvas id="bgParticles"></canvas>
   <div class="bg-vignette"></div>
   <div class="bg-frame"></div>
@@ -2504,9 +2562,32 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
 
       let palette = ['#c8aa6e', '#0ac8b9', '#38bdf8'];
       let packSplashUrl = '';
-      let gameSplashUrl = '';
+      let activeMode = 'motes';
       let ddVerPromise = null;
       const skinCache = {};
+
+      const MODE_BY_EFFECT = {
+        'jinx-glitch': 'sparks',
+        'soul-fighter': 'sparks',
+        'kda-firestarter': 'embers',
+        'high-noon': 'embers',
+        'nightbringer': 'embers',
+        'god-king': 'embers',
+        'risen-legend': 'streaks',
+        'kda-all-out': 'stars',
+        'dark-cosmic': 'orbit',
+        'prestige-cosmic': 'orbit',
+        'black-rose': 'petals',
+        'spirit-blossom': 'petals',
+        'blossom-springs': 'bubbles',
+        'ravenborn': 'feathers',
+        'inkshadow': 'ink',
+        'elementalist': 'orbs',
+        'radiant-cloud': 'orbs',
+        'arcane-prestige': 'diamonds',
+        'project-cyber': 'cyber',
+        'ruined-mist': 'mist'
+      };
 
       function resize() {
         canvas.width = window.innerWidth || 1920;
@@ -2515,35 +2596,105 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       resize();
       window.addEventListener('resize', resize);
 
-      const particles = Array.from({ length: 52 }, () => ({
+      const particles = Array.from({ length: 64 }, () => ({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        r: 1.4 + Math.random() * 3.2,
-        vy: 0.25 + Math.random() * 0.75,
-        vx: (Math.random() - 0.5) * 0.35,
+        r: 1.6 + Math.random() * 3.8,
+        speed: 0.4 + Math.random() * 1.4,
+        vx: (Math.random() - 0.5) * 0.6,
         phase: Math.random() * Math.PI * 2,
+        angle: Math.random() * Math.PI * 2,
+        orbitR: 120 + Math.random() * (Math.max(canvas.width, canvas.height) * 0.48),
         ci: Math.floor(Math.random() * 3),
-        alpha: 0.25 + Math.random() * 0.65
+        alpha: 0.28 + Math.random() * 0.65
       }));
 
       function tick() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.5;
+
         for (const p of particles) {
-          p.y -= p.vy;
-          p.phase += 0.014;
-          p.x += p.vx + Math.sin(p.phase) * 0.32;
-          if (p.y < -12) { p.y = canvas.height + 12; p.x = Math.random() * canvas.width; }
-          if (p.x < -12) p.x = canvas.width + 12;
-          if (p.x > canvas.width + 12) p.x = -12;
           const col = palette[p.ci % palette.length];
+          p.phase += 0.02;
           ctx.save();
           ctx.globalAlpha = p.alpha;
           ctx.shadowBlur = 14;
           ctx.shadowColor = col;
           ctx.fillStyle = col;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.strokeStyle = col;
+
+          if (activeMode === 'orbit') {
+            p.angle += 0.0018 * p.speed;
+            const ox = cx + Math.cos(p.angle) * p.orbitR;
+            const oy = cy + Math.sin(p.angle) * (p.orbitR * 0.58);
+            ctx.beginPath();
+            ctx.arc(ox, oy, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (activeMode === 'petals' || activeMode === 'feathers') {
+            p.y += p.speed * 0.85;
+            p.x += Math.sin(p.phase) * 0.9 + 0.35;
+            if (p.y > h + 20) { p.y = -20; p.x = Math.random() * w; }
+            if (p.x > w + 20) p.x = -20;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.sin(p.phase) * 0.8);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.r * (activeMode === 'feathers' ? 2.6 : 1.7), p.r * 0.75, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (activeMode === 'sparks' || activeMode === 'streaks') {
+            p.y -= p.speed * 2.2;
+            p.x += (activeMode === 'sparks' ? p.vx * 3.2 : p.speed * 0.8);
+            if (p.y < -30 || p.x < -30 || p.x > w + 30) { p.y = h + 20; p.x = Math.random() * w; }
+            ctx.lineWidth = Math.max(1.5, p.r * 0.55);
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - (activeMode === 'sparks' ? p.vx * 14 : 10), p.y + 18);
+            ctx.stroke();
+          } else if (activeMode === 'cyber') {
+            p.y += p.speed * 2.6;
+            if (p.y > h + 40) { p.y = -40; p.x = Math.floor(Math.random() * (w / 32)) * 32; }
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x, p.y - 24 * p.speed);
+            ctx.stroke();
+          } else if (activeMode === 'stars' || activeMode === 'diamonds') {
+            p.y -= p.speed * 0.4;
+            if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
+            const tw = 0.45 + 0.55 * Math.abs(Math.sin(p.phase * 1.4));
+            ctx.globalAlpha = p.alpha * tw;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.PI / 4);
+            const sz = p.r * 1.6;
+            ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
+          } else if (activeMode === 'bubbles') {
+            p.y -= p.speed * 0.65;
+            p.x += Math.sin(p.phase) * 0.5;
+            if (p.y < -25) { p.y = h + 25; p.x = Math.random() * w; }
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * 1.8, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (activeMode === 'ink' || activeMode === 'mist' || activeMode === 'orbs') {
+            p.x += activeMode === 'ink' ? p.speed * 1.1 : Math.sin(p.phase) * 0.55;
+            p.y += activeMode === 'mist' ? -p.speed * 0.25 : -p.speed * 0.55;
+            if (p.y < -40 || p.x > w + 40) { p.y = activeMode === 'mist' ? h - Math.random() * 260 : h + 30; p.x = activeMode === 'ink' ? -30 : Math.random() * w; }
+            ctx.globalAlpha = p.alpha * (activeMode === 'mist' ? 0.25 : 0.45);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r * (activeMode === 'mist' ? 5.5 : 3.2), 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            p.y -= p.speed * (activeMode === 'embers' ? 1.45 : 0.65);
+            p.x += p.vx + Math.sin(p.phase) * (activeMode === 'embers' ? 0.75 : 0.35);
+            if (p.y < -15) { p.y = h + 15; p.x = Math.random() * w; }
+            if (p.x < -15) p.x = w + 15;
+            if (p.x > w + 15) p.x = -15;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+          }
           ctx.restore();
         }
         requestAnimationFrame(tick);
@@ -2551,11 +2702,11 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       requestAnimationFrame(tick);
 
       function updateSplash() {
-        const url = packSplashUrl || gameSplashUrl;
-        if (url) {
-          splashEl.style.backgroundImage = 'url("' + url + '")';
+        if (packSplashUrl) {
+          splashEl.style.backgroundImage = 'url("' + packSplashUrl + '")';
           splashEl.classList.add('visible');
         } else {
+          splashEl.style.backgroundImage = 'none';
           splashEl.classList.remove('visible');
         }
       }
@@ -2598,9 +2749,15 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         return url;
       }
 
+      function clearFxClasses() {
+        document.body.className = '';
+      }
+
       function applyPack(pack) {
+        clearFxClasses();
         if (!pack || !pack.id) {
           palette = ['#c8aa6e', '#0ac8b9', '#38bdf8'];
+          activeMode = 'motes';
           root.style.setProperty('--c1', '#c8aa6e');
           root.style.setProperty('--c2', '#0ac8b9');
           root.style.setProperty('--c3', '#38bdf8');
@@ -2612,6 +2769,9 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
           updateSplash();
           return;
         }
+        const eff = String(pack.effect || 'none');
+        if (eff && eff !== 'none') document.body.classList.add('fx-' + eff);
+        activeMode = MODE_BY_EFFECT[eff] || 'motes';
         const c = pack.colors || {};
         const c1 = c.primary || '#ff2a85';
         const c2 = c.secondary || '#39ff14';
@@ -2632,14 +2792,10 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         }
       }
 
-      function fetchAll() {
+      function fetchTheme() {
         fetch('/api/champion-theme', { cache: 'no-store' })
           .then((r) => (r.ok ? r.json() : null))
           .then((d) => applyPack(d && d.pack ? d.pack : null))
-          .catch(() => {});
-        fetch('/api/game-stats', { cache: 'no-store' })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => { if (d && d.skinSplashUrl) { gameSplashUrl = d.skinSplashUrl; updateSplash(); } })
           .catch(() => {});
       }
 
@@ -2650,19 +2806,15 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
             try {
               const p = JSON.parse(ev.data);
               if (p.type === 'champion-theme') applyPack(p.data);
-              if (p.type === 'game-stats' && p.data && p.data.skinSplashUrl) {
-                gameSplashUrl = p.data.skinSplashUrl;
-                updateSplash();
-              }
             } catch (e) {}
           };
           ws.onclose = () => setTimeout(connectWs, 2500);
         } catch (e) {}
       }
 
-      fetchAll();
+      fetchTheme();
       connectWs();
-      setInterval(fetchAll, 4000);
+      setInterval(fetchTheme, 4000);
     })();
   </script>
 </body>
