@@ -1,0 +1,20 @@
+{
+  "id": "lucian-high-noon",
+  "name": "Lucian — High Noon",
+  "icon": "🤠",
+  "championMatch": ["lucian"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "high-noon",
+  "description": "Hellfire brimstone orange, burnished western brass & charred gunmetal iron with smoldering ember aura across all OBS overlays.",
+  "colors": {
+    "primary": "#ff5a1f",
+    "secondary": "#f59e0b",
+    "tertiary": "#dc2626",
+    "bgStart": "rgba(20, 8, 5, 0.97)",
+    "bgEnd": "rgba(12, 6, 5, 0.98)",
+    "text": "#fff7ed",
+    "muted": "#fdba74"
+  },
+  "mapCoverBadge": "HIGH NOON // HELLFIRE 🤠"
+}

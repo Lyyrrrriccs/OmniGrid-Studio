@@ -3336,6 +3336,10 @@ const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
   33% { box-shadow: 0 0 28px rgba(56, 189, 248, 0.52), inset 0 0 18px rgba(232, 121, 249, 0.2); border-color: #38bdf8; }
   66% { box-shadow: 0 0 28px rgba(232, 121, 249, 0.52), inset 0 0 18px rgba(253, 224, 71, 0.2); border-color: #e879f9; }
 }
+@keyframes highNoonEmber {
+  0%, 100% { box-shadow: 0 0 24px rgba(255, 90, 31, 0.52), inset 0 0 18px rgba(245, 158, 11, 0.18); border-color: var(--ct-primary, #ff5a1f); }
+  50% { box-shadow: 0 0 32px rgba(220, 38, 38, 0.55), 0 0 18px rgba(245, 158, 11, 0.5), inset 0 0 20px rgba(255, 90, 31, 0.24); border-color: var(--ct-secondary, #f59e0b); }
+}
 body.champ-fx-jinx-glitch .msg-row {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.08) 0 8px, rgba(57, 255, 20, 0.05) 8px 16px, transparent 16px 32px),
@@ -3839,12 +3843,51 @@ body.champ-fx-elementalist .lb-lp-fill,
 body.champ-fx-elementalist .goal-fill,
 body.champ-fx-elementalist .sp-prog-fill,
 body.champ-fx-elementalist .val-rr-fill { background: linear-gradient(90deg, #fde047, #38bdf8, #e879f9, #fb7185) !important; }
+
+body.champ-fx-high-noon .msg-row {
+  background:
+    linear-gradient(125deg, rgba(255, 90, 31, 0.16), rgba(245, 158, 11, 0.10) 55%, rgba(220, 38, 38, 0.14)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(20, 8, 5, 0.97)), var(--ct-bg-end, rgba(12, 6, 5, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #ff5a1f) !important;
+  border-left: 4px solid var(--ct-secondary, #f59e0b) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 8px, 100% 100%, 10px 100%, 0 calc(100% - 8px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 16px rgba(255, 90, 31, 0.28), -2px 0 0 rgba(245, 158, 11, 0.55) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-high-noon ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 86% 16%, rgba(245, 158, 11, 0.22), transparent 46%),
+    radial-gradient(circle at 14% 86%, rgba(220, 38, 38, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(20, 8, 5, 0.97)), var(--ct-bg-end, rgba(12, 6, 5, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #ff5a1f) !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  border-radius: 0 !important;
+  animation: highNoonEmber 3.4s ease-in-out infinite;
+}
+body.champ-fx-high-noon .gs-title,
+body.champ-fx-high-noon .gs-champ-name,
+body.champ-fx-high-noon .lb-rank,
+body.champ-fx-high-noon .sp-title,
+body.champ-fx-high-noon .goal-title,
+body.champ-fx-high-noon .poll-q,
+body.champ-fx-high-noon .gw-title,
+body.champ-fx-high-noon .sched-title,
+body.champ-fx-high-noon .al-author,
+body.champ-fx-high-noon .lt-topic,
+body.champ-fx-high-noon .qna-author,
+body.champ-fx-high-noon .tron-topic,
+body.champ-fx-high-noon .val-rank-name { color: #fff7ed !important; text-shadow: 0 0 12px rgba(255, 90, 31, 0.85), 0 0 6px rgba(245, 158, 11, 0.6) !important; }
+body.champ-fx-high-noon .gs-lp-fill,
+body.champ-fx-high-noon .lb-lp-fill,
+body.champ-fx-high-noon .goal-fill,
+body.champ-fx-high-noon .sp-prog-fill,
+body.champ-fx-high-noon .val-rr-fill { background: linear-gradient(90deg, #dc2626, #ff5a1f, #f59e0b) !important; }
 </style>
 <script>
 (function initChampionThemeClient(){
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);
