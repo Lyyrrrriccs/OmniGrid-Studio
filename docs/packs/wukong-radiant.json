@@ -1,0 +1,20 @@
+{
+  "id": "wukong-radiant",
+  "name": "Wukong — Radiant",
+  "icon": "☁️",
+  "championMatch": ["wukong", "monkeyking"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "radiant-cloud",
+  "description": "Imperial golden cloud, lunar jade emerald & vermilion dragon accents with celestial Monkey King glow across all OBS overlays.",
+  "colors": {
+    "primary": "#fbbf24",
+    "secondary": "#34d399",
+    "tertiary": "#f43f5e",
+    "bgStart": "rgba(8, 18, 16, 0.96)",
+    "bgEnd": "rgba(20, 13, 8, 0.97)",
+    "text": "#fefce8",
+    "muted": "#a7f3d0"
+  },
+  "mapCoverBadge": "RADIANT // MONKEY KING ☁️"
+}
