@@ -8742,9 +8742,9 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   };
 
   const evaluateSetupStatus = (cfg = null) => {
-    const tw = String(cfg ? cfg.twitch?.channel : document.getElementById('inputTwitchChannel')?.value || '').trim();
-    const yt = String(cfg ? cfg.youtube?.channel : document.getElementById('inputYoutubeChannel')?.value || '').trim();
-    const tt = String(cfg ? cfg.tiktok?.channel : document.getElementById('inputTiktokChannel')?.value || '').trim();
+    const tw = String((cfg ? (cfg.twitchChannel ?? cfg.twitch?.channel) : document.getElementById('inputTwitchChannel')?.value) || '').trim();
+    const yt = String((cfg ? (cfg.youtubeChannel ?? cfg.youtube?.channel) : document.getElementById('inputYoutubeChannel')?.value) || '').trim();
+    const tt = String((cfg ? (cfg.tiktokChannel ?? cfg.tiktok?.channel) : document.getElementById('inputTiktokChannel')?.value) || '').trim();
     const items = [];
     if (tw) items.push(`Twitch (${tw})`);
     if (yt) items.push(`YouTube (${yt})`);
