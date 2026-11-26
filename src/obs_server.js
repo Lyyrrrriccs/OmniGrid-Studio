@@ -2515,14 +2515,14 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     .bg-c-br { bottom: 12px; right: 12px; border-bottom: 3px solid var(--c2); border-right: 3px solid var(--c2); }
     .bg-watermark {
       position: fixed;
-      bottom: 24px;
-      left: 28px;
+      bottom: 18px;
+      left: 36px;
       display: inline-flex;
       align-items: center;
       gap: 9px;
       padding: 6px 14px;
       border-radius: 4px;
-      background: rgba(5, 10, 22, 0.72);
+      background: rgba(5, 10, 22, 0.82);
       border: 1px solid var(--c1);
       border-left: 4px solid var(--c2);
       font-size: 12px;
@@ -2533,8 +2533,131 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       text-shadow: 0 0 10px var(--c1);
       backdrop-filter: blur(8px);
       transition: all 0.5s ease;
+      z-index: 4;
     }
     .bg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c2); box-shadow: 0 0 10px var(--c2); }
+
+    .frame-layout {
+      position: fixed;
+      inset: 34px 36px 56px 36px;
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      gap: 26px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    body.layout-clean .frame-layout { display: none; }
+    .frame-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+    .frame-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 0;
+    }
+    .slot-box {
+      position: relative;
+      border: 2.5px solid var(--c1);
+      background: rgba(3, 8, 18, 0.58);
+      box-shadow: 0 0 32px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 22px var(--c1);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.5s ease, box-shadow 0.5s ease;
+    }
+    .slot-box::before,
+    .slot-box::after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--c2);
+      pointer-events: none;
+      z-index: 3;
+      transition: border-color 0.5s ease;
+    }
+    .slot-box::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .slot-box::after { bottom: 0; right: 0; border-left: none; border-top: none; }
+    .client-slot {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cam-slot {
+      width: 100%;
+      height: 248px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .chat-slot {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .slot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: linear-gradient(90deg, rgba(4, 10, 22, 0.90), rgba(4, 10, 22, 0.55));
+      border-bottom: 1px solid var(--c1);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--txt);
+      text-shadow: 0 0 8px var(--c1);
+    }
+    .slot-pill {
+      font-size: 9.5px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--c2);
+      color: var(--c2);
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .slot-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      opacity: 0.28;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--txt);
+      text-align: center;
+    }
+    .slot-placeholder small { font-size: 10px; letter-spacing: 0.1em; color: var(--c2); }
+    .bg-status-right {
+      position: fixed;
+      bottom: 18px;
+      right: 36px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--c2);
+      background: rgba(5, 10, 22, 0.78);
+      border: 1px solid var(--c2);
+      padding: 6px 14px;
+      border-radius: 4px;
+      z-index: 4;
+    }
   </style>
 </head>
 <body>
@@ -2551,7 +2674,40 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
   <div class="bg-corner bg-c-tr"></div>
   <div class="bg-corner bg-c-bl"></div>
   <div class="bg-corner bg-c-br"></div>
+
+  <div class="frame-layout">
+    <div class="frame-left">
+      <div class="slot-box client-slot">
+        <div class="slot-header">
+          <span>⚔️ RIOT / LEAGUE CLIENT</span>
+          <span class="slot-pill">16:9 CLIENT FRAME</span>
+        </div>
+        <div class="slot-placeholder">
+          <span>LEAGUE CLIENT AREA</span>
+          <small>Client-Aufnahme in OBS hier platzieren</small>
+        </div>
+      </div>
+    </div>
+    <div class="frame-right">
+      <div class="slot-box cam-slot">
+        <div class="slot-header">
+          <span>📷 WEBCAM</span>
+          <span class="slot-pill">16:9</span>
+        </div>
+        <div class="slot-placeholder"><span>CAM</span></div>
+      </div>
+      <div class="slot-box chat-slot">
+        <div class="slot-header">
+          <span>💬 LIVE CHAT</span>
+          <span class="slot-pill">OMNIGRID</span>
+        </div>
+        <div class="slot-placeholder"><span>CHAT OVERLAY</span></div>
+      </div>
+    </div>
+  </div>
+
   <div class="bg-watermark"><span class="bg-dot"></span><span id="bgLabel">⚔️ LEAGUE OF LEGENDS // HEXTECH</span></div>
+  <div class="bg-status-right">● LOBBY / CHAMP SELECT</div>
   <script>
     (function initLolAnimatedBg() {
       const root = document.documentElement;
@@ -2749,8 +2905,9 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         return url;
       }
 
+      const isCleanLayout = new URLSearchParams(location.search).get('layout') === 'clean';
       function clearFxClasses() {
-        document.body.className = '';
+        document.body.className = isCleanLayout ? 'layout-clean' : '';
       }
 
       function applyPack(pack) {
