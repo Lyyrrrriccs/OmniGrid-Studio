@@ -2,7 +2,9 @@
   "id": "jhin-dark-cosmic",
   "name": "Jhin — Dark Cosmic",
   "icon": "🌌",
-  "championMatch": ["jhin"],
+  "championMatch": [
+    "jhin"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "dark-cosmic",
@@ -16,5 +18,9 @@
     "text": "#faf5ff",
     "muted": "#d8b4fe"
   },
-  "mapCoverBadge": "FOUR // DARK COSMIC 🌌"
+  "mapCoverBadge": "FOUR // DARK COSMIC 🌌",
+  "skinArt": {
+    "championId": "Jhin",
+    "skinQuery": "Dark Cosmic"
+  }
 }

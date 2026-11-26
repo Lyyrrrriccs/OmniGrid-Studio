@@ -2,7 +2,10 @@
   "id": "kaisa-risen-legend",
   "name": "Kai'Sa — Risen Legend",
   "icon": "🏆",
-  "championMatch": ["kaisa", "kai'sa"],
+  "championMatch": [
+    "kaisa",
+    "kai'sa"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "risen-legend",
@@ -16,5 +19,9 @@
     "text": "#fff8e7",
     "muted": "#fde68a"
   },
-  "mapCoverBadge": "HALL OF LEGENDS // RISEN LEGEND 🏆"
+  "mapCoverBadge": "HALL OF LEGENDS // RISEN LEGEND 🏆",
+  "skinArt": {
+    "championId": "Kaisa",
+    "skinQuery": "Risen Legend"
+  }
 }

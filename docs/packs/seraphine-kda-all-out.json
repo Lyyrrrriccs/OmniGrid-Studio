@@ -2,7 +2,9 @@
   "id": "seraphine-kda-all-out",
   "name": "Seraphine — K/DA ALL OUT",
   "icon": "✨",
-  "championMatch": ["seraphine"],
+  "championMatch": [
+    "seraphine"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "kda-all-out",
@@ -16,5 +18,9 @@
     "text": "#f8fbff",
     "muted": "#bae6fd"
   },
-  "mapCoverBadge": "K/DA ALL OUT // SUPERSTAR ✨"
+  "mapCoverBadge": "K/DA ALL OUT // SUPERSTAR ✨",
+  "skinArt": {
+    "championId": "Seraphine",
+    "skinQuery": "K/DA ALL OUT"
+  }
 }

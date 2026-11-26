@@ -4140,12 +4140,59 @@ body.champ-fx-blossom-springs .lb-lp-fill,
 body.champ-fx-blossom-springs .goal-fill,
 body.champ-fx-blossom-springs .sp-prog-fill,
 body.champ-fx-blossom-springs .val-rr-fill { background: linear-gradient(90deg, #5eead4, #fb7185, #fde68a) !important; }
+body.champ-has-skin-art .gs-splash,
+body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
+${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').map((s) => `body.champ-has-skin-art ${s}`).join(',\n')} {
+  background-image: linear-gradient(145deg, var(--ct-bg-start, rgba(12, 12, 24, 0.86)), var(--ct-bg-end, rgba(8, 10, 20, 0.90))), var(--ct-skin-splash) !important;
+  background-size: cover !important;
+  background-position: center 22% !important;
+  background-blend-mode: multiply !important;
+}
 </style>
 <script>
 (function initChampionThemeClient(){
+  let ddVerPromise = null;
+  const skinUrlCache = {};
+  function getDdVer(){
+    if (!ddVerPromise) {
+      ddVerPromise = fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((arr) => (Array.isArray(arr) && arr[0] ? arr[0] : '15.22.1'))
+        .catch(() => '15.22.1');
+    }
+    return ddVerPromise;
+  }
+  async function resolvePackSkinSplash(art){
+    if (!art || !art.championId) return '';
+    const cid = String(art.championId).replace(/[^A-Za-z0-9]/g, '');
+    if (!cid) return '';
+    const q = String(art.skinQuery || '').trim().toLowerCase();
+    const key = cid + ':' + q;
+    if (skinUrlCache[key]) return skinUrlCache[key];
+    let num = 0;
+    if (q && q !== 'default') {
+      try {
+        const ver = await getDdVer();
+        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/en_US/champion/' + cid + '.json');
+        if (res.ok) {
+          const j = await res.json();
+          const skins = j && j.data && j.data[cid] && Array.isArray(j.data[cid].skins) ? j.data[cid].skins : [];
+          const words = q.split(/\s+/).filter(Boolean);
+          const hit = skins.find((s) => String(s.name || '').toLowerCase().includes(q))
+            || skins.find((s) => words.every((w) => String(s.name || '').toLowerCase().includes(w)))
+            || skins.find((s) => words.some((w) => w.length > 3 && String(s.name || '').toLowerCase().includes(w)));
+          if (hit && Number.isFinite(Number(hit.num))) num = Number(hit.num);
+        }
+      } catch (e) {}
+    }
+    const url = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + cid + '_' + num + '.jpg';
+    skinUrlCache[key] = url;
+    return url;
+  }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
     if (pack.effect && pack.effect !== 'none') document.body.classList.add('champ-fx-' + pack.effect);
@@ -4156,6 +4203,13 @@ body.champ-fx-blossom-springs .val-rr-fill { background: linear-gradient(90deg, 
     if (c.bgStart) r.style.setProperty('--ct-bg-start', c.bgStart);
     if (c.bgEnd) r.style.setProperty('--ct-bg-end', c.bgEnd);
     if (c.text) r.style.setProperty('--ct-text', c.text);
+    if (pack.skinArt && pack.skinArt.championId) {
+      resolvePackSkinSplash(pack.skinArt).then((url) => {
+        if (!url) return;
+        r.style.setProperty('--ct-skin-splash', 'url("' + url + '")');
+        document.body.classList.add('champ-has-skin-art');
+      }).catch(() => {});
+    }
   }
   function fetchTheme(){
     fetch('/api/champion-theme', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});

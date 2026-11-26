@@ -2,7 +2,9 @@
   "id": "darius-divine-god-king",
   "name": "Darius — Divine God-King",
   "icon": "🐺",
-  "championMatch": ["darius"],
+  "championMatch": [
+    "darius"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "god-king",
@@ -16,5 +18,9 @@
     "text": "#fef2f2",
     "muted": "#fde68a"
   },
-  "mapCoverBadge": "GOD-KING // SOVEREIGN WOLF 🐺"
+  "mapCoverBadge": "GOD-KING // SOVEREIGN WOLF 🐺",
+  "skinArt": {
+    "championId": "Darius",
+    "skinQuery": "God-King"
+  }
 }

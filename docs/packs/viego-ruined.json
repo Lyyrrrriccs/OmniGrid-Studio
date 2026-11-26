@@ -2,7 +2,9 @@
   "id": "viego-ruined",
   "name": "Viego — Ruined King",
   "icon": "👑",
-  "championMatch": ["viego"],
+  "championMatch": [
+    "viego"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "ruined-mist",
@@ -16,5 +18,9 @@
     "text": "#ecfdf5",
     "muted": "#6ee7b7"
   },
-  "mapCoverBadge": "BLACK MIST // RADAR VEILED 👑"
+  "mapCoverBadge": "BLACK MIST // RADAR VEILED 👑",
+  "skinArt": {
+    "championId": "Viego",
+    "skinQuery": "default"
+  }
 }

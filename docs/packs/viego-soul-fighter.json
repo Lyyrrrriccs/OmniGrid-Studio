@@ -2,7 +2,9 @@
   "id": "viego-soul-fighter",
   "name": "Viego — Soul Fighter",
   "icon": "⚔️",
-  "championMatch": ["viego"],
+  "championMatch": [
+    "viego"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "soul-fighter",
@@ -16,5 +18,9 @@
     "text": "#f8fafc",
     "muted": "#a5f3fc"
   },
-  "mapCoverBadge": "SOUL FIGHTER // TOURNAMENT ⚔️"
+  "mapCoverBadge": "SOUL FIGHTER // TOURNAMENT ⚔️",
+  "skinArt": {
+    "championId": "Viego",
+    "skinQuery": "Soul Fighter"
+  }
 }

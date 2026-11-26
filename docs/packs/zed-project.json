@@ -2,7 +2,9 @@
   "id": "zed-project",
   "name": "Zed — PROJECT",
   "icon": "⚡",
-  "championMatch": ["zed"],
+  "championMatch": [
+    "zed"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "project-cyber",
@@ -16,5 +18,9 @@
     "text": "#f8fafc",
     "muted": "#fda4af"
   },
-  "mapCoverBadge": "PROJECT // SHADOW PROTOCOL ⚡"
+  "mapCoverBadge": "PROJECT // SHADOW PROTOCOL ⚡",
+  "skinArt": {
+    "championId": "Zed",
+    "skinQuery": "PROJECT"
+  }
 }

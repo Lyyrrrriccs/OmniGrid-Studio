@@ -2,7 +2,9 @@
   "id": "diana-prestige-dark-cosmic",
   "name": "Diana — Prestige Dark Cosmic",
   "icon": "🌙",
-  "championMatch": ["diana"],
+  "championMatch": [
+    "diana"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "prestige-cosmic",
@@ -16,5 +18,9 @@
     "text": "#faf5ff",
     "muted": "#fde68a"
   },
-  "mapCoverBadge": "PRESTIGE // DARK COSMIC 🌙"
+  "mapCoverBadge": "PRESTIGE // DARK COSMIC 🌙",
+  "skinArt": {
+    "championId": "Diana",
+    "skinQuery": "Dark Cosmic"
+  }
 }

@@ -2,7 +2,10 @@
   "id": "wukong-radiant",
   "name": "Wukong — Radiant",
   "icon": "☁️",
-  "championMatch": ["wukong", "monkeyking"],
+  "championMatch": [
+    "wukong",
+    "monkeyking"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "radiant-cloud",
@@ -16,5 +19,9 @@
     "text": "#fefce8",
     "muted": "#a7f3d0"
   },
-  "mapCoverBadge": "RADIANT // MONKEY KING ☁️"
+  "mapCoverBadge": "RADIANT // MONKEY KING ☁️",
+  "skinArt": {
+    "championId": "MonkeyKing",
+    "skinQuery": "Radiant"
+  }
 }

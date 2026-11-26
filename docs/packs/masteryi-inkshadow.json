@@ -2,7 +2,11 @@
   "id": "masteryi-inkshadow",
   "name": "Master Yi — Inkshadow",
   "icon": "🖌️",
-  "championMatch": ["master yi", "masteryi", "yi"],
+  "championMatch": [
+    "master yi",
+    "masteryi",
+    "yi"
+  ],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "inkshadow",
@@ -16,5 +20,9 @@
     "text": "#f8fafc",
     "muted": "#cbd5e1"
   },
-  "mapCoverBadge": "INKSHADOW // ALPHA STRIKE 🖌️"
+  "mapCoverBadge": "INKSHADOW // ALPHA STRIKE 🖌️",
+  "skinArt": {
+    "championId": "MasterYi",
+    "skinQuery": "Inkshadow"
+  }
 }
