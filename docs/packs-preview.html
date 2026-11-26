@@ -134,8 +134,8 @@
       96% { box-shadow: 3px 0 24px rgba(0, 245, 212, 0.65), -2px 0 24px rgba(255, 42, 133, 0.7); border-color: var(--ct-tertiary, #00f5d4); transform: translateX(-1px); }
     }
     @keyframes kdaFirePulse {
-      0%, 100% { box-shadow: 0 0 22px rgba(217, 70, 239, 0.52), inset 0 0 16px rgba(0, 245, 255, 0.16); border-color: var(--ct-primary, #d946ef); }
-      50% { box-shadow: 0 0 28px rgba(0, 245, 255, 0.62), 0 0 14px rgba(255, 107, 0, 0.45), inset 0 0 18px rgba(217, 70, 239, 0.22); border-color: var(--ct-secondary, #00f5ff); }
+      0%, 100% { box-shadow: 0 0 24px rgba(255, 59, 92, 0.56), inset 0 0 18px rgba(255, 122, 0, 0.22); border-color: var(--ct-primary, #ff3b5c); }
+      50% { box-shadow: 0 0 32px rgba(255, 122, 0, 0.64), 0 0 18px rgba(0, 245, 255, 0.45), inset 0 0 20px rgba(255, 59, 92, 0.24); border-color: var(--ct-secondary, #ff7a00); }
     }
     @keyframes risenLegendGlow {
       0%, 100% { box-shadow: 0 0 24px rgba(245, 197, 66, 0.48), inset 0 0 16px rgba(255, 46, 85, 0.18); border-color: var(--ct-primary, #f5c542); }
@@ -601,7 +601,7 @@
       { id: 'seraphine-kda-all-out', name: 'Seraphine — K/DA ALL OUT', icon: '✨', effect: 'kda-all-out', description: 'Iridescent K/DA ALL OUT crystal prism, starlight pink & holographic ice-cyan.', colors: { primary: '#67e8f9', secondary: '#f472b6', tertiary: '#c4b5fd', bgStart: 'rgba(14, 10, 32, 0.95)', bgEnd: 'rgba(10, 18, 38, 0.96)', text: '#f8fbff' }, mapCoverBadge: 'K/DA ALL OUT // SUPERSTAR ✨' },
       { id: 'masteryi-inkshadow', name: 'Master Yi — Inkshadow', icon: '🖌️', effect: 'inkshadow', description: 'Sumi-e obsidian ink wash, spectral Jade Spirit glow & Vermilion seal accents.', colors: { primary: '#14f1c6', secondary: '#ff3b4e', tertiary: '#f8fafc', bgStart: 'rgba(8, 9, 14, 0.97)', bgEnd: 'rgba(14, 12, 22, 0.98)', text: '#f8fafc' }, mapCoverBadge: 'INKSHADOW // ALPHA STRIKE 🖌️' },
       { id: 'kaisa-risen-legend', name: "Kai'Sa — Risen Legend", icon: '🏆', effect: 'risen-legend', description: 'Hall of Legends Obsidian, Imperial Gold & Royal Crimson plasma aura.', colors: { primary: '#f5c542', secondary: '#ff2e55', tertiary: '#c084fc', bgStart: 'rgba(18, 7, 14, 0.96)', bgEnd: 'rgba(9, 8, 18, 0.97)', text: '#fff8e7' }, mapCoverBadge: 'HALL OF LEGENDS // RISEN LEGEND 🏆' },
-      { id: 'akali-kda-firestarter', name: 'Akali — K/DA Firestarter', icon: '🐉', effect: 'kda-firestarter', description: 'K/DA Blacklight UV Magenta, Neon Cyan & Firestarter Flame glow.', colors: { primary: '#d946ef', secondary: '#00f5ff', tertiary: '#ff6b00', bgStart: 'rgba(12, 6, 28, 0.96)', bgEnd: 'rgba(18, 4, 24, 0.97)', text: '#fdf4ff' }, mapCoverBadge: 'K/DA // IN THE SHROUD 🐉' },
+      { id: 'akali-kda-firestarter-ignition', name: 'Akali — K/DA Firestarter Ignition', icon: '🔥', effect: 'kda-firestarter', description: 'Blazing K/DA Ignition flame orange, neon crimson-magenta & UV hyper-cyan sparks.', colors: { primary: '#ff3b5c', secondary: '#ff7a00', tertiary: '#00f5ff', bgStart: 'rgba(22, 6, 20, 0.96)', bgEnd: 'rgba(10, 8, 26, 0.97)', text: '#fff5f7' }, mapCoverBadge: 'K/DA IGNITION // FIRESTARTER 🔥' },
       { id: 'jinx-arcane-zaun', name: 'Jinx — Arcane / Zaun', icon: '💥', effect: 'jinx-glitch', description: 'Neon Pink & Zaun Toxic Green, graffiti stripes & animated glitch border.', colors: { primary: '#ff2a85', secondary: '#39ff14', tertiary: '#00f5d4', bgStart: 'rgba(18, 6, 26, 0.95)', bgEnd: 'rgba(6, 18, 22, 0.96)', text: '#fff0f7' }, mapCoverBadge: "POW-POW // DON'T PEEK! 💥" },
       { id: 'ahri-spirit-blossom', name: 'Ahri — Spirit Blossom', icon: '🌸', effect: 'spirit-blossom', description: 'Sakura Pink & Spirit Cyan ether glow with rounded Spirit Realm framing.', colors: { primary: '#f472b6', secondary: '#67e8f9', tertiary: '#c084fc', bgStart: 'rgba(24, 12, 34, 0.94)', bgEnd: 'rgba(12, 22, 38, 0.95)', text: '#fdf2f8' }, mapCoverBadge: 'SPIRIT REALM // NO PEEKING 🌸' },
       { id: 'yasuo-nightbringer', name: 'Yasuo — Nightbringer', icon: '🔥', effect: 'nightbringer', description: 'Obsidian steel & molten ember orange with sharp blade-cut edges.', colors: { primary: '#ff5500', secondary: '#ffaa00', tertiary: '#ff2200', bgStart: 'rgba(20, 8, 6, 0.96)', bgEnd: 'rgba(10, 6, 8, 0.97)', text: '#fff7ed' }, mapCoverBadge: 'HASAGI // MINIMAP SEALED 🔥' },
@@ -631,7 +631,7 @@
 
     const SKIN_ART_MAP = {
       'ahri-spirit-blossom': { championId: 'Ahri', skinQuery: 'Spirit Blossom' },
-      'akali-kda-firestarter': { championId: 'Akali', skinQuery: 'K/DA' },
+      'akali-kda-firestarter-ignition': { championId: 'Akali', skinQuery: 'K/DA' },
       'caitlyn-arcane-prestige': { championId: 'Caitlyn', skinQuery: 'Prestige Arcane Commander' },
       'darius-divine-god-king': { championId: 'Darius', skinQuery: 'God-King' },
       'diana-prestige-dark-cosmic': { championId: 'Diana', skinQuery: 'Dark Cosmic' },
