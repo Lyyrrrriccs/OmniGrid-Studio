@@ -2365,6 +2365,309 @@ const OBS_GAME_STATS_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_LOL_BG_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — LoL Client Animated Background</title>
+  <style>
+    :root {
+      --c1: #c8aa6e;
+      --c2: #0ac8b9;
+      --c3: #38bdf8;
+      --bg-a: #061022;
+      --bg-b: #020814;
+      --txt: #f0e6d2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100vw; height: 100vh; overflow: hidden; background: var(--bg-b); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--txt); }
+    .bg-root {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255,255,255,0.03), transparent 45%),
+        linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 100%);
+      transition: background 0.8s ease;
+    }
+    @keyframes kenBurns {
+      0% { transform: scale(1.04) translate3d(0%, 0%, 0); }
+      50% { transform: scale(1.13) translate3d(-1.8%, -1.2%, 0); }
+      100% { transform: scale(1.04) translate3d(0%, 0%, 0); }
+    }
+    .bg-splash {
+      position: fixed;
+      inset: -4%;
+      background-size: cover;
+      background-position: center 22%;
+      opacity: 0;
+      filter: blur(2px) saturate(1.18) brightness(0.68);
+      animation: kenBurns 28s ease-in-out infinite;
+      transition: opacity 0.9s ease, background-image 0.6s ease;
+      pointer-events: none;
+    }
+    .bg-splash.visible { opacity: 0.42; }
+    .bg-vignette {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center, rgba(2, 6, 16, 0.25) 0%, rgba(2, 6, 16, 0.82) 100%),
+        linear-gradient(180deg, rgba(2, 6, 16, 0.45) 0%, transparent 25%, transparent 75%, rgba(2, 6, 16, 0.72) 100%);
+      pointer-events: none;
+    }
+    @keyframes orbFloatA {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(6vw, 4vh, 0) scale(1.14); }
+    }
+    @keyframes orbFloatB {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-6vw, -5vh, 0) scale(1.18); }
+    }
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(110px);
+      opacity: 0.28;
+      pointer-events: none;
+      transition: background 0.8s ease;
+    }
+    .bg-orb-1 { width: 46vw; height: 46vw; top: -16vw; left: -12vw; background: var(--c1); animation: orbFloatA 16s ease-in-out infinite; }
+    .bg-orb-2 { width: 42vw; height: 42vw; bottom: -16vw; right: -10vw; background: var(--c2); animation: orbFloatB 19s ease-in-out infinite; }
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 64px 64px;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    #bgParticles { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .bg-frame {
+      position: fixed;
+      inset: 14px;
+      border: 1.5px solid var(--c1);
+      opacity: 0.36;
+      pointer-events: none;
+      transition: border-color 0.6s ease;
+    }
+    .bg-corner { position: fixed; width: 34px; height: 34px; pointer-events: none; transition: border-color 0.6s ease; }
+    .bg-c-tl { top: 12px; left: 12px; border-top: 3px solid var(--c2); border-left: 3px solid var(--c2); }
+    .bg-c-tr { top: 12px; right: 12px; border-top: 3px solid var(--c1); border-right: 3px solid var(--c1); }
+    .bg-c-bl { bottom: 12px; left: 12px; border-bottom: 3px solid var(--c1); border-left: 3px solid var(--c1); }
+    .bg-c-br { bottom: 12px; right: 12px; border-bottom: 3px solid var(--c2); border-right: 3px solid var(--c2); }
+    .bg-watermark {
+      position: fixed;
+      bottom: 24px;
+      left: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 14px;
+      border-radius: 4px;
+      background: rgba(5, 10, 22, 0.72);
+      border: 1px solid var(--c1);
+      border-left: 4px solid var(--c2);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--txt);
+      text-shadow: 0 0 10px var(--c1);
+      backdrop-filter: blur(8px);
+      transition: all 0.5s ease;
+    }
+    .bg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c2); box-shadow: 0 0 10px var(--c2); }
+  </style>
+</head>
+<body>
+  <div class="bg-root"></div>
+  <div class="bg-splash" id="bgSplash"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-grid"></div>
+  <canvas id="bgParticles"></canvas>
+  <div class="bg-vignette"></div>
+  <div class="bg-frame"></div>
+  <div class="bg-corner bg-c-tl"></div>
+  <div class="bg-corner bg-c-tr"></div>
+  <div class="bg-corner bg-c-bl"></div>
+  <div class="bg-corner bg-c-br"></div>
+  <div class="bg-watermark"><span class="bg-dot"></span><span id="bgLabel">⚔️ LEAGUE OF LEGENDS // HEXTECH</span></div>
+  <script>
+    (function initLolAnimatedBg() {
+      const root = document.documentElement;
+      const splashEl = document.getElementById('bgSplash');
+      const labelEl = document.getElementById('bgLabel');
+      const canvas = document.getElementById('bgParticles');
+      const ctx = canvas.getContext('2d');
+
+      let palette = ['#c8aa6e', '#0ac8b9', '#38bdf8'];
+      let packSplashUrl = '';
+      let gameSplashUrl = '';
+      let ddVerPromise = null;
+      const skinCache = {};
+
+      function resize() {
+        canvas.width = window.innerWidth || 1920;
+        canvas.height = window.innerHeight || 1080;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const particles = Array.from({ length: 52 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: 1.4 + Math.random() * 3.2,
+        vy: 0.25 + Math.random() * 0.75,
+        vx: (Math.random() - 0.5) * 0.35,
+        phase: Math.random() * Math.PI * 2,
+        ci: Math.floor(Math.random() * 3),
+        alpha: 0.25 + Math.random() * 0.65
+      }));
+
+      function tick() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const p of particles) {
+          p.y -= p.vy;
+          p.phase += 0.014;
+          p.x += p.vx + Math.sin(p.phase) * 0.32;
+          if (p.y < -12) { p.y = canvas.height + 12; p.x = Math.random() * canvas.width; }
+          if (p.x < -12) p.x = canvas.width + 12;
+          if (p.x > canvas.width + 12) p.x = -12;
+          const col = palette[p.ci % palette.length];
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = col;
+          ctx.fillStyle = col;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      function updateSplash() {
+        const url = packSplashUrl || gameSplashUrl;
+        if (url) {
+          splashEl.style.backgroundImage = 'url("' + url + '")';
+          splashEl.classList.add('visible');
+        } else {
+          splashEl.classList.remove('visible');
+        }
+      }
+
+      function getDdVer() {
+        if (!ddVerPromise) {
+          ddVerPromise = fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((a) => (Array.isArray(a) && a[0] ? a[0] : '15.22.1'))
+            .catch(() => '15.22.1');
+        }
+        return ddVerPromise;
+      }
+
+      async function resolveSkinSplash(art) {
+        if (!art || !art.championId) return '';
+        const cid = String(art.championId).replace(/[^A-Za-z0-9]/g, '');
+        if (!cid) return '';
+        const q = String(art.skinQuery || '').trim().toLowerCase();
+        const key = cid + ':' + q;
+        if (skinCache[key]) return skinCache[key];
+        let num = 0;
+        if (q && q !== 'default') {
+          try {
+            const ver = await getDdVer();
+            const r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/en_US/champion/' + cid + '.json');
+            if (r.ok) {
+              const j = await r.json();
+              const skins = j && j.data && j.data[cid] && Array.isArray(j.data[cid].skins) ? j.data[cid].skins : [];
+              const words = q.split(/\s+/).filter(Boolean);
+              const hit = skins.find((s) => String(s.name || '').toLowerCase().includes(q))
+                || skins.find((s) => words.every((w) => String(s.name || '').toLowerCase().includes(w)))
+                || skins.find((s) => words.some((w) => w.length > 3 && String(s.name || '').toLowerCase().includes(w)));
+              if (hit && Number.isFinite(Number(hit.num))) num = Number(hit.num);
+            }
+          } catch (e) {}
+        }
+        const url = 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/' + cid + '_' + num + '.jpg';
+        skinCache[key] = url;
+        return url;
+      }
+
+      function applyPack(pack) {
+        if (!pack || !pack.id) {
+          palette = ['#c8aa6e', '#0ac8b9', '#38bdf8'];
+          root.style.setProperty('--c1', '#c8aa6e');
+          root.style.setProperty('--c2', '#0ac8b9');
+          root.style.setProperty('--c3', '#38bdf8');
+          root.style.setProperty('--bg-a', '#061022');
+          root.style.setProperty('--bg-b', '#020814');
+          root.style.setProperty('--txt', '#f0e6d2');
+          labelEl.textContent = '⚔️ LEAGUE OF LEGENDS // HEXTECH';
+          packSplashUrl = '';
+          updateSplash();
+          return;
+        }
+        const c = pack.colors || {};
+        const c1 = c.primary || '#ff2a85';
+        const c2 = c.secondary || '#39ff14';
+        const c3 = c.tertiary || '#00f5d4';
+        palette = [c1, c2, c3];
+        root.style.setProperty('--c1', c1);
+        root.style.setProperty('--c2', c2);
+        root.style.setProperty('--c3', c3);
+        root.style.setProperty('--bg-a', c.bgStart || '#12061a');
+        root.style.setProperty('--bg-b', c.bgEnd || '#061216');
+        root.style.setProperty('--txt', c.text || '#f8fafc');
+        labelEl.textContent = (pack.icon || '🎨') + ' ' + pack.name;
+        if (pack.skinArt && pack.skinArt.championId) {
+          resolveSkinSplash(pack.skinArt).then((u) => { packSplashUrl = u; updateSplash(); }).catch(() => {});
+        } else {
+          packSplashUrl = '';
+          updateSplash();
+        }
+      }
+
+      function fetchAll() {
+        fetch('/api/champion-theme', { cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => applyPack(d && d.pack ? d.pack : null))
+          .catch(() => {});
+        fetch('/api/game-stats', { cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => { if (d && d.skinSplashUrl) { gameSplashUrl = d.skinSplashUrl; updateSplash(); } })
+          .catch(() => {});
+      }
+
+      function connectWs() {
+        try {
+          const ws = new WebSocket('ws://' + location.host);
+          ws.onmessage = (ev) => {
+            try {
+              const p = JSON.parse(ev.data);
+              if (p.type === 'champion-theme') applyPack(p.data);
+              if (p.type === 'game-stats' && p.data && p.data.skinSplashUrl) {
+                gameSplashUrl = p.data.skinSplashUrl;
+                updateSplash();
+              }
+            } catch (e) {}
+          };
+          ws.onclose = () => setTimeout(connectWs, 2500);
+        } catch (e) {}
+      }
+
+      fetchAll();
+      connectWs();
+      setInterval(fetchAll, 4000);
+    })();
+  </script>
+</body>
+</html>`;
+
 const OBS_LOL_MAP_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -4520,6 +4823,8 @@ class ObsServer {
           res.end(withChampionTheme(OBS_GAME_STATS_HTML));
         } else if (urlPath === '/lol-map') {
           res.end(withChampionTheme(OBS_LOL_MAP_HTML));
+        } else if (urlPath === '/lol-bg') {
+          res.end(OBS_LOL_BG_HTML);
         } else if (urlPath === '/lol-build') {
           res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {
