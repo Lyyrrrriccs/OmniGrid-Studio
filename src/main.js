@@ -5674,6 +5674,37 @@ app.whenReady().then(async () => {
     return { ok: true, dir };
   });
 
+  ipcMain.handle('themes-check-updates', async () => {
+    const bundledDir = path.join(__dirname, '..', 'docs', 'packs');
+    const res = await themePacks.checkAndUpdatePacks(app.getPath('userData'), { bundledPacksDir: bundledDir, online: true });
+    const cfg = loadConfig();
+    const state = broadcastChampionThemeToObs(cfg);
+    if (res.updated.length) {
+      appendDiagLog('system', 'info', `🔄 ${res.updated.length} Overlay-Pack(s) aktualisiert: ${res.updated.map((u) => u.name).join(', ')}`);
+      if (obsWs.connected) obsWs.refreshOmniGridOverlays().catch(() => {});
+    }
+    const rawMode = String(cfg.championThemeMode || 'none').trim();
+    return { ...res, ...state, mode: rawMode === 'auto' ? 'none' : rawMode };
+  });
+
+  const bundledPacksDir = path.join(__dirname, '..', 'docs', 'packs');
+  const localPackSync = themePacks.syncInstalledPacksLocal(app.getPath('userData'), bundledPacksDir);
+  if (localPackSync.updated.length) {
+    appendDiagLog('system', 'info', `🔄 ${localPackSync.updated.length} Overlay-Pack(s) beim Start aktualisiert: ${localPackSync.updated.map((u) => u.name).join(', ')}`);
+    broadcastChampionThemeToObs(loadConfig());
+  }
+  setTimeout(() => {
+    themePacks.checkAndUpdatePacks(app.getPath('userData'), { bundledPacksDir, online: true })
+      .then((res) => {
+        if (res?.updated?.length) {
+          appendDiagLog('system', 'info', `🔄 ${res.updated.length} Overlay-Pack(s) online aktualisiert: ${res.updated.map((u) => u.name).join(', ')}`);
+          broadcastChampionThemeToObs(loadConfig());
+          if (obsWs.connected) obsWs.refreshOmniGridOverlays().catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, 4500);
+
   ipcMain.handle('submit-github-feedback', async (_ev, payload = {}) => {
     const { shell } = require('electron');
     const https = require('https');
