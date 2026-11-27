@@ -1,0 +1,25 @@
+{
+  "id": "ahri-kda-firestarter",
+  "name": "Ahri — K/DA FIRESTARTER",
+  "icon": "🦊",
+  "championMatch": ["ahri"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "ahri-firestarter",
+  "description": "K/DA FIRESTARTER Ahri hot-pink neon charm, crimson flame & crystal heart shards with 2.5D cel-shaded Heart-Shatter transition across all OBS overlays.",
+  "colors": {
+    "primary": "#ff2e97",
+    "secondary": "#ff1e56",
+    "tertiary": "#fda4af",
+    "bgStart": "rgba(18, 4, 14, 0.97)",
+    "bgEnd": "rgba(9, 3, 12, 0.98)",
+    "text": "#fff0f7",
+    "muted": "#f9a8d4"
+  },
+  "mapCoverBadge": "FIRESTARTER // HEART CHARM 🦊",
+  "skinArt": {
+    "championId": "Ahri",
+    "skinQuery": "FIRESTARTER",
+    "skinNum": 97
+  }
+}

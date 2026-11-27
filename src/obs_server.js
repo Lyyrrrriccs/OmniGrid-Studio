@@ -2460,7 +2460,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-kda-firestarter .bg-splash,
     body.fx-dj-sona .bg-splash,
     body.fx-arcane-fractured .bg-splash,
-    body.fx-eve-firestarter .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
+    body.fx-eve-firestarter .bg-splash,
+    body.fx-ahri-firestarter .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
     body.fx-inkshadow .bg-splash,
     body.fx-black-rose .bg-splash,
     body.fx-ravenborn .bg-splash,
@@ -2748,7 +2749,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'prestige-rose': 'petals',
         'dj-sona': 'eq',
         'arcane-fractured': 'shards',
-        'eve-firestarter': 'embers'
+        'eve-firestarter': 'embers',
+        'ahri-firestarter': 'shards'
       };
 
       function resize() {
@@ -4120,6 +4122,27 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'eve-firestarter') {
           spawnEveCoffin();
           drawEveCoffin();
+        } else if (activeEffect === 'ahri-firestarter') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/ahri-firestarter-transition.mp4?t=' + Date.now();
+            customVideo.currentTime = 0;
+            customVideo.muted = true;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnBubbles();
+              drawBubbles();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2250);
+            return;
+          }
+          spawnBubbles();
+          drawBubbles();
         } else if (activeEffect === 'kda-firestarter') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/akali-firestarter-transition.mp4?t=' + Date.now();
@@ -6573,6 +6596,104 @@ body.champ-fx-eve-firestarter .gw-winner {
   color: #fff0f6 !important;
   text-shadow: 0 0 18px rgba(255, 30, 107, 0.95), 0 0 10px rgba(255, 122, 0, 0.82) !important;
 }
+
+@keyframes ahriFirestarterPulse {
+  0%, 100% { border-color: #ff2e97; box-shadow: 0 0 22px rgba(255, 46, 151, 0.58), inset 0 0 14px rgba(255, 30, 86, 0.18); }
+  50% { border-color: #ff1e56; box-shadow: 0 0 26px rgba(255, 30, 86, 0.62), inset 0 0 14px rgba(253, 164, 175, 0.22); }
+}
+body.champ-fx-ahri-firestarter .msg-row {
+  background:
+    repeating-linear-gradient(-35deg, rgba(255, 46, 151, 0.07) 0 4px, rgba(255, 30, 86, 0.05) 4px 10px, transparent 10px 24px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(18, 4, 14, 0.97)), var(--ct-bg-end, rgba(9, 3, 12, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #ff2e97) !important;
+  border-left: 4px solid var(--ct-secondary, #ff1e56) !important;
+  border-radius: 12px !important;
+  animation: ahriFirestarterPulse 4.2s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-ahri-firestarter ${s}`).join(',\n')} {
+  position: relative;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255, 46, 151, 0.26), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(255, 30, 86, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(18, 4, 14, 0.97)), var(--ct-bg-end, rgba(9, 3, 12, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #ff2e97) !important;
+  border-radius: 14px !important;
+  animation: ahriFirestarterPulse 3.8s ease-in-out infinite;
+}
+body.champ-fx-ahri-firestarter .gs-title,
+body.champ-fx-ahri-firestarter .gs-champ-name,
+body.champ-fx-ahri-firestarter .lb-rank,
+body.champ-fx-ahri-firestarter .sp-title,
+body.champ-fx-ahri-firestarter .goal-title,
+body.champ-fx-ahri-firestarter .poll-q,
+body.champ-fx-ahri-firestarter .gw-title,
+body.champ-fx-ahri-firestarter .sched-title,
+body.champ-fx-ahri-firestarter .al-author,
+body.champ-fx-ahri-firestarter .lt-topic,
+body.champ-fx-ahri-firestarter .qna-author,
+body.champ-fx-ahri-firestarter .tron-topic,
+body.champ-fx-ahri-firestarter .val-rank-name { color: #fff0f7 !important; text-shadow: 0 0 12px rgba(255, 46, 151, 0.92), 0 0 8px rgba(255, 30, 86, 0.72) !important; }
+body.champ-fx-ahri-firestarter .gs-lp-fill,
+body.champ-fx-ahri-firestarter .lb-lp-fill,
+body.champ-fx-ahri-firestarter .goal-fill,
+body.champ-fx-ahri-firestarter .sp-prog-fill,
+body.champ-fx-ahri-firestarter .val-rr-fill { background: linear-gradient(90deg, #ff2e97, #ff1e56, #fda4af) !important; }
+body.champ-fx-ahri-firestarter .alert-card {
+  position: relative;
+  animation: ahriFirestarterPulse 2.6s ease-in-out infinite !important;
+}
+body.champ-fx-ahri-firestarter .alert-card::before {
+  content: '♥  🦊';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 13px;
+  color: #ff2e97;
+  text-shadow: 0 0 12px rgba(255, 46, 151, 0.95);
+  pointer-events: none;
+}
+body.champ-fx-ahri-firestarter .alert-card::after {
+  content: '🔥  ♥';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 13px;
+  color: #ff1e56;
+  text-shadow: 0 0 12px rgba(255, 30, 86, 0.95);
+  pointer-events: none;
+}
+body.champ-fx-ahri-firestarter .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(26, 5, 20, 0.96), rgba(10, 3, 14, 0.98)) !important;
+  border: 2px solid #ff2e97 !important;
+  box-shadow: 0 0 22px rgba(255, 46, 151, 0.45), inset 0 0 14px rgba(255, 30, 86, 0.22) !important;
+}
+body.champ-fx-ahri-firestarter .gw-slot::before {
+  content: '♥';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 13px;
+  color: #ff2e97;
+}
+body.champ-fx-ahri-firestarter .gw-slot::after {
+  content: '🦊';
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 12px;
+}
+body.champ-fx-ahri-firestarter .gw-slot.is-spinning {
+  animation: ahriFirestarterPulse 0.55s linear infinite !important;
+}
+body.champ-fx-ahri-firestarter .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  box-shadow: 0 0 34px rgba(255, 46, 151, 0.88), inset 0 0 18px rgba(255, 30, 86, 0.32) !important;
+}
+body.champ-fx-ahri-firestarter .gw-winner {
+  color: #fff0f7 !important;
+  text-shadow: 0 0 18px rgba(255, 46, 151, 0.95), 0 0 10px rgba(255, 30, 86, 0.82) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -6642,7 +6763,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');

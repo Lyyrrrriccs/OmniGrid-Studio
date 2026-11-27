@@ -158,8 +158,9 @@
     stage.classList.add('playing');
 
     const vid = m.querySelector('#otpVideo');
-    if (fx === 'kda-firestarter' && vid) {
-      vid.src = './assets/akali-firestarter-transition.mp4?t=' + Date.now();
+    if ((fx === 'kda-firestarter' || fx === 'ahri-firestarter') && vid) {
+      const clipName = fx === 'ahri-firestarter' ? 'ahri-firestarter-transition.mp4' : 'akali-firestarter-transition.mp4';
+      vid.src = './assets/' + clipName + '?t=' + Date.now();
       vid.currentTime = 0;
       vid.style.display = 'block';
       vid.onended = () => { vid.style.display = 'none'; };
