@@ -3291,6 +3291,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       let eveEmbers = [];
       let akaliStart = 0;
       let akaliSparks = [];
+      let akaliStars = [];
       let akaliTrail = [];
       const akaliSkateImg = new Image();
       akaliSkateImg.src = '/api/theme-asset/akali-ignition-art.png';
@@ -3298,26 +3299,61 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       function spawnAkaliSkate() {
         akaliStart = performance.now();
         akaliTrail = [];
-        const cols = ['#ff3b5c', '#ff7a00', '#00f5ff', '#fde047'];
-        akaliSparks = Array.from({ length: 72 }, (_, i) => ({
-          x: -200,
-          y: canvas.height * 0.7,
-          vx: -(6 + Math.random() * 16),
-          vy: -(3 + Math.random() * 11),
-          r: 2.5 + Math.random() * 6,
+        const cols = ['#ff2e97', '#ff1e56', '#ff7a00', '#fde047', '#f472b6'];
+        akaliSparks = Array.from({ length: 84 }, (_, i) => ({
+          x: canvas.width * 0.5,
+          y: canvas.height * 0.72,
+          vx: (Math.random() - 0.5) * 24,
+          vy: -(3 + Math.random() * 14),
+          r: 2 + Math.random() * 5.5,
           col: cols[i % cols.length],
           life: 0,
-          maxLife: 320 + Math.random() * 480
+          maxLife: 280 + Math.random() * 440
         }));
+        akaliStars = Array.from({ length: 34 }, (_, i) => {
+          const angle = (i / 34) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+          return {
+            angle,
+            speed: 14 + Math.random() * 26,
+            radius: 16 + Math.random() * 90,
+            size: 16 + Math.random() * 42,
+            rot: Math.random() * Math.PI,
+            vrot: (Math.random() - 0.5) * 0.08,
+            col: i % 3 === 0 ? '#fde047' : (i % 3 === 1 ? '#ff2e97' : '#ff5a1f'),
+            delay: 520 + Math.random() * 380
+          };
+        });
+      }
+
+      function drawFourPointStar(ctx, x, y, r, rot, col, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.fillStyle = col;
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 24;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const rad = i % 2 === 0 ? r : r * 0.22;
+          const a = (i * Math.PI) / 4;
+          if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+          else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       }
 
       function drawAkaliSkate(now) {
         const elapsed = Math.max(0, (now || performance.now()) - akaliStart);
         const w = canvas.width;
         const h = canvas.height;
+        const cx = w * 0.5;
+        const vpY = h * 0.54;
         ctx.clearRect(0, 0, w, h);
 
-        const prog = Math.min(1, elapsed / 1720);
+        const prog = Math.min(1, elapsed / 1780);
         const env = elapsed < 140
           ? elapsed / 140
           : elapsed > 1420 ? Math.max(0, 1 - (elapsed - 1420) / 400) : 1;
@@ -3326,56 +3362,96 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           return;
         }
 
-        const easeX = prog < 0.5
-          ? 2 * prog * prog
-          : 1 - Math.pow(-2 * prog + 2, 2) / 2;
-        const skateX = -260 + (w + 520) * easeX;
-        const baseY = h * 0.66;
-        const danceBounce = Math.abs(Math.sin(elapsed * 0.016)) * 28;
-        const ollieEnv = (prog > 0.34 && prog < 0.66)
-          ? Math.sin(((prog - 0.34) / 0.32) * Math.PI)
-          : 0;
-        const skateY = baseY - danceBounce - ollieEnv * 150;
-        const danceTilt = Math.sin(elapsed * 0.014) * 0.14 + ollieEnv * -0.22;
+        const bgGrad = ctx.createRadialGradient(cx, vpY, 30, cx, vpY, w * 0.72);
+        bgGrad.addColorStop(0, 'rgba(255, 30, 86, ' + (0.28 * env).toFixed(3) + ')');
+        bgGrad.addColorStop(0.45, 'rgba(28, 6, 20, ' + (0.72 * env).toFixed(3) + ')');
+        bgGrad.addColorStop(1, 'rgba(6, 2, 10, ' + (0.88 * env).toFixed(3) + ')');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
 
-        akaliTrail.push({ x: skateX, y: skateY + 34, t: elapsed });
-        if (akaliTrail.length > 34) akaliTrail.shift();
-
-        for (let i = 1; i < akaliTrail.length; i++) {
-          const p0 = akaliTrail[i - 1];
-          const p1 = akaliTrail[i];
-          const ratio = i / akaliTrail.length;
+        for (let a = 0; a < 7; a++) {
+          const z = ((elapsed * 0.0014 + a / 7) % 1);
+          const archR = 90 + Math.pow(z, 2.2) * (w * 0.85);
+          const archAlpha = Math.sin(z * Math.PI) * 0.85 * env;
           ctx.save();
-          ctx.globalAlpha = ratio * 0.85 * env;
-          ctx.strokeStyle = i % 2 === 0 ? '#ff3b5c' : '#00f5ff';
-          ctx.shadowColor = i % 2 === 0 ? '#ff7a00' : '#00f5ff';
-          ctx.shadowBlur = 22;
-          ctx.lineWidth = 6 + ratio * 16;
-          ctx.lineCap = 'round';
+          ctx.globalAlpha = archAlpha;
+          ctx.strokeStyle = a % 2 === 0 ? '#ff1e56' : '#ff2e97';
+          ctx.shadowColor = '#ff1e56';
+          ctx.shadowBlur = 28;
+          ctx.lineWidth = 3 + z * 8;
           ctx.beginPath();
-          ctx.moveTo(p0.x, p0.y);
-          ctx.lineTo(p1.x, p1.y);
+          ctx.arc(cx, vpY + 60, archR, Math.PI * 1.04, Math.PI * 1.96);
           ctx.stroke();
           ctx.restore();
         }
 
-        for (let i = 0; i < akaliSparks.length; i++) {
-          const sp = akaliSparks[i];
-          if (sp.life <= 0 && Math.random() < 0.28) {
-            sp.x = skateX - 30 + (Math.random() - 0.5) * 90;
-            sp.y = skateY + 38 + (Math.random() - 0.5) * 18;
-            sp.vx = -(7 + Math.random() * 16);
-            sp.vy = -(2 + Math.random() * 10);
+        for (let l = 0; l < 14; l++) {
+          const lAngle = (l / 14) * Math.PI * 2 + 0.12;
+          const lPhase = ((elapsed * 0.0032 + l * 0.17) % 1);
+          const r1 = 80 + lPhase * (w * 0.45);
+          const r2 = r1 + 140 + lPhase * 220;
+          ctx.save();
+          ctx.globalAlpha = (1 - lPhase) * 0.75 * env;
+          ctx.strokeStyle = l % 2 === 0 ? '#ff2a55' : '#ff7a00';
+          ctx.shadowColor = '#ff2a55';
+          ctx.shadowBlur = 18;
+          ctx.lineWidth = 2 + lPhase * 4;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(lAngle) * r1, vpY + Math.sin(lAngle) * r1 * 0.65);
+          ctx.lineTo(cx + Math.cos(lAngle) * r2, vpY + Math.sin(lAngle) * r2 * 0.65);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const carveX = cx + Math.sin(prog * Math.PI * 1.45 - 0.5) * (w * 0.24) + (prog - 0.5) * (w * 0.18);
+        const zoomP = Math.sin(Math.min(1, prog * 1.15) * Math.PI);
+        const depthScale = 0.52 + zoomP * 0.72;
+        const danceBounce = Math.abs(Math.sin(elapsed * 0.017)) * 22 * depthScale;
+        const skateY = h * 0.76 - danceBounce + (zoomP - 0.5) * 40;
+        const carveTilt = Math.cos(prog * Math.PI * 1.45 - 0.5) * 0.22 + Math.sin(elapsed * 0.015) * 0.08;
+
+        akaliTrail.push({ x: carveX, y: skateY + 34 * depthScale });
+        if (akaliTrail.length > 26) akaliTrail.shift();
+        for (let i = 1; i < akaliTrail.length; i++) {
+          const r = i / akaliTrail.length;
+          ctx.save();
+          ctx.globalAlpha = r * 0.88 * env;
+          ctx.strokeStyle = i % 2 === 0 ? '#ff2e97' : '#d946ef';
+          ctx.shadowColor = '#ff2e97';
+          ctx.shadowBlur = 30;
+          ctx.lineWidth = (8 + r * 28) * depthScale;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(akaliTrail[i - 1].x, akaliTrail[i - 1].y);
+          ctx.lineTo(akaliTrail[i].x, akaliTrail[i].y);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const floorGlow = ctx.createRadialGradient(carveX, skateY + 38 * depthScale, 10, carveX, skateY + 38 * depthScale, 260 * depthScale);
+        floorGlow.addColorStop(0, 'rgba(255, 46, 151, ' + (0.78 * env).toFixed(3) + ')');
+        floorGlow.addColorStop(0.5, 'rgba(255, 122, 0, ' + (0.35 * env).toFixed(3) + ')');
+        floorGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = floorGlow;
+        ctx.beginPath();
+        ctx.ellipse(carveX, skateY + 42 * depthScale, 260 * depthScale, 52 * depthScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (const sp of akaliSparks) {
+          if (sp.life <= 0 && Math.random() < 0.34) {
+            sp.x = carveX + (Math.random() - 0.5) * 110 * depthScale;
+            sp.y = skateY + 36 * depthScale;
+            sp.vx = (Math.random() - 0.5) * 26 - carveTilt * 36;
+            sp.vy = -(4 + Math.random() * 14);
             sp.life = sp.maxLife;
           }
           if (sp.life > 0) {
             sp.x += sp.vx;
             sp.y += sp.vy;
-            sp.vy += 0.32;
+            sp.vy += 0.38;
             sp.life -= 16;
-            const a = Math.max(0, sp.life / sp.maxLife) * env;
             ctx.save();
-            ctx.globalAlpha = a;
+            ctx.globalAlpha = Math.max(0, sp.life / sp.maxLife) * env;
             ctx.fillStyle = sp.col;
             ctx.shadowColor = sp.col;
             ctx.shadowBlur = 16;
@@ -3386,84 +3462,90 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           }
         }
 
-        if (ollieEnv > 0.05) {
-          const flashA = ollieEnv * 0.34;
-          const grad = ctx.createRadialGradient(skateX, skateY - 60, 20, skateX, skateY - 60, w * 0.55);
-          grad.addColorStop(0, 'rgba(255, 122, 0, ' + flashA.toFixed(3) + ')');
-          grad.addColorStop(0.5, 'rgba(255, 59, 92, ' + (flashA * 0.7).toFixed(3) + ')');
-          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-          ctx.fillStyle = grad;
-          ctx.fillRect(0, 0, w, h);
-        }
-
         ctx.save();
         ctx.globalAlpha = env;
-        ctx.translate(skateX, skateY);
-        ctx.rotate(danceTilt);
+        ctx.translate(carveX, skateY);
+        ctx.scale(depthScale, depthScale);
+        ctx.rotate(carveTilt);
 
-        const deckW = 280;
+        const deckW = 270;
         const deckH = 26;
         ctx.save();
-        ctx.shadowColor = '#ff3b5c';
-        ctx.shadowBlur = 28;
-        const deckGrad = ctx.createLinearGradient(-deckW / 2, 0, deckW / 2, 0);
-        deckGrad.addColorStop(0, '#ff3b5c');
-        deckGrad.addColorStop(0.5, '#ff7a00');
-        deckGrad.addColorStop(1, '#00f5ff');
-        ctx.fillStyle = deckGrad;
+        ctx.shadowColor = '#ff2e97';
+        ctx.shadowBlur = 32;
+        ctx.fillStyle = '#0c0714';
+        ctx.strokeStyle = '#ff1e56';
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.roundRect(-deckW / 2, 16, deckW, deckH, 13);
+        ctx.roundRect(-deckW / 2, 14, deckW, deckH, 13);
         ctx.fill();
-        ctx.strokeStyle = '#fff5f7';
-        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.strokeStyle = '#ff2e97';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-deckW * 0.35, 27);
+        ctx.lineTo(deckW * 0.35, 27);
         ctx.stroke();
 
-        const wheelSpin = elapsed * 0.028;
-        for (const wx of [-84, 84]) {
+        const wSpin = elapsed * 0.032;
+        for (const wx of [-82, 82]) {
           ctx.save();
-          ctx.translate(wx, 52);
-          ctx.rotate(wheelSpin);
-          ctx.fillStyle = '#090616';
-          ctx.strokeStyle = '#00f5ff';
-          ctx.shadowColor = '#00f5ff';
-          ctx.shadowBlur = 20;
+          ctx.translate(wx, 50);
+          ctx.rotate(wSpin);
+          ctx.fillStyle = '#120518';
+          ctx.strokeStyle = '#ff2e97';
+          ctx.shadowColor = '#ff2e97';
+          ctx.shadowBlur = 22;
           ctx.lineWidth = 5;
           ctx.beginPath();
-          ctx.arc(0, 0, 20, 0, Math.PI * 2);
+          ctx.arc(0, 0, 18, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
-          ctx.strokeStyle = '#ff7a00';
-          ctx.lineWidth = 3;
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 2.6;
           ctx.beginPath();
-          ctx.moveTo(-14, 0);
-          ctx.lineTo(14, 0);
-          ctx.moveTo(0, -14);
-          ctx.lineTo(0, 14);
+          ctx.moveTo(-12, 0);
+          ctx.lineTo(12, 0);
+          ctx.moveTo(0, -12);
+          ctx.lineTo(0, 12);
           ctx.stroke();
           ctx.restore();
         }
         ctx.restore();
 
         const danceSway = Math.sin(elapsed * 0.022) * 14;
-        const danceScaleY = 1 + Math.sin(elapsed * 0.032) * 0.05;
         ctx.save();
-        ctx.translate(danceSway, 18);
-        ctx.scale(1, danceScaleY);
-        ctx.shadowColor = '#ff3b5c';
-        ctx.shadowBlur = 32;
+        ctx.translate(danceSway, 16);
+        ctx.scale(1, 1 + Math.sin(elapsed * 0.032) * 0.05);
+        ctx.shadowColor = '#ff2e97';
+        ctx.shadowBlur = 36;
         if (akaliSkateImg.complete && akaliSkateImg.naturalWidth > 0) {
-          const drawH = Math.min(h * 0.48, 460);
+          const drawH = 440;
           const drawW = drawH * (akaliSkateImg.naturalWidth / akaliSkateImg.naturalHeight);
           ctx.drawImage(akaliSkateImg, -drawW / 2, -drawH + 20, drawW, drawH);
-        } else {
-          ctx.fillStyle = '#ff3b5c';
-          ctx.beginPath();
-          ctx.arc(0, -220, 44, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillRect(-38, -172, 76, 172);
         }
         ctx.restore();
         ctx.restore();
+
+        for (const st of akaliStars) {
+          if (elapsed < st.delay) continue;
+          st.radius += st.speed;
+          st.rot += st.vrot;
+          const sx = cx + Math.cos(st.angle) * st.radius;
+          const sy = vpY + Math.sin(st.angle) * st.radius * 0.72;
+          const sFade = Math.max(0, 1 - Math.max(0, elapsed - 1340) / 440) * env;
+          if (sFade > 0.02) drawFourPointStar(ctx, sx, sy, st.size, st.rot, st.col, sFade);
+        }
+
+        if (elapsed > 720 && elapsed < 1180) {
+          const flash = Math.sin(((elapsed - 720) / 460) * Math.PI) * 0.42;
+          const fGrad = ctx.createRadialGradient(cx, vpY, 20, cx, vpY, w * 0.68);
+          fGrad.addColorStop(0, 'rgba(255, 46, 151, ' + flash.toFixed(3) + ')');
+          fGrad.addColorStop(0.5, 'rgba(255, 30, 86, ' + (flash * 0.65).toFixed(3) + ')');
+          fGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = fGrad;
+          ctx.fillRect(0, 0, w, h);
+        }
 
         animId = requestAnimationFrame(drawAkaliSkate);
       }
