@@ -2450,7 +2450,12 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-spirit-blossom .bg-splash,
     body.fx-blossom-springs .bg-splash,
     body.fx-radiant-cloud .bg-splash,
-    body.fx-ruined-mist .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    body.fx-ruined-mist .bg-splash,
+    body.fx-zaun-lab .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    @keyframes slotFramePulse {
+      0%, 100% { box-shadow: 0 0 28px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 18px var(--c1); border-color: var(--c1); }
+      50% { box-shadow: 0 0 34px rgba(0, 0, 0, 0.78), inset 0 0 14px rgba(255, 255, 255, 0.06), 0 0 28px var(--c2); border-color: var(--c2); }
+    }
     .bg-scanline {
       position: fixed;
       left: 0;
@@ -2567,6 +2572,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       border-radius: 6px;
       overflow: hidden;
       transition: border-color 0.5s ease, box-shadow 0.5s ease;
+      animation: slotFramePulse 4.8s ease-in-out infinite;
     }
     .slot-box::before,
     .slot-box::after {
@@ -2658,23 +2664,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       border-radius: 4px;
       z-index: 4;
     }
-    @keyframes charFloatBg {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
-    }
-    .bg-char-art {
-      position: fixed;
-      right: 30px;
-      bottom: 8px;
-      height: 295px;
-      width: auto;
-      display: none;
-      z-index: 4;
-      pointer-events: none;
-      filter: drop-shadow(0 0 18px var(--c1)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.85));
-      animation: charFloatBg 4.6s ease-in-out infinite;
-    }
-    .bg-char-art.visible { display: block; }
   </style>
 </head>
 <body>
@@ -2701,12 +2690,10 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       <div class="slot-box chat-slot"></div>
     </div>
   </div>
-  <img id="bgCharArt" class="bg-char-art" alt="" />
   <script>
     (function initLolAnimatedBg() {
       const root = document.documentElement;
       const splashEl = document.getElementById('bgSplash');
-      const charArtEl = document.getElementById('bgCharArt');
       const canvas = document.getElementById('bgParticles');
       const ctx = canvas.getContext('2d');
 
@@ -2736,7 +2723,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'radiant-cloud': 'orbs',
         'arcane-prestige': 'diamonds',
         'project-cyber': 'cyber',
-        'ruined-mist': 'mist'
+        'ruined-mist': 'mist',
+        'zaun-lab': 'bubbles'
       };
 
       function resize() {
@@ -2920,8 +2908,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
           root.style.setProperty('--bg-b', '#020814');
           root.style.setProperty('--txt', '#f0e6d2');
           packSplashUrl = '';
-          charArtEl.classList.remove('visible');
-          charArtEl.removeAttribute('src');
           updateSplash();
           return;
         }
@@ -2939,13 +2925,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         root.style.setProperty('--bg-a', c.bgStart || '#12061a');
         root.style.setProperty('--bg-b', c.bgEnd || '#061216');
         root.style.setProperty('--txt', c.text || '#f8fafc');
-        if (pack.characterArt && /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(pack.characterArt))) {
-          charArtEl.src = '/api/theme-asset/' + encodeURIComponent(String(pack.characterArt));
-          charArtEl.classList.add('visible');
-        } else {
-          charArtEl.classList.remove('visible');
-          charArtEl.removeAttribute('src');
-        }
         if (pack.skinArt && pack.skinArt.championId) {
           resolveSkinSplash(pack.skinArt).then((u) => { packSplashUrl = u; updateSplash(); }).catch(() => {});
         } else {
@@ -2977,6 +2956,201 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       fetchTheme();
       connectWs();
       setInterval(fetchTheme, 4000);
+    })();
+  </script>
+</body>
+</html>`;
+
+const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — Singed Laboratory Transition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100vw; height: 100vh; overflow: hidden; background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .st-stage { position: fixed; inset: 0; pointer-events: none; opacity: 0; }
+    .st-stage.playing { opacity: 1; }
+    .st-curtain {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 62vw;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(57, 255, 20, 0.32), transparent 58%),
+        repeating-linear-gradient(-35deg, rgba(57, 255, 20, 0.09) 0 14px, rgba(0, 229, 160, 0.05) 14px 28px, transparent 28px 56px),
+        linear-gradient(135deg, #03120a 0%, #072617 55%, #041315 100%);
+      border: 3px solid #39ff14;
+      box-shadow: 0 0 60px rgba(57, 255, 20, 0.65), inset 0 0 40px rgba(0, 229, 160, 0.35);
+    }
+    .st-left { left: -66vw; border-left: none; clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%); }
+    .st-right { right: -66vw; border-right: none; clip-path: polygon(12% 0, 100% 0, 100% 100%, 12% 100%, 0 50%); }
+    @keyframes stLeftSweep {
+      0% { transform: translateX(0); }
+      38% { transform: translateX(64vw); }
+      58% { transform: translateX(64vw); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes stRightSweep {
+      0% { transform: translateX(0); }
+      38% { transform: translateX(-64vw); }
+      58% { transform: translateX(-64vw); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes stEmblemPop {
+      0%, 22% { opacity: 0; transform: translate(-50%, -50%) scale(0.45) rotate(-14deg); }
+      40% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(2deg); }
+      58% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+      82%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25) rotate(8deg); }
+    }
+    @keyframes stRingBlast {
+      0%, 34% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+      44% { opacity: 0.95; }
+      78%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(2.8); }
+    }
+    .st-stage.playing .st-left { animation: stLeftSweep 1.75s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
+    .st-stage.playing .st-right { animation: stRightSweep 1.75s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
+    .st-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      border: 4px solid #39ff14;
+      box-shadow: 0 0 42px #39ff14, inset 0 0 32px #00e5a0;
+      opacity: 0;
+    }
+    .st-stage.playing .st-ring { animation: stRingBlast 1.75s ease-out forwards; }
+    .st-emblem {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+    }
+    .st-stage.playing .st-emblem { animation: stEmblemPop 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .st-flask {
+      width: 144px;
+      height: 144px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(57, 255, 20, 0.32) 0%, rgba(4, 18, 12, 0.94) 70%);
+      border: 3px solid #39ff14;
+      box-shadow: 0 0 45px rgba(57, 255, 20, 0.8), inset 0 0 24px rgba(0, 229, 160, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+    }
+    .st-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: #ecfdf5;
+      text-shadow: 0 0 18px #39ff14, 0 0 8px #00e5a0;
+    }
+    #stBubbles { position: absolute; inset: 0; width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div class="st-stage" id="stStage">
+    <div class="st-curtain st-left"></div>
+    <div class="st-curtain st-right"></div>
+    <canvas id="stBubbles"></canvas>
+    <div class="st-ring"></div>
+    <div class="st-emblem">
+      <div class="st-flask">🧪</div>
+      <div class="st-title">ZAUN LABORATORY</div>
+    </div>
+  </div>
+  <script>
+    (function initSingedTransition() {
+      const stage = document.getElementById('stStage');
+      const canvas = document.getElementById('stBubbles');
+      const ctx = canvas.getContext('2d');
+      let animId = 0;
+      let timer = null;
+      let bubbles = [];
+
+      function resize() {
+        canvas.width = window.innerWidth || 1920;
+        canvas.height = window.innerHeight || 1080;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function spawnBubbles() {
+        bubbles = Array.from({ length: 70 }, () => ({
+          x: Math.random() * canvas.width,
+          y: canvas.height + Math.random() * 240,
+          r: 4 + Math.random() * 14,
+          vy: 4 + Math.random() * 9,
+          vx: (Math.random() - 0.5) * 2.2,
+          col: Math.random() > 0.45 ? '#39ff14' : '#00e5a0',
+          alpha: 0.35 + Math.random() * 0.55
+        }));
+      }
+
+      function drawBubbles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const b of bubbles) {
+          b.y -= b.vy;
+          b.x += b.vx;
+          ctx.save();
+          ctx.globalAlpha = b.alpha;
+          ctx.strokeStyle = b.col;
+          ctx.fillStyle = b.col;
+          ctx.shadowBlur = 14;
+          ctx.shadowColor = b.col;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = b.alpha * 0.25;
+          ctx.fill();
+          ctx.restore();
+        }
+        animId = requestAnimationFrame(drawBubbles);
+      }
+
+      function playTransition() {
+        if (timer) clearTimeout(timer);
+        if (animId) cancelAnimationFrame(animId);
+        stage.classList.remove('playing');
+        void stage.offsetWidth;
+        spawnBubbles();
+        stage.classList.add('playing');
+        drawBubbles();
+        timer = setTimeout(() => {
+          stage.classList.remove('playing');
+          if (animId) cancelAnimationFrame(animId);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 1820);
+      }
+
+      function connectWs() {
+        try {
+          const ws = new WebSocket('ws://' + location.host);
+          ws.onmessage = (ev) => {
+            try {
+              const p = JSON.parse(ev.data);
+              if (p.type === 'singed-transition') playTransition();
+            } catch (e) {}
+          };
+          ws.onclose = () => setTimeout(connectWs, 2500);
+        } catch (e) {}
+      }
+      connectWs();
+
+      const params = new URLSearchParams(location.search);
+      if (params.get('autoplay') === '1' || params.get('play') === '1') {
+        setTimeout(playTransition, 80);
+      }
+      window.addEventListener('click', playTransition);
     })();
   </script>
 </body>
@@ -3981,6 +4155,10 @@ const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
   0%, 100% { box-shadow: 0 0 24px rgba(94, 234, 212, 0.45), inset 0 0 20px rgba(251, 113, 133, 0.16); border-color: var(--ct-primary, #5eead4); }
   50% { box-shadow: 0 0 30px rgba(251, 113, 133, 0.48), 0 0 18px rgba(253, 230, 138, 0.40), inset 0 0 22px rgba(94, 234, 212, 0.20); border-color: var(--ct-secondary, #fb7185); }
 }
+@keyframes zaunLabFramePulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(57, 255, 20, 0.48), inset 0 0 18px rgba(0, 229, 160, 0.16); border-color: var(--ct-primary, #39ff14); }
+  50% { box-shadow: 0 0 34px rgba(0, 229, 160, 0.56), 0 0 18px rgba(163, 230, 53, 0.46), inset 0 0 22px rgba(57, 255, 20, 0.24); border-color: var(--ct-secondary, #00e5a0); }
+}
 body.champ-fx-jinx-glitch .msg-row {
   background:
     repeating-linear-gradient(-45deg, rgba(255, 42, 133, 0.08) 0 8px, rgba(57, 255, 20, 0.05) 8px 16px, transparent 16px 32px),
@@ -4758,22 +4936,62 @@ body.champ-fx-blossom-springs .lb-lp-fill,
 body.champ-fx-blossom-springs .goal-fill,
 body.champ-fx-blossom-springs .sp-prog-fill,
 body.champ-fx-blossom-springs .val-rr-fill { background: linear-gradient(90deg, #5eead4, #fb7185, #fde68a) !important; }
+
+body.champ-fx-zaun-lab .msg-row {
+  background:
+    repeating-linear-gradient(-40deg, rgba(57, 255, 20, 0.07) 0 6px, rgba(0, 229, 160, 0.04) 6px 12px, transparent 12px 26px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(6, 18, 12, 0.96)), var(--ct-bg-end, rgba(4, 12, 14, 0.97))) !important;
+  border: 1.5px solid var(--ct-primary, #39ff14) !important;
+  border-left: 4px solid var(--ct-secondary, #00e5a0) !important;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  border-radius: 0 !important;
+  animation: zaunLabFramePulse 4.2s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-zaun-lab ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(57, 255, 20, 0.22), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(0, 229, 160, 0.22), transparent 50%),
+    repeating-linear-gradient(-35deg, rgba(163, 230, 53, 0.04) 0 5px, transparent 5px 22px),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(6, 18, 12, 0.96)), var(--ct-bg-end, rgba(4, 12, 14, 0.97))) !important;
+  border: 2px solid var(--ct-primary, #39ff14) !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  border-radius: 0 !important;
+  animation: zaunLabFramePulse 3.6s ease-in-out infinite;
+}
+body.champ-fx-zaun-lab .gs-title,
+body.champ-fx-zaun-lab .gs-champ-name,
+body.champ-fx-zaun-lab .lb-rank,
+body.champ-fx-zaun-lab .sp-title,
+body.champ-fx-zaun-lab .goal-title,
+body.champ-fx-zaun-lab .poll-q,
+body.champ-fx-zaun-lab .gw-title,
+body.champ-fx-zaun-lab .sched-title,
+body.champ-fx-zaun-lab .al-author,
+body.champ-fx-zaun-lab .lt-topic,
+body.champ-fx-zaun-lab .qna-author,
+body.champ-fx-zaun-lab .tron-topic,
+body.champ-fx-zaun-lab .val-rank-name { color: #ecfdf5 !important; text-shadow: 0 0 12px rgba(57, 255, 20, 0.85), 0 0 8px rgba(0, 229, 160, 0.6) !important; }
+body.champ-fx-zaun-lab .gs-lp-fill,
+body.champ-fx-zaun-lab .lb-lp-fill,
+body.champ-fx-zaun-lab .goal-fill,
+body.champ-fx-zaun-lab .sp-prog-fill,
+body.champ-fx-zaun-lab .val-rr-fill { background: linear-gradient(90deg, #16a34a, #39ff14, #00e5a0) !important; }
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 #omniCharArt {
   position: fixed;
-  right: 4px;
+  right: 2px;
   bottom: 2px;
-  height: 92px;
+  height: 112px;
   width: auto;
   display: none;
   pointer-events: none;
   z-index: 9;
-  filter: drop-shadow(0 0 10px var(--ct-primary, #ff3b5c)) drop-shadow(0 4px 10px rgba(0,0,0,0.85));
+  filter: drop-shadow(0 0 12px var(--ct-primary, #ff3b5c)) drop-shadow(0 4px 10px rgba(0,0,0,0.88));
   animation: omniCharFloat 4.2s ease-in-out infinite;
 }
-#omniCharArt.visible { display: block; }
+#gsCard.theme-lol ~ #omniCharArt.visible { display: block; }
 ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').map((s) => `body.champ-has-skin-art ${s}`).join(',\n')} {
   background-image: linear-gradient(145deg, var(--ct-bg-start, rgba(12, 12, 24, 0.86)), var(--ct-bg-end, rgba(8, 10, 20, 0.90))), var(--ct-skin-splash) !important;
   background-size: cover !important;
@@ -4827,7 +5045,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
@@ -4846,8 +5064,9 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
         document.body.classList.add('champ-has-skin-art');
       }).catch(() => {});
     }
+    const isLolGameStatsPage = Boolean(document.getElementById('gsCard'));
     let charEl = document.getElementById('omniCharArt');
-    if (pack.characterArt && /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(pack.characterArt))) {
+    if (isLolGameStatsPage && pack.id === 'akali-kda-firestarter-ignition' && pack.characterArt && /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(pack.characterArt))) {
       if (!charEl) {
         charEl = document.createElement('img');
         charEl.id = 'omniCharArt';
@@ -4934,6 +5153,13 @@ class ObsServer {
             'Cache-Control': 'no-cache'
           });
           res.end(JSON.stringify(this.currentSponsors || { enabled: false, items: [] }));
+          return;
+        }
+
+        if (urlPath === '/api/transition/singed') {
+          this.broadcastSingedTransition();
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-cache' });
+          res.end(JSON.stringify({ ok: true }));
           return;
         }
 
@@ -5191,6 +5417,8 @@ class ObsServer {
           res.end(withChampionTheme(OBS_LOL_MAP_HTML));
         } else if (urlPath === '/lol-bg') {
           res.end(OBS_LOL_BG_HTML);
+        } else if (urlPath === '/singed-transition') {
+          res.end(OBS_SINGED_TRANSITION_HTML);
         } else if (urlPath === '/lol-build') {
           res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {
@@ -5399,6 +5627,10 @@ class ObsServer {
   broadcastChampionTheme(pack) {
     this.currentChampionTheme = pack || null;
     this._broadcast({ type: 'champion-theme', data: this.currentChampionTheme });
+  }
+
+  broadcastSingedTransition() {
+    this._broadcast({ type: 'singed-transition', data: { at: Date.now() } });
   }
 
   setVoiceTestHandler(fn) {

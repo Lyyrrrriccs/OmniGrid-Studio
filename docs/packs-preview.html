@@ -194,6 +194,14 @@
       0%, 100% { box-shadow: 0 0 24px rgba(94, 234, 212, 0.45), inset 0 0 20px rgba(251, 113, 133, 0.16); border-color: var(--ct-primary, #5eead4); }
       50% { box-shadow: 0 0 30px rgba(251, 113, 133, 0.48), 0 0 18px rgba(253, 230, 138, 0.40), inset 0 0 22px rgba(94, 234, 212, 0.20); border-color: var(--ct-secondary, #fb7185); }
     }
+    @keyframes zaunLabFramePulse {
+      0%, 100% { box-shadow: 0 0 24px rgba(57, 255, 20, 0.48), inset 0 0 18px rgba(0, 229, 160, 0.16); border-color: var(--ct-primary, #39ff14); }
+      50% { box-shadow: 0 0 34px rgba(0, 229, 160, 0.56), 0 0 18px rgba(163, 230, 53, 0.46), inset 0 0 22px rgba(57, 255, 20, 0.24); border-color: var(--ct-secondary, #00e5a0); }
+    }
+    @keyframes csSlotPulse {
+      0%, 100% { box-shadow: 0 0 16px rgba(0,0,0,0.7), 0 0 12px var(--ct-primary, #c8aa6e); border-color: var(--ct-primary, #c8aa6e); }
+      50% { box-shadow: 0 0 20px rgba(0,0,0,0.75), 0 0 20px var(--ct-secondary, #0ac8b9); border-color: var(--ct-secondary, #0ac8b9); }
+    }
 
     /* Generic Pack Active Rules (scoped to #stage) */
     #stage.champ-pack-active .msg-row {
@@ -302,6 +310,11 @@
       border-radius: 16px !important;
       animation: blossomSpringsGlow 4.4s ease-in-out infinite;
     }
+    #stage.champ-fx-zaun-lab :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
+      background: radial-gradient(circle at 14% 16%, rgba(57,255,20,0.22), transparent 46%), radial-gradient(circle at 86% 84%, rgba(0,229,160,0.22), transparent 50%), linear-gradient(145deg, var(--ct-bg-start), var(--ct-bg-end)) !important;
+      clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+      animation: zaunLabFramePulse 3.6s ease-in-out infinite;
+    }
     #stage.champ-fx-spirit-blossom :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) { border-radius: 14px !important; }
     #stage.champ-fx-nightbringer :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card),
     #stage.champ-fx-project-cyber :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
@@ -353,6 +366,7 @@
       border-radius: 5px;
       box-shadow: 0 0 18px rgba(0,0,0,0.7), 0 0 14px var(--ct-primary, #c8aa6e);
       overflow: hidden;
+      animation: csSlotPulse 4.6s ease-in-out infinite;
     }
     .cs-slot::before, .cs-slot::after {
       content: "";
@@ -410,7 +424,7 @@
       <aside class="lg:col-span-4 glass rounded-2xl p-4">
         <div class="flex items-center justify-between mb-3">
           <h1 class="text-base font-bold text-white" data-en="🎨 Choose Overlay Pack" data-de="🎨 Overlay-Pack auswählen">🎨 Choose Overlay Pack</h1>
-          <span class="text-xs text-slate-400" id="packCountBadge">20 Packs</span>
+          <span class="text-xs text-slate-400" id="packCountBadge">21 Packs</span>
         </div>
         <div id="packList" class="space-y-2 max-h-[650px] overflow-y-auto pr-1"></div>
       </aside>
@@ -455,7 +469,6 @@
             <span data-en="155 px Open Overlay Space (Music, Goals, Sponsors, Build Bar)" data-de="155 px freier Platz unten (Musik, Goals, Sponsoren, Build-Bar)">155 px Open Overlay Space (Music, Goals, Sponsors, Build Bar)</span>
             <span id="csAnimBadge" class="text-xs font-bold text-pink-300">✨ motes</span>
           </div>
-          <img id="csCharArt" alt="" class="hidden absolute right-3 bottom-1 h-44 w-auto z-10 pointer-events-none" style="filter: drop-shadow(0 0 14px var(--ct-primary, #ff3b5c)) drop-shadow(0 6px 12px rgba(0,0,0,0.85));" />
         </div>
 
         <div id="skinBannerWrap" class="pv-skin-banner hidden">
@@ -517,6 +530,7 @@
                   </div>
                 </div>
                 </div>
+                <img id="pvGsCharArt" alt="" class="hidden absolute right-1 bottom-0.5 h-28 w-auto z-10 pointer-events-none" style="filter: drop-shadow(0 0 12px var(--ct-primary, #ff3b5c)) drop-shadow(0 4px 10px rgba(0,0,0,0.88));" />
               </div>
 
               <div class="lb-bar">
@@ -588,6 +602,7 @@
   <script>
     const PACK_CATALOG = [
       { id: 'none', name: 'Standard (LoL Hextech)', icon: '⚔️', effect: 'none', description: 'Default OmniGrid Studio Hextech design across all OBS overlays.', colors: { primary: '#c8aa6e', secondary: '#0ac8b9', tertiary: '#38bdf8', bgStart: 'rgba(9, 20, 40, 0.96)', bgEnd: 'rgba(1, 10, 19, 0.97)', text: '#f0e6d2' }, mapCoverBadge: '🛡️ Streamer-Modus' },
+      { id: 'singed-laboratory', name: 'Singed — Zaun Laboratory', icon: '🧪', effect: 'zaun-lab', description: 'Zaun Chemtech laboratory bio-green glow, gently animated containment frames & standalone /singed-transition stinger.', colors: { primary: '#39ff14', secondary: '#00e5a0', tertiary: '#a3e635', bgStart: 'rgba(6, 18, 12, 0.96)', bgEnd: 'rgba(4, 12, 14, 0.97)', text: '#ecfdf5' }, mapCoverBadge: 'ZAUN LAB // MIX, MIX, SWIRL 🧪' },
       { id: 'yunara-spirit-blossom-springs', name: 'Yunara — Spirit Blossom Springs', icon: '♨️', effect: 'blossom-springs', description: 'Serene onsen hot-spring aqua, warm sakura-peach petals & golden lantern mist.', colors: { primary: '#5eead4', secondary: '#fb7185', tertiary: '#fde68a', bgStart: 'rgba(10, 18, 28, 0.94)', bgEnd: 'rgba(22, 12, 26, 0.95)', text: '#fff1f2' }, mapCoverBadge: 'SPIRIT BLOSSOM SPRINGS // ONSEN ♨️' },
       { id: 'viego-soul-fighter', name: 'Viego — Soul Fighter', icon: '⚔️', effect: 'soul-fighter', description: 'Anime fighting-game cel-shaded comic shadows, electric soul-cyan & hot magenta.', colors: { primary: '#22d3ee', secondary: '#ff1f71', tertiary: '#facc15', bgStart: 'rgba(11, 8, 22, 0.97)', bgEnd: 'rgba(20, 6, 22, 0.98)', text: '#f8fafc' }, mapCoverBadge: 'SOUL FIGHTER // TOURNAMENT ⚔️' },
       { id: 'wukong-radiant', name: 'Wukong — Radiant', icon: '☁️', effect: 'radiant-cloud', description: 'Imperial golden cloud, lunar jade emerald & vermilion dragon accents.', colors: { primary: '#fbbf24', secondary: '#34d399', tertiary: '#f43f5e', bgStart: 'rgba(8, 18, 16, 0.96)', bgEnd: 'rgba(20, 13, 8, 0.97)', text: '#fefce8' }, mapCoverBadge: 'RADIANT // MONKEY KING ☁️' },
@@ -627,7 +642,7 @@
       'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose',
       'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige',
       'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter',
-      'champ-fx-blossom-springs', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
+      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
     ];
 
     const SKIN_ART_MAP = {
@@ -645,6 +660,7 @@
       'lux-elementalist': { championId: 'Lux', skinQuery: 'Elementalist' },
       'masteryi-inkshadow': { championId: 'MasterYi', skinQuery: 'Inkshadow' },
       'seraphine-kda-all-out': { championId: 'Seraphine', skinQuery: 'K/DA ALL OUT' },
+      'singed-laboratory': { championId: 'Singed', skinQuery: 'default' },
       'viego-ruined': { championId: 'Viego', skinQuery: 'default' },
       'viego-soul-fighter': { championId: 'Viego', skinQuery: 'Soul Fighter' },
       'wukong-radiant': { championId: 'MonkeyKing', skinQuery: 'Radiant' },
@@ -659,7 +675,7 @@
     const pvMapSplash = document.getElementById('pvMapSplash');
     const clientSceneStage = document.getElementById('clientSceneStage');
     const csSplash = document.getElementById('csSplash');
-    const csCharArt = document.getElementById('csCharArt');
+    const pvGsCharArt = document.getElementById('pvGsCharArt');
     const csCanvas = document.getElementById('csCanvas');
     const csCtx = csCanvas.getContext('2d');
     const csAnimBadge = document.getElementById('csAnimBadge');
@@ -670,7 +686,7 @@
       'nightbringer': 'embers', 'god-king': 'embers', 'risen-legend': 'streaks', 'kda-all-out': 'stars',
       'dark-cosmic': 'orbit', 'prestige-cosmic': 'orbit', 'black-rose': 'petals', 'spirit-blossom': 'petals',
       'blossom-springs': 'bubbles', 'ravenborn': 'feathers', 'inkshadow': 'ink', 'elementalist': 'orbs',
-      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist'
+      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles'
     };
     const csParticles = Array.from({ length: 44 }, () => ({
       x: Math.random() * 960, y: Math.random() * 540, r: 1.4 + Math.random() * 2.8,
@@ -784,7 +800,7 @@
       pvMapSplash.style.backgroundImage = 'none';
       csSplash.style.backgroundImage = 'none';
       csSplash.classList.remove('visible');
-      csCharArt.classList.add('hidden');
+      pvGsCharArt.classList.add('hidden');
       skinBannerWrap.classList.add('hidden');
       const parts = pack.name.split('—').map((s) => s.trim());
       pvChampName.textContent = isDefault ? 'Jinx • ADC' : (parts[0] + ' • LIVE');
@@ -813,9 +829,9 @@
         btnDownload.classList.remove('hidden');
 
         const artCfg = SKIN_ART_MAP[pack.id];
-        if (artCfg && artCfg.charArtUrl) {
-          csCharArt.src = artCfg.charArtUrl;
-          csCharArt.classList.remove('hidden');
+        if (pack.id === 'akali-kda-firestarter-ignition' && artCfg && artCfg.charArtUrl) {
+          pvGsCharArt.src = artCfg.charArtUrl;
+          pvGsCharArt.classList.remove('hidden');
         }
         resolveSkinArt(pack.id).then((art) => {
           if (!art || seq !== activeApplySeq) return;
