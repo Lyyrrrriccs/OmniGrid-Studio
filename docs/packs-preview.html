@@ -321,9 +321,34 @@
       80% { border-color: #facc15; box-shadow: 0 0 18px rgba(250,204,21,0.36); }
     }
     #stage.champ-fx-crime-city :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
+      position: relative;
       background: radial-gradient(circle at 14% 16%, rgba(225,29,72,0.24), transparent 46%), radial-gradient(circle at 86% 84%, rgba(168,85,247,0.24), transparent 50%), linear-gradient(145deg, var(--ct-bg-start), var(--ct-bg-end)) !important;
       clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
       animation: crimeCityCardPulse 5.4s ease-in-out infinite;
+    }
+    #stage.champ-fx-crime-city :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card)::before {
+      content: '♠';
+      position: absolute;
+      top: 4px;
+      left: 7px;
+      font-size: 11px;
+      line-height: 1;
+      color: #facc15;
+      text-shadow: 0 0 8px rgba(250,204,21,0.85);
+      pointer-events: none;
+      z-index: 6;
+    }
+    #stage.champ-fx-crime-city :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card)::after {
+      content: '♦';
+      position: absolute;
+      bottom: 4px;
+      right: 7px;
+      font-size: 11px;
+      line-height: 1;
+      color: #e11d48;
+      text-shadow: 0 0 8px rgba(225,29,72,0.85);
+      pointer-events: none;
+      z-index: 6;
     }
     @keyframes prestigeRoseBladePulse {
       0%, 100% { border-color: #f5d061; box-shadow: 0 0 20px rgba(245,208,97,0.45); }
