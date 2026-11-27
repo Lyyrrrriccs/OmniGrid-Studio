@@ -2100,9 +2100,15 @@ body.hide-platicons .msg-plat-dot {
 }
 
 /* CLIP STUDIO DUAL-RANGE TIMELINE SCRUBBER + WAVEFORM + FACECAM CROP */
+#clipStudioModal .config-modal-shell {
+  width: min(1440px, 96vw);
+  max-width: 96vw;
+  max-height: 94vh;
+}
 .clip-video-wrap {
   position: relative;
   width: 100%;
+  min-height: 360px;
   margin-top: 8px;
   border-radius: 10px;
   overflow: hidden;
@@ -2114,7 +2120,8 @@ body.hide-platicons .msg-plat-dot {
 .clip-video-wrap video {
   display: block;
   width: 100%;
-  max-height: 270px;
+  min-height: 360px;
+  max-height: 54vh;
   border-radius: 10px;
   background: #020617;
 }
