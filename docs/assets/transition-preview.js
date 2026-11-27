@@ -4,6 +4,8 @@
   let endTimer = null;
   let switchTimer = null;
   let activePack = null;
+  const akaliSkateImg = new Image();
+  akaliSkateImg.src = './assets/akali-ignition-art.png';
 
   function ensureModal() {
     if (modalEl) return modalEl;
@@ -66,6 +68,7 @@
           <div class="otp-curtain otp-right"></div>
           <div class="otp-ring"></div>
           <canvas class="otp-canvas" id="otpCanvas"></canvas>
+          <video id="otpVideo" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:6;pointer-events:none;"></video>
           <div class="otp-emblem" id="otpEmblem">⚡</div>
         </div>
       </div>
@@ -90,6 +93,12 @@
     animId = 0;
     if (endTimer) clearTimeout(endTimer);
     if (switchTimer) clearTimeout(switchTimer);
+    const vid = modalEl?.querySelector('#otpVideo');
+    if (vid) {
+      vid.pause();
+      vid.removeAttribute('src');
+      vid.style.display = 'none';
+    }
   }
 
   function closeModal() {
@@ -147,6 +156,20 @@
     stage.classList.remove('playing');
     void stage.offsetWidth;
     stage.classList.add('playing');
+
+    const vid = m.querySelector('#otpVideo');
+    if (fx === 'kda-firestarter' && vid) {
+      vid.src = './assets/akali-firestarter-transition.mp4?t=' + Date.now();
+      vid.currentTime = 0;
+      vid.style.display = 'block';
+      vid.onended = () => { vid.style.display = 'none'; };
+      vid.play().catch(() => { vid.style.display = 'none'; });
+      endTimer = setTimeout(() => {
+        stage.classList.remove('playing');
+        stopAnim();
+      }, 2250);
+      return;
+    }
 
     let items = [];
     if (fx === 'crime-city') {
@@ -211,6 +234,18 @@
         size: 16 + Math.random() * 30,
         col: cols[i % cols.length]
       }));
+    } else if (fx === 'kda-firestarter') {
+      const cols = ['#ff3b5c', '#ff7a00', '#00f5ff', '#fde047'];
+      items = Array.from({ length: 64 }, (_, i) => ({
+        x: -160,
+        y: H * 0.68,
+        vx: -(5 + Math.random() * 12),
+        vy: -(2 + Math.random() * 8),
+        r: 2 + Math.random() * 5,
+        col: cols[i % cols.length],
+        life: 0,
+        maxLife: 300 + Math.random() * 440
+      }));
     } else if (fx === 'eve-firestarter') {
       const cols = ['#ff1e6b', '#ff7a00', '#a855f7', '#fde047'];
       items = Array.from({ length: 58 }, (_, i) => ({
@@ -231,6 +266,31 @@
         col: Math.random() > 0.45 ? c1 : c2,
         alpha: 0.35 + Math.random() * 0.55
       }));
+    }
+
+    const akaliTrail = [];
+    const akaliStars = Array.from({ length: 30 }, (_, i) => ({
+      angle: (i / 30) * Math.PI * 2 + (Math.random() - 0.5) * 0.25,
+      speed: 10 + Math.random() * 18,
+      radius: 12 + Math.random() * 60,
+      size: 12 + Math.random() * 28,
+      rot: Math.random() * Math.PI,
+      vrot: (Math.random() - 0.5) * 0.08,
+      col: i % 3 === 0 ? '#fde047' : (i % 3 === 1 ? '#ff2e97' : '#ff5a1f'),
+      delay: 520 + Math.random() * 380
+    }));
+
+    function drawFourPointStar(x, y, r, rot, col, alpha) {
+      ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot);
+      ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 18;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const rad = i % 2 === 0 ? r : r * 0.22;
+        const a = (i * Math.PI) / 4;
+        if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+        else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+      }
+      ctx.closePath(); ctx.fill(); ctx.restore();
     }
 
     function frame(now) {
@@ -328,6 +388,74 @@
           ctx.save(); ctx.globalAlpha = 0.9 * fade; ctx.translate(cx + Math.cos(s.angle) * s.radius, cy + Math.sin(s.angle) * s.radius); ctx.rotate(s.rot);
           ctx.fillStyle = 'rgba(14,6,26,0.88)'; ctx.strokeStyle = s.col; ctx.shadowColor = s.col; ctx.shadowBlur = 18; ctx.lineWidth = 2.2;
           const sz = s.size; ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(sz * 0.76, sz * 0.18); ctx.lineTo(-sz * 0.58, sz * 0.82); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+        }
+      } else if (fx === 'kda-firestarter') {
+        const prog = Math.min(1, elapsed / 1780);
+        const env = elapsed < 140 ? elapsed / 140 : elapsed > 1420 ? Math.max(0, 1 - (elapsed - 1420) / 400) : 1;
+        const vpY = H * 0.54;
+        const bgG = ctx.createRadialGradient(cx, vpY, 20, cx, vpY, W * 0.7);
+        bgG.addColorStop(0, 'rgba(255,30,86,' + (0.28 * env).toFixed(3) + ')');
+        bgG.addColorStop(0.5, 'rgba(28,6,20,' + (0.72 * env).toFixed(3) + ')');
+        bgG.addColorStop(1, 'rgba(6,2,10,' + (0.88 * env).toFixed(3) + ')');
+        ctx.fillStyle = bgG; ctx.fillRect(0, 0, W, H);
+        for (let a = 0; a < 7; a++) {
+          const z = ((elapsed * 0.0014 + a / 7) % 1);
+          ctx.save(); ctx.globalAlpha = Math.sin(z * Math.PI) * 0.85 * env;
+          ctx.strokeStyle = a % 2 === 0 ? '#ff1e56' : '#ff2e97'; ctx.shadowColor = '#ff1e56'; ctx.shadowBlur = 22; ctx.lineWidth = 2 + z * 6;
+          ctx.beginPath(); ctx.arc(cx, vpY + 40, 60 + Math.pow(z, 2.2) * (W * 0.85), Math.PI * 1.04, Math.PI * 1.96); ctx.stroke(); ctx.restore();
+        }
+        for (let l = 0; l < 12; l++) {
+          const lA = (l / 12) * Math.PI * 2 + 0.12; const lP = ((elapsed * 0.0032 + l * 0.17) % 1);
+          const r1 = 55 + lP * (W * 0.45); const r2 = r1 + 95 + lP * 150;
+          ctx.save(); ctx.globalAlpha = (1 - lP) * 0.72 * env; ctx.strokeStyle = l % 2 === 0 ? '#ff2a55' : '#ff7a00'; ctx.shadowColor = '#ff2a55'; ctx.shadowBlur = 14; ctx.lineWidth = 2 + lP * 3;
+          ctx.beginPath(); ctx.moveTo(cx + Math.cos(lA) * r1, vpY + Math.sin(lA) * r1 * 0.65); ctx.lineTo(cx + Math.cos(lA) * r2, vpY + Math.sin(lA) * r2 * 0.65); ctx.stroke(); ctx.restore();
+        }
+        const carveX = cx + Math.sin(prog * Math.PI * 1.45 - 0.5) * (W * 0.24) + (prog - 0.5) * (W * 0.18);
+        const zoomP = Math.sin(Math.min(1, prog * 1.15) * Math.PI);
+        const depthSc = 0.52 + zoomP * 0.72;
+        const skateY = H * 0.76 - Math.abs(Math.sin(elapsed * 0.017)) * 16 * depthSc + (zoomP - 0.5) * 28;
+        const carveTilt = Math.cos(prog * Math.PI * 1.45 - 0.5) * 0.22 + Math.sin(elapsed * 0.015) * 0.08;
+        akaliTrail.push({ x: carveX, y: skateY + 24 * depthSc });
+        if (akaliTrail.length > 24) akaliTrail.shift();
+        for (let i = 1; i < akaliTrail.length; i++) {
+          const r = i / akaliTrail.length;
+          ctx.save(); ctx.globalAlpha = r * 0.85 * env; ctx.strokeStyle = i % 2 === 0 ? '#ff2e97' : '#d946ef'; ctx.shadowColor = '#ff2e97'; ctx.shadowBlur = 22;
+          ctx.lineWidth = (6 + r * 20) * depthSc; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(akaliTrail[i - 1].x, akaliTrail[i - 1].y); ctx.lineTo(akaliTrail[i].x, akaliTrail[i].y); ctx.stroke(); ctx.restore();
+        }
+        for (const sp of items) {
+          if (sp.life <= 0 && Math.random() < 0.34) {
+            sp.x = carveX + (Math.random() - 0.5) * 75 * depthSc; sp.y = skateY + 24 * depthSc;
+            sp.vx = (Math.random() - 0.5) * 20 - carveTilt * 28; sp.vy = -(3 + Math.random() * 10); sp.life = sp.maxLife;
+          }
+          if (sp.life > 0) {
+            sp.x += sp.vx; sp.y += sp.vy; sp.vy += 0.3; sp.life -= 16;
+            ctx.save(); ctx.globalAlpha = Math.max(0, sp.life / sp.maxLife) * env; ctx.fillStyle = sp.col; ctx.shadowColor = sp.col; ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+          }
+        }
+        ctx.save(); ctx.globalAlpha = env; ctx.translate(carveX, skateY); ctx.scale(depthSc, depthSc); ctx.rotate(carveTilt);
+        const dW = 190;
+        ctx.fillStyle = '#0c0714'; ctx.strokeStyle = '#ff1e56'; ctx.shadowColor = '#ff2e97'; ctx.shadowBlur = 24; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.roundRect(-dW / 2, 10, dW, 18, 9); ctx.fill(); ctx.stroke();
+        const wSpin = elapsed * 0.032;
+        for (const wx of [-56, 56]) {
+          ctx.save(); ctx.translate(wx, 34); ctx.rotate(wSpin);
+          ctx.fillStyle = '#120518'; ctx.strokeStyle = '#ff2e97'; ctx.shadowColor = '#ff2e97'; ctx.shadowBlur = 16; ctx.lineWidth = 3.5;
+          ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
+        }
+        ctx.save(); ctx.translate(Math.sin(elapsed * 0.022) * 10, 12); ctx.scale(1, 1 + Math.sin(elapsed * 0.032) * 0.05);
+        ctx.shadowColor = '#ff2e97'; ctx.shadowBlur = 28;
+        if (akaliSkateImg.complete && akaliSkateImg.naturalWidth > 0) {
+          const drawH = 300; const drawW = drawH * (akaliSkateImg.naturalWidth / akaliSkateImg.naturalHeight);
+          ctx.drawImage(akaliSkateImg, -drawW / 2, -drawH + 14, drawW, drawH);
+        }
+        ctx.restore(); ctx.restore();
+        for (const st of akaliStars) {
+          if (elapsed < st.delay) continue;
+          st.radius += st.speed; st.rot += st.vrot;
+          const sFade = Math.max(0, 1 - Math.max(0, elapsed - 1340) / 440) * env;
+          if (sFade > 0.02) drawFourPointStar(cx + Math.cos(st.angle) * st.radius, vpY + Math.sin(st.angle) * st.radius * 0.72, st.size, st.rot, st.col, sFade);
         }
       } else if (fx === 'eve-firestarter') {
         const env = elapsed < 200 ? elapsed / 200 : elapsed > 1340 ? Math.max(0, 1 - (elapsed - 1340) / 480) : 1;

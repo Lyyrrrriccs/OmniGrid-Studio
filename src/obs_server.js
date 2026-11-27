@@ -3289,6 +3289,266 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       let fracturedShards = [];
       let eveStart = 0;
       let eveEmbers = [];
+      let akaliStart = 0;
+      let akaliSparks = [];
+      let akaliStars = [];
+      let akaliTrail = [];
+      const akaliSkateImg = new Image();
+      akaliSkateImg.src = '/api/theme-asset/akali-ignition-art.png';
+
+      function spawnAkaliSkate() {
+        akaliStart = performance.now();
+        akaliTrail = [];
+        const cols = ['#ff2e97', '#ff1e56', '#ff7a00', '#fde047', '#f472b6'];
+        akaliSparks = Array.from({ length: 84 }, (_, i) => ({
+          x: canvas.width * 0.5,
+          y: canvas.height * 0.72,
+          vx: (Math.random() - 0.5) * 24,
+          vy: -(3 + Math.random() * 14),
+          r: 2 + Math.random() * 5.5,
+          col: cols[i % cols.length],
+          life: 0,
+          maxLife: 280 + Math.random() * 440
+        }));
+        akaliStars = Array.from({ length: 34 }, (_, i) => {
+          const angle = (i / 34) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+          return {
+            angle,
+            speed: 14 + Math.random() * 26,
+            radius: 16 + Math.random() * 90,
+            size: 16 + Math.random() * 42,
+            rot: Math.random() * Math.PI,
+            vrot: (Math.random() - 0.5) * 0.08,
+            col: i % 3 === 0 ? '#fde047' : (i % 3 === 1 ? '#ff2e97' : '#ff5a1f'),
+            delay: 520 + Math.random() * 380
+          };
+        });
+      }
+
+      function drawFourPointStar(ctx, x, y, r, rot, col, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(x, y);
+        ctx.rotate(rot);
+        ctx.fillStyle = col;
+        ctx.shadowColor = col;
+        ctx.shadowBlur = 24;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const rad = i % 2 === 0 ? r : r * 0.22;
+          const a = (i * Math.PI) / 4;
+          if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+          else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawAkaliSkate(now) {
+        const elapsed = Math.max(0, (now || performance.now()) - akaliStart);
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const vpY = h * 0.54;
+        ctx.clearRect(0, 0, w, h);
+
+        const prog = Math.min(1, elapsed / 1780);
+        const env = elapsed < 140
+          ? elapsed / 140
+          : elapsed > 1420 ? Math.max(0, 1 - (elapsed - 1420) / 400) : 1;
+        if (env <= 0.01) {
+          animId = requestAnimationFrame(drawAkaliSkate);
+          return;
+        }
+
+        const bgGrad = ctx.createRadialGradient(cx, vpY, 30, cx, vpY, w * 0.72);
+        bgGrad.addColorStop(0, 'rgba(255, 30, 86, ' + (0.28 * env).toFixed(3) + ')');
+        bgGrad.addColorStop(0.45, 'rgba(28, 6, 20, ' + (0.72 * env).toFixed(3) + ')');
+        bgGrad.addColorStop(1, 'rgba(6, 2, 10, ' + (0.88 * env).toFixed(3) + ')');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        for (let a = 0; a < 7; a++) {
+          const z = ((elapsed * 0.0014 + a / 7) % 1);
+          const archR = 90 + Math.pow(z, 2.2) * (w * 0.85);
+          const archAlpha = Math.sin(z * Math.PI) * 0.85 * env;
+          ctx.save();
+          ctx.globalAlpha = archAlpha;
+          ctx.strokeStyle = a % 2 === 0 ? '#ff1e56' : '#ff2e97';
+          ctx.shadowColor = '#ff1e56';
+          ctx.shadowBlur = 28;
+          ctx.lineWidth = 3 + z * 8;
+          ctx.beginPath();
+          ctx.arc(cx, vpY + 60, archR, Math.PI * 1.04, Math.PI * 1.96);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        for (let l = 0; l < 14; l++) {
+          const lAngle = (l / 14) * Math.PI * 2 + 0.12;
+          const lPhase = ((elapsed * 0.0032 + l * 0.17) % 1);
+          const r1 = 80 + lPhase * (w * 0.45);
+          const r2 = r1 + 140 + lPhase * 220;
+          ctx.save();
+          ctx.globalAlpha = (1 - lPhase) * 0.75 * env;
+          ctx.strokeStyle = l % 2 === 0 ? '#ff2a55' : '#ff7a00';
+          ctx.shadowColor = '#ff2a55';
+          ctx.shadowBlur = 18;
+          ctx.lineWidth = 2 + lPhase * 4;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(lAngle) * r1, vpY + Math.sin(lAngle) * r1 * 0.65);
+          ctx.lineTo(cx + Math.cos(lAngle) * r2, vpY + Math.sin(lAngle) * r2 * 0.65);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const carveX = cx + Math.sin(prog * Math.PI * 1.45 - 0.5) * (w * 0.24) + (prog - 0.5) * (w * 0.18);
+        const zoomP = Math.sin(Math.min(1, prog * 1.15) * Math.PI);
+        const depthScale = 0.52 + zoomP * 0.72;
+        const danceBounce = Math.abs(Math.sin(elapsed * 0.017)) * 22 * depthScale;
+        const skateY = h * 0.76 - danceBounce + (zoomP - 0.5) * 40;
+        const carveTilt = Math.cos(prog * Math.PI * 1.45 - 0.5) * 0.22 + Math.sin(elapsed * 0.015) * 0.08;
+
+        akaliTrail.push({ x: carveX, y: skateY + 34 * depthScale });
+        if (akaliTrail.length > 26) akaliTrail.shift();
+        for (let i = 1; i < akaliTrail.length; i++) {
+          const r = i / akaliTrail.length;
+          ctx.save();
+          ctx.globalAlpha = r * 0.88 * env;
+          ctx.strokeStyle = i % 2 === 0 ? '#ff2e97' : '#d946ef';
+          ctx.shadowColor = '#ff2e97';
+          ctx.shadowBlur = 30;
+          ctx.lineWidth = (8 + r * 28) * depthScale;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(akaliTrail[i - 1].x, akaliTrail[i - 1].y);
+          ctx.lineTo(akaliTrail[i].x, akaliTrail[i].y);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        const floorGlow = ctx.createRadialGradient(carveX, skateY + 38 * depthScale, 10, carveX, skateY + 38 * depthScale, 260 * depthScale);
+        floorGlow.addColorStop(0, 'rgba(255, 46, 151, ' + (0.78 * env).toFixed(3) + ')');
+        floorGlow.addColorStop(0.5, 'rgba(255, 122, 0, ' + (0.35 * env).toFixed(3) + ')');
+        floorGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = floorGlow;
+        ctx.beginPath();
+        ctx.ellipse(carveX, skateY + 42 * depthScale, 260 * depthScale, 52 * depthScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (const sp of akaliSparks) {
+          if (sp.life <= 0 && Math.random() < 0.34) {
+            sp.x = carveX + (Math.random() - 0.5) * 110 * depthScale;
+            sp.y = skateY + 36 * depthScale;
+            sp.vx = (Math.random() - 0.5) * 26 - carveTilt * 36;
+            sp.vy = -(4 + Math.random() * 14);
+            sp.life = sp.maxLife;
+          }
+          if (sp.life > 0) {
+            sp.x += sp.vx;
+            sp.y += sp.vy;
+            sp.vy += 0.38;
+            sp.life -= 16;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, sp.life / sp.maxLife) * env;
+            ctx.fillStyle = sp.col;
+            ctx.shadowColor = sp.col;
+            ctx.shadowBlur = 16;
+            ctx.beginPath();
+            ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        ctx.save();
+        ctx.globalAlpha = env;
+        ctx.translate(carveX, skateY);
+        ctx.scale(depthScale, depthScale);
+        ctx.rotate(carveTilt);
+
+        const deckW = 270;
+        const deckH = 26;
+        ctx.save();
+        ctx.shadowColor = '#ff2e97';
+        ctx.shadowBlur = 32;
+        ctx.fillStyle = '#0c0714';
+        ctx.strokeStyle = '#ff1e56';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(-deckW / 2, 14, deckW, deckH, 13);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = '#ff2e97';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-deckW * 0.35, 27);
+        ctx.lineTo(deckW * 0.35, 27);
+        ctx.stroke();
+
+        const wSpin = elapsed * 0.032;
+        for (const wx of [-82, 82]) {
+          ctx.save();
+          ctx.translate(wx, 50);
+          ctx.rotate(wSpin);
+          ctx.fillStyle = '#120518';
+          ctx.strokeStyle = '#ff2e97';
+          ctx.shadowColor = '#ff2e97';
+          ctx.shadowBlur = 22;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.arc(0, 0, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          ctx.moveTo(-12, 0);
+          ctx.lineTo(12, 0);
+          ctx.moveTo(0, -12);
+          ctx.lineTo(0, 12);
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        const danceSway = Math.sin(elapsed * 0.022) * 14;
+        ctx.save();
+        ctx.translate(danceSway, 16);
+        ctx.scale(1, 1 + Math.sin(elapsed * 0.032) * 0.05);
+        ctx.shadowColor = '#ff2e97';
+        ctx.shadowBlur = 36;
+        if (akaliSkateImg.complete && akaliSkateImg.naturalWidth > 0) {
+          const drawH = 440;
+          const drawW = drawH * (akaliSkateImg.naturalWidth / akaliSkateImg.naturalHeight);
+          ctx.drawImage(akaliSkateImg, -drawW / 2, -drawH + 20, drawW, drawH);
+        }
+        ctx.restore();
+        ctx.restore();
+
+        for (const st of akaliStars) {
+          if (elapsed < st.delay) continue;
+          st.radius += st.speed;
+          st.rot += st.vrot;
+          const sx = cx + Math.cos(st.angle) * st.radius;
+          const sy = vpY + Math.sin(st.angle) * st.radius * 0.72;
+          const sFade = Math.max(0, 1 - Math.max(0, elapsed - 1340) / 440) * env;
+          if (sFade > 0.02) drawFourPointStar(ctx, sx, sy, st.size, st.rot, st.col, sFade);
+        }
+
+        if (elapsed > 720 && elapsed < 1180) {
+          const flash = Math.sin(((elapsed - 720) / 460) * Math.PI) * 0.42;
+          const fGrad = ctx.createRadialGradient(cx, vpY, 20, cx, vpY, w * 0.68);
+          fGrad.addColorStop(0, 'rgba(255, 46, 151, ' + flash.toFixed(3) + ')');
+          fGrad.addColorStop(0.5, 'rgba(255, 30, 86, ' + (flash * 0.65).toFixed(3) + ')');
+          fGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = fGrad;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        animId = requestAnimationFrame(drawAkaliSkate);
+      }
 
       function spawnEveCoffin() {
         eveStart = performance.now();
@@ -3860,6 +4120,27 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'eve-firestarter') {
           spawnEveCoffin();
           drawEveCoffin();
+        } else if (activeEffect === 'kda-firestarter') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/akali-firestarter-transition.mp4?t=' + Date.now();
+            customVideo.currentTime = 0;
+            customVideo.muted = true;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnAkaliSkate();
+              drawAkaliSkate();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2250);
+            return;
+          }
+          spawnAkaliSkate();
+          drawAkaliSkate();
         } else {
           spawnBubbles();
           drawBubbles();
@@ -6491,7 +6772,7 @@ class ObsServer {
 
         if (urlPath.startsWith('/api/theme-asset/')) {
           const safeFile = decodeURIComponent(urlPath.replace('/api/theme-asset/', '')).trim();
-          if (!/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(safeFile)) {
+          if (!/^[a-z0-9_-]+\.(jpg|jpeg|png|webp|mp4|webm)$/i.test(safeFile)) {
             res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
             res.end('Invalid theme asset');
             return;
@@ -6503,7 +6784,11 @@ class ObsServer {
             return;
           }
           const ext = path.extname(assetPath).toLowerCase();
-          const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          const mime = ext === '.png' ? 'image/png'
+            : ext === '.webp' ? 'image/webp'
+              : ext === '.mp4' ? 'video/mp4'
+                : ext === '.webm' ? 'video/webm'
+                  : 'image/jpeg';
           res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
           fs.createReadStream(assetPath).pipe(res);
           return;
