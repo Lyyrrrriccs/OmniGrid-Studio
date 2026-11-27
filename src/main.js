@@ -3526,6 +3526,50 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
 
+  ipcMain.handle('clip-studio-waveform', async (_ev, { filePath, bars } = {}) => {
+    try {
+      return await clipStudio.extractWaveform(filePath, bars || 140);
+    } catch (err) {
+      return { ok: false, peaks: [], error: err.message };
+    }
+  });
+
+  ipcMain.handle('clip-studio-thumbnail', async (_ev, payload = {}) => {
+    try {
+      const res = await clipStudio.exportThumbnail(payload);
+      appendDiagLog('system', 'info', `🖼️ Thumbnail gespeichert: ${res.outPath}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('system', 'error', `Thumbnail Export fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('clip-studio-montage', async (_ev, payload = {}) => {
+    try {
+      const res = await clipStudio.exportHighlightMontage(payload);
+      appendDiagLog('system', 'info', `🎞️ Highlight-Montage exportiert: ${res.outPath}`);
+      return res;
+    } catch (err) {
+      appendDiagLog('system', 'error', `Highlight-Montage fehlgeschlagen: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('clip-studio-pick-asset', async (_ev, { kind } = {}) => {
+    const isSub = kind === 'subtitle';
+    const res = await dialog.showOpenDialog(mainWindow, {
+      title: isSub ? 'Untertitel-Datei wählen (.srt / .ass / .vtt)' : 'Hintergrund-Musik wählen (.mp3 / .wav / .m4a)',
+      properties: ['openFile'],
+      filters: isSub
+        ? [{ name: 'Untertitel', extensions: ['srt', 'ass', 'vtt'] }]
+        : [{ name: 'Audio', extensions: ['mp3', 'wav', 'm4a', 'ogg', 'flac', 'aac'] }]
+    });
+    if (res.canceled || !res.filePaths?.[0]) return { ok: false, canceled: true };
+    const filePath = res.filePaths[0];
+    return { ok: true, filePath, fileName: path.basename(filePath) };
+  });
+
   ipcMain.handle('poll-action', (_ev, payload) => {
     const act = payload?.action || 'start';
     if (act === 'start') {

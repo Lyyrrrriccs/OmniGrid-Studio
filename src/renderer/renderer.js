@@ -3673,11 +3673,278 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   const inputTitle = document.getElementById('inputClipTitle');
   const btnRename = document.getElementById('btnClipRename');
   const btnDelete = document.getElementById('btnClipDelete');
+  const btnThumbnail = document.getElementById('btnClipThumbnail');
+  const waveformCanvas = document.getElementById('clipWaveformCanvas');
+  const videoWrap = document.getElementById('clipVideoWrap');
+  const facecamBoxEl = document.getElementById('clipFacecamBox');
+  const facecamResizeEl = document.getElementById('clipFacecamResize');
+  const selLayout = document.getElementById('selClipLayout');
+  const selPreset = document.getElementById('selClipPreset');
+  const selSpeed = document.getElementById('selClipSpeed');
+  const inpHook = document.getElementById('inpClipHook');
+  const inpWatermark = document.getElementById('inpClipWatermark');
+  const chkNormAudio = document.getElementById('chkClipNormAudio');
+  const chkMuteAudio = document.getElementById('chkClipMuteAudio');
+  const numGainDb = document.getElementById('numClipGainDb');
+  const numFadeSec = document.getElementById('numClipFadeSec');
+  const btnPickMusic = document.getElementById('btnClipPickMusic');
+  const lblMusicName = document.getElementById('lblClipMusicName');
+  const rngMusicVol = document.getElementById('rngClipMusicVol');
+  const btnClearMusic = document.getElementById('btnClipClearMusic');
+  const btnPickSub = document.getElementById('btnClipPickSub');
+  const lblSubName = document.getElementById('lblClipSubName');
+  const btnClearSub = document.getElementById('btnClipClearSub');
   const statusEl = document.getElementById('clipStudioStatus');
   let selectedPath = '';
   let lastOutPath = '';
   let rangePlayStopAt = null;
   let videoDurationSec = 30;
+  let selectedMusicPath = '';
+  let selectedSubPath = '';
+  let facecamBox = { x: 0.72, y: 0.64, w: 0.25, h: 0.30 };
+  let waveformPeaks = [];
+
+  function drawWaveform(peaks = []) {
+    waveformPeaks = peaks;
+    if (!waveformCanvas) return;
+    const rect = waveformCanvas.getBoundingClientRect();
+    const w = Math.max(160, Math.round(rect.width || 480));
+    const h = Math.max(24, Math.round(rect.height || 30));
+    if (waveformCanvas.width !== w) waveformCanvas.width = w;
+    if (waveformCanvas.height !== h) waveformCanvas.height = h;
+    const ctx = waveformCanvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, w, h);
+    if (!peaks.length) return;
+    const barW = w / peaks.length;
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.55)';
+    for (let i = 0; i < peaks.length; i++) {
+      const p = Math.max(0.06, Math.min(1, Number(peaks[i]) || 0));
+      const bh = Math.max(2, p * (h - 4));
+      const y = (h - bh) / 2;
+      ctx.fillRect(i * barW + 0.5, y, Math.max(1, barW - 1.2), bh);
+    }
+  }
+
+  function getRenderedVideoRect() {
+    if (!videoEl || !videoWrap) return null;
+    const wrapRect = videoWrap.getBoundingClientRect();
+    const vRect = videoEl.getBoundingClientRect();
+    const vw = videoEl.videoWidth || 16;
+    const vh = videoEl.videoHeight || 9;
+    const elemW = vRect.width || wrapRect.width;
+    const elemH = vRect.height || wrapRect.height;
+    if (!elemW || !elemH) return null;
+    const scale = Math.min(elemW / vw, elemH / vh);
+    const drawW = vw * scale;
+    const drawH = vh * scale;
+    const left = (vRect.left - wrapRect.left) + (elemW - drawW) / 2;
+    const top = (vRect.top - wrapRect.top) + (elemH - drawH) / 2;
+    return { left, top, width: drawW, height: drawH };
+  }
+
+  function renderFacecamBox() {
+    if (!facecamBoxEl) return;
+    const show = Boolean(selectedPath) && selLayout?.value === 'split_cam';
+    facecamBoxEl.classList.toggle('hidden', !show);
+    if (!show) return;
+    const r = getRenderedVideoRect();
+    if (!r) return;
+    facecamBoxEl.style.left = `${r.left + facecamBox.x * r.width}px`;
+    facecamBoxEl.style.top = `${r.top + facecamBox.y * r.height}px`;
+    facecamBoxEl.style.width = `${facecamBox.w * r.width}px`;
+    facecamBoxEl.style.height = `${facecamBox.h * r.height}px`;
+  }
+
+  if (facecamBoxEl) {
+    let dragMode = null;
+    let startClientX = 0;
+    let startClientY = 0;
+    let startBox = null;
+    let startRect = null;
+
+    facecamBoxEl.addEventListener('mousedown', (e) => {
+      if (!selectedPath) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragMode = e.target === facecamResizeEl ? 'resize' : 'move';
+      startClientX = e.clientX;
+      startClientY = e.clientY;
+      startBox = { ...facecamBox };
+      startRect = getRenderedVideoRect();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragMode || !startRect || !startBox) return;
+      const dx = (e.clientX - startClientX) / Math.max(1, startRect.width);
+      const dy = (e.clientY - startClientY) / Math.max(1, startRect.height);
+      if (dragMode === 'move') {
+        facecamBox.x = Math.max(0, Math.min(1 - startBox.w, startBox.x + dx));
+        facecamBox.y = Math.max(0, Math.min(1 - startBox.h, startBox.y + dy));
+      } else {
+        facecamBox.w = Math.max(0.08, Math.min(1 - startBox.x, startBox.w + dx));
+        facecamBox.h = Math.max(0.08, Math.min(1 - startBox.y, startBox.h + dy));
+      }
+      renderFacecamBox();
+    });
+
+    window.addEventListener('mouseup', () => { dragMode = null; });
+  }
+
+  selLayout?.addEventListener('change', renderFacecamBox);
+  window.addEventListener('resize', () => {
+    if (!modal.classList.contains('hidden')) {
+      renderFacecamBox();
+      if (waveformPeaks.length) drawWaveform(waveformPeaks);
+    }
+  });
+
+  function renderClipTextOverlayPng(isVertical, hookText, watermarkText) {
+    const hTxt = String(hookText || '').trim().slice(0, 80);
+    const wTxt = String(watermarkText || '').trim().slice(0, 48);
+    if (!hTxt && !wTxt) return '';
+    const W = isVertical ? 1080 : 1920;
+    const H = isVertical ? 1920 : 1080;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext('2d');
+    if (!ctx) return '';
+    ctx.clearRect(0, 0, W, H);
+    if (hTxt) {
+      const fSize = isVertical ? 54 : 48;
+      ctx.font = `900 ${fSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const tw = Math.min(W - 80, ctx.measureText(hTxt).width);
+      const padX = 28;
+      const boxW = tw + padX * 2;
+      const boxH = fSize + 34;
+      const bx = (W - boxW) / 2;
+      const by = isVertical ? 110 : 42;
+      ctx.fillStyle = 'rgba(2, 6, 23, 0.72)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, boxW, boxH, 16);
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(145, 70, 255, 0.9)';
+      ctx.stroke();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.strokeText(hTxt, W / 2, by + boxH / 2 + 2, W - 110);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(hTxt, W / 2, by + boxH / 2 + 2, W - 110);
+    }
+    if (wTxt) {
+      const wSize = isVertical ? 32 : 28;
+      ctx.font = `800 ${wSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.78)';
+      ctx.strokeText(wTxt, W - 28, H - 26);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.fillText(wTxt, W - 28, H - 26);
+    }
+    return c.toDataURL('image/png');
+  }
+
+  window.getClipStudioProOptions = (isVertical = true) => {
+    const hookText = (inpHook?.value || '').trim();
+    const watermarkText = (inpWatermark?.value || '').trim();
+    return {
+      layoutMode: selLayout?.value || 'blur_bg',
+      facecamBox: selLayout?.value === 'split_cam' ? { ...facecamBox } : null,
+      speed: parseFloat(selSpeed?.value || '1') || 1,
+      hookText,
+      watermarkText,
+      overlayPngDataUrl: renderClipTextOverlayPng(isVertical, hookText, watermarkText),
+      subtitlePath: selectedSubPath || '',
+      muteAudio: Boolean(chkMuteAudio?.checked),
+      normalizeAudio: Boolean(chkNormAudio?.checked),
+      audioGainDb: parseFloat(numGainDb?.value || '0') || 0,
+      fadeAudioSec: parseFloat(numFadeSec?.value || '0') || 0,
+      musicPath: selectedMusicPath || '',
+      musicVolume: parseFloat(rngMusicVol?.value || '0.25') || 0.25,
+      preset: selPreset?.value || 'standard'
+    };
+  };
+
+  btnPickMusic?.addEventListener('click', async () => {
+    const res = await window.omnichat.clipStudioPickAsset?.('music');
+    if (!res?.ok) return;
+    selectedMusicPath = res.filePath;
+    if (lblMusicName) { lblMusicName.textContent = res.fileName; lblMusicName.title = res.filePath; }
+    btnClearMusic?.classList.remove('hidden');
+  });
+  btnClearMusic?.addEventListener('click', () => {
+    selectedMusicPath = '';
+    if (lblMusicName) { lblMusicName.textContent = 'Keine Musik'; lblMusicName.title = ''; }
+    btnClearMusic?.classList.add('hidden');
+  });
+
+  btnPickSub?.addEventListener('click', async () => {
+    const res = await window.omnichat.clipStudioPickAsset?.('subtitle');
+    if (!res?.ok) return;
+    selectedSubPath = res.filePath;
+    if (lblSubName) { lblSubName.textContent = res.fileName; lblSubName.title = res.filePath; }
+    btnClearSub?.classList.remove('hidden');
+  });
+  btnClearSub?.addEventListener('click', () => {
+    selectedSubPath = '';
+    if (lblSubName) { lblSubName.textContent = 'Keine Untertitel'; lblSubName.title = ''; }
+    btnClearSub?.classList.add('hidden');
+  });
+
+  btnThumbnail?.addEventListener('click', async () => {
+    if (!selectedPath || !videoEl) return;
+    btnThumbnail.disabled = true;
+    const origTxt = btnThumbnail.textContent;
+    btnThumbnail.textContent = '⏳';
+    const res = await window.omnichat.clipStudioThumbnail?.({
+      inputPath: selectedPath,
+      timeSec: Number(videoEl.currentTime || 0)
+    });
+    btnThumbnail.disabled = false;
+    btnThumbnail.textContent = origTxt;
+    if (res?.ok) {
+      lastOutPath = res.outPath;
+      if (btnReveal) btnReveal.classList.remove('hidden');
+      if (statusEl) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `🖼️ Thumbnail gespeichert: ${res.fileName}`;
+      }
+    } else if (statusEl) {
+      statusEl.style.color = '#f87171';
+      statusEl.textContent = `❌ ${res?.error || 'Thumbnail fehlgeschlagen.'}`;
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (modal.classList.contains('hidden') || !selectedPath || !videoEl) return;
+    const tag = (document.activeElement?.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || document.activeElement?.isContentEditable) return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (videoEl.paused) videoEl.play().catch(() => {});
+      else videoEl.pause();
+    } else if (e.key === 'i' || e.key === 'I') {
+      e.preventDefault();
+      btnMarkStart?.click();
+    } else if (e.key === 'o' || e.key === 'O') {
+      e.preventDefault();
+      btnMarkEnd?.click();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const step = e.shiftKey ? 1 : (1 / 30);
+      videoEl.currentTime = Math.max(0, (videoEl.currentTime || 0) - step);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      const step = e.shiftKey ? 1 : (1 / 30);
+      const dur = Number.isFinite(videoEl.duration) ? videoEl.duration : 9999;
+      videoEl.currentTime = Math.min(dur, (videoEl.currentTime || 0) + step);
+    }
+  });
 
   function updateRangeDurationLabel() {
     const s = Math.max(0, parseFloat(numClipStart?.value || '0') || 0);
@@ -3710,9 +3977,19 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       inputTitle.disabled = !hasSel;
       inputTitle.value = hasSel ? String(fileName || '').replace(/\.[^.]+$/, '') : '';
     }
-    [btnExport, btnTrimOrig, btnMarkStart, btnMarkEnd, btnPlayRange, btnRename, btnDelete, rngClipStart, rngClipEnd].forEach((b) => {
+    [btnExport, btnTrimOrig, btnMarkStart, btnMarkEnd, btnPlayRange, btnRename, btnDelete, btnThumbnail, rngClipStart, rngClipEnd].forEach((b) => {
       if (b) b.disabled = !hasSel;
     });
+    renderFacecamBox();
+    drawWaveform([]);
+    if (hasSel && window.omnichat.clipStudioWaveform) {
+      const targetPath = selectedPath;
+      window.omnichat.clipStudioWaveform(targetPath, 140).then((wRes) => {
+        if (targetPath === selectedPath && wRes?.ok && Array.isArray(wRes.peaks)) {
+          drawWaveform(wRes.peaks);
+        }
+      }).catch(() => {});
+    }
   }
 
   function renderReplays(res) {
@@ -3894,6 +4171,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (numClipStart) numClipStart.value = '0';
     if (numClipEnd) numClipEnd.value = dur.toFixed(1);
     updateRangeDurationLabel();
+    renderFacecamBox();
   });
 
   videoEl?.addEventListener('timeupdate', () => {
@@ -3959,7 +4237,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (!selectedPath) return;
     const isShort = mode === 'short';
     const activeBtn = isShort ? btnExport : btnTrimOrig;
-    const defaultLabel = isShort ? '📱 Als 9:16 Short' : '✂️ 16:9 schneiden';
+    const defaultLabel = isShort ? '📱 9:16 Short exportieren' : '✂️ 16:9 exportieren';
     if (btnExport) btnExport.disabled = true;
     if (btnTrimOrig) btnTrimOrig.disabled = true;
     if (activeBtn) activeBtn.textContent = isShort ? '⏳ Rendere 9:16...' : '⏳ Schneide 16:9...';
@@ -3973,11 +4251,13 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
     const startSec = Math.max(0, parseFloat(numClipStart?.value || '0') || 0);
     const endSec = Math.max(startSec + 0.5, parseFloat(numClipEnd?.value || '30') || 30);
-    const layoutMode = document.getElementById('selClipLayout')?.value || 'blur_bg';
+    const proOpts = typeof window.getClipStudioProOptions === 'function'
+      ? window.getClipStudioProOptions(isShort)
+      : { layoutMode: document.getElementById('selClipLayout')?.value || 'blur_bg' };
 
     const res = isShort
-      ? await window.omnichat.clipStudioExportShort({ inputPath: selectedPath, startSec, endSec, layoutMode })
-      : await window.omnichat.clipStudioTrimOriginal({ inputPath: selectedPath, startSec, endSec });
+      ? await window.omnichat.clipStudioExportShort({ inputPath: selectedPath, startSec, endSec, ...proOpts })
+      : await window.omnichat.clipStudioTrimOriginal({ inputPath: selectedPath, startSec, endSec, ...proOpts });
 
     if (btnExport) btnExport.disabled = false;
     if (btnTrimOrig) btnTrimOrig.disabled = false;
@@ -9742,6 +10022,8 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
   const btnAddSeg = document.getElementById('btnClipAddSegment');
   const btnExpAll = document.getElementById('btnClipExportAllShorts');
   const btnTrimAll = document.getElementById('btnClipTrimAll');
+  const btnMontage169 = document.getElementById('btnClipMontage169');
+  const btnMontage916 = document.getElementById('btnClipMontage916');
   const btnClear = document.getElementById('btnClipClearMarkers');
   if (!videoEl || !listEl) return;
 
@@ -9780,6 +10062,8 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     if (countEl) countEl.textContent = String(markers.length);
     if (btnExpAll) btnExpAll.disabled = markers.length === 0;
     if (btnTrimAll) btnTrimAll.disabled = markers.length === 0;
+    if (btnMontage169) btnMontage169.disabled = markers.length < 2;
+    if (btnMontage916) btnMontage916.disabled = markers.length < 2;
     if (btnClear) btnClear.disabled = markers.length === 0;
 
     if (markersLayer) {
@@ -9889,17 +10173,23 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
         statusEl.style.color = '#38bdf8';
         statusEl.textContent = `⏳ Exportiere Marker ${i + 1}/${markers.length} (${m.label})...`;
       }
+      const proOpts = typeof window.getClipStudioProOptions === 'function'
+        ? window.getClipStudioProOptions(mode === 'short')
+        : { layoutMode: selLayout?.value || 'blur_bg' };
       const res = mode === 'short'
         ? await window.omnichat.clipStudioExportShort({
             inputPath: filePath,
             startSec: m.start,
+            endSec: m.end,
             durationSec: Math.max(0.5, m.end - m.start),
-            layout: selLayout?.value || 'blur_bg'
+            ...proOpts
           })
         : await window.omnichat.clipStudioTrimOriginal({
             inputPath: filePath,
             startSec: m.start,
-            durationSec: Math.max(0.5, m.end - m.start)
+            endSec: m.end,
+            durationSec: Math.max(0.5, m.end - m.start),
+            ...proOpts
           });
       if (res?.ok) okCount += 1;
     }
@@ -9911,8 +10201,42 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     renderMarkers();
   };
 
+  const exportMontage = async (isVertical) => {
+    const filePath = getActiveFilePath();
+    if (!filePath || markers.length < 2) return;
+    if (btnMontage169) btnMontage169.disabled = true;
+    if (btnMontage916) btnMontage916.disabled = true;
+    const proOpts = typeof window.getClipStudioProOptions === 'function' ? window.getClipStudioProOptions(isVertical) : {};
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = `⏳ Rendere Highlight-Montage (${markers.length} Segmente, ${isVertical ? '9:16' : '16:9'}) mit Crossfades...`;
+    }
+    const res = await window.omnichat.clipStudioMontage?.({
+      inputPath: filePath,
+      segments: markers.map((m) => ({ startSec: m.start, endSec: m.end })),
+      isVertical,
+      crossfadeSec: 0.4,
+      normalizeAudio: Boolean(proOpts.normalizeAudio),
+      watermarkText: proOpts.watermarkText || '',
+      overlayPngDataUrl: proOpts.overlayPngDataUrl || ''
+    });
+    if (statusEl) {
+      if (res?.ok) {
+        statusEl.style.color = '#4ade80';
+        statusEl.textContent = `🎞️ Highlight-Montage fertig: ${res.fileName}`;
+      } else {
+        statusEl.style.color = '#f87171';
+        statusEl.textContent = `❌ ${res?.error || 'Highlight-Montage fehlgeschlagen.'}`;
+      }
+    }
+    document.getElementById('btnClipRefresh')?.click();
+    renderMarkers();
+  };
+
   btnExpAll?.addEventListener('click', () => exportAllMarkers('short'));
   btnTrimAll?.addEventListener('click', () => exportAllMarkers('trim'));
+  btnMontage169?.addEventListener('click', () => exportMontage(false));
+  btnMontage916?.addEventListener('click', () => exportMontage(true));
   renderMarkers();
 })();
 

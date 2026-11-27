@@ -1809,17 +1809,32 @@
             <span style="color: #94a3b8;">Lade Aufnahmen...</span>
           </div>
         </div>
-        <div class="sidebar-section" style="margin: 0;">
-          <h3>📱 Vorschau &amp; 9:16 Export</h3>
+        <div class="sidebar-section" style="margin: 0; max-height: 76vh; overflow-y: auto;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h3 style="margin: 0;">📱 Vorschau &amp; Pro Export</h3>
+            <div class="clip-shortcut-hint" title="Tastenkürzel aktiv wenn kein Textfeld fokussiert ist">
+              <span><kbd>Space</kbd> Play</span>
+              <span><kbd>I</kbd> / <kbd>O</kbd> Start/Ende</span>
+              <span><kbd>←</kbd><kbd>→</kbd> Frame</span>
+            </div>
+          </div>
           <div style="display: flex; gap: 6px; margin-top: 6px; align-items: center;">
             <input type="text" id="inputClipTitle" placeholder="Clip-Titel (ohne Dateiendung)" disabled style="flex: 1;" />
+            <button class="btn-sm" id="btnClipThumbnail" disabled title="Aktuelles Video-Frame als PNG-Thumbnail speichern">🖼️ Thumbnail</button>
             <button class="btn-sm" id="btnClipRename" disabled title="Clip-Titel / Dateiname speichern">✏️ Umbenennen</button>
             <button class="btn-sm warn" id="btnClipDelete" disabled title="Clip in den Papierkorb verschieben">🗑️ Löschen</button>
           </div>
-          <video id="clipStudioVideo" controls style="width: 100%; max-height: 280px; border-radius: 10px; background: #020617; margin-top: 8px;"></video>
+          <div class="clip-video-wrap" id="clipVideoWrap">
+            <video id="clipStudioVideo" controls></video>
+            <div class="clip-facecam-box hidden" id="clipFacecamBox" title="Facecam-Ausschnitt für 9:16 Split-Screen verschieben oder unten rechts skalieren">
+              <span class="clip-facecam-box-label">📷 Facecam</span>
+              <div class="clip-facecam-resize" id="clipFacecamResize"></div>
+            </div>
+          </div>
 
           <div class="clip-timeline-wrap" id="clipTimelineWrap" title="Start- (lila) & End-Regler (blau) zum Schneiden ziehen">
             <div class="clip-timeline-track" id="clipTimelineTrack">
+              <canvas class="clip-waveform-canvas" id="clipWaveformCanvas"></canvas>
               <div class="clip-timeline-selection" id="clipTimelineSel"></div>
               <div id="clipTimelineMarkersLayer"></div>
               <div class="clip-timeline-playhead" id="clipTimelinePlayhead"></div>
@@ -1857,22 +1872,91 @@
                 <button class="btn-sm" id="btnClipAddSegment" style="background: rgba(56,189,248,0.18); border-color: rgba(56,189,248,0.5); color: #bae6fd;">➕ Auswahl merken</button>
                 <button class="btn-sm" id="btnClipExportAllShorts" disabled style="background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); color: #6ee7b7;">📱 Alle als 9:16</button>
                 <button class="btn-sm" id="btnClipTrimAll" disabled>✂️ Alle 16:9</button>
+                <button class="btn-sm" id="btnClipMontage169" disabled style="background: rgba(168,85,247,0.22); border-color: rgba(168,85,247,0.55); color: #e9d5ff;" title="Alle Segmente mit Crossfade zu einem 16:9 Highlight-Video verbinden">🎞️ Montage 16:9</button>
+                <button class="btn-sm" id="btnClipMontage916" disabled style="background: rgba(236,72,153,0.22); border-color: rgba(236,72,153,0.55); color: #fbcfe8;" title="Alle Segmente mit Crossfade zu einer 9:16 Highlight-Montage verbinden">🎞️ Montage 9:16</button>
                 <button class="btn-sm warn" id="btnClipClearMarkers" disabled>🗑️</button>
               </div>
             </div>
-            <div id="clipMarkersList" style="display: flex; flex-direction: column; gap: 5px; margin-top: 7px; max-height: 150px; overflow-y: auto; font-size: 11.5px;"></div>
+            <div id="clipMarkersList" style="display: flex; flex-direction: column; gap: 5px; margin-top: 7px; max-height: 140px; overflow-y: auto; font-size: 11.5px;"></div>
           </div>
 
-          <div style="margin-top: 8px;">
-            <label for="selClipLayout" style="font-size: 11px;">9:16 Layout (für Shorts/TikTok)</label>
-            <select id="selClipLayout" style="width: 100%; margin-top: 2px;">
-              <option value="blur_bg">Blur-Hintergrund (16:9 komplett)</option>
-              <option value="center_crop">Center-Crop (Vollbild 9:16)</option>
-            </select>
+          <div class="clip-pro-panel">
+            <div class="clip-pro-grid-3">
+              <div>
+                <label for="selClipLayout" style="font-size: 11px;">📐 9:16 Layout</label>
+                <select id="selClipLayout" style="width: 100%; margin-top: 2px;">
+                  <option value="blur_bg">Blur-Hintergrund (16:9 komplett)</option>
+                  <option value="center_crop">Center-Crop (Vollbild 9:16)</option>
+                  <option value="split_cam">🎥 Split-Screen (Facecam + Gameplay)</option>
+                </select>
+              </div>
+              <div>
+                <label for="selClipPreset" style="font-size: 11px;">🎯 Export-Preset</label>
+                <select id="selClipPreset" style="width: 100%; margin-top: 2px;">
+                  <option value="standard">Standard MP4 (Ausgewogen)</option>
+                  <option value="shorts_60fps">Shorts / TikTok (60fps High)</option>
+                  <option value="discord_10mb">Discord (&lt; 10 MB)</option>
+                  <option value="gif">Animiertes GIF</option>
+                </select>
+              </div>
+              <div>
+                <label for="selClipSpeed" style="font-size: 11px;">⚡ Geschwindigkeit</label>
+                <select id="selClipSpeed" style="width: 100%; margin-top: 2px;">
+                  <option value="0.25">0.25× (Super Slow-Mo)</option>
+                  <option value="0.5">0.5× (Slow-Mo)</option>
+                  <option value="1" selected>1× (Normal)</option>
+                  <option value="1.5">1.5× (Schneller)</option>
+                  <option value="2">2× (Zeitraffer)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="clip-pro-grid">
+              <div>
+                <label for="inpClipHook" style="font-size: 11px;">🪝 Hook-Headline (oben im Clip)</label>
+                <input type="text" id="inpClipHook" placeholder="z. B. 1v5 CLUTCH IN RANKED!" style="width: 100%; margin-top: 2px;" />
+              </div>
+              <div>
+                <label for="inpClipWatermark" style="font-size: 11px;">🏷️ Kanal-Watermark</label>
+                <input type="text" id="inpClipWatermark" placeholder="z. B. @DeinKanal" style="width: 100%; margin-top: 2px;" />
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-top: 2px; border-top: 1px solid rgba(148,163,184,0.16);">
+              <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; cursor: pointer;">
+                <input type="checkbox" id="chkClipNormAudio" /> 🔊 Loudness normalisieren
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; cursor: pointer;">
+                <input type="checkbox" id="chkClipMuteAudio" /> 🔇 Ton stumm
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
+                Gain (dB):
+                <input type="number" id="numClipGainDb" min="-18" max="18" step="1" value="0" style="width: 56px;" />
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px;">
+                Fade (s):
+                <input type="number" id="numClipFadeSec" min="0" max="3" step="0.2" value="0" style="width: 54px;" />
+              </label>
+            </div>
+
+            <div class="clip-pro-grid" style="padding-top: 2px; border-top: 1px solid rgba(148,163,184,0.16);">
+              <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                <button class="btn-sm" id="btnClipPickMusic" type="button" style="font-size: 11px;">🎵 Musik-Track…</button>
+                <span id="lblClipMusicName" style="font-size: 11px; color: #94a3b8; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Keine Musik</span>
+                <input type="range" id="rngClipMusicVol" min="0.05" max="1" step="0.05" value="0.25" title="Musik-Lautstärke" style="width: 64px;" />
+                <button class="btn-sm warn hidden" id="btnClipClearMusic" type="button" style="padding: 2px 6px; font-size: 10px;">✕</button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                <button class="btn-sm" id="btnClipPickSub" type="button" style="font-size: 11px;">💬 Untertitel (.srt)…</button>
+                <span id="lblClipSubName" style="font-size: 11px; color: #94a3b8; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Keine Untertitel</span>
+                <button class="btn-sm warn hidden" id="btnClipClearSub" type="button" style="padding: 2px 6px; font-size: 10px;">✕</button>
+              </div>
+            </div>
           </div>
+
           <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
-            <button class="btn-sm" id="btnClipTrimOriginal" disabled style="flex: 1; padding: 9px; font-weight: 700;">✂️ 16:9 schneiden</button>
-            <button class="btn-sm" id="btnClipExportShort" disabled style="flex: 1; padding: 9px; font-weight: 700;">📱 Als 9:16 Short</button>
+            <button class="btn-sm" id="btnClipTrimOriginal" disabled style="flex: 1; padding: 9px; font-weight: 700;">✂️ 16:9 exportieren</button>
+            <button class="btn-sm" id="btnClipExportShort" disabled style="flex: 1; padding: 9px; font-weight: 700;">📱 9:16 Short exportieren</button>
             <button class="btn-sm hidden" id="btnClipRevealOut">📂 Im Ordner zeigen</button>
           </div>
           <div id="clipStudioStatus" style="margin-top: 8px; font-size: 12px; color: #94a3b8; word-break: break-word;"></div>
