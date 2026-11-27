@@ -2451,7 +2451,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-blossom-springs .bg-splash,
     body.fx-radiant-cloud .bg-splash,
     body.fx-ruined-mist .bg-splash,
-    body.fx-zaun-lab .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    body.fx-zaun-lab .bg-splash,
+    body.fx-crime-city .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
     @keyframes slotFramePulse {
       0%, 100% { box-shadow: 0 0 28px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 18px var(--c1); border-color: var(--c1); }
       50% { box-shadow: 0 0 34px rgba(0, 0, 0, 0.78), inset 0 0 14px rgba(255, 255, 255, 0.06), 0 0 28px var(--c2); border-color: var(--c2); }
@@ -2724,7 +2725,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'arcane-prestige': 'diamonds',
         'project-cyber': 'cyber',
         'ruined-mist': 'mist',
-        'zaun-lab': 'bubbles'
+        'zaun-lab': 'bubbles',
+        'crime-city': 'diamonds'
       };
 
       function resize() {
@@ -5071,6 +5073,50 @@ body.champ-fx-zaun-lab .lb-lp-fill,
 body.champ-fx-zaun-lab .goal-fill,
 body.champ-fx-zaun-lab .sp-prog-fill,
 body.champ-fx-zaun-lab .val-rr-fill { background: linear-gradient(90deg, #76ff03, #00e5ff, #facc15) !important; }
+
+@keyframes crimeCityCardPulse {
+  0%, 100% { border-color: #e11d48; box-shadow: 0 0 18px rgba(225, 29, 72, 0.42), inset 0 0 12px rgba(168, 85, 247, 0.14); }
+  50% { border-color: #a855f7; box-shadow: 0 0 22px rgba(168, 85, 247, 0.48), inset 0 0 14px rgba(250, 204, 21, 0.14); }
+  80% { border-color: #facc15; box-shadow: 0 0 18px rgba(250, 204, 21, 0.36), inset 0 0 12px rgba(225, 29, 72, 0.16); }
+}
+body.champ-fx-crime-city .msg-row {
+  background:
+    repeating-linear-gradient(-45deg, rgba(225, 29, 72, 0.06) 0 4px, rgba(168, 85, 247, 0.04) 4px 10px, transparent 10px 24px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(11, 6, 14, 0.97)), var(--ct-bg-end, rgba(6, 5, 10, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #e11d48) !important;
+  border-left: 4px solid var(--ct-tertiary, #facc15) !important;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+  border-radius: 0 !important;
+  animation: crimeCityCardPulse 6s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-crime-city ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(225, 29, 72, 0.24), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(168, 85, 247, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(11, 6, 14, 0.97)), var(--ct-bg-end, rgba(6, 5, 10, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #e11d48) !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  border-radius: 0 !important;
+  animation: crimeCityCardPulse 5.4s ease-in-out infinite;
+}
+body.champ-fx-crime-city .gs-title,
+body.champ-fx-crime-city .gs-champ-name,
+body.champ-fx-crime-city .lb-rank,
+body.champ-fx-crime-city .sp-title,
+body.champ-fx-crime-city .goal-title,
+body.champ-fx-crime-city .poll-q,
+body.champ-fx-crime-city .gw-title,
+body.champ-fx-crime-city .sched-title,
+body.champ-fx-crime-city .al-author,
+body.champ-fx-crime-city .lt-topic,
+body.champ-fx-crime-city .qna-author,
+body.champ-fx-crime-city .tron-topic,
+body.champ-fx-crime-city .val-rank-name { color: #faf5ff !important; text-shadow: 0 0 12px rgba(225, 29, 72, 0.85), 0 0 8px rgba(168, 85, 247, 0.65) !important; }
+body.champ-fx-crime-city .gs-lp-fill,
+body.champ-fx-crime-city .lb-lp-fill,
+body.champ-fx-crime-city .goal-fill,
+body.champ-fx-crime-city .sp-prog-fill,
+body.champ-fx-crime-city .val-rr-fill { background: linear-gradient(90deg, #e11d48, #a855f7, #facc15) !important; }
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -5140,7 +5186,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
