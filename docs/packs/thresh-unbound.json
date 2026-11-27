@@ -1,0 +1,25 @@
+{
+  "id": "thresh-unbound",
+  "name": "Thresh — Unbound",
+  "icon": "⛓️",
+  "championMatch": ["thresh"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "unbound-thresh",
+  "description": "Unbound Thresh Shadow Isles emerald, spectral cyan & obsidian iron with chain-link overlay frames, swaying soul lantern emblem & 2.5D cel-shaded Soul-Capture transition.",
+  "colors": {
+    "primary": "#10b981",
+    "secondary": "#5eead4",
+    "tertiary": "#34d399",
+    "bgStart": "rgba(4, 16, 14, 0.97)",
+    "bgEnd": "rgba(2, 9, 10, 0.98)",
+    "text": "#ecfdf5",
+    "muted": "#6ee7b7"
+  },
+  "mapCoverBadge": "UNBOUND // COLLECT SOULS ⛓️",
+  "skinArt": {
+    "championId": "Thresh",
+    "skinQuery": "Unbound",
+    "skinNum": 27
+  }
+}

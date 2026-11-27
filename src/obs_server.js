@@ -2471,7 +2471,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-ruined-mist .bg-splash,
     body.fx-zaun-lab .bg-splash,
     body.fx-crime-city .bg-splash,
-    body.fx-prestige-rose .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    body.fx-prestige-rose .bg-splash,
+    body.fx-unbound-thresh .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
     @keyframes slotFramePulse {
       0%, 100% { box-shadow: 0 0 28px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 18px var(--c1); border-color: var(--c1); }
       50% { box-shadow: 0 0 34px rgba(0, 0, 0, 0.78), inset 0 0 14px rgba(255, 255, 255, 0.06), 0 0 28px var(--c2); border-color: var(--c2); }
@@ -2750,7 +2751,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'dj-sona': 'eq',
         'arcane-fractured': 'shards',
         'eve-firestarter': 'embers',
-        'ahri-firestarter': 'shards'
+        'ahri-firestarter': 'shards',
+        'unbound-thresh': 'mist'
       };
 
       function resize() {
@@ -4122,6 +4124,28 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'eve-firestarter') {
           spawnEveCoffin();
           drawEveCoffin();
+        } else if (activeEffect === 'unbound-thresh') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/thresh-unbound-transition.mp4?t=' + Date.now();
+            customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnBubbles();
+              drawBubbles();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2350);
+            return;
+          }
+          spawnBubbles();
+          drawBubbles();
         } else if (activeEffect === 'ahri-firestarter') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/ahri-firestarter-transition.mp4?t=' + Date.now();
@@ -6696,6 +6720,95 @@ body.champ-fx-ahri-firestarter .gw-winner {
   color: #fff0f7 !important;
   text-shadow: 0 0 18px rgba(255, 46, 151, 0.95), 0 0 10px rgba(255, 30, 86, 0.82) !important;
 }
+
+@keyframes threshChainPulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(16, 185, 129, 0.48), inset 0 0 14px rgba(94, 234, 212, 0.16); }
+  50% { box-shadow: 0 0 28px rgba(94, 234, 212, 0.58), inset 0 0 18px rgba(16, 185, 129, 0.24); }
+}
+@keyframes threshLanternSway {
+  0%, 100% { transform: rotate(-6deg); filter: drop-shadow(0 0 8px rgba(94, 234, 212, 0.9)); }
+  50% { transform: rotate(6deg); filter: drop-shadow(0 0 14px rgba(16, 185, 129, 1)); }
+}
+body.champ-fx-unbound-thresh .msg-row {
+  background:
+    repeating-linear-gradient(-40deg, rgba(16, 185, 129, 0.06) 0 4px, rgba(94, 234, 212, 0.04) 4px 10px, transparent 10px 24px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(4, 16, 14, 0.97)), var(--ct-bg-end, rgba(2, 9, 10, 0.98))) !important;
+  border: 4px solid transparent !important;
+  border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='2' y='2' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.6'/%3E%3Crect x='13' y='4' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='22' y='2' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.6'/%3E%3Crect x='33' y='4' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='2' y='38' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.6'/%3E%3Crect x='13' y='40' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='22' y='38' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.6'/%3E%3Crect x='33' y='40' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='2' y='14' width='8' height='14' rx='4' fill='none' stroke='%2310b981' stroke-width='2.6'/%3E%3Crect x='4' y='25' width='4' height='10' rx='2' fill='%235eead4'/%3E%3Crect x='38' y='14' width='8' height='14' rx='4' fill='none' stroke='%2310b981' stroke-width='2.6'/%3E%3Crect x='40' y='25' width='4' height='10' rx='2' fill='%235eead4'/%3E%3C/svg%3E") 12 round !important;
+  border-radius: 0 !important;
+  animation: threshChainPulse 4.6s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-unbound-thresh ${s}`).join(',\n')} {
+  position: relative;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(16, 185, 129, 0.24), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(94, 234, 212, 0.22), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(4, 16, 14, 0.97)), var(--ct-bg-end, rgba(2, 9, 10, 0.98))) !important;
+  border: 6px solid transparent !important;
+  border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect x='2' y='2' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.8'/%3E%3Crect x='13' y='4' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='22' y='2' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.8'/%3E%3Crect x='33' y='4' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='2' y='38' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.8'/%3E%3Crect x='13' y='40' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='22' y='38' width='14' height='8' rx='4' fill='none' stroke='%2310b981' stroke-width='2.8'/%3E%3Crect x='33' y='40' width='12' height='4' rx='2' fill='%235eead4'/%3E%3Crect x='2' y='14' width='8' height='14' rx='4' fill='none' stroke='%2310b981' stroke-width='2.8'/%3E%3Crect x='4' y='25' width='4' height='10' rx='2' fill='%235eead4'/%3E%3Crect x='38' y='14' width='8' height='14' rx='4' fill='none' stroke='%2310b981' stroke-width='2.8'/%3E%3Crect x='40' y='25' width='4' height='10' rx='2' fill='%235eead4'/%3E%3C/svg%3E") 12 round !important;
+  border-radius: 0 !important;
+  animation: threshChainPulse 4.2s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-unbound-thresh ${s}::after`).join(',\n')} {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 24px;
+  height: 30px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 42'%3E%3Cpath d='M16 1v5M11 6h10l3 6H8l3-6z' fill='%23111827' stroke='%235eead4' stroke-width='1.8'/%3E%3Cpath d='M9 12h14l2 18-9 9-9-9 2-18z' fill='%23052e2b' stroke='%2310b981' stroke-width='2'/%3E%3Cellipse cx='16' cy='22' rx='5' ry='8' fill='%235eead4'/%3E%3Cellipse cx='16' cy='22' rx='2.5' ry='5' fill='%23ecfdf5'/%3E%3Cpath d='M16 12v27M10 18h12M10 26h12' stroke='%23041414' stroke-width='1.5'/%3E%3C/svg%3E");
+  transform-origin: top center;
+  animation: threshLanternSway 3.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 8;
+}
+body.champ-fx-unbound-thresh .gs-title,
+body.champ-fx-unbound-thresh .gs-champ-name,
+body.champ-fx-unbound-thresh .lb-rank,
+body.champ-fx-unbound-thresh .sp-title,
+body.champ-fx-unbound-thresh .goal-title,
+body.champ-fx-unbound-thresh .poll-q,
+body.champ-fx-unbound-thresh .gw-title,
+body.champ-fx-unbound-thresh .sched-title,
+body.champ-fx-unbound-thresh .al-author,
+body.champ-fx-unbound-thresh .lt-topic,
+body.champ-fx-unbound-thresh .qna-author,
+body.champ-fx-unbound-thresh .tron-topic,
+body.champ-fx-unbound-thresh .val-rank-name { color: #ecfdf5 !important; text-shadow: 0 0 12px rgba(16, 185, 129, 0.92), 0 0 8px rgba(94, 234, 212, 0.72) !important; }
+body.champ-fx-unbound-thresh .gs-lp-fill,
+body.champ-fx-unbound-thresh .lb-lp-fill,
+body.champ-fx-unbound-thresh .goal-fill,
+body.champ-fx-unbound-thresh .sp-prog-fill,
+body.champ-fx-unbound-thresh .val-rr-fill { background: linear-gradient(90deg, #059669, #10b981, #5eead4) !important; }
+body.champ-fx-unbound-thresh .alert-card::before {
+  content: '⛓️  👻';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 13px;
+  color: #5eead4;
+  text-shadow: 0 0 12px rgba(94, 234, 212, 0.95);
+  pointer-events: none;
+}
+body.champ-fx-unbound-thresh .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(4, 24, 20, 0.96), rgba(2, 10, 12, 0.98)) !important;
+  border: 2px solid #10b981 !important;
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.48), inset 0 0 16px rgba(94, 234, 212, 0.24) !important;
+}
+body.champ-fx-unbound-thresh .gw-slot.is-spinning {
+  animation: threshChainPulse 0.55s linear infinite !important;
+}
+body.champ-fx-unbound-thresh .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  box-shadow: 0 0 34px rgba(94, 234, 212, 0.88), inset 0 0 18px rgba(16, 185, 129, 0.35) !important;
+}
+body.champ-fx-unbound-thresh .gw-winner {
+  color: #a7f3d0 !important;
+  text-shadow: 0 0 18px rgba(94, 234, 212, 0.95), 0 0 10px rgba(16, 185, 129, 0.85) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -6765,7 +6878,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
