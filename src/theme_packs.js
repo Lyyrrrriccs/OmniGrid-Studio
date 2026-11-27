@@ -36,10 +36,6 @@ const KNOWN_PACK_ASSETS = {
   'akali-kda-firestarter-ignition': {
     characterArt: 'akali-ignition-art.png',
     skinArt: { championId: 'Akali', skinQuery: 'Firestarter Ignition', localAsset: 'akali-kda-firestarter-ignition.jpg' }
-  },
-  'akali-kda-firestarter': {
-    characterArt: 'akali-ignition-art.png',
-    skinArt: { championId: 'Akali', skinQuery: 'Firestarter Ignition', localAsset: 'akali-kda-firestarter-ignition.jpg' }
   }
 };
 

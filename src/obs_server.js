@@ -2658,23 +2658,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       border-radius: 4px;
       z-index: 4;
     }
-    @keyframes charFloatBg {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
-    }
-    .bg-char-art {
-      position: fixed;
-      right: 30px;
-      bottom: 8px;
-      height: 295px;
-      width: auto;
-      display: none;
-      z-index: 12;
-      pointer-events: none;
-      filter: drop-shadow(0 0 18px var(--c1)) drop-shadow(0 8px 18px rgba(0, 0, 0, 0.85));
-      animation: charFloatBg 4.6s ease-in-out infinite;
-    }
-    .bg-char-art.visible { display: block; }
   </style>
 </head>
 <body>
@@ -2701,12 +2684,10 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
       <div class="slot-box chat-slot"></div>
     </div>
   </div>
-  <img id="bgCharArt" class="bg-char-art" alt="" />
   <script>
     (function initLolAnimatedBg() {
       const root = document.documentElement;
       const splashEl = document.getElementById('bgSplash');
-      const charArtEl = document.getElementById('bgCharArt');
       const canvas = document.getElementById('bgParticles');
       const ctx = canvas.getContext('2d');
 
@@ -2920,8 +2901,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
           root.style.setProperty('--bg-b', '#020814');
           root.style.setProperty('--txt', '#f0e6d2');
           packSplashUrl = '';
-          charArtEl.classList.remove('visible');
-          charArtEl.removeAttribute('src');
           updateSplash();
           return;
         }
@@ -2939,13 +2918,6 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         root.style.setProperty('--bg-a', c.bgStart || '#12061a');
         root.style.setProperty('--bg-b', c.bgEnd || '#061216');
         root.style.setProperty('--txt', c.text || '#f8fafc');
-        if (pack.characterArt && /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(pack.characterArt))) {
-          charArtEl.src = '/api/theme-asset/' + encodeURIComponent(String(pack.characterArt));
-          charArtEl.classList.add('visible');
-        } else {
-          charArtEl.classList.remove('visible');
-          charArtEl.removeAttribute('src');
-        }
         if (pack.skinArt && pack.skinArt.championId) {
           resolveSkinSplash(pack.skinArt).then((u) => { packSplashUrl = u; updateSplash(); }).catch(() => {});
         } else {
@@ -4763,17 +4735,17 @@ body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !i
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 #omniCharArt {
   position: fixed;
-  right: 4px;
+  right: 2px;
   bottom: 2px;
-  height: 92px;
+  height: 112px;
   width: auto;
   display: none;
   pointer-events: none;
   z-index: 9;
-  filter: drop-shadow(0 0 10px var(--ct-primary, #ff3b5c)) drop-shadow(0 4px 10px rgba(0,0,0,0.85));
+  filter: drop-shadow(0 0 12px var(--ct-primary, #ff3b5c)) drop-shadow(0 4px 10px rgba(0,0,0,0.88));
   animation: omniCharFloat 4.2s ease-in-out infinite;
 }
-#omniCharArt.visible { display: block; }
+#gsCard.theme-lol ~ #omniCharArt.visible { display: block; }
 ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').map((s) => `body.champ-has-skin-art ${s}`).join(',\n')} {
   background-image: linear-gradient(145deg, var(--ct-bg-start, rgba(12, 12, 24, 0.86)), var(--ct-bg-end, rgba(8, 10, 20, 0.90))), var(--ct-skin-splash) !important;
   background-size: cover !important;
@@ -4846,8 +4818,9 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
         document.body.classList.add('champ-has-skin-art');
       }).catch(() => {});
     }
+    const isLolGameStatsPage = Boolean(document.getElementById('gsCard'));
     let charEl = document.getElementById('omniCharArt');
-    if (pack.characterArt && /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(pack.characterArt))) {
+    if (isLolGameStatsPage && pack.id === 'akali-kda-firestarter-ignition' && pack.characterArt && /^[a-z0-9_-]+\.(png|webp|jpg|jpeg)$/i.test(String(pack.characterArt))) {
       if (!charEl) {
         charEl = document.createElement('img');
         charEl.id = 'omniCharArt';
