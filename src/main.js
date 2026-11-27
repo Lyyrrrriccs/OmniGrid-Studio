@@ -469,7 +469,7 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
     { id: 'game-stats', label: '🎮 Game-Stats / LoL Champion, Skin & Letzte 6 Games', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 370, posX: 1460, posY: 24 },
     { id: 'lol-bg', label: '🖼️ LoL-Client Frame & Animierter Hintergrund (1920×1080, Champion-Theme)', inputName: 'OmniGrid LoL-Client Frame', url: `${base}/lol-bg`, width: 1920, height: 1080, posX: 0, posY: 0 },
-    { id: 'singed-transition', label: '🧪 Singed Laboratory — Animierte Szenen-Transition (1920×1080)', inputName: 'OmniGrid Singed Transition', url: `${base}/singed-transition?autoplay=1`, width: 1920, height: 1080, posX: 0, posY: 0 },
+    { id: 'scene-transition', label: '✨ Scene Transition — Animierte Überblendung (1920×1080)', inputName: 'OmniGrid Scene Transition', url: `${base}/scene-transition`, width: 1920, height: 1080, posX: 0, posY: 0 },
     { id: 'lol-build', label: '⚔️ LoL Live Item-Build & Elo-Bar', inputName: 'OmniGrid LoL-Build', url: `${base}/lol-build`, width: 550, height: 125, posX: 685, posY: 940 },
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
     { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
@@ -2073,9 +2073,26 @@ function triggerAutoMusicVodProtection(force = false) {
 }
 
 let lastObsConnectedState = false;
+let lastObsProgramScene = '';
 obsWs.on('state', (st) => {
   broadcastToWindows('obs-ws-state', st);
   obsServer.broadcastObsWsState(st);
+  const nextScene = String(st?.currentScene || '');
+  if (st?.connected && nextScene && lastObsProgramScene && nextScene !== lastObsProgramScene) {
+    const cfg = loadConfig();
+    const tr = cfg.obsSceneTransition;
+    if (tr?.enabled) {
+      const matchDirect = (tr.fromScene === '__all__' || tr.fromScene === lastObsProgramScene)
+        && (tr.toScene === '__all__' || tr.toScene === nextScene);
+      const matchReverse = tr.bidirectional !== false
+        && (tr.fromScene === '__all__' || tr.fromScene === nextScene)
+        && (tr.toScene === '__all__' || tr.toScene === lastObsProgramScene);
+      if (matchDirect || matchReverse) {
+        obsServer.broadcastSceneTransition();
+      }
+    }
+  }
+  if (nextScene) lastObsProgramScene = nextScene;
   if (st?.connected) {
     triggerAutoMusicVodProtection(Boolean(st?.streaming && !lastObsStreaming));
     if (!lastObsConnectedState) {
@@ -3620,6 +3637,38 @@ app.whenReady().then(async () => {
       if (act === 'create-input') return await obsWs.createInput(payload);
       if (act === 'get-builtin-overlays') {
         return { ok: true, overlays: getBuiltinObsOverlays(obsServer.port || 4588) };
+      }
+      if (act === 'setup-scene-transition') {
+        const list = getBuiltinObsOverlays(obsServer.port || 4588);
+        const preset = list.find((o) => o.id === 'scene-transition');
+        if (!preset) return { ok: false, error: 'Scene Transition Preset nicht gefunden.' };
+        const fromScene = String(payload.fromScene || '__all__');
+        const toScene = String(payload.toScene || '__all__');
+        const bidirectional = payload.bidirectional !== false;
+        const allScenes = Array.isArray(obsWs.getState()?.scenes) ? obsWs.getState().scenes : [];
+        const targets = (fromScene === '__all__' || toScene === '__all__')
+          ? allScenes
+          : [...new Set([fromScene, toScene].filter(Boolean))];
+        if (!targets.length) return { ok: false, error: 'Keine Ziel-Szenen gefunden.' };
+        const attached = [];
+        for (const sc of targets) {
+          await obsWs.addOrAttachBrowserOverlay({
+            sceneName: sc,
+            inputName: preset.inputName,
+            url: preset.url,
+            width: preset.width,
+            height: preset.height,
+            posX: 0,
+            posY: 0,
+            rerouteAudio: false
+          });
+          attached.push(sc);
+        }
+        const cfg = loadConfig();
+        cfg.obsSceneTransition = { enabled: true, fromScene, toScene, bidirectional };
+        saveConfig(cfg);
+        setTimeout(() => obsServer.broadcastSceneTransition(), 350);
+        return { ok: true, attached, fromScene, toScene, bidirectional };
       }
       if (act === 'add-builtin-overlay') {
         const list = getBuiltinObsOverlays(obsServer.port || 4588);

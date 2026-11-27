@@ -6748,12 +6748,80 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (prev && list.some((x) => x.id === prev)) selBuiltinOverlay.value = prev;
   }
 
+  function promptSceneTransitionPair(scenes, defaultFrom) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(2,6,23,0.78);display:flex;align-items:center;justify-content:center;padding:16px;';
+      const list = Array.isArray(scenes) ? scenes : [];
+      const optsHtml = '<option value="__all__">🌐 Alle Szenen (bei jedem Wechsel)</option>'
+        + list.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+      const secondScene = list.find((s) => s !== defaultFrom) || '__all__';
+      overlay.innerHTML = `
+        <div style="width:460px;max-width:95vw;background:#0f172a;border:1.5px solid #38bdf8;border-radius:14px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,0.65);color:#f8fafc;">
+          <h3 style="margin:0 0 6px;font-size:15px;">✨ Scene Transition einrichten</h3>
+          <p style="margin:0 0 14px;font-size:12px;color:#94a3b8;">Wähle aus, zwischen welchen beiden OBS-Szenen die animierte Überblendung abgespielt werden soll (wird automatisch in beide Szenen eingefügt):</p>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <label style="font-size:11.5px;color:#cbd5e1;">Von Szene (Start):
+              <select id="trFromSel" style="width:100%;margin-top:4px;">${optsHtml}</select>
+            </label>
+            <label style="font-size:11.5px;color:#cbd5e1;">Nach Szene (Ziel):
+              <select id="trToSel" style="width:100%;margin-top:4px;">${optsHtml}</select>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e2e8f0;margin-top:2px;">
+              <input type="checkbox" id="trBidir" checked />
+              <span>🔄 In beide Richtungen abspielen (Szene A ↔ Szene B)</span>
+            </label>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+            <button id="trCancel" class="btn-sm">Abbrechen</button>
+            <button id="trConfirm" class="btn-sm" style="background:#0284c7;color:#fff;font-weight:700;">✨ Überblendung einrichten</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      const fromSel = overlay.querySelector('#trFromSel');
+      const toSel = overlay.querySelector('#trToSel');
+      const bidirChk = overlay.querySelector('#trBidir');
+      if (defaultFrom && list.includes(defaultFrom)) fromSel.value = defaultFrom;
+      toSel.value = secondScene;
+      const done = (val) => { overlay.remove(); resolve(val); };
+      overlay.querySelector('#trCancel').addEventListener('click', () => done(null));
+      overlay.querySelector('#trConfirm').addEventListener('click', () => done({
+        fromScene: fromSel.value,
+        toScene: toSel.value,
+        bidirectional: Boolean(bidirChk.checked)
+      }));
+    });
+  }
+
   btnAddBuiltinOverlay?.addEventListener('click', async () => {
     if (!currentSceneName) {
       setStatus('⚠️ Bitte zuerst oben mit OBS verbinden und eine Szene wählen.', '#fbbf24');
       return;
     }
     const overlayId = selBuiltinOverlay?.value || 'chat';
+    if (overlayId === 'scene-transition') {
+      const sceneNames = [...(selScene?.options || [])].map((o) => o.value).filter(Boolean);
+      const choice = await promptSceneTransitionPair(sceneNames, currentSceneName);
+      if (!choice) return;
+      setStatus('⏳ Richte animierte Scene Transition zwischen den gewählten Szenen ein...', '#38bdf8');
+      const res = await window.omnichat.obsWsAction({
+        action: 'setup-scene-transition',
+        fromScene: choice.fromScene,
+        toScene: choice.toScene,
+        bidirectional: choice.bidirectional
+      });
+      if (res?.ok) {
+        const pairLabel = choice.fromScene === '__all__' || choice.toScene === '__all__'
+          ? 'allen Szenen'
+          : `"${choice.fromScene}" ${choice.bidirectional ? '↔' : '→'} "${choice.toScene}"`;
+        setStatus(`✨ Scene Transition aktiv für ${pairLabel} (${res.attached.length} Szene(n) eingerichtet)!`, '#4ade80');
+        await loadSceneItems(currentSceneName);
+        setTimeout(refreshPreview, 450);
+      } else {
+        setStatus(`❌ ${res?.error || 'Scene Transition konnte nicht eingerichtet werden.'}`, '#f87171');
+      }
+      return;
+    }
     const res = await window.omnichat.obsWsAction({
       action: 'add-builtin-overlay',
       sceneName: currentSceneName,

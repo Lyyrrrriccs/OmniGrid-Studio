@@ -2961,12 +2961,13 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
+const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>OmniGrid Studio — Singed Laboratory Transition</title>
+  <title>OmniGrid Studio — Scene Transition</title>
   <style>
+    :root { --t1: #c8aa6e; --t2: #0ac8b9; --t3: #38bdf8; --tbg-a: #061022; --tbg-b: #020814; --ttxt: #f8fafc; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100vw; height: 100vh; overflow: hidden; background: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     .st-stage { position: fixed; inset: 0; pointer-events: none; opacity: 0; }
@@ -2977,11 +2978,10 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
       bottom: 0;
       width: 62vw;
       background:
-        radial-gradient(circle at 50% 45%, rgba(57, 255, 20, 0.32), transparent 58%),
-        repeating-linear-gradient(-35deg, rgba(57, 255, 20, 0.09) 0 14px, rgba(0, 229, 160, 0.05) 14px 28px, transparent 28px 56px),
-        linear-gradient(135deg, #03120a 0%, #072617 55%, #041315 100%);
-      border: 3px solid #39ff14;
-      box-shadow: 0 0 60px rgba(57, 255, 20, 0.65), inset 0 0 40px rgba(0, 229, 160, 0.35);
+        radial-gradient(circle at 50% 45%, var(--t1), transparent 62%),
+        linear-gradient(135deg, var(--tbg-a) 0%, var(--tbg-b) 100%);
+      border: 3px solid var(--t1);
+      box-shadow: 0 0 60px var(--t1), inset 0 0 40px var(--t2);
     }
     .st-left { left: -66vw; border-left: none; clip-path: polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%); }
     .st-right { right: -66vw; border-right: none; clip-path: polygon(12% 0, 100% 0, 100% 100%, 12% 100%, 0 50%); }
@@ -3017,8 +3017,8 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
       width: 340px;
       height: 340px;
       border-radius: 50%;
-      border: 4px solid #39ff14;
-      box-shadow: 0 0 42px #39ff14, inset 0 0 32px #00e5a0;
+      border: 4px solid var(--t1);
+      box-shadow: 0 0 42px var(--t1), inset 0 0 32px var(--t2);
       opacity: 0;
     }
     .st-stage.playing .st-ring { animation: stRingBlast 1.75s ease-out forwards; }
@@ -3037,9 +3037,9 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
       width: 144px;
       height: 144px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(57, 255, 20, 0.32) 0%, rgba(4, 18, 12, 0.94) 70%);
-      border: 3px solid #39ff14;
-      box-shadow: 0 0 45px rgba(57, 255, 20, 0.8), inset 0 0 24px rgba(0, 229, 160, 0.45);
+      background: radial-gradient(circle, var(--t2) 0%, var(--tbg-b) 72%);
+      border: 3px solid var(--t1);
+      box-shadow: 0 0 45px var(--t1), inset 0 0 24px var(--t2);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3048,10 +3048,11 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
     .st-title {
       font-size: 22px;
       font-weight: 900;
-      letter-spacing: 0.24em;
+      letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: #ecfdf5;
-      text-shadow: 0 0 18px #39ff14, 0 0 8px #00e5a0;
+      color: var(--ttxt);
+      text-shadow: 0 0 18px var(--t1), 0 0 8px var(--t2);
+      white-space: nowrap;
     }
     #stBubbles { position: absolute; inset: 0; width: 100%; height: 100%; }
   </style>
@@ -3063,15 +3064,19 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
     <canvas id="stBubbles"></canvas>
     <div class="st-ring"></div>
     <div class="st-emblem">
-      <div class="st-flask">🧪</div>
-      <div class="st-title">MAD SCIENTIST LAB</div>
+      <div class="st-flask" id="stIcon">⚡</div>
+      <div class="st-title" id="stTitle">SCENE TRANSITION</div>
     </div>
   </div>
   <script>
-    (function initSingedTransition() {
+    (function initSceneTransition() {
+      const root = document.documentElement;
       const stage = document.getElementById('stStage');
+      const iconEl = document.getElementById('stIcon');
+      const titleEl = document.getElementById('stTitle');
       const canvas = document.getElementById('stBubbles');
       const ctx = canvas.getContext('2d');
+      let palette = ['#c8aa6e', '#0ac8b9'];
       let animId = 0;
       let timer = null;
       let bubbles = [];
@@ -3083,6 +3088,33 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
       resize();
       window.addEventListener('resize', resize);
 
+      function applyTheme(pack) {
+        if (!pack || !pack.id) {
+          palette = ['#c8aa6e', '#0ac8b9'];
+          root.style.setProperty('--t1', '#c8aa6e');
+          root.style.setProperty('--t2', '#0ac8b9');
+          root.style.setProperty('--t3', '#38bdf8');
+          root.style.setProperty('--tbg-a', '#061022');
+          root.style.setProperty('--tbg-b', '#020814');
+          root.style.setProperty('--ttxt', '#f8fafc');
+          iconEl.textContent = '⚡';
+          titleEl.textContent = 'SCENE TRANSITION';
+          return;
+        }
+        const c = pack.colors || {};
+        const c1 = c.primary || '#76ff03';
+        const c2 = c.secondary || '#00e5ff';
+        palette = [c1, c2];
+        root.style.setProperty('--t1', c1);
+        root.style.setProperty('--t2', c2);
+        root.style.setProperty('--t3', c.tertiary || c2);
+        root.style.setProperty('--tbg-a', c.bgStart || '#071012');
+        root.style.setProperty('--tbg-b', c.bgEnd || '#050b10');
+        root.style.setProperty('--ttxt', c.text || '#f8fafc');
+        iconEl.textContent = pack.icon || '⚡';
+        titleEl.textContent = String(pack.name || 'SCENE TRANSITION').toUpperCase();
+      }
+
       function spawnBubbles() {
         bubbles = Array.from({ length: 70 }, () => ({
           x: Math.random() * canvas.width,
@@ -3090,7 +3122,7 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
           r: 4 + Math.random() * 14,
           vy: 4 + Math.random() * 9,
           vx: (Math.random() - 0.5) * 2.2,
-          col: Math.random() > 0.45 ? '#76ff03' : '#00e5ff',
+          col: Math.random() > 0.45 ? palette[0] : palette[1],
           alpha: 0.35 + Math.random() * 0.55
         }));
       }
@@ -3132,13 +3164,19 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
         }, 1820);
       }
 
+      fetch('/api/champion-theme', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => applyTheme(d && d.pack ? d.pack : null))
+        .catch(() => {});
+
       function connectWs() {
         try {
           const ws = new WebSocket('ws://' + location.host);
           ws.onmessage = (ev) => {
             try {
               const p = JSON.parse(ev.data);
-              if (p.type === 'singed-transition') playTransition();
+              if (p.type === 'champion-theme') applyTheme(p.data);
+              if (p.type === 'scene-transition' || p.type === 'singed-transition') playTransition();
             } catch (e) {}
           };
           ws.onclose = () => setTimeout(connectWs, 2500);
@@ -5156,8 +5194,8 @@ class ObsServer {
           return;
         }
 
-        if (urlPath === '/api/transition/singed') {
-          this.broadcastSingedTransition();
+        if (urlPath === '/api/transition/scene' || urlPath === '/api/transition/singed') {
+          this.broadcastSceneTransition();
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-cache' });
           res.end(JSON.stringify({ ok: true }));
           return;
@@ -5417,8 +5455,8 @@ class ObsServer {
           res.end(withChampionTheme(OBS_LOL_MAP_HTML));
         } else if (urlPath === '/lol-bg') {
           res.end(OBS_LOL_BG_HTML);
-        } else if (urlPath === '/singed-transition') {
-          res.end(OBS_SINGED_TRANSITION_HTML);
+        } else if (urlPath === '/scene-transition' || urlPath === '/singed-transition') {
+          res.end(OBS_SCENE_TRANSITION_HTML);
         } else if (urlPath === '/lol-build') {
           res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {
@@ -5629,8 +5667,12 @@ class ObsServer {
     this._broadcast({ type: 'champion-theme', data: this.currentChampionTheme });
   }
 
+  broadcastSceneTransition() {
+    this._broadcast({ type: 'scene-transition', data: { at: Date.now() } });
+  }
+
   broadcastSingedTransition() {
-    this._broadcast({ type: 'singed-transition', data: { at: Date.now() } });
+    this.broadcastSceneTransition();
   }
 
   setVoiceTestHandler(fn) {
