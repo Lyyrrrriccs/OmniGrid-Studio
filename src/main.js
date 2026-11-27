@@ -4890,6 +4890,8 @@ app.whenReady().then(async () => {
       broadcastGiveawayState();
     } else if (act === 'stop') {
       activeGiveaway.active = false;
+      activeGiveaway.visible = false;
+      activeGiveaway.spinning = false;
       broadcastGiveawayState();
     } else if (act === 'reset') {
       activeGiveaway.active = false;
