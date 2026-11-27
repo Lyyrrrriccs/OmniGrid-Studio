@@ -334,6 +334,16 @@
       clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
       animation: prestigeRoseBladePulse 4.2s ease-in-out infinite;
     }
+    @keyframes djSonaBeatCycle {
+      0%, 100% { border-color: #00e5ff; box-shadow: 0 0 22px rgba(0,229,255,0.5); }
+      33% { border-color: #ff2a6d; box-shadow: 0 0 24px rgba(255,42,109,0.52); }
+      66% { border-color: #c084fc; box-shadow: 0 0 24px rgba(192,132,252,0.52); }
+    }
+    #stage.champ-fx-dj-sona :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
+      background: radial-gradient(circle at 14% 16%, rgba(0,229,255,0.22), transparent 46%), radial-gradient(circle at 86% 84%, rgba(255,42,109,0.22), transparent 50%), linear-gradient(145deg, var(--ct-bg-start), var(--ct-bg-end)) !important;
+      border-radius: 14px !important;
+      animation: djSonaBeatCycle 4.2s ease-in-out infinite;
+    }
     #stage.champ-fx-spirit-blossom :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) { border-radius: 14px !important; }
     #stage.champ-fx-nightbringer :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card),
     #stage.champ-fx-project-cyber :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
@@ -621,6 +631,7 @@
   <script>
     const PACK_CATALOG = [
       { id: 'none', name: 'Standard (LoL Hextech)', icon: '⚔️', effect: 'none', description: 'Default OmniGrid Studio Hextech design across all OBS overlays.', colors: { primary: '#c8aa6e', secondary: '#0ac8b9', tertiary: '#38bdf8', bgStart: 'rgba(9, 20, 40, 0.96)', bgEnd: 'rgba(1, 10, 19, 0.97)', text: '#f0e6d2' }, mapCoverBadge: '🛡️ Streamer-Modus' },
+      { id: 'sona-dj', name: 'Sona — DJ Sona', icon: '🎧', effect: 'dj-sona', description: 'DJ Sona Kinetic cyan, Concussive bass crimson & Ethereal synth violet with animated audio-equalizer frames, Crescendo Bass-Drop transition & live EQ Client-Frame.', colors: { primary: '#00e5ff', secondary: '#ff2a6d', tertiary: '#c084fc', bgStart: 'rgba(6, 10, 24, 0.96)', bgEnd: 'rgba(12, 6, 26, 0.97)', text: '#f0f9ff' }, mapCoverBadge: 'DJ SONA // DROP THE BEAT 🎧' },
       { id: 'katarina-prestige-black-rose', name: 'Katarina — Prestige Masque of the Black Rose', icon: '🗡️', effect: 'prestige-rose', description: 'Prestige champagne gold, Noxian velvet crimson & platinum daggers with Death Lotus blade-and-petal transition across all OBS overlays.', colors: { primary: '#f5d061', secondary: '#e11d48', tertiary: '#e2e8f0', bgStart: 'rgba(16, 6, 12, 0.97)', bgEnd: 'rgba(8, 5, 11, 0.98)', text: '#fff8eb' }, mapCoverBadge: 'BLACK ROSE // DEATH LOTUS 🗡️' },
       { id: 'twistedfate-crime-city-nightmare', name: 'Twisted Fate — Crime City Nightmare', icon: '🃏', effect: 'crime-city', description: 'Noir Crime City crimson, eldritch nightmare violet & Pick-a-Card gold with animated Art-Deco frames across all OBS overlays.', colors: { primary: '#e11d48', secondary: '#a855f7', tertiary: '#facc15', bgStart: 'rgba(11, 6, 14, 0.97)', bgEnd: 'rgba(6, 5, 10, 0.98)', text: '#faf5ff' }, mapCoverBadge: 'CRIME CITY // PICK A CARD 🃏' },
       { id: 'singed-laboratory', name: 'Singed — Mad Scientist Laboratory', icon: '🧪', effect: 'zaun-lab', description: 'Mad Scientist Singed radioactive green, high-voltage Tesla cyan & hazard amber with gently animated lab frames and /singed-transition.', colors: { primary: '#76ff03', secondary: '#00e5ff', tertiary: '#facc15', bgStart: 'rgba(7, 16, 18, 0.96)', bgEnd: 'rgba(5, 11, 16, 0.97)', text: '#f0fdf4' }, mapCoverBadge: 'MAD SCIENTIST // LAB EXPERIMENT 🧪' },
@@ -663,7 +674,7 @@
       'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose',
       'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige',
       'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter',
-      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
+      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
     ];
 
     const SKIN_ART_MAP = {
@@ -683,6 +694,7 @@
       'masteryi-inkshadow': { championId: 'MasterYi', skinQuery: 'Inkshadow' },
       'seraphine-kda-all-out': { championId: 'Seraphine', skinQuery: 'K/DA ALL OUT' },
       'singed-laboratory': { championId: 'Singed', skinQuery: 'Mad Scientist' },
+      'sona-dj': { championId: 'Sona', skinQuery: 'DJ Sona' },
       'twistedfate-crime-city-nightmare': { championId: 'TwistedFate', skinQuery: 'Crime City Nightmare' },
       'viego-ruined': { championId: 'Viego', skinQuery: 'default' },
       'viego-soul-fighter': { championId: 'Viego', skinQuery: 'Soul Fighter' },
@@ -709,7 +721,7 @@
       'nightbringer': 'embers', 'god-king': 'embers', 'risen-legend': 'streaks', 'kda-all-out': 'stars',
       'dark-cosmic': 'orbit', 'prestige-cosmic': 'orbit', 'black-rose': 'petals', 'spirit-blossom': 'petals',
       'blossom-springs': 'bubbles', 'ravenborn': 'feathers', 'inkshadow': 'ink', 'elementalist': 'orbs',
-      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles', 'crime-city': 'cards', 'prestige-rose': 'petals'
+      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles', 'crime-city': 'cards', 'prestige-rose': 'petals', 'dj-sona': 'eq'
     };
     const csParticles = Array.from({ length: 44 }, () => ({
       x: Math.random() * 960, y: Math.random() * 540, r: 1.4 + Math.random() * 2.8,
@@ -749,6 +761,19 @@
             if (p.y < -20 || p.y > h + 20) { p.y = csMode === 'cyber' ? -20 : h + 15; p.x = Math.random() * w; }
             csCtx.lineWidth = 1.6; csCtx.beginPath(); csCtx.moveTo(p.x, p.y);
             csCtx.lineTo(p.x + (csMode === 'cyber' ? 0 : -6), p.y + (csMode === 'cyber' ? -16 : 14)); csCtx.stroke();
+          } else if (csMode === 'eq') {
+            const idx = csParticles.indexOf(p);
+            const bars = 28;
+            if (idx < bars) {
+              const bw = w / bars;
+              const amp = 10 + Math.abs(Math.sin(p.phase * 2.2 + idx * 0.45)) * 58;
+              const eqCols = ['#00e5ff', '#ff2a6d', '#c084fc'];
+              csCtx.globalAlpha = 0.72; csCtx.fillStyle = eqCols[idx % 3]; csCtx.shadowColor = eqCols[idx % 3];
+              csCtx.fillRect(idx * bw + 2, h - amp, Math.max(3, bw - 4), amp);
+            } else {
+              p.y -= p.speed * 0.9; if (p.y < -15) { p.y = h + 15; p.x = Math.random() * w; }
+              csCtx.beginPath(); csCtx.arc(p.x, p.y, p.r * 1.4, 0, Math.PI * 2); csCtx.stroke();
+            }
           } else if (csMode === 'cards') {
             p.y -= p.speed * 0.65; p.x += Math.sin(p.phase) * 0.6;
             if (p.y < -35) { p.y = h + 35; p.x = Math.random() * w; }

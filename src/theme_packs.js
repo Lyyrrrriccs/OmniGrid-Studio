@@ -46,7 +46,7 @@ function sanitizePack(raw = {}) {
   if (!id || !name) return null;
   const known = KNOWN_PACK_ASSETS[id] || null;
   const c = raw.colors && typeof raw.colors === 'object' ? raw.colors : {};
-  const allowedEffects = ['none', 'jinx-glitch', 'kda-firestarter', 'kda-all-out', 'risen-legend', 'inkshadow', 'dark-cosmic', 'black-rose', 'ravenborn', 'elementalist', 'high-noon', 'arcane-prestige', 'prestige-cosmic', 'god-king', 'radiant-cloud', 'soul-fighter', 'blossom-springs', 'zaun-lab', 'crime-city', 'prestige-rose', 'spirit-blossom', 'nightbringer', 'project-cyber', 'ruined-mist', 'neon-pulse', 'hextech'];
+  const allowedEffects = ['none', 'jinx-glitch', 'kda-firestarter', 'kda-all-out', 'risen-legend', 'inkshadow', 'dark-cosmic', 'black-rose', 'ravenborn', 'elementalist', 'high-noon', 'arcane-prestige', 'prestige-cosmic', 'god-king', 'radiant-cloud', 'soul-fighter', 'blossom-springs', 'zaun-lab', 'crime-city', 'prestige-rose', 'dj-sona', 'spirit-blossom', 'nightbringer', 'project-cyber', 'ruined-mist', 'neon-pulse', 'hextech'];
   const eff = allowedEffects.includes(String(raw.effect || '')) ? String(raw.effect) : 'none';
   const rawCharArt = String(raw.characterArt || known?.characterArt || '');
   const rawSkin = raw.skinArt && typeof raw.skinArt === 'object' ? raw.skinArt : (known?.skinArt || null);
