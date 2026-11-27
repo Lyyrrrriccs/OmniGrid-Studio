@@ -990,7 +990,8 @@
       "ov_valbar": "🔫 Valorant Rank, RR & Match-Bar",
       "ov_valmap": "🛡️ Valorant Radar-Cover (Anti-Snipe oben links)",
       "ov_sponsors": "🏷️ Werbepartner / Sponsoren-Banner",
-      "se_opacity_lbl": "💧 Sichtbarkeit:"
+      "se_opacity_lbl": "💧 Sichtbarkeit:",
+      "tp_check_updates": "🔄 Pack-Updates"
     }
   },
   "titles": {
@@ -1143,7 +1144,8 @@
     "t_se_opacity_100": "100% sichtbar (deckend)",
     "t_se_opacity_75": "75% sichtbar",
     "t_se_opacity_50": "50% sichtbar (halbtransparent)",
-    "t_se_opacity_25": "25% sichtbar"
+    "t_se_opacity_25": "25% sichtbar",
+    "t_tp_check_updates": "Installierte Overlay-Packs auf Überarbeitungen prüfen und automatisch aktualisieren"
   },
   "placeholders": {
     "p_1": "z.B. DeinName",

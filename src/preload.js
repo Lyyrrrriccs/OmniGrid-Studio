@@ -156,5 +156,6 @@ contextBridge.exposeInMainWorld('omnichat', {
   themesSelect: (mode) => ipcRenderer.invoke('themes-select', mode),
   themesInstallFile: () => ipcRenderer.invoke('themes-install-file'),
   themesExportPack: (packId) => ipcRenderer.invoke('themes-export-pack', packId),
-  themesOpenDir: () => ipcRenderer.invoke('themes-open-dir')
+  themesOpenDir: () => ipcRenderer.invoke('themes-open-dir'),
+  themesCheckUpdates: () => ipcRenderer.invoke('themes-check-updates')
 });

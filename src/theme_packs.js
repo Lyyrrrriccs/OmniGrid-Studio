@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 const BUILTIN_CHAMPION_PACKS = [
   {
@@ -77,6 +78,7 @@ function sanitizePack(raw = {}) {
       ? {
           championId: String(rawSkin.championId).slice(0, 32),
           skinQuery: String(rawSkin.skinQuery || '').slice(0, 64),
+          ...(Number.isFinite(Number(rawSkin.skinNum)) ? { skinNum: Number(rawSkin.skinNum) } : {}),
           ...(/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(resolvedLocal)
             ? { localAsset: resolvedLocal.slice(0, 80) }
             : {})
@@ -149,6 +151,126 @@ function deletePack(userDataDir, packId) {
   return { ok: true };
 }
 
+function packFingerprint(pack) {
+  if (!pack) return '';
+  return JSON.stringify({
+    name: pack.name,
+    icon: pack.icon,
+    version: pack.version,
+    effect: pack.effect,
+    description: pack.description,
+    colors: pack.colors,
+    mapCoverBadge: pack.mapCoverBadge,
+    characterArt: pack.characterArt,
+    skinArt: pack.skinArt,
+    championMatch: pack.championMatch
+  });
+}
+
+function isOfficialUpdatablePack(pack) {
+  if (!pack) return false;
+  const author = String(pack.author || '').trim().toLowerCase();
+  return !author || author === 'omnigrid studio' || author === 'community';
+}
+
+function syncInstalledPacksLocal(userDataDir, bundledPacksDir) {
+  const dir = getThemesDir(userDataDir);
+  const updated = [];
+  let checked = 0;
+  if (!bundledPacksDir || !fs.existsSync(bundledPacksDir)) return { updated, checked };
+  try {
+    for (const f of fs.readdirSync(dir)) {
+      if (!f.endsWith('.json')) continue;
+      const localPath = path.join(dir, f);
+      let localClean = null;
+      try {
+        localClean = sanitizePack(JSON.parse(fs.readFileSync(localPath, 'utf8')));
+      } catch (e) {}
+      if (!localClean || !isOfficialUpdatablePack(localClean)) continue;
+      const bundledPath = path.join(bundledPacksDir, `${localClean.id}.json`);
+      if (!fs.existsSync(bundledPath)) continue;
+      checked++;
+      try {
+        const bundledClean = sanitizePack(JSON.parse(fs.readFileSync(bundledPath, 'utf8')));
+        if (!bundledClean) continue;
+        if (packFingerprint(localClean) !== packFingerprint(bundledClean)) {
+          fs.writeFileSync(localPath, JSON.stringify(bundledClean, null, 2) + '\n', 'utf8');
+          updated.push({ id: bundledClean.id, name: bundledClean.name, source: 'local' });
+        }
+      } catch (e) {}
+    }
+  } catch (e) {}
+  return { updated, checked };
+}
+
+function fetchGitHubPackJson(packId, timeoutMs = 5500) {
+  return new Promise((resolve) => {
+    const safeId = String(packId || '').replace(/[^a-z0-9_-]/gi, '');
+    if (!safeId) return resolve(null);
+    const req = https.request({
+      hostname: 'api.github.com',
+      path: `/repos/Lyyrrrriccs/OmniGrid-Studio/contents/docs/packs/${safeId}.json`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'OmniGrid-Studio',
+        Accept: 'application/vnd.github.raw+json'
+      }
+    }, (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        return resolve(null);
+      }
+      let body = '';
+      res.on('data', (c) => {
+        body += c;
+        if (body.length > 65536) req.destroy();
+      });
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(body));
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    });
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve(null); });
+    req.on('error', () => resolve(null));
+    req.end();
+  });
+}
+
+async function checkAndUpdatePacks(userDataDir, { bundledPacksDir = '', online = true } = {}) {
+  const localRes = syncInstalledPacksLocal(userDataDir, bundledPacksDir);
+  const updatedMap = new Map(localRes.updated.map((u) => [u.id, u]));
+  const dir = getThemesDir(userDataDir);
+  let checked = localRes.checked;
+  let onlineChecked = 0;
+
+  if (online) {
+    const installed = listInstalledPacks(userDataDir).filter((p) => isOfficialUpdatablePack(p));
+    checked = Math.max(checked, installed.length);
+    await Promise.all(installed.map(async (localClean) => {
+      const remoteRaw = await fetchGitHubPackJson(localClean.id);
+      if (!remoteRaw) return;
+      onlineChecked++;
+      const remoteClean = sanitizePack(remoteRaw);
+      if (!remoteClean) return;
+      if (packFingerprint(localClean) !== packFingerprint(remoteClean)) {
+        const dest = path.join(dir, `${remoteClean.id}.json`);
+        fs.writeFileSync(dest, JSON.stringify(remoteClean, null, 2) + '\n', 'utf8');
+        updatedMap.set(remoteClean.id, { id: remoteClean.id, name: remoteClean.name, source: 'github' });
+      }
+    }));
+  }
+
+  return {
+    ok: true,
+    updated: [...updatedMap.values()],
+    checked,
+    onlineChecked
+  };
+}
+
 function resolveActiveChampionTheme(cfg = {}, packs = []) {
   const mode = String(cfg.championThemeMode || 'none').trim();
   if (!mode || mode === 'none' || mode === 'default' || mode === 'auto') return null;
@@ -161,5 +283,7 @@ module.exports = {
   listInstalledPacks,
   installPackFromJson,
   deletePack,
+  syncInstalledPacksLocal,
+  checkAndUpdatePacks,
   resolveActiveChampionTheme
 };

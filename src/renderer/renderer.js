@@ -9962,6 +9962,32 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     }
   });
 
+  document.getElementById('btnGaCheckThemeUpdates')?.addEventListener('click', async () => {
+    const isEn = window.__appLang === 'en';
+    if (statusEl) {
+      statusEl.style.color = '#38bdf8';
+      statusEl.textContent = isEn ? '⏳ Checking installed overlay packs for updates...' : '⏳ Prüfe installierte Overlay-Packs auf Updates...';
+    }
+    const res = await window.omnichat.themesCheckUpdates?.();
+    if (res?.ok) {
+      renderThemes(res);
+      if (statusEl) {
+        if (res.updated?.length) {
+          const names = res.updated.map((u) => u.name).join(', ');
+          statusEl.style.color = '#4ade80';
+          statusEl.textContent = isEn
+            ? `🔄 Updated ${res.updated.length} pack(s): ${names}`
+            : `🔄 ${res.updated.length} Pack(s) aktualisiert: ${names}`;
+        } else {
+          statusEl.style.color = '#94a3b8';
+          statusEl.textContent = isEn
+            ? `✅ All installed packs (${res.checked || 0}) are up to date!`
+            : `✅ Alle installierten Packs (${res.checked || 0}) sind auf dem neuesten Stand!`;
+        }
+      }
+    }
+  });
+
   document.getElementById('btnGaExportThemePack')?.addEventListener('click', async () => {
     const targetId = sel.value !== 'auto' && sel.value !== 'none' ? sel.value : 'jinx-arcane-zaun';
     await window.omnichat.themesExportPack?.(targetId);
