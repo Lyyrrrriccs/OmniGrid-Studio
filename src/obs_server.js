@@ -3089,7 +3089,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       text-shadow: 0 0 18px var(--t1), 0 0 8px var(--t2);
       white-space: nowrap;
     }
-    #stBubbles { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #stBubbles { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
+    .st-emblem { z-index: 5; }
+    .st-ring { z-index: 3; }
   </style>
 </head>
 <body>
@@ -3224,61 +3226,144 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         animId = requestAnimationFrame(drawThrownCards);
       }
 
+      let lotusStart = 0;
+
       function spawnDeathLotus() {
-        const cx = canvas.width * 0.5;
-        const cy = canvas.height * 0.5;
+        lotusStart = performance.now();
         const cols = ['#f5d061', '#e11d48', '#f8fafc', '#fbbf24'];
-        lotusItems = Array.from({ length: 54 }, (_, i) => {
-          const isDagger = i % 3 === 0;
-          const angle = (i / 54) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
-          const speed = isDagger ? (24 + Math.random() * 18) : (10 + Math.random() * 16);
-          return {
-            x: cx + Math.cos(angle) * (20 + Math.random() * 60),
-            y: cy + Math.sin(angle) * (20 + Math.random() * 60),
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
+        lotusItems = [];
+        for (let wave = 0; wave < 3; wave++) {
+          const delay = 140 + wave * 240;
+          for (let i = 0; i < 24; i++) {
+            const angle = (i / 24) * Math.PI * 2 + wave * 0.42;
+            lotusItems.push({
+              isDagger: true,
+              delay,
+              angle,
+              spinSpeed: (wave % 2 === 0 ? 1 : -1) * 0.045,
+              radius: 26,
+              speed: 24 + (i % 4) * 5 + wave * 3,
+              size: 46 + (i % 3) * 14,
+              col: i % 2 === 0 ? '#f5d061' : '#f8fafc',
+              trailCol: i % 2 === 0 ? '#e11d48' : '#f5d061',
+              alpha: 0.96
+            });
+          }
+        }
+        for (let p = 0; p < 52; p++) {
+          const angle = Math.random() * Math.PI * 2;
+          lotusItems.push({
+            isDagger: false,
+            delay: 80 + Math.random() * 680,
             angle,
-            vrot: isDagger ? 0.22 : (Math.random() - 0.5) * 0.14,
-            size: isDagger ? (46 + Math.random() * 28) : (12 + Math.random() * 14),
-            isDagger,
-            col: isDagger ? (i % 2 === 0 ? '#f5d061' : '#f8fafc') : cols[i % cols.length],
-            alpha: 0.85 + Math.random() * 0.15
-          };
-        });
+            spinSpeed: (Math.random() > 0.5 ? 1 : -1) * (0.02 + Math.random() * 0.04),
+            radius: 30 + Math.random() * 140,
+            speed: 8 + Math.random() * 14,
+            size: 11 + Math.random() * 15,
+            rot: Math.random() * Math.PI * 2,
+            vrot: (Math.random() - 0.5) * 0.16,
+            col: cols[p % cols.length],
+            alpha: 0.85
+          });
+        }
       }
 
-      function drawDeathLotus() {
+      function drawDeathLotus(now) {
+        const elapsed = Math.max(0, (now || performance.now()) - lotusStart);
+        const cx = canvas.width * 0.5;
+        const cy = canvas.height * 0.5;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const vortexFade = elapsed < 220
+          ? elapsed / 220
+          : elapsed > 1280 ? Math.max(0, 1 - (elapsed - 1280) / 520) : 1;
+        if (vortexFade > 0.01) {
+          const baseSpin = elapsed * 0.013;
+          const rings = [
+            { r: 170 + elapsed * 0.24, dir: 1, col: '#f5d061', w: 5, arcs: 4 },
+            { r: 280 + elapsed * 0.34, dir: -1, col: '#e11d48', w: 6, arcs: 5 },
+            { r: 410 + elapsed * 0.42, dir: 1, col: '#f8fafc', w: 3.5, arcs: 3 }
+          ];
+          for (const rg of rings) {
+            for (let a = 0; a < rg.arcs; a++) {
+              const startA = baseSpin * rg.dir + (a * Math.PI * 2) / rg.arcs;
+              ctx.save();
+              ctx.globalAlpha = vortexFade * 0.82;
+              ctx.strokeStyle = rg.col;
+              ctx.shadowColor = rg.col;
+              ctx.shadowBlur = 24;
+              ctx.lineWidth = rg.w;
+              ctx.lineCap = 'round';
+              ctx.beginPath();
+              ctx.arc(cx, cy, rg.r, startA, startA + 0.88);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+          if (elapsed > 620 && elapsed < 920) {
+            const flashAlpha = Math.sin(((elapsed - 620) / 300) * Math.PI) * 0.34;
+            const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, canvas.width * 0.65);
+            grad.addColorStop(0, 'rgba(245, 208, 97, ' + flashAlpha.toFixed(3) + ')');
+            grad.addColorStop(0.5, 'rgba(225, 29, 72, ' + (flashAlpha * 0.65).toFixed(3) + ')');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+        }
+
         for (const it of lotusItems) {
-          it.x += it.vx;
-          it.y += it.vy;
-          it.angle += it.vrot;
+          if (elapsed < it.delay) continue;
+          it.radius += it.speed;
+          it.angle += it.spinSpeed;
+          const x = cx + Math.cos(it.angle) * it.radius;
+          const y = cy + Math.sin(it.angle) * it.radius;
+          const fadeOut = Math.max(0, 1 - Math.max(0, elapsed - 1320) / 480);
+          if (fadeOut <= 0.01) continue;
+
           ctx.save();
-          ctx.globalAlpha = it.alpha;
-          ctx.translate(it.x, it.y);
-          ctx.rotate(it.angle);
-          ctx.shadowBlur = 22;
-          ctx.shadowColor = it.col;
+          ctx.globalAlpha = it.alpha * fadeOut;
           if (it.isDagger) {
+            const prevR = Math.max(0, it.radius - it.speed * 3.4);
+            const px = cx + Math.cos(it.angle - it.spinSpeed * 3.4) * prevR;
+            const py = cy + Math.sin(it.angle - it.spinSpeed * 3.4) * prevR;
+            ctx.strokeStyle = it.trailCol;
+            ctx.shadowColor = it.trailCol;
+            ctx.shadowBlur = 18;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            ctx.translate(x, y);
+            ctx.rotate(it.angle + Math.atan2(it.spinSpeed * it.radius, it.speed));
             const s = it.size;
+            ctx.shadowColor = it.col;
+            ctx.shadowBlur = 22;
             ctx.fillStyle = it.col;
             ctx.beginPath();
             ctx.moveTo(s, 0);
-            ctx.lineTo(-s * 0.35, -s * 0.16);
-            ctx.lineTo(-s * 0.55, 0);
-            ctx.lineTo(-s * 0.35, s * 0.16);
+            ctx.lineTo(-s * 0.3, -s * 0.17);
+            ctx.lineTo(-s * 0.58, 0);
+            ctx.lineTo(-s * 0.3, s * 0.17);
             ctx.closePath();
             ctx.fill();
             ctx.strokeStyle = '#e11d48';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.6;
             ctx.beginPath();
-            ctx.moveTo(-s * 0.3, -s * 0.28);
-            ctx.lineTo(-s * 0.3, s * 0.28);
+            ctx.moveTo(-s * 0.28, -s * 0.32);
+            ctx.lineTo(-s * 0.28, s * 0.32);
             ctx.stroke();
           } else {
+            it.rot += it.vrot;
+            ctx.translate(x, y);
+            ctx.rotate(it.rot);
+            ctx.shadowColor = it.col;
+            ctx.shadowBlur = 16;
             ctx.fillStyle = it.col;
             ctx.beginPath();
-            ctx.ellipse(0, 0, it.size * 1.35, it.size * 0.65, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, it.size * 1.4, it.size * 0.65, 0, 0, Math.PI * 2);
             ctx.fill();
           }
           ctx.restore();
