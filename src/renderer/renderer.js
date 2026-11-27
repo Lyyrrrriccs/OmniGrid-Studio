@@ -5706,6 +5706,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  function isHiddenTransitionItem(it) {
+    const n = String(it?.sourceName || '');
+    return n === 'OmniGrid Scene Transition' || n === 'OmniGrid Singed Transition';
+  }
+
   function isAudioOnlyItem(it) {
     if (!it) return false;
     const k = String(it.inputKind || '').toLowerCase();
@@ -5907,7 +5912,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     // Render bottom-to-top (reverse of top-to-bottom list) so top OBS layer sits on top
     const drawOrder = sceneItems.slice().reverse();
     drawOrder.forEach((it) => {
-      if (!it.sceneItemEnabled || isAudioOnlyItem(it)) return;
+      if (!it.sceneItemEnabled || isAudioOnlyItem(it) || isHiddenTransitionItem(it)) return;
       const { x, y, w, h } = getItemBoxPx(it);
       const isSel = selectedItem?.sceneItemId === it.sceneItemId;
 
@@ -6092,8 +6097,9 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   function renderSourcesList() {
     if (!sourcesList) return;
     sourcesList.innerHTML = '';
-    const total = sceneItems.length;
-    sceneItems.forEach((it, uiIdx) => {
+    const visibleItems = sceneItems.filter((it) => !isHiddenTransitionItem(it));
+    const total = visibleItems.length;
+    visibleItems.forEach((it, uiIdx) => {
       const row = document.createElement('div');
       row.draggable = total > 1;
       row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:4px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.8); border:1px solid ${selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)'}; font-size:12px; cursor:pointer;`;
@@ -6189,8 +6195,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         const srcItem = sceneItems.find((x) => x.sceneItemId === draggedSourceItemId);
         draggedSourceItemId = null;
         if (!srcItem || srcItem.sceneItemId === it.sceneItemId) return;
-        // UI index 0 = top/foreground = OBS index (total - 1)
-        const targetObsIdx = Math.max(0, total - 1 - uiIdx);
+        const realIdx = sceneItems.indexOf(it);
+        const targetObsIdx = Math.max(0, sceneItems.length - 1 - (realIdx >= 0 ? realIdx : uiIdx));
         await moveItemLayer(srcItem, 'index', targetObsIdx);
       });
 
@@ -6468,6 +6474,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
     setStatus('');
     await Promise.all([loadSceneItems(currentSceneName), loadAudioInputs(), refreshPreview()]);
+    if (transitionsViewOpen) await loadTransitionsPanel();
   }
 
   async function startVirtualCamPreview() {
@@ -6747,6 +6754,267 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     });
     if (prev && list.some((x) => x.id === prev)) selBuiltinOverlay.value = prev;
   }
+
+  const btnToggleTransitions = document.getElementById('btnSeToggleTransitions');
+  const canvasWrapEl = document.getElementById('seCanvasWrap');
+  const transitionsPanel = document.getElementById('seTransitionsPanel');
+  const trScenesGrid = document.getElementById('seTransitionScenesGrid');
+  const trFromSel = document.getElementById('seTrFromScene');
+  const trToSel = document.getElementById('seTrToScene');
+  const trBidirChk = document.getElementById('seTrBidir');
+  const trDirIcon = document.getElementById('seTrDirIcon');
+  const trEffectSel = document.getElementById('seTrEffectSelect');
+  const trCustomFileRow = document.getElementById('seTrCustomFileRow');
+  const btnPickTrFile = document.getElementById('btnSePickTransitionFile');
+  const trCustomFileNameEl = document.getElementById('seTrCustomFileName');
+  const btnAddTransition = document.getElementById('btnSeAddTransition');
+  const btnTestTransition = document.getElementById('btnSeTestTransition');
+  const trRulesList = document.getElementById('seTransitionRulesList');
+  let transitionsViewOpen = false;
+  let trPickNext = 'from';
+  let selectedCustomTransitionFile = null;
+
+  function syncCustomTransitionFileRow() {
+    const isCustom = trEffectSel?.value === 'custom-file';
+    if (trCustomFileRow) {
+      trCustomFileRow.classList.toggle('hidden', !isCustom);
+      trCustomFileRow.style.display = isCustom ? 'flex' : 'none';
+    }
+  }
+
+  function getSelectedTransitionEffect() {
+    const val = String(trEffectSel?.value || 'theme');
+    if (val === 'custom-file') {
+      return {
+        mode: 'custom-file',
+        filePath: selectedCustomTransitionFile?.filePath || '',
+        fileName: selectedCustomTransitionFile?.fileName || '',
+        fileKind: selectedCustomTransitionFile?.fileKind || 'video'
+      };
+    }
+    if (val.startsWith('obs:')) {
+      return { mode: 'obs', obsTransitionName: val.slice(4) };
+    }
+    return { mode: 'theme' };
+  }
+
+  function setTransitionsView(open) {
+    transitionsViewOpen = Boolean(open);
+    if (canvasWrapEl) canvasWrapEl.classList.toggle('hidden', transitionsViewOpen);
+    if (transitionsPanel) {
+      transitionsPanel.classList.toggle('hidden', !transitionsViewOpen);
+      transitionsPanel.style.display = transitionsViewOpen ? 'flex' : 'none';
+    }
+    if (btnToggleTransitions) {
+      btnToggleTransitions.style.background = transitionsViewOpen ? 'rgba(168,85,247,0.32)' : '';
+      btnToggleTransitions.style.borderColor = transitionsViewOpen ? '#a855f7' : '';
+      btnToggleTransitions.style.color = transitionsViewOpen ? '#f3e8ff' : '';
+      btnToggleTransitions.textContent = transitionsViewOpen
+        ? window.tDyn('trBtnObsPreview')
+        : window.tDyn('trBtnTransitions');
+    }
+    if (transitionsViewOpen) {
+      loadTransitionsPanel();
+    } else {
+      refreshPreview();
+    }
+  }
+
+  async function loadTransitionsPanel() {
+    const res = await window.omnichat.obsWsAction({ action: 'get-scene-transitions' });
+    const scenes = (Array.isArray(res?.scenes) && res.scenes.length)
+      ? res.scenes
+      : [...(selScene?.options || [])].map((o) => o.value).filter(Boolean);
+    const rules = Array.isArray(res?.rules) ? res.rules : [];
+    const obsTransitions = Array.isArray(res?.obsTransitions) ? res.obsTransitions : [];
+
+    if (trEffectSel) {
+      const prevEff = trEffectSel.value || 'theme';
+      let effHtml = `<option value="theme">${escapeHtml(window.tDyn('trOptTheme'))}</option>`;
+      effHtml += `<option value="custom-file">${escapeHtml(window.tDyn('trOptCustomFile'))}</option>`;
+      if (obsTransitions.length) {
+        effHtml += `<optgroup label="${escapeHtml(window.tDyn('trOptGroupObs'))}">`
+          + obsTransitions.map((t) => `<option value="obs:${escapeHtml(t.name)}">🎬 OBS: ${escapeHtml(t.name)}</option>`).join('')
+          + '</optgroup>';
+      }
+      trEffectSel.innerHTML = effHtml;
+      if ([...trEffectSel.options].some((o) => o.value === prevEff)) trEffectSel.value = prevEff;
+      syncCustomTransitionFileRow();
+    }
+
+    const prevFrom = trFromSel?.value || '';
+    const prevTo = trToSel?.value || '';
+    const optsHtml = `<option value="__all__">${escapeHtml(window.tDyn('trAllScenes'))}</option>`
+      + scenes.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (trFromSel) {
+      trFromSel.innerHTML = optsHtml;
+      trFromSel.value = (prevFrom && (prevFrom === '__all__' || scenes.includes(prevFrom)))
+        ? prevFrom
+        : (currentSceneName && scenes.includes(currentSceneName) ? currentSceneName : '__all__');
+    }
+    if (trToSel) {
+      trToSel.innerHTML = optsHtml;
+      const fallbackTo = scenes.find((s) => s !== trFromSel?.value) || '__all__';
+      trToSel.value = (prevTo && (prevTo === '__all__' || scenes.includes(prevTo))) ? prevTo : fallbackTo;
+    }
+
+    if (trScenesGrid) {
+      trScenesGrid.innerHTML = '';
+      if (!scenes.length) {
+        trScenesGrid.innerHTML = `<span style="font-size:11.5px;color:#64748b;">${escapeHtml(window.tDyn('trConnectToSeeScenes'))}</span>`;
+      } else {
+        scenes.forEach((sc) => {
+          const hasRule = rules.some((r) =>
+            r.fromScene === '__all__' || r.toScene === '__all__' || r.fromScene === sc || r.toScene === sc
+          );
+          const isFrom = trFromSel?.value === sc;
+          const isTo = trToSel?.value === sc;
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'btn-sm';
+          chip.style.cssText = `padding:5px 10px;font-size:11.5px;border-radius:8px;display:inline-flex;align-items:center;gap:5px;${
+            isFrom ? 'border-color:#38bdf8;background:rgba(56,189,248,0.2);color:#e0f2fe;'
+              : isTo ? 'border-color:#a855f7;background:rgba(168,85,247,0.2);color:#f3e8ff;'
+                : hasRule ? 'border-color:rgba(74,222,128,0.45);background:rgba(34,197,94,0.12);color:#dcfce7;'
+                  : ''
+          }`;
+          chip.textContent = `${hasRule ? '✨ ' : '🎬 '}${sc}`;
+          chip.title = window.tDyn('trSceneChipTitle');
+          chip.addEventListener('click', () => {
+            if (trPickNext === 'from' && trFromSel) {
+              trFromSel.value = sc;
+              trPickNext = 'to';
+            } else if (trToSel) {
+              trToSel.value = sc;
+              trPickNext = 'from';
+            }
+            loadTransitionsPanel();
+          });
+          trScenesGrid.appendChild(chip);
+        });
+      }
+    }
+
+    if (trRulesList) {
+      trRulesList.innerHTML = '';
+      if (!rules.length) {
+        trRulesList.innerHTML = `<div style="font-size:11.5px;color:#64748b;padding:8px;border:1px dashed rgba(148,163,184,0.2);border-radius:8px;">${escapeHtml(window.tDyn('trEmptyRules'))}</div>`;
+      } else {
+        rules.forEach((r) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(30,41,59,0.85);border:1px solid rgba(168,85,247,0.35);font-size:12px;';
+          const lblFrom = r.fromScene === '__all__' ? window.tDyn('trAllScenes') : r.fromScene;
+          const lblTo = r.toScene === '__all__' ? window.tDyn('trAllScenes') : r.toScene;
+          const arrow = r.bidirectional !== false ? '↔' : '→';
+          const badgeText = r.mode === 'obs'
+            ? `🎬 OBS: ${r.obsTransitionName}`
+            : r.mode === 'custom-file'
+              ? `📁 ${r.fileName || window.tDyn('trBadgeCustomFallback')}`
+              : window.tDyn('trBadgeTheme');
+          const info = document.createElement('div');
+          info.style.cssText = 'display:flex;align-items:center;gap:8px;min-width:0;flex:1;';
+          const text = document.createElement('span');
+          text.style.cssText = 'color:#f8fafc;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          text.textContent = `${lblFrom}  ${arrow}  ${lblTo}`;
+          const badge = document.createElement('span');
+          badge.style.cssText = 'font-size:10.5px;padding:2px 7px;border-radius:999px;background:rgba(168,85,247,0.22);color:#e9d5ff;white-space:nowrap;flex-shrink:0;';
+          badge.textContent = badgeText;
+          info.append(text, badge);
+
+          const actions = document.createElement('div');
+          actions.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
+          const playBtn = document.createElement('button');
+          playBtn.type = 'button';
+          playBtn.className = 'btn-sm';
+          playBtn.style.cssText = 'padding:2px 7px;font-size:11px;color:#c084fc;';
+          playBtn.textContent = '▶️';
+          playBtn.title = window.tDyn('trPlayRuleTitle');
+          playBtn.addEventListener('click', async () => {
+            await window.omnichat.obsWsAction({ action: 'test-scene-transition', ruleId: r.id });
+            setStatus(window.tDyn('trStatusPlayed', { name: badgeText }), '#c084fc');
+          });
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn-sm';
+          delBtn.style.cssText = 'padding:2px 7px;font-size:11px;color:#f87171;';
+          delBtn.textContent = '🗑️';
+          delBtn.title = window.tDyn('trDeleteRuleTitle');
+          delBtn.addEventListener('click', async () => {
+            const delRes = await window.omnichat.obsWsAction({ action: 'remove-scene-transition', id: r.id });
+            if (delRes?.ok) {
+              setStatus(window.tDyn('trStatusDeleted'), '#94a3b8');
+              loadTransitionsPanel();
+            }
+          });
+          actions.append(playBtn, delBtn);
+          row.append(info, actions);
+          trRulesList.appendChild(row);
+        });
+      }
+    }
+  }
+
+  btnToggleTransitions?.addEventListener('click', () => setTransitionsView(!transitionsViewOpen));
+  trBidirChk?.addEventListener('change', () => {
+    if (trDirIcon) trDirIcon.textContent = trBidirChk.checked ? '↔' : '→';
+  });
+  trEffectSel?.addEventListener('change', syncCustomTransitionFileRow);
+  btnPickTrFile?.addEventListener('click', async () => {
+    const picked = await window.omnichat.obsWsAction({ action: 'pick-transition-file' });
+    if (picked?.ok && picked.filePath) {
+      selectedCustomTransitionFile = picked;
+      if (trCustomFileNameEl) {
+        trCustomFileNameEl.textContent = `✅ ${picked.fileName}`;
+        trCustomFileNameEl.style.color = '#4ade80';
+      }
+    }
+  });
+  trFromSel?.addEventListener('change', loadTransitionsPanel);
+  trToSel?.addEventListener('change', loadTransitionsPanel);
+
+  btnAddTransition?.addEventListener('click', async () => {
+    const fromScene = trFromSel?.value || '__all__';
+    const toScene = trToSel?.value || '__all__';
+    const bidirectional = Boolean(trBidirChk?.checked);
+    const eff = getSelectedTransitionEffect();
+    if (fromScene !== '__all__' && fromScene === toScene) {
+      setStatus(window.tDyn('trErrSameScene'), '#fbbf24');
+      return;
+    }
+    if (eff.mode === 'custom-file' && !eff.filePath) {
+      setStatus(window.tDyn('trErrPickFile'), '#fbbf24');
+      return;
+    }
+    setStatus(window.tDyn('trStatusSetting'), '#38bdf8');
+    const res = await window.omnichat.obsWsAction({
+      action: 'setup-scene-transition',
+      fromScene,
+      toScene,
+      bidirectional,
+      ...eff
+    });
+    if (res?.ok) {
+      const pairLabel = fromScene === '__all__' || toScene === '__all__'
+        ? window.tDyn('trPairAll')
+        : `„${fromScene}“ ${bidirectional ? '↔' : '→'} „${toScene}“`;
+      const effLabel = eff.mode === 'obs'
+        ? `OBS: ${eff.obsTransitionName}`
+        : eff.mode === 'custom-file'
+          ? eff.fileName
+          : window.tDyn('trBadgeTheme');
+      setStatus(window.tDyn('trStatusSaved', { effect: effLabel, pair: pairLabel }), '#4ade80');
+      await loadTransitionsPanel();
+      if (currentSceneName) await loadSceneItems(currentSceneName);
+    } else {
+      setStatus(`❌ ${res?.error || window.tDyn('trErrFailed')}`, '#f87171');
+    }
+  });
+
+  btnTestTransition?.addEventListener('click', async () => {
+    const eff = getSelectedTransitionEffect();
+    await window.omnichat.obsWsAction({ action: 'test-scene-transition', ...eff });
+    setStatus(window.tDyn('trStatusTriggered'), '#c084fc');
+  });
 
   btnAddBuiltinOverlay?.addEventListener('click', async () => {
     if (!currentSceneName) {
@@ -8101,6 +8369,17 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
             if (node.__i18nOrigTitle && titleMap.has(node.__i18nOrigTitle)) {
               const nextT = titleMap.get(node.__i18nOrigTitle);
               if (node.getAttribute('title') !== nextT) node.setAttribute('title', nextT);
+            }
+          }
+
+          if (node.tagName === 'OPTGROUP' && node.hasAttribute('label')) {
+            if (node.__i18nOrigLabel === undefined) {
+              const curL = normWs(node.getAttribute('label') || '');
+              if (textMap.has(curL)) node.__i18nOrigLabel = curL;
+            }
+            if (node.__i18nOrigLabel && textMap.has(node.__i18nOrigLabel)) {
+              const nextL = textMap.get(node.__i18nOrigLabel);
+              if (node.getAttribute('label') !== nextL) node.setAttribute('label', nextL);
             }
           }
 

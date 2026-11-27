@@ -469,7 +469,6 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
     { id: 'game-stats', label: '🎮 Game-Stats / LoL Champion, Skin & Letzte 6 Games', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 370, posX: 1460, posY: 24 },
     { id: 'lol-bg', label: '🖼️ LoL-Client Frame & Animierter Hintergrund (1920×1080, Champion-Theme)', inputName: 'OmniGrid LoL-Client Frame', url: `${base}/lol-bg`, width: 1920, height: 1080, posX: 0, posY: 0 },
-    { id: 'singed-transition', label: '🧪 Singed Laboratory — Animierte Szenen-Transition (1920×1080)', inputName: 'OmniGrid Singed Transition', url: `${base}/singed-transition?autoplay=1`, width: 1920, height: 1080, posX: 0, posY: 0 },
     { id: 'lol-build', label: '⚔️ LoL Live Item-Build & Elo-Bar', inputName: 'OmniGrid LoL-Build', url: `${base}/lol-build`, width: 550, height: 125, posX: 685, posY: 940 },
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
     { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
@@ -2072,10 +2071,83 @@ function triggerAutoMusicVodProtection(force = false) {
   }
 }
 
+function normalizeObsTransitionRules(tr) {
+  if (!tr) return [];
+  if (Array.isArray(tr.rules)) {
+    return tr.rules
+      .filter((r) => r && (r.fromScene || r.toScene))
+      .map((r, i) => ({
+        id: String(r.id || `tr-${i}-${r.fromScene}-${r.toScene}`).replace(/[^a-zA-Z0-9_-]/g, ''),
+        fromScene: String(r.fromScene || '__all__'),
+        toScene: String(r.toScene || '__all__'),
+        bidirectional: r.bidirectional !== false,
+        mode: r.mode === 'obs' || r.mode === 'custom-file' ? r.mode : 'theme',
+        obsTransitionName: String(r.obsTransitionName || ''),
+        filePath: String(r.filePath || ''),
+        fileName: String(r.fileName || ''),
+        fileKind: r.fileKind === 'image' || r.fileKind === 'html' ? r.fileKind : 'video',
+        durationMs: Number(r.durationMs) || 2600
+      }));
+  }
+  if (tr.enabled) {
+    return [{
+      id: `tr-legacy-${String(tr.fromScene || 'all').replace(/[^a-zA-Z0-9_-]/g, '')}`,
+      fromScene: String(tr.fromScene || '__all__'),
+      toScene: String(tr.toScene || '__all__'),
+      bidirectional: tr.bidirectional !== false,
+      mode: 'theme',
+      obsTransitionName: '',
+      filePath: '',
+      fileName: '',
+      fileKind: 'video',
+      durationMs: 2600
+    }];
+  }
+  return [];
+}
+
+function findMatchingTransitionRule(rules, fromScene, toScene) {
+  return rules.find((r) => {
+    const direct = (r.fromScene === '__all__' || r.fromScene === fromScene)
+      && (r.toScene === '__all__' || r.toScene === toScene);
+    const reverse = r.bidirectional !== false
+      && (r.fromScene === '__all__' || r.fromScene === toScene)
+      && (r.toScene === '__all__' || r.toScene === fromScene);
+    return direct || reverse;
+  }) || null;
+}
+
+function triggerTransitionRule(rule) {
+  if (!rule) return;
+  if (rule.mode === 'obs' && rule.obsTransitionName) {
+    obsWs.setSceneTransition(rule.obsTransitionName).catch(() => {});
+    return;
+  }
+  if (rule.mode === 'custom-file' && rule.filePath) {
+    obsServer.broadcastSceneTransition({
+      mode: 'custom-file',
+      fileKind: rule.fileKind || 'video',
+      mediaUrl: `/api/custom-transition/${rule.id}`,
+      durationMs: rule.durationMs || 2600
+    });
+    return;
+  }
+  obsServer.broadcastSceneTransition({ mode: 'theme' });
+}
+
+let tempPreviewTransitionPath = '';
 let lastObsConnectedState = false;
+let lastObsProgramScene = '';
 obsWs.on('state', (st) => {
   broadcastToWindows('obs-ws-state', st);
   obsServer.broadcastObsWsState(st);
+  const nextScene = String(st?.currentScene || '');
+  if (st?.connected && nextScene && lastObsProgramScene && nextScene !== lastObsProgramScene) {
+    const rules = normalizeObsTransitionRules(loadConfig().obsSceneTransition);
+    const matched = findMatchingTransitionRule(rules, lastObsProgramScene, nextScene);
+    if (matched) triggerTransitionRule(matched);
+  }
+  if (nextScene) lastObsProgramScene = nextScene;
   if (st?.connected) {
     triggerAutoMusicVodProtection(Boolean(st?.streaming && !lastObsStreaming));
     if (!lastObsConnectedState) {
@@ -2891,6 +2963,12 @@ app.whenReady().then(async () => {
       const found = list.find((s) => s && s.id === id);
       return found?.imagePath || null;
     });
+    obsServer.setCustomTransitionResolver((id) => {
+      if (id === 'preview' && tempPreviewTransitionPath) return tempPreviewTransitionPath;
+      const rules = normalizeObsTransitionRules(loadConfig().obsSceneTransition);
+      const found = rules.find((r) => r.id === id);
+      return found?.filePath || null;
+    });
     broadcastSponsorsToObs(saved).catch(() => {});
     broadcastScheduleToObs(saved);
     obsServer.onGameWebhook = handleIncomingGameWebhook;
@@ -3620,6 +3698,136 @@ app.whenReady().then(async () => {
       if (act === 'create-input') return await obsWs.createInput(payload);
       if (act === 'get-builtin-overlays') {
         return { ok: true, overlays: getBuiltinObsOverlays(obsServer.port || 4588) };
+      }
+      if (act === 'pick-transition-file') {
+        const { dialog } = require('electron');
+        const res = await dialog.showOpenDialog(mainWindow, {
+          title: 'Eigene Transition-Datei wählen (Stinger-Video, GIF oder HTML)',
+          properties: ['openFile'],
+          filters: [
+            { name: 'Transition-Dateien (Video, GIF, HTML)', extensions: ['webm', 'mp4', 'mov', 'gif', 'webp', 'png', 'html', 'htm'] }
+          ]
+        });
+        if (res.canceled || !res.filePaths?.[0]) return { ok: false, canceled: true };
+        const filePath = res.filePaths[0];
+        const ext = path.extname(filePath).toLowerCase();
+        const fileKind = (ext === '.html' || ext === '.htm')
+          ? 'html'
+          : (ext === '.gif' || ext === '.webp' || ext === '.png') ? 'image' : 'video';
+        return { ok: true, filePath, fileName: path.basename(filePath), fileKind };
+      }
+      if (act === 'get-scene-transitions') {
+        const rules = normalizeObsTransitionRules(loadConfig().obsSceneTransition);
+        const scenes = Array.isArray(obsWs.getState()?.scenes) ? obsWs.getState().scenes : [];
+        const obsTr = obsWs.getState()?.connected ? await obsWs.getSceneTransitions() : { transitions: [], current: '' };
+        return {
+          ok: true,
+          rules,
+          scenes,
+          obsTransitions: obsTr.transitions || [],
+          currentObsTransition: obsTr.current || ''
+        };
+      }
+      if (act === 'test-scene-transition') {
+        const rules = normalizeObsTransitionRules(loadConfig().obsSceneTransition);
+        if (payload.ruleId) {
+          const found = rules.find((r) => r.id === String(payload.ruleId));
+          if (found) {
+            triggerTransitionRule(found);
+            return { ok: true, mode: found.mode };
+          }
+        }
+        if (payload.mode === 'obs' && payload.obsTransitionName) {
+          return await obsWs.setSceneTransition(payload.obsTransitionName);
+        }
+        if (payload.mode === 'custom-file' && payload.filePath) {
+          tempPreviewTransitionPath = String(payload.filePath);
+          obsServer.broadcastSceneTransition({
+            mode: 'custom-file',
+            fileKind: payload.fileKind || 'video',
+            mediaUrl: '/api/custom-transition/preview',
+            durationMs: Number(payload.durationMs) || 2600
+          });
+          return { ok: true, mode: 'custom-file' };
+        }
+        obsServer.broadcastSceneTransition({ mode: 'theme' });
+        return { ok: true, mode: 'theme' };
+      }
+      if (act === 'remove-scene-transition') {
+        const cfg = loadConfig();
+        const rules = normalizeObsTransitionRules(cfg.obsSceneTransition)
+          .filter((r) => r.id !== String(payload.id || ''));
+        cfg.obsSceneTransition = { enabled: rules.length > 0, rules };
+        saveConfig(cfg);
+        return { ok: true, rules };
+      }
+      if (act === 'setup-scene-transition') {
+        const transitionUrl = `http://127.0.0.1:${obsServer.port || 4588}/scene-transition`;
+        const fromScene = String(payload.fromScene || '__all__');
+        const toScene = String(payload.toScene || '__all__');
+        const bidirectional = payload.bidirectional !== false;
+        const mode = payload.mode === 'obs' || payload.mode === 'custom-file' ? payload.mode : 'theme';
+        const obsTransitionName = String(payload.obsTransitionName || '').trim();
+        const filePath = String(payload.filePath || '').trim();
+        const fileName = String(payload.fileName || (filePath ? path.basename(filePath) : '')).trim();
+        const fileKind = payload.fileKind === 'image' || payload.fileKind === 'html' ? payload.fileKind : 'video';
+        const durationMs = Number(payload.durationMs) || 2600;
+        if (mode === 'obs' && !obsTransitionName) {
+          return { ok: false, error: 'Bitte einen OBS-Übergang auswählen.' };
+        }
+        if (mode === 'custom-file' && (!filePath || !fs.existsSync(filePath))) {
+          return { ok: false, error: 'Bitte zuerst eine gültige Transition-Datei auswählen.' };
+        }
+        const allScenes = Array.isArray(obsWs.getState()?.scenes) ? obsWs.getState().scenes : [];
+        const targets = (fromScene === '__all__' || toScene === '__all__')
+          ? allScenes
+          : [...new Set([fromScene, toScene].filter(Boolean))];
+        if (!targets.length) return { ok: false, error: 'Keine Ziel-Szenen gefunden.' };
+        const attached = [];
+        if (mode === 'obs') {
+          await obsWs.setSceneTransition(obsTransitionName);
+        } else {
+          for (const sc of targets) {
+            await obsWs.addOrAttachBrowserOverlay({
+              sceneName: sc,
+              inputName: 'OmniGrid Scene Transition',
+              url: transitionUrl,
+              width: 1920,
+              height: 1080,
+              posX: 0,
+              posY: 0,
+              rerouteAudio: false
+            });
+            attached.push(sc);
+          }
+        }
+        const cfg = loadConfig();
+        const rules = normalizeObsTransitionRules(cfg.obsSceneTransition);
+        const newRule = {
+          id: `tr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          fromScene,
+          toScene,
+          bidirectional,
+          mode,
+          obsTransitionName,
+          filePath,
+          fileName,
+          fileKind,
+          durationMs
+        };
+        const existingIdx = rules.findIndex((r) =>
+          (r.fromScene === fromScene && r.toScene === toScene && r.bidirectional === bidirectional) ||
+          (bidirectional && r.bidirectional && r.fromScene === toScene && r.toScene === fromScene)
+        );
+        if (existingIdx >= 0) {
+          rules[existingIdx] = newRule;
+        } else {
+          rules.push(newRule);
+        }
+        cfg.obsSceneTransition = { enabled: rules.length > 0, rules };
+        saveConfig(cfg);
+        setTimeout(() => triggerTransitionRule(newRule), 350);
+        return { ok: true, attached, rules, rule: newRule, fromScene, toScene, bidirectional };
       }
       if (act === 'add-builtin-overlay') {
         const list = getBuiltinObsOverlays(obsServer.port || 4588);
