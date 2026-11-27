@@ -161,6 +161,8 @@
     if ((fx === 'kda-firestarter' || fx === 'ahri-firestarter') && vid) {
       const clipName = fx === 'ahri-firestarter' ? 'ahri-firestarter-transition.mp4' : 'akali-firestarter-transition.mp4';
       vid.src = './assets/' + clipName + '?t=' + Date.now();
+      vid.muted = true;
+      vid.load();
       vid.currentTime = 0;
       vid.style.display = 'block';
       vid.onended = () => { vid.style.display = 'none'; };
@@ -168,7 +170,7 @@
       endTimer = setTimeout(() => {
         stage.classList.remove('playing');
         stopAnim();
-      }, 2250);
+      }, 2350);
       return;
     }
 
