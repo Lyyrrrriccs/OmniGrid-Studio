@@ -4125,8 +4125,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'ahri-firestarter') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/ahri-firestarter-transition.mp4?t=' + Date.now();
-            customVideo.currentTime = 0;
             customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
             customVideo.style.display = 'block';
             customVideo.onended = () => resetCustomMedia();
             customVideo.onerror = () => {
@@ -4138,7 +4139,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
             timer = setTimeout(() => {
               stage.classList.remove('playing');
               resetCustomMedia();
-            }, 2250);
+            }, 2350);
             return;
           }
           spawnBubbles();
@@ -4146,8 +4147,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'kda-firestarter') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/akali-firestarter-transition.mp4?t=' + Date.now();
-            customVideo.currentTime = 0;
             customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
             customVideo.style.display = 'block';
             customVideo.onended = () => resetCustomMedia();
             customVideo.onerror = () => {
@@ -4159,7 +4161,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
             timer = setTimeout(() => {
               stage.classList.remove('playing');
               resetCustomMedia();
-            }, 2250);
+            }, 2350);
             return;
           }
           spawnAkaliSkate();
@@ -6910,7 +6912,31 @@ class ObsServer {
               : ext === '.mp4' ? 'video/mp4'
                 : ext === '.webm' ? 'video/webm'
                   : 'image/jpeg';
-          res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
+          const stat = fs.statSync(assetPath);
+          const total = stat.size;
+          const range = req.headers.range;
+          if (range && (ext === '.mp4' || ext === '.webm')) {
+            const m = range.replace(/bytes=/, '').split('-');
+            const start = Math.max(0, parseInt(m[0], 10) || 0);
+            const end = m[1] ? Math.min(total - 1, parseInt(m[1], 10)) : total - 1;
+            res.writeHead(206, {
+              'Content-Range': `bytes ${start}-${end}/${total}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': (end - start) + 1,
+              'Content-Type': mime,
+              'Cache-Control': 'no-cache',
+              'Access-Control-Allow-Origin': '*'
+            });
+            fs.createReadStream(assetPath, { start, end }).pipe(res);
+            return;
+          }
+          res.writeHead(200, {
+            'Content-Type': mime,
+            'Content-Length': total,
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'no-cache',
+            'Access-Control-Allow-Origin': '*'
+          });
           fs.createReadStream(assetPath).pipe(res);
           return;
         }
@@ -6934,8 +6960,29 @@ class ObsServer {
             '.html': 'text/html; charset=utf-8',
             '.htm': 'text/html; charset=utf-8'
           };
+          const mime = mimeMap[ext] || 'application/octet-stream';
+          const stat = fs.statSync(filePath);
+          const total = stat.size;
+          const range = req.headers.range;
+          if (range && (ext === '.mp4' || ext === '.webm' || ext === '.mov')) {
+            const m = range.replace(/bytes=/, '').split('-');
+            const start = Math.max(0, parseInt(m[0], 10) || 0);
+            const end = m[1] ? Math.min(total - 1, parseInt(m[1], 10)) : total - 1;
+            res.writeHead(206, {
+              'Content-Range': `bytes ${start}-${end}/${total}`,
+              'Accept-Ranges': 'bytes',
+              'Content-Length': (end - start) + 1,
+              'Content-Type': mime,
+              'Cache-Control': 'no-cache',
+              'X-Content-Type-Options': 'nosniff'
+            });
+            fs.createReadStream(filePath, { start, end }).pipe(res);
+            return;
+          }
           res.writeHead(200, {
-            'Content-Type': mimeMap[ext] || 'application/octet-stream',
+            'Content-Type': mime,
+            'Content-Length': total,
+            'Accept-Ranges': 'bytes',
             'Cache-Control': 'no-cache',
             'X-Content-Type-Options': 'nosniff'
           });
