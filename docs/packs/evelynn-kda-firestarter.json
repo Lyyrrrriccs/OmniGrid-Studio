@@ -1,0 +1,25 @@
+{
+  "id": "evelynn-kda-firestarter",
+  "name": "Evelynn — K/DA FIRESTARTER",
+  "icon": "🖤",
+  "championMatch": ["evelynn", "eve"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "eve-firestarter",
+  "description": "K/DA FIRESTARTER Evelynn crimson-magenta, shadow-demon violet & molten flame amber with Coffin Awakening transition and animated diva frames across all OBS overlays.",
+  "colors": {
+    "primary": "#ff1e6b",
+    "secondary": "#a855f7",
+    "tertiary": "#ff7a00",
+    "bgStart": "rgba(16, 4, 14, 0.97)",
+    "bgEnd": "rgba(8, 3, 12, 0.98)",
+    "text": "#fff0f6",
+    "muted": "#f472b6"
+  },
+  "mapCoverBadge": "FIRESTARTER // SHADOW DIVA 🖤",
+  "skinArt": {
+    "championId": "Evelynn",
+    "skinQuery": "FIRESTARTER",
+    "skinNum": 65
+  }
+}

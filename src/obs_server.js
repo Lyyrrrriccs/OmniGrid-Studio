@@ -2450,7 +2450,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-risen-legend .bg-splash,
     body.fx-kda-firestarter .bg-splash,
     body.fx-dj-sona .bg-splash,
-    body.fx-arcane-fractured .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
+    body.fx-arcane-fractured .bg-splash,
+    body.fx-eve-firestarter .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
     body.fx-inkshadow .bg-splash,
     body.fx-black-rose .bg-splash,
     body.fx-ravenborn .bg-splash,
@@ -2737,7 +2738,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'crime-city': 'cards',
         'prestige-rose': 'petals',
         'dj-sona': 'eq',
-        'arcane-fractured': 'shards'
+        'arcane-fractured': 'shards',
+        'eve-firestarter': 'embers'
       };
 
       function resize() {
@@ -3276,6 +3278,175 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       let djStart = 0;
       let fracturedStart = 0;
       let fracturedShards = [];
+      let eveStart = 0;
+      let eveEmbers = [];
+
+      function spawnEveCoffin() {
+        eveStart = performance.now();
+        const cols = ['#ff1e6b', '#ff7a00', '#a855f7', '#fde047'];
+        eveEmbers = Array.from({ length: 64 }, (_, i) => ({
+          x: canvas.width * 0.5 + (Math.random() - 0.5) * 420,
+          y: canvas.height * 0.5 + (Math.random() - 0.5) * 320,
+          vx: (Math.random() - 0.5) * 4.5,
+          vy: -(4 + Math.random() * 11),
+          r: 2.5 + Math.random() * 6.5,
+          col: cols[i % cols.length],
+          alpha: 0.75 + Math.random() * 0.25
+        }));
+      }
+
+      function drawCoffinShape(ctx, cx, cy, w, h) {
+        ctx.beginPath();
+        ctx.moveTo(cx - w * 0.28, cy - h * 0.5);
+        ctx.lineTo(cx + w * 0.28, cy - h * 0.5);
+        ctx.lineTo(cx + w * 0.5, cy - h * 0.18);
+        ctx.lineTo(cx + w * 0.34, cy + h * 0.5);
+        ctx.lineTo(cx - w * 0.34, cy + h * 0.5);
+        ctx.lineTo(cx - w * 0.5, cy - h * 0.18);
+        ctx.closePath();
+      }
+
+      function drawEveCoffin(now) {
+        const elapsed = Math.max(0, (now || performance.now()) - eveStart);
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.52;
+        ctx.clearRect(0, 0, w, h);
+
+        const env = elapsed < 200
+          ? elapsed / 200
+          : elapsed > 1340 ? Math.max(0, 1 - (elapsed - 1340) / 480) : 1;
+        if (env <= 0.01) {
+          animId = requestAnimationFrame(drawEveCoffin);
+          return;
+        }
+
+        const openProg = Math.max(0, Math.min(1, (elapsed - 260) / 480));
+        const riseProg = Math.max(0, Math.min(1, (elapsed - 460) / 620));
+        const cw = Math.min(w * 0.28, 440);
+        const ch = Math.min(h * 0.74, 760);
+
+        if (openProg > 0.02) {
+          const glowGrad = ctx.createRadialGradient(cx, cy, 20, cx, cy, ch * 0.85);
+          glowGrad.addColorStop(0, 'rgba(255, 30, 107, ' + (0.68 * openProg * env).toFixed(3) + ')');
+          glowGrad.addColorStop(0.45, 'rgba(255, 122, 0, ' + (0.42 * openProg * env).toFixed(3) + ')');
+          glowGrad.addColorStop(0.75, 'rgba(168, 85, 247, ' + (0.24 * openProg * env).toFixed(3) + ')');
+          glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = glowGrad;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        ctx.save();
+        ctx.globalAlpha = env;
+        drawCoffinShape(ctx, cx, cy, cw, ch);
+        const innerGrad = ctx.createLinearGradient(cx, cy - ch * 0.5, cx, cy + ch * 0.5);
+        innerGrad.addColorStop(0, openProg > 0.1 ? 'rgba(255, 30, 107, 0.78)' : 'rgba(18, 5, 16, 0.96)');
+        innerGrad.addColorStop(0.5, openProg > 0.1 ? 'rgba(255, 122, 0, 0.58)' : 'rgba(10, 4, 14, 0.98)');
+        innerGrad.addColorStop(1, 'rgba(12, 3, 14, 0.98)');
+        ctx.fillStyle = innerGrad;
+        ctx.fill();
+        ctx.strokeStyle = '#ff1e6b';
+        ctx.shadowColor = '#ff1e6b';
+        ctx.shadowBlur = 28;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+
+        if (riseProg > 0.02) {
+          const liftY = (1 - riseProg) * 180;
+          const sc = 0.78 + riseProg * 0.28;
+          ctx.save();
+          ctx.globalAlpha = Math.min(1, riseProg * 1.4) * env;
+          ctx.translate(cx, cy - 20 + liftY);
+          ctx.scale(sc, sc);
+
+          for (const side of [-1, 1]) {
+            ctx.save();
+            ctx.strokeStyle = '#ff1e6b';
+            ctx.shadowColor = '#ff1e6b';
+            ctx.shadowBlur = 26;
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(side * 22, 70);
+            ctx.bezierCurveTo(side * (120 + riseProg * 120), 20, side * (160 + riseProg * 150), -130, side * (230 + riseProg * 110), -210 - Math.sin(elapsed * 0.01) * 18);
+            ctx.stroke();
+            ctx.fillStyle = '#ff7a00';
+            ctx.beginPath();
+            const tipX = side * (230 + riseProg * 110);
+            const tipY = -210 - Math.sin(elapsed * 0.01) * 18;
+            ctx.moveTo(tipX, tipY);
+            ctx.lineTo(tipX - side * 26, tipY + 10);
+            ctx.lineTo(tipX - side * 10, tipY + 30);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+          }
+
+          ctx.fillStyle = 'rgba(12, 3, 14, 0.94)';
+          ctx.strokeStyle = '#ff7a00';
+          ctx.shadowColor = '#ff1e6b';
+          ctx.shadowBlur = 24;
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          ctx.arc(0, -135, 36, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(-48, -86);
+          ctx.quadraticCurveTo(0, -104, 48, -86);
+          ctx.lineTo(64, 130);
+          ctx.lineTo(-64, 130);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#fde047';
+          ctx.shadowColor = '#ff7a00';
+          ctx.shadowBlur = 18;
+          ctx.beginPath();
+          ctx.ellipse(-13, -136, 8, 3.2, 0.18, 0, Math.PI * 2);
+          ctx.ellipse(13, -136, 8, 3.2, -0.18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        const lidSlideX = openProg * (cw * 0.92);
+        const lidSlideY = -openProg * 42;
+        const lidRot = openProg * 0.18;
+        ctx.save();
+        ctx.globalAlpha = env * Math.max(0.12, 1 - openProg * 0.85);
+        ctx.translate(cx + lidSlideX, cy + lidSlideY);
+        ctx.rotate(lidRot);
+        drawCoffinShape(ctx, 0, 0, cw, ch);
+        ctx.fillStyle = 'rgba(14, 5, 18, 0.94)';
+        ctx.fill();
+        ctx.strokeStyle = '#a855f7';
+        ctx.shadowColor = '#a855f7';
+        ctx.shadowBlur = 24;
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+        ctx.restore();
+
+        for (const e of eveEmbers) {
+          if (elapsed > 240) {
+            e.x += e.vx;
+            e.y += e.vy;
+          }
+          ctx.save();
+          ctx.globalAlpha = e.alpha * env;
+          ctx.fillStyle = e.col;
+          ctx.shadowColor = e.col;
+          ctx.shadowBlur = 16;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        animId = requestAnimationFrame(drawEveCoffin);
+      }
 
       function spawnFracturedShatter() {
         fracturedStart = performance.now();
@@ -3677,6 +3848,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'arcane-fractured') {
           spawnFracturedShatter();
           drawFracturedShatter();
+        } else if (activeEffect === 'eve-firestarter') {
+          spawnEveCoffin();
+          drawEveCoffin();
         } else {
           spawnBubbles();
           drawBubbles();
@@ -5963,6 +6137,105 @@ body.champ-fx-arcane-fractured .gw-winner {
   color: #fff5fb !important;
   text-shadow: 0 0 18px rgba(255, 46, 151, 0.95), 0 0 10px rgba(0, 240, 255, 0.8) !important;
 }
+
+@keyframes eveFirestarterPulse {
+  0%, 100% { border-color: #ff1e6b; box-shadow: 0 0 22px rgba(255, 30, 107, 0.55), inset 0 0 14px rgba(168, 85, 247, 0.18); }
+  50% { border-color: #a855f7; box-shadow: 0 0 26px rgba(168, 85, 247, 0.55), inset 0 0 14px rgba(255, 122, 0, 0.2); }
+  80% { border-color: #ff7a00; box-shadow: 0 0 22px rgba(255, 122, 0, 0.5), inset 0 0 14px rgba(255, 30, 107, 0.2); }
+}
+body.champ-fx-eve-firestarter .msg-row {
+  background:
+    repeating-linear-gradient(-38deg, rgba(255, 30, 107, 0.07) 0 4px, rgba(168, 85, 247, 0.05) 4px 10px, transparent 10px 24px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(16, 4, 14, 0.97)), var(--ct-bg-end, rgba(8, 3, 12, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #ff1e6b) !important;
+  border-left: 4px solid var(--ct-tertiary, #ff7a00) !important;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  border-radius: 0 !important;
+  animation: eveFirestarterPulse 4.6s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-eve-firestarter ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255, 30, 107, 0.26), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(168, 85, 247, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(16, 4, 14, 0.97)), var(--ct-bg-end, rgba(8, 3, 12, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #ff1e6b) !important;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  border-radius: 0 !important;
+  animation: eveFirestarterPulse 4.2s ease-in-out infinite;
+}
+body.champ-fx-eve-firestarter .gs-title,
+body.champ-fx-eve-firestarter .gs-champ-name,
+body.champ-fx-eve-firestarter .lb-rank,
+body.champ-fx-eve-firestarter .sp-title,
+body.champ-fx-eve-firestarter .goal-title,
+body.champ-fx-eve-firestarter .poll-q,
+body.champ-fx-eve-firestarter .gw-title,
+body.champ-fx-eve-firestarter .sched-title,
+body.champ-fx-eve-firestarter .al-author,
+body.champ-fx-eve-firestarter .lt-topic,
+body.champ-fx-eve-firestarter .qna-author,
+body.champ-fx-eve-firestarter .tron-topic,
+body.champ-fx-eve-firestarter .val-rank-name { color: #fff0f6 !important; text-shadow: 0 0 12px rgba(255, 30, 107, 0.92), 0 0 8px rgba(255, 122, 0, 0.72) !important; }
+body.champ-fx-eve-firestarter .gs-lp-fill,
+body.champ-fx-eve-firestarter .lb-lp-fill,
+body.champ-fx-eve-firestarter .goal-fill,
+body.champ-fx-eve-firestarter .sp-prog-fill,
+body.champ-fx-eve-firestarter .val-rr-fill { background: linear-gradient(90deg, #ff1e6b, #a855f7, #ff7a00) !important; }
+body.champ-fx-eve-firestarter .alert-card {
+  position: relative;
+  animation: eveFirestarterPulse 2.8s ease-in-out infinite !important;
+}
+body.champ-fx-eve-firestarter .alert-card::before {
+  content: '🖤  🔥';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 13px;
+  color: #ff1e6b;
+  text-shadow: 0 0 10px rgba(255, 30, 107, 0.9);
+  pointer-events: none;
+}
+body.champ-fx-eve-firestarter .alert-card::after {
+  content: '🔥  ✦';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 13px;
+  color: #ff7a00;
+  text-shadow: 0 0 10px rgba(255, 122, 0, 0.9);
+  pointer-events: none;
+}
+body.champ-fx-eve-firestarter .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(22, 5, 18, 0.96), rgba(10, 3, 14, 0.98)) !important;
+  border: 2px solid #ff1e6b !important;
+  box-shadow: 0 0 22px rgba(255, 30, 107, 0.45), inset 0 0 14px rgba(168, 85, 247, 0.22) !important;
+}
+body.champ-fx-eve-firestarter .gw-slot::before {
+  content: '🖤';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 12px;
+}
+body.champ-fx-eve-firestarter .gw-slot::after {
+  content: '🔥';
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 12px;
+}
+body.champ-fx-eve-firestarter .gw-slot.is-spinning {
+  animation: eveFirestarterPulse 0.6s linear infinite !important;
+}
+body.champ-fx-eve-firestarter .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  box-shadow: 0 0 32px rgba(255, 30, 107, 0.85), inset 0 0 18px rgba(255, 122, 0, 0.32) !important;
+}
+body.champ-fx-eve-firestarter .gw-winner {
+  color: #fff0f6 !important;
+  text-shadow: 0 0 18px rgba(255, 30, 107, 0.95), 0 0 10px rgba(255, 122, 0, 0.82) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -6032,7 +6305,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
