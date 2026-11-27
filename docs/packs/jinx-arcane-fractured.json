@@ -1,0 +1,25 @@
+{
+  "id": "jinx-arcane-fractured",
+  "name": "Jinx — Arcane Fractured",
+  "icon": "💣",
+  "championMatch": ["jinx"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "arcane-fractured",
+  "description": "Exalted Arcane Fractured Jinx shimmer magenta, Hextech anomaly cyan & graffiti gold with shattered-glass frames, Fractured Shatter transition & shard Client-Frame.",
+  "colors": {
+    "primary": "#ff2e97",
+    "secondary": "#00f0ff",
+    "tertiary": "#ffe14d",
+    "bgStart": "rgba(14, 6, 22, 0.97)",
+    "bgEnd": "rgba(6, 12, 22, 0.98)",
+    "text": "#fff5fb",
+    "muted": "#f9a8d4"
+  },
+  "mapCoverBadge": "FRACTURED // POW-POW 💣",
+  "skinArt": {
+    "championId": "Jinx",
+    "skinQuery": "Arcane Fractured",
+    "skinNum": 60
+  }
+}

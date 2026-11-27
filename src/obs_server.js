@@ -2449,7 +2449,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-nightbringer .bg-splash,
     body.fx-risen-legend .bg-splash,
     body.fx-kda-firestarter .bg-splash,
-    body.fx-dj-sona .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
+    body.fx-dj-sona .bg-splash,
+    body.fx-arcane-fractured .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
     body.fx-inkshadow .bg-splash,
     body.fx-black-rose .bg-splash,
     body.fx-ravenborn .bg-splash,
@@ -2735,7 +2736,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'zaun-lab': 'bubbles',
         'crime-city': 'cards',
         'prestige-rose': 'petals',
-        'dj-sona': 'eq'
+        'dj-sona': 'eq',
+        'arcane-fractured': 'shards'
       };
 
       function resize() {
@@ -2808,6 +2810,27 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p.x, p.y - 24 * p.speed);
+            ctx.stroke();
+          } else if (activeMode === 'shards') {
+            p.y -= p.speed * 0.85;
+            p.x += Math.sin(p.phase * 1.4) * 0.9;
+            if (p.y < -40) { p.y = h + 40; p.x = Math.random() * w; }
+            const shCols = ['#ff2e97', '#00f0ff', '#ffe14d'];
+            const sCol = shCols[p.ci % 3];
+            const sz = 8 + p.r * 3.4;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.phase * 0.9 + p.ci);
+            ctx.fillStyle = 'rgba(14, 6, 24, 0.72)';
+            ctx.strokeStyle = sCol;
+            ctx.shadowColor = sCol;
+            ctx.shadowBlur = 16;
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(0, -sz);
+            ctx.lineTo(sz * 0.72, sz * 0.25);
+            ctx.lineTo(-sz * 0.55, sz * 0.85);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
           } else if (activeMode === 'eq') {
             const idx = particles.indexOf(p);
@@ -3251,6 +3274,103 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
 
       let lotusStart = 0;
       let djStart = 0;
+      let fracturedStart = 0;
+      let fracturedShards = [];
+
+      function spawnFracturedShatter() {
+        fracturedStart = performance.now();
+        const cols = ['#ff2e97', '#00f0ff', '#ffe14d', '#f8fafc'];
+        fracturedShards = Array.from({ length: 58 }, (_, i) => {
+          const angle = (i / 58) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+          const speed = 16 + Math.random() * 26;
+          return {
+            delay: 180 + Math.random() * 240,
+            angle,
+            radius: 14 + Math.random() * 60,
+            speed,
+            rot: Math.random() * Math.PI * 2,
+            vrot: (Math.random() - 0.5) * 0.28,
+            size: 24 + Math.random() * 44,
+            col: cols[i % cols.length],
+            alpha: 0.9
+          };
+        });
+      }
+
+      function drawFracturedShatter(now) {
+        const elapsed = Math.max(0, (now || performance.now()) - fracturedStart);
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.5;
+        ctx.clearRect(0, 0, w, h);
+
+        const crackEnv = elapsed < 160
+          ? elapsed / 160
+          : elapsed > 960 ? Math.max(0, 1 - (elapsed - 960) / 420) : 1;
+        if (crackEnv > 0.01) {
+          const crackCols = ['#ff2e97', '#00f0ff', '#ffe14d'];
+          const maxLen = Math.min(w, h) * 0.92 * Math.min(1, elapsed / 320);
+          for (let c = 0; c < 10; c++) {
+            const baseA = (c / 10) * Math.PI * 2 + 0.18;
+            const col = crackCols[c % 3];
+            ctx.save();
+            ctx.globalAlpha = crackEnv * 0.88;
+            ctx.strokeStyle = col;
+            ctx.shadowColor = col;
+            ctx.shadowBlur = 22;
+            ctx.lineWidth = c % 2 === 0 ? 4 : 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            for (let seg = 1; seg <= 4; seg++) {
+              const r = (maxLen * seg) / 4;
+              const jitter = (seg % 2 === 0 ? 0.09 : -0.09) * (c % 2 === 0 ? 1 : -1);
+              ctx.lineTo(cx + Math.cos(baseA + jitter) * r, cy + Math.sin(baseA + jitter) * r);
+            }
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+
+        if (elapsed > 520 && elapsed < 860) {
+          const flash = Math.sin(((elapsed - 520) / 340) * Math.PI) * 0.4;
+          const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, w * 0.65);
+          grad.addColorStop(0, 'rgba(255, 46, 151, ' + flash.toFixed(3) + ')');
+          grad.addColorStop(0.5, 'rgba(0, 240, 255, ' + (flash * 0.72).toFixed(3) + ')');
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        for (const s of fracturedShards) {
+          if (elapsed < s.delay) continue;
+          s.radius += s.speed;
+          s.rot += s.vrot;
+          const fade = Math.max(0, 1 - Math.max(0, elapsed - 1280) / 500);
+          if (fade <= 0.01) continue;
+          const x = cx + Math.cos(s.angle) * s.radius;
+          const y = cy + Math.sin(s.angle) * s.radius;
+          ctx.save();
+          ctx.globalAlpha = s.alpha * fade;
+          ctx.translate(x, y);
+          ctx.rotate(s.rot);
+          ctx.fillStyle = 'rgba(14, 6, 26, 0.88)';
+          ctx.strokeStyle = s.col;
+          ctx.shadowColor = s.col;
+          ctx.shadowBlur = 22;
+          ctx.lineWidth = 2.6;
+          const sz = s.size;
+          ctx.beginPath();
+          ctx.moveTo(0, -sz);
+          ctx.lineTo(sz * 0.76, sz * 0.18);
+          ctx.lineTo(-sz * 0.58, sz * 0.82);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+        animId = requestAnimationFrame(drawFracturedShatter);
+      }
 
       function spawnDjCrescendo() {
         djStart = performance.now();
@@ -3554,6 +3674,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'dj-sona') {
           spawnDjCrescendo();
           drawDjCrescendo();
+        } else if (activeEffect === 'arcane-fractured') {
+          spawnFracturedShatter();
+          drawFracturedShatter();
         } else {
           spawnBubbles();
           drawBubbles();
@@ -5741,6 +5864,105 @@ body.champ-fx-dj-sona .gw-winner {
   color: #e0f2fe !important;
   text-shadow: 0 0 18px rgba(0, 229, 255, 0.95), 0 0 10px rgba(255, 42, 109, 0.75) !important;
 }
+
+@keyframes fracturedJinxPulse {
+  0%, 100% { border-color: #ff2e97; box-shadow: 0 0 22px rgba(255, 46, 151, 0.52), inset 0 0 14px rgba(0, 240, 255, 0.16); }
+  45% { border-color: #00f0ff; box-shadow: 0 0 24px rgba(0, 240, 255, 0.55), inset 0 0 14px rgba(255, 46, 151, 0.18); }
+  78% { border-color: #ffe14d; box-shadow: 0 0 20px rgba(255, 225, 77, 0.45), inset 0 0 12px rgba(255, 46, 151, 0.18); }
+}
+body.champ-fx-arcane-fractured .msg-row {
+  background:
+    repeating-linear-gradient(-32deg, rgba(255, 46, 151, 0.07) 0 5px, rgba(0, 240, 255, 0.05) 5px 11px, transparent 11px 26px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(14, 6, 22, 0.97)), var(--ct-bg-end, rgba(6, 12, 22, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #ff2e97) !important;
+  border-left: 4px solid var(--ct-secondary, #00f0ff) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 10px));
+  border-radius: 0 !important;
+  animation: fracturedJinxPulse 4.2s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-arcane-fractured ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255, 46, 151, 0.25), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(0, 240, 255, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(14, 6, 22, 0.97)), var(--ct-bg-end, rgba(6, 12, 22, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #ff2e97) !important;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 10px);
+  border-radius: 0 !important;
+  animation: fracturedJinxPulse 3.8s ease-in-out infinite;
+}
+body.champ-fx-arcane-fractured .gs-title,
+body.champ-fx-arcane-fractured .gs-champ-name,
+body.champ-fx-arcane-fractured .lb-rank,
+body.champ-fx-arcane-fractured .sp-title,
+body.champ-fx-arcane-fractured .goal-title,
+body.champ-fx-arcane-fractured .poll-q,
+body.champ-fx-arcane-fractured .gw-title,
+body.champ-fx-arcane-fractured .sched-title,
+body.champ-fx-arcane-fractured .al-author,
+body.champ-fx-arcane-fractured .lt-topic,
+body.champ-fx-arcane-fractured .qna-author,
+body.champ-fx-arcane-fractured .tron-topic,
+body.champ-fx-arcane-fractured .val-rank-name { color: #fff5fb !important; text-shadow: 0 0 12px rgba(255, 46, 151, 0.9), 0 0 8px rgba(0, 240, 255, 0.7) !important; }
+body.champ-fx-arcane-fractured .gs-lp-fill,
+body.champ-fx-arcane-fractured .lb-lp-fill,
+body.champ-fx-arcane-fractured .goal-fill,
+body.champ-fx-arcane-fractured .sp-prog-fill,
+body.champ-fx-arcane-fractured .val-rr-fill { background: linear-gradient(90deg, #ff2e97, #00f0ff, #ffe14d) !important; }
+body.champ-fx-arcane-fractured .alert-card {
+  position: relative;
+  animation: fracturedJinxPulse 2.6s ease-in-out infinite !important;
+}
+body.champ-fx-arcane-fractured .alert-card::before {
+  content: '💣  ✕';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 13px;
+  color: #ff2e97;
+  text-shadow: 0 0 10px rgba(255, 46, 151, 0.9);
+  pointer-events: none;
+}
+body.champ-fx-arcane-fractured .alert-card::after {
+  content: '⚡  ✖';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 13px;
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.9);
+  pointer-events: none;
+}
+body.champ-fx-arcane-fractured .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(20, 6, 28, 0.96), rgba(6, 14, 26, 0.98)) !important;
+  border: 2px solid #ff2e97 !important;
+  box-shadow: 0 0 22px rgba(255, 46, 151, 0.42), inset 0 0 14px rgba(0, 240, 255, 0.2) !important;
+}
+body.champ-fx-arcane-fractured .gw-slot::before {
+  content: '💣';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 12px;
+}
+body.champ-fx-arcane-fractured .gw-slot::after {
+  content: '⚡';
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 12px;
+}
+body.champ-fx-arcane-fractured .gw-slot.is-spinning {
+  animation: fracturedJinxPulse 0.55s linear infinite !important;
+}
+body.champ-fx-arcane-fractured .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  box-shadow: 0 0 32px rgba(255, 46, 151, 0.85), inset 0 0 18px rgba(0, 240, 255, 0.3) !important;
+}
+body.champ-fx-arcane-fractured .gw-winner {
+  color: #fff5fb !important;
+  text-shadow: 0 0 18px rgba(255, 46, 151, 0.95), 0 0 10px rgba(0, 240, 255, 0.8) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -5810,7 +6032,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
