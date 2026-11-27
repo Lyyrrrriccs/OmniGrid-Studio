@@ -389,6 +389,15 @@
       clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
       animation: eveFirestarterPulse 4.2s ease-in-out infinite;
     }
+    @keyframes ahriFirestarterPulse {
+      0%, 100% { border-color: #ff2e97; box-shadow: 0 0 22px rgba(255,46,151,0.58); }
+      50% { border-color: #ff1e56; box-shadow: 0 0 26px rgba(255,30,86,0.62); }
+    }
+    #stage.champ-fx-ahri-firestarter :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
+      background: radial-gradient(circle at 14% 16%, rgba(255,46,151,0.26), transparent 46%), radial-gradient(circle at 86% 84%, rgba(255,30,86,0.24), transparent 50%), linear-gradient(145deg, var(--ct-bg-start), var(--ct-bg-end)) !important;
+      border-radius: 14px !important;
+      animation: ahriFirestarterPulse 3.8s ease-in-out infinite;
+    }
     #stage.champ-fx-spirit-blossom :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) { border-radius: 14px !important; }
     #stage.champ-fx-nightbringer :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card),
     #stage.champ-fx-project-cyber :is(.msg-row, .gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
@@ -677,6 +686,7 @@
   <script>
     const PACK_CATALOG = [
       { id: 'none', name: 'Standard (LoL Hextech)', icon: '⚔️', effect: 'none', description: 'Default OmniGrid Studio Hextech design across all OBS overlays.', colors: { primary: '#c8aa6e', secondary: '#0ac8b9', tertiary: '#38bdf8', bgStart: 'rgba(9, 20, 40, 0.96)', bgEnd: 'rgba(1, 10, 19, 0.97)', text: '#f0e6d2' }, mapCoverBadge: '🛡️ Streamer-Modus' },
+      { id: 'ahri-kda-firestarter', name: 'Ahri — K/DA FIRESTARTER', icon: '🦊', effect: 'ahri-firestarter', description: 'K/DA FIRESTARTER Ahri hot-pink neon charm, crimson flame & crystal heart shards with 2.5D cel-shaded Heart-Shatter transition across all OBS overlays.', colors: { primary: '#ff2e97', secondary: '#ff1e56', tertiary: '#fda4af', bgStart: 'rgba(18, 4, 14, 0.97)', bgEnd: 'rgba(9, 3, 12, 0.98)', text: '#fff0f7' }, mapCoverBadge: 'FIRESTARTER // HEART CHARM 🦊' },
       { id: 'evelynn-kda-firestarter', name: 'Evelynn — K/DA FIRESTARTER', icon: '🖤', effect: 'eve-firestarter', description: 'K/DA FIRESTARTER Evelynn crimson-magenta, shadow-demon violet & molten flame amber with Coffin Awakening transition and animated diva frames across all OBS overlays.', colors: { primary: '#ff1e6b', secondary: '#a855f7', tertiary: '#ff7a00', bgStart: 'rgba(16, 4, 14, 0.97)', bgEnd: 'rgba(8, 3, 12, 0.98)', text: '#fff0f6' }, mapCoverBadge: 'FIRESTARTER // SHADOW DIVA 🖤' },
       { id: 'jinx-arcane-fractured', name: 'Jinx — Arcane Fractured', icon: '💣', effect: 'arcane-fractured', description: 'Exalted Arcane Fractured Jinx shimmer magenta, Hextech anomaly cyan & graffiti gold with shattered-glass frames, Fractured Shatter transition & shard Client-Frame.', colors: { primary: '#ff2e97', secondary: '#00f0ff', tertiary: '#ffe14d', bgStart: 'rgba(14, 6, 22, 0.97)', bgEnd: 'rgba(6, 12, 22, 0.98)', text: '#fff5fb' }, mapCoverBadge: 'FRACTURED // POW-POW 💣' },
       { id: 'sona-dj', name: 'Sona — DJ Sona', icon: '🎧', effect: 'dj-sona', description: 'DJ Sona Kinetic cyan, Concussive bass crimson & Ethereal synth violet with animated audio-equalizer frames, Crescendo Bass-Drop transition & live EQ Client-Frame.', colors: { primary: '#00e5ff', secondary: '#ff2a6d', tertiary: '#c084fc', bgStart: 'rgba(6, 10, 24, 0.96)', bgEnd: 'rgba(12, 6, 26, 0.97)', text: '#f0f9ff' }, mapCoverBadge: 'DJ SONA // DROP THE BEAT 🎧' },
@@ -722,11 +732,12 @@
       'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose',
       'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige',
       'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter',
-      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
+      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
     ];
 
     const SKIN_ART_MAP = {
       'ahri-spirit-blossom': { championId: 'Ahri', skinQuery: 'Spirit Blossom' },
+      'ahri-kda-firestarter': { championId: 'Ahri', skinQuery: 'FIRESTARTER' },
       'akali-kda-firestarter-ignition': { championId: 'Akali', skinQuery: 'Firestarter Ignition', directUrl: './assets/akali-kda-firestarter-ignition.jpg', charArtUrl: './assets/akali-ignition-art.png' },
       'caitlyn-arcane-prestige': { championId: 'Caitlyn', skinQuery: 'Prestige Arcane Commander' },
       'darius-divine-god-king': { championId: 'Darius', skinQuery: 'God-King' },
@@ -771,7 +782,7 @@
       'nightbringer': 'embers', 'god-king': 'embers', 'risen-legend': 'streaks', 'kda-all-out': 'stars',
       'dark-cosmic': 'orbit', 'prestige-cosmic': 'orbit', 'black-rose': 'petals', 'spirit-blossom': 'petals',
       'blossom-springs': 'bubbles', 'ravenborn': 'feathers', 'inkshadow': 'ink', 'elementalist': 'orbs',
-      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles', 'crime-city': 'cards', 'prestige-rose': 'petals', 'dj-sona': 'eq', 'arcane-fractured': 'shards', 'eve-firestarter': 'embers'
+      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles', 'crime-city': 'cards', 'prestige-rose': 'petals', 'dj-sona': 'eq', 'arcane-fractured': 'shards', 'eve-firestarter': 'embers', 'ahri-firestarter': 'shards'
     };
     const csParticles = Array.from({ length: 44 }, () => ({
       x: Math.random() * 960, y: Math.random() * 540, r: 1.4 + Math.random() * 2.8,
