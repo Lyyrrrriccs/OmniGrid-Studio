@@ -1870,7 +1870,12 @@ const OBS_GIVEAWAY_HTML = `<!DOCTYPE html>
         ? 'Teilnahme offen: Schreibe ' + (gw.keyword || '!join') + ' in den Chat!'
         : (gw.winner ? '🎉 Gewinner gezogen!' : 'Teilnahme geschlossen');
 
+      const gwSlot = document.querySelector('.gw-slot');
       clearInterval(spinTimer);
+      if (gwSlot) {
+        gwSlot.classList.toggle('is-spinning', Boolean(gw.spinning && list.length > 0));
+        gwSlot.classList.toggle('has-winner', Boolean(!gw.spinning && gw.winner));
+      }
       if (gw.spinning && list.length > 0) {
         platEl.textContent = 'Ziehung läuft...';
         spinTimer = setInterval(() => {
@@ -2726,7 +2731,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'project-cyber': 'cyber',
         'ruined-mist': 'mist',
         'zaun-lab': 'bubbles',
-        'crime-city': 'diamonds'
+        'crime-city': 'cards'
       };
 
       function resize() {
@@ -2800,6 +2805,32 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p.x, p.y - 24 * p.speed);
             ctx.stroke();
+          } else if (activeMode === 'cards') {
+            p.y -= p.speed * 0.72;
+            p.x += Math.sin(p.phase) * 0.75;
+            if (p.y < -60) { p.y = h + 60; p.x = Math.random() * w; }
+            const tfCols = ['#facc15', '#ef4444', '#38bdf8'];
+            const suits = ['♠', '♥', '♦', '♣'];
+            const cardCol = tfCols[p.ci % 3];
+            const cw = 20 + p.r * 3.8;
+            const ch = cw * 1.42;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.sin(p.phase) * 0.45);
+            ctx.fillStyle = 'rgba(10, 6, 16, 0.88)';
+            ctx.strokeStyle = cardCol;
+            ctx.shadowColor = cardCol;
+            ctx.shadowBlur = 16;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 4);
+            ctx.fill();
+            ctx.stroke();
+            ctx.shadowBlur = 6;
+            ctx.fillStyle = cardCol;
+            ctx.font = 'bold ' + Math.round(cw * 0.56) + 'px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(suits[Math.floor(p.phase * 0.5 + p.ci) % 4], 0, 1);
           } else if (activeMode === 'stars' || activeMode === 'diamonds') {
             p.y -= p.speed * 0.4;
             if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
@@ -3085,9 +3116,11 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       const canvas = document.getElementById('stBubbles');
       const ctx = canvas.getContext('2d');
       let palette = ['#c8aa6e', '#0ac8b9'];
+      let activeEffect = '';
       let animId = 0;
       let timer = null;
       let bubbles = [];
+      let thrownCards = [];
 
       function resize() {
         canvas.width = window.innerWidth || 1920;
@@ -3098,6 +3131,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
 
       function applyTheme(pack) {
         if (!pack || !pack.id) {
+          activeEffect = '';
           palette = ['#c8aa6e', '#0ac8b9'];
           root.style.setProperty('--t1', '#c8aa6e');
           root.style.setProperty('--t2', '#0ac8b9');
@@ -3110,6 +3144,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           return;
         }
         const c = pack.colors || {};
+        activeEffect = String(pack.effect || '');
         const c1 = c.primary || '#76ff03';
         const c2 = c.secondary || '#00e5ff';
         palette = [c1, c2];
@@ -3133,6 +3168,61 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           col: Math.random() > 0.45 ? palette[0] : palette[1],
           alpha: 0.35 + Math.random() * 0.55
         }));
+      }
+
+      function spawnThrownCards() {
+        const tfCols = ['#facc15', '#ef4444', '#38bdf8', '#e11d48', '#a855f7'];
+        const suits = ['♠', '♥', '♦', '♣'];
+        thrownCards = Array.from({ length: 42 }, (_, i) => {
+          const fromLeft = i % 2 === 0;
+          const speed = 26 + Math.random() * 24;
+          const spreadAngle = (Math.random() - 0.5) * 0.72;
+          return {
+            x: fromLeft ? -160 - Math.random() * 520 : canvas.width + 160 + Math.random() * 520,
+            y: canvas.height * (0.15 + Math.random() * 0.72),
+            vx: (fromLeft ? 1 : -1) * Math.cos(spreadAngle) * speed,
+            vy: Math.sin(spreadAngle) * speed * 0.75 - 2.5,
+            rot: Math.random() * Math.PI * 2,
+            vrot: (fromLeft ? 1 : -1) * (0.14 + Math.random() * 0.18),
+            w: 66 + Math.random() * 44,
+            col: tfCols[i % tfCols.length],
+            suit: suits[i % 4],
+            alpha: 0.82 + Math.random() * 0.18
+          };
+        });
+      }
+
+      function drawThrownCards() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const c of thrownCards) {
+          c.x += c.vx;
+          c.y += c.vy;
+          c.rot += c.vrot;
+          const h = c.w * 1.44;
+          ctx.save();
+          ctx.globalAlpha = c.alpha;
+          ctx.translate(c.x, c.y);
+          ctx.rotate(c.rot);
+          ctx.shadowBlur = 28;
+          ctx.shadowColor = c.col;
+          ctx.fillStyle = 'rgba(11, 6, 16, 0.94)';
+          ctx.strokeStyle = c.col;
+          ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          ctx.roundRect(-c.w / 2, -h / 2, c.w, h, 8);
+          ctx.fill();
+          ctx.stroke();
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+          ctx.strokeRect(-c.w / 2 + 6, -h / 2 + 6, c.w - 12, h - 12);
+          ctx.fillStyle = c.col;
+          ctx.font = '900 ' + Math.round(c.w * 0.52) + 'px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(c.suit, 0, 2);
+          ctx.restore();
+        }
+        animId = requestAnimationFrame(drawThrownCards);
       }
 
       function drawBubbles() {
@@ -3213,9 +3303,14 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         }
 
         void stage.offsetWidth;
-        spawnBubbles();
         stage.classList.add('playing');
-        drawBubbles();
+        if (activeEffect === 'crime-city') {
+          spawnThrownCards();
+          drawThrownCards();
+        } else {
+          spawnBubbles();
+          drawBubbles();
+        }
         timer = setTimeout(() => {
           stage.classList.remove('playing');
           if (animId) cancelAnimationFrame(animId);
@@ -5117,6 +5212,92 @@ body.champ-fx-crime-city .lb-lp-fill,
 body.champ-fx-crime-city .goal-fill,
 body.champ-fx-crime-city .sp-prog-fill,
 body.champ-fx-crime-city .val-rr-fill { background: linear-gradient(90deg, #e11d48, #a855f7, #facc15) !important; }
+@keyframes tfPickACardGlow {
+  0%, 100% { border-color: #facc15 !important; box-shadow: 0 18px 46px rgba(0,0,0,0.7), 0 0 34px rgba(250, 204, 21, 0.72), inset 0 0 16px rgba(250, 204, 21, 0.22) !important; }
+  33% { border-color: #ef4444 !important; box-shadow: 0 18px 46px rgba(0,0,0,0.7), 0 0 34px rgba(239, 68, 68, 0.72), inset 0 0 16px rgba(239, 68, 68, 0.22) !important; }
+  66% { border-color: #38bdf8 !important; box-shadow: 0 18px 46px rgba(0,0,0,0.7), 0 0 34px rgba(56, 189, 248, 0.72), inset 0 0 16px rgba(56, 189, 248, 0.22) !important; }
+}
+@keyframes tfCardFlipReveal {
+  0% { transform: perspective(700px) rotateY(90deg) scale(0.92); opacity: 0.4; }
+  65% { transform: perspective(700px) rotateY(-10deg) scale(1.03); opacity: 1; }
+  100% { transform: perspective(700px) rotateY(0deg) scale(1); opacity: 1; }
+}
+@keyframes tfCardShuffle {
+  0% { border-color: #facc15; box-shadow: 0 0 22px rgba(250, 204, 21, 0.65); }
+  33% { border-color: #ef4444; box-shadow: 0 0 22px rgba(239, 68, 68, 0.65); }
+  66% { border-color: #38bdf8; box-shadow: 0 0 22px rgba(56, 189, 248, 0.65); }
+  100% { border-color: #facc15; box-shadow: 0 0 22px rgba(250, 204, 21, 0.65); }
+}
+body.champ-fx-crime-city .alert-card {
+  position: relative;
+  animation: tfPickACardGlow 3.6s ease-in-out infinite !important;
+}
+body.champ-fx-crime-city .alert-card::before {
+  content: '♠  ♥';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #facc15;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.85);
+  pointer-events: none;
+}
+body.champ-fx-crime-city .alert-card::after {
+  content: '♦  ♣';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #e11d48;
+  text-shadow: 0 0 10px rgba(225, 29, 72, 0.85);
+  pointer-events: none;
+}
+body.champ-fx-crime-city .gw-card {
+  position: relative;
+  animation: tfPickACardGlow 4.8s ease-in-out infinite !important;
+}
+body.champ-fx-crime-city .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(18, 9, 26, 0.96), rgba(9, 5, 14, 0.98)) !important;
+  border: 2px solid #facc15 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.35), inset 0 0 0 3px rgba(11, 6, 14, 0.95), inset 0 0 0 4px rgba(250, 204, 21, 0.35) !important;
+  padding: 18px 16px !important;
+}
+body.champ-fx-crime-city .gw-slot::before {
+  content: '♠ A';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #facc15;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+}
+body.champ-fx-crime-city .gw-slot::after {
+  content: 'A ♦';
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #e11d48;
+  text-shadow: 0 0 8px rgba(225, 29, 72, 0.7);
+}
+body.champ-fx-crime-city .gw-slot.is-spinning {
+  animation: tfCardShuffle 0.65s linear infinite !important;
+}
+body.champ-fx-crime-city .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  border-color: #facc15 !important;
+  box-shadow: 0 0 30px rgba(250, 204, 21, 0.75), inset 0 0 18px rgba(250, 204, 21, 0.25) !important;
+}
+body.champ-fx-crime-city .gw-winner {
+  color: #fef08a !important;
+  text-shadow: 0 0 18px rgba(250, 204, 21, 0.9), 0 0 8px rgba(225, 29, 72, 0.7) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }

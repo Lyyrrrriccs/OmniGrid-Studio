@@ -698,7 +698,7 @@
       'nightbringer': 'embers', 'god-king': 'embers', 'risen-legend': 'streaks', 'kda-all-out': 'stars',
       'dark-cosmic': 'orbit', 'prestige-cosmic': 'orbit', 'black-rose': 'petals', 'spirit-blossom': 'petals',
       'blossom-springs': 'bubbles', 'ravenborn': 'feathers', 'inkshadow': 'ink', 'elementalist': 'orbs',
-      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles', 'crime-city': 'diamonds'
+      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'zaun-lab': 'bubbles', 'crime-city': 'cards'
     };
     const csParticles = Array.from({ length: 44 }, () => ({
       x: Math.random() * 960, y: Math.random() * 540, r: 1.4 + Math.random() * 2.8,
@@ -738,6 +738,18 @@
             if (p.y < -20 || p.y > h + 20) { p.y = csMode === 'cyber' ? -20 : h + 15; p.x = Math.random() * w; }
             csCtx.lineWidth = 1.6; csCtx.beginPath(); csCtx.moveTo(p.x, p.y);
             csCtx.lineTo(p.x + (csMode === 'cyber' ? 0 : -6), p.y + (csMode === 'cyber' ? -16 : 14)); csCtx.stroke();
+          } else if (csMode === 'cards') {
+            p.y -= p.speed * 0.65; p.x += Math.sin(p.phase) * 0.6;
+            if (p.y < -35) { p.y = h + 35; p.x = Math.random() * w; }
+            const tfCols = ['#facc15', '#ef4444', '#38bdf8'];
+            const suits = ['♠', '♥', '♦', '♣'];
+            const cCol = tfCols[p.ci % 3];
+            const cw = 12 + p.r * 2.5, ch = cw * 1.42;
+            csCtx.translate(p.x, p.y); csCtx.rotate(Math.sin(p.phase) * 0.45);
+            csCtx.fillStyle = 'rgba(10,6,16,0.9)'; csCtx.strokeStyle = cCol; csCtx.shadowColor = cCol; csCtx.lineWidth = 1.4;
+            csCtx.beginPath(); csCtx.roundRect(-cw / 2, -ch / 2, cw, ch, 3); csCtx.fill(); csCtx.stroke();
+            csCtx.fillStyle = cCol; csCtx.font = `bold ${Math.round(cw * 0.58)}px sans-serif`; csCtx.textAlign = 'center'; csCtx.textBaseline = 'middle';
+            csCtx.fillText(suits[Math.floor(p.phase * 0.5 + p.ci) % 4], 0, 1);
           } else if (csMode === 'bubbles') {
             p.y -= p.speed * 0.6; p.x += Math.sin(p.phase) * 0.4;
             if (p.y < -15) { p.y = h + 15; p.x = Math.random() * w; }
