@@ -474,9 +474,26 @@
       pv.setAttribute('data-en', '👁️ Preview');
       pv.setAttribute('data-de', '👁️ Vorschau');
       pv.textContent = '👁️ Preview';
+      const trBtn = document.createElement('button');
+      trBtn.type = 'button';
+      trBtn.className = 'inline-flex items-center justify-center gap-1 px-2.5 py-2.5 rounded-lg font-semibold text-xs text-purple-200 bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/40 transition';
+      trBtn.title = 'Preview Scene Transition';
+      trBtn.setAttribute('data-en', '✨ Transition');
+      trBtn.setAttribute('data-de', '✨ Übergang');
+      trBtn.textContent = '✨ Transition';
+      trBtn.addEventListener('click', async () => {
+        try {
+          const r = await fetch('./packs/' + id + '.json');
+          const pack = r.ok ? await r.json() : { id, name: id, icon: '✨', effect: 'none', colors: {} };
+          window.openOmniTransitionPreview?.(pack);
+        } catch (e) {
+          window.openOmniTransitionPreview?.({ id, name: id, icon: '✨', effect: 'none', colors: {} });
+        }
+      });
       dl.parentNode.insertBefore(row, dl);
       row.appendChild(dl);
       row.appendChild(pv);
+      row.appendChild(trBtn);
     });
 
     let currentLang = 'en';
@@ -488,5 +505,6 @@
       });
     });
   </script>
+  <script src="./assets/transition-preview.js"></script>
 </body>
 </html>

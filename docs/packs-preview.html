@@ -492,6 +492,7 @@
               <button class="view-btn px-2.5 py-1.5 bg-pink-600 text-white font-semibold" data-view="overlays" data-en="🎮 Overlays" data-de="🎮 Overlays">🎮 Overlays</button>
               <button class="view-btn px-2.5 py-1.5 bg-slate-800 text-slate-300" data-view="client" data-en="🖼️ Client Scene (/lol-bg)" data-de="🖼️ Client-Szene (/lol-bg)">🖼️ Client Scene (/lol-bg)</button>
             </div>
+            <button type="button" id="btnPreviewTransition" class="px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold border border-purple-400/50 transition" data-en="✨ Preview Transition" data-de="✨ Übergang ansehen">✨ Preview Transition</button>
             <div class="flex rounded-lg overflow-hidden border border-slate-700 text-xs">
               <button class="bg-btn px-2.5 py-1.5 bg-indigo-600 text-white font-semibold" data-bg="gameplay">🎮 Stream</button>
               <button class="bg-btn px-2.5 py-1.5 bg-slate-800 text-slate-300" data-bg="midnight">🌌 Dark</button>
@@ -1017,6 +1018,14 @@
     const initialId = new URLSearchParams(location.search).get('pack') || 'jinx-arcane-zaun';
     const initialPack = PACK_CATALOG.find((p) => p.id === initialId) || PACK_CATALOG[1];
     applyPack(initialPack);
+  </script>
+  <script src="./assets/transition-preview.js"></script>
+  <script>
+    document.getElementById('btnPreviewTransition')?.addEventListener('click', () => {
+      const activeId = document.querySelector('#packList .pack-item.active')?.dataset?.id || 'none';
+      const found = (typeof PACK_CATALOG !== 'undefined' && PACK_CATALOG.find((p) => p.id === activeId)) || PACK_CATALOG[0];
+      window.openOmniTransitionPreview?.(found);
+    });
   </script>
 </body>
 </html>
