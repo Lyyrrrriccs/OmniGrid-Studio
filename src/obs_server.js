@@ -2457,7 +2457,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-radiant-cloud .bg-splash,
     body.fx-ruined-mist .bg-splash,
     body.fx-zaun-lab .bg-splash,
-    body.fx-crime-city .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
+    body.fx-crime-city .bg-splash,
+    body.fx-prestige-rose .bg-splash { animation: fxPanDrift 24s ease-in-out infinite; }
     @keyframes slotFramePulse {
       0%, 100% { box-shadow: 0 0 28px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 18px var(--c1); border-color: var(--c1); }
       50% { box-shadow: 0 0 34px rgba(0, 0, 0, 0.78), inset 0 0 14px rgba(255, 255, 255, 0.06), 0 0 28px var(--c2); border-color: var(--c2); }
@@ -2731,7 +2732,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'project-cyber': 'cyber',
         'ruined-mist': 'mist',
         'zaun-lab': 'bubbles',
-        'crime-city': 'cards'
+        'crime-city': 'cards',
+        'prestige-rose': 'petals'
       };
 
       function resize() {
@@ -3119,6 +3121,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       let timer = null;
       let bubbles = [];
       let thrownCards = [];
+      let lotusItems = [];
 
       function resize() {
         canvas.width = window.innerWidth || 1920;
@@ -3221,6 +3224,68 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         animId = requestAnimationFrame(drawThrownCards);
       }
 
+      function spawnDeathLotus() {
+        const cx = canvas.width * 0.5;
+        const cy = canvas.height * 0.5;
+        const cols = ['#f5d061', '#e11d48', '#f8fafc', '#fbbf24'];
+        lotusItems = Array.from({ length: 54 }, (_, i) => {
+          const isDagger = i % 3 === 0;
+          const angle = (i / 54) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+          const speed = isDagger ? (24 + Math.random() * 18) : (10 + Math.random() * 16);
+          return {
+            x: cx + Math.cos(angle) * (20 + Math.random() * 60),
+            y: cy + Math.sin(angle) * (20 + Math.random() * 60),
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            angle,
+            vrot: isDagger ? 0.22 : (Math.random() - 0.5) * 0.14,
+            size: isDagger ? (46 + Math.random() * 28) : (12 + Math.random() * 14),
+            isDagger,
+            col: isDagger ? (i % 2 === 0 ? '#f5d061' : '#f8fafc') : cols[i % cols.length],
+            alpha: 0.85 + Math.random() * 0.15
+          };
+        });
+      }
+
+      function drawDeathLotus() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const it of lotusItems) {
+          it.x += it.vx;
+          it.y += it.vy;
+          it.angle += it.vrot;
+          ctx.save();
+          ctx.globalAlpha = it.alpha;
+          ctx.translate(it.x, it.y);
+          ctx.rotate(it.angle);
+          ctx.shadowBlur = 22;
+          ctx.shadowColor = it.col;
+          if (it.isDagger) {
+            const s = it.size;
+            ctx.fillStyle = it.col;
+            ctx.beginPath();
+            ctx.moveTo(s, 0);
+            ctx.lineTo(-s * 0.35, -s * 0.16);
+            ctx.lineTo(-s * 0.55, 0);
+            ctx.lineTo(-s * 0.35, s * 0.16);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#e11d48';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-s * 0.3, -s * 0.28);
+            ctx.lineTo(-s * 0.3, s * 0.28);
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = it.col;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, it.size * 1.35, it.size * 0.65, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+        animId = requestAnimationFrame(drawDeathLotus);
+      }
+
       function drawBubbles() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (const b of bubbles) {
@@ -3303,6 +3368,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         if (activeEffect === 'crime-city') {
           spawnThrownCards();
           drawThrownCards();
+        } else if (activeEffect === 'prestige-rose') {
+          spawnDeathLotus();
+          drawDeathLotus();
         } else {
           spawnBubbles();
           drawBubbles();
@@ -5294,6 +5362,104 @@ body.champ-fx-crime-city .gw-winner {
   color: #fef08a !important;
   text-shadow: 0 0 18px rgba(250, 204, 21, 0.9), 0 0 8px rgba(225, 29, 72, 0.7) !important;
 }
+
+@keyframes prestigeRoseBladePulse {
+  0%, 100% { border-color: #f5d061; box-shadow: 0 0 20px rgba(245, 208, 97, 0.45), inset 0 0 12px rgba(225, 29, 72, 0.16); }
+  50% { border-color: #e11d48; box-shadow: 0 0 24px rgba(225, 29, 72, 0.52), inset 0 0 14px rgba(245, 208, 97, 0.22); }
+}
+body.champ-fx-prestige-rose .msg-row {
+  background:
+    repeating-linear-gradient(-40deg, rgba(245, 208, 97, 0.06) 0 4px, rgba(225, 29, 72, 0.05) 4px 10px, transparent 10px 24px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(16, 6, 12, 0.97)), var(--ct-bg-end, rgba(8, 5, 11, 0.98))) !important;
+  border: 1.5px solid var(--ct-primary, #f5d061) !important;
+  border-left: 4px solid var(--ct-secondary, #e11d48) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  border-radius: 0 !important;
+  animation: prestigeRoseBladePulse 4.6s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-prestige-rose ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(245, 208, 97, 0.22), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(225, 29, 72, 0.24), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(16, 6, 12, 0.97)), var(--ct-bg-end, rgba(8, 5, 11, 0.98))) !important;
+  border: 2px solid var(--ct-primary, #f5d061) !important;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  border-radius: 0 !important;
+  animation: prestigeRoseBladePulse 4.2s ease-in-out infinite;
+}
+body.champ-fx-prestige-rose .gs-title,
+body.champ-fx-prestige-rose .gs-champ-name,
+body.champ-fx-prestige-rose .lb-rank,
+body.champ-fx-prestige-rose .sp-title,
+body.champ-fx-prestige-rose .goal-title,
+body.champ-fx-prestige-rose .poll-q,
+body.champ-fx-prestige-rose .gw-title,
+body.champ-fx-prestige-rose .sched-title,
+body.champ-fx-prestige-rose .al-author,
+body.champ-fx-prestige-rose .lt-topic,
+body.champ-fx-prestige-rose .qna-author,
+body.champ-fx-prestige-rose .tron-topic,
+body.champ-fx-prestige-rose .val-rank-name { color: #fff8eb !important; text-shadow: 0 0 12px rgba(245, 208, 97, 0.85), 0 0 8px rgba(225, 29, 72, 0.65) !important; }
+body.champ-fx-prestige-rose .gs-lp-fill,
+body.champ-fx-prestige-rose .lb-lp-fill,
+body.champ-fx-prestige-rose .goal-fill,
+body.champ-fx-prestige-rose .sp-prog-fill,
+body.champ-fx-prestige-rose .val-rr-fill { background: linear-gradient(90deg, #f5d061, #e11d48, #f8fafc) !important; }
+body.champ-fx-prestige-rose .alert-card {
+  position: relative;
+  animation: prestigeRoseBladePulse 3.2s ease-in-out infinite !important;
+}
+body.champ-fx-prestige-rose .alert-card::before {
+  content: '🥀  ✦';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 13px;
+  color: #f5d061;
+  text-shadow: 0 0 10px rgba(245, 208, 97, 0.85);
+  pointer-events: none;
+}
+body.champ-fx-prestige-rose .alert-card::after {
+  content: '✦  🗡️';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 13px;
+  color: #e11d48;
+  text-shadow: 0 0 10px rgba(225, 29, 72, 0.85);
+  pointer-events: none;
+}
+body.champ-fx-prestige-rose .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(22, 8, 16, 0.96), rgba(10, 5, 11, 0.98)) !important;
+  border: 2px solid #f5d061 !important;
+  box-shadow: 0 0 20px rgba(245, 208, 97, 0.35), inset 0 0 12px rgba(225, 29, 72, 0.18) !important;
+}
+body.champ-fx-prestige-rose .gw-slot::before {
+  content: '🥀';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 12px;
+}
+body.champ-fx-prestige-rose .gw-slot::after {
+  content: '🗡️';
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 12px;
+}
+body.champ-fx-prestige-rose .gw-slot.is-spinning {
+  animation: prestigeRoseBladePulse 0.65s linear infinite !important;
+}
+body.champ-fx-prestige-rose .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  box-shadow: 0 0 30px rgba(245, 208, 97, 0.78), inset 0 0 18px rgba(225, 29, 72, 0.25) !important;
+}
+body.champ-fx-prestige-rose .gw-winner {
+  color: #fef08a !important;
+  text-shadow: 0 0 18px rgba(245, 208, 97, 0.9), 0 0 8px rgba(225, 29, 72, 0.75) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -5363,7 +5529,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
