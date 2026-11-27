@@ -2448,7 +2448,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-god-king .bg-splash,
     body.fx-nightbringer .bg-splash,
     body.fx-risen-legend .bg-splash,
-    body.fx-kda-firestarter .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
+    body.fx-kda-firestarter .bg-splash,
+    body.fx-dj-sona .bg-splash { animation: fxBreatheZoom 12s ease-in-out infinite; }
     body.fx-inkshadow .bg-splash,
     body.fx-black-rose .bg-splash,
     body.fx-ravenborn .bg-splash,
@@ -2733,7 +2734,8 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'ruined-mist': 'mist',
         'zaun-lab': 'bubbles',
         'crime-city': 'cards',
-        'prestige-rose': 'petals'
+        'prestige-rose': 'petals',
+        'dj-sona': 'eq'
       };
 
       function resize() {
@@ -2807,6 +2809,27 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p.x, p.y - 24 * p.speed);
             ctx.stroke();
+          } else if (activeMode === 'eq') {
+            const idx = particles.indexOf(p);
+            const bars = 40;
+            if (idx < bars) {
+              const barW = w / bars;
+              const amp = 18 + Math.abs(Math.sin(p.phase * 2.2 + idx * 0.45)) * 105 + Math.abs(Math.cos(p.phase * 1.3 + idx * 0.8)) * 42;
+              const bx = idx * barW + 4;
+              const eqCols = ['#00e5ff', '#ff2a6d', '#c084fc'];
+              const eqCol = eqCols[idx % 3];
+              ctx.globalAlpha = 0.65;
+              ctx.fillStyle = eqCol;
+              ctx.shadowColor = eqCol;
+              ctx.shadowBlur = 16;
+              ctx.fillRect(bx, h - amp, Math.max(4, barW - 8), amp);
+            } else {
+              p.y -= p.speed * 1.1;
+              if (p.y < -20) { p.y = h + 20; p.x = Math.random() * w; }
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.r * 1.6, 0, Math.PI * 2);
+              ctx.stroke();
+            }
           } else if (activeMode === 'cards') {
             p.y -= p.speed * 0.72;
             p.x += Math.sin(p.phase) * 0.75;
@@ -3227,6 +3250,78 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       }
 
       let lotusStart = 0;
+      let djStart = 0;
+
+      function spawnDjCrescendo() {
+        djStart = performance.now();
+      }
+
+      function drawDjCrescendo(now) {
+        const elapsed = Math.max(0, (now || performance.now()) - djStart);
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w * 0.5;
+        const cy = h * 0.5;
+        ctx.clearRect(0, 0, w, h);
+
+        const env = elapsed < 240
+          ? elapsed / 240
+          : elapsed > 1320 ? Math.max(0, 1 - (elapsed - 1320) / 500) : 1;
+        if (env <= 0.01) {
+          animId = requestAnimationFrame(drawDjCrescendo);
+          return;
+        }
+
+        const cols = ['#00e5ff', '#ff2a6d', '#c084fc'];
+        const bars = 36;
+        const bw = w / bars;
+        for (let i = 0; i < bars; i++) {
+          const distFromCenter = Math.abs(i - bars / 2) / (bars / 2);
+          const wave = Math.abs(Math.sin(elapsed * 0.012 + i * 0.42)) * 0.65 + Math.abs(Math.cos(elapsed * 0.008 - i * 0.25)) * 0.35;
+          const barH = (h * 0.14 + wave * h * 0.34 * (1 - distFromCenter * 0.35)) * env;
+          const col = cols[(i + Math.floor(elapsed / 260)) % 3];
+          ctx.save();
+          ctx.globalAlpha = 0.85 * env;
+          ctx.fillStyle = col;
+          ctx.shadowColor = col;
+          ctx.shadowBlur = 22;
+          const x = i * bw + 4;
+          const rw = Math.max(6, bw - 8);
+          ctx.fillRect(x, h - barH, rw, barH);
+          ctx.fillRect(x, 0, rw, barH * 0.72);
+          ctx.restore();
+        }
+
+        for (let r = 0; r < 4; r++) {
+          const t = elapsed - r * 220;
+          if (t < 0) continue;
+          const rad = 40 + t * 0.88;
+          const rAlpha = Math.max(0, 1 - t / 1150) * env;
+          const col = cols[r % 3];
+          ctx.save();
+          ctx.globalAlpha = rAlpha * 0.9;
+          ctx.strokeStyle = col;
+          ctx.shadowColor = col;
+          ctx.shadowBlur = 28;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (elapsed > 580 && elapsed < 920) {
+          const flash = Math.sin(((elapsed - 580) / 340) * Math.PI) * 0.36;
+          const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, w * 0.65);
+          grad.addColorStop(0, 'rgba(0, 229, 255, ' + flash.toFixed(3) + ')');
+          grad.addColorStop(0.5, 'rgba(255, 42, 109, ' + (flash * 0.65).toFixed(3) + ')');
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, w, h);
+        }
+
+        animId = requestAnimationFrame(drawDjCrescendo);
+      }
 
       function spawnDeathLotus() {
         lotusStart = performance.now();
@@ -3456,6 +3551,9 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         } else if (activeEffect === 'prestige-rose') {
           spawnDeathLotus();
           drawDeathLotus();
+        } else if (activeEffect === 'dj-sona') {
+          spawnDjCrescendo();
+          drawDjCrescendo();
         } else {
           spawnBubbles();
           drawBubbles();
@@ -5545,6 +5643,104 @@ body.champ-fx-prestige-rose .gw-winner {
   color: #fef08a !important;
   text-shadow: 0 0 18px rgba(245, 208, 97, 0.9), 0 0 8px rgba(225, 29, 72, 0.75) !important;
 }
+
+@keyframes djSonaBeatCycle {
+  0%, 100% { border-color: #00e5ff; box-shadow: 0 0 22px rgba(0, 229, 255, 0.5), inset 0 0 14px rgba(0, 229, 255, 0.16); }
+  33% { border-color: #ff2a6d; box-shadow: 0 0 24px rgba(255, 42, 109, 0.52), inset 0 0 14px rgba(255, 42, 109, 0.16); }
+  66% { border-color: #c084fc; box-shadow: 0 0 24px rgba(192, 132, 252, 0.52), inset 0 0 14px rgba(192, 132, 252, 0.16); }
+}
+body.champ-fx-dj-sona .msg-row {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.05) 0 4px, transparent 4px 10px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(6, 10, 24, 0.96)), var(--ct-bg-end, rgba(12, 6, 26, 0.97))) !important;
+  border: 1.5px solid var(--ct-primary, #00e5ff) !important;
+  border-left: 4px solid var(--ct-secondary, #ff2a6d) !important;
+  border-radius: 10px !important;
+  animation: djSonaBeatCycle 4.5s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-dj-sona ${s}`).join(',\n')} {
+  background:
+    radial-gradient(circle at 14% 16%, rgba(0, 229, 255, 0.22), transparent 46%),
+    radial-gradient(circle at 86% 84%, rgba(255, 42, 109, 0.22), transparent 50%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(6, 10, 24, 0.96)), var(--ct-bg-end, rgba(12, 6, 26, 0.97))) !important;
+  border: 2px solid var(--ct-primary, #00e5ff) !important;
+  border-radius: 14px !important;
+  animation: djSonaBeatCycle 4.2s ease-in-out infinite;
+}
+body.champ-fx-dj-sona .gs-title,
+body.champ-fx-dj-sona .gs-champ-name,
+body.champ-fx-dj-sona .lb-rank,
+body.champ-fx-dj-sona .sp-title,
+body.champ-fx-dj-sona .goal-title,
+body.champ-fx-dj-sona .poll-q,
+body.champ-fx-dj-sona .gw-title,
+body.champ-fx-dj-sona .sched-title,
+body.champ-fx-dj-sona .al-author,
+body.champ-fx-dj-sona .lt-topic,
+body.champ-fx-dj-sona .qna-author,
+body.champ-fx-dj-sona .tron-topic,
+body.champ-fx-dj-sona .val-rank-name { color: #f0f9ff !important; text-shadow: 0 0 12px rgba(0, 229, 255, 0.85), 0 0 8px rgba(255, 42, 109, 0.65) !important; }
+body.champ-fx-dj-sona .gs-lp-fill,
+body.champ-fx-dj-sona .lb-lp-fill,
+body.champ-fx-dj-sona .goal-fill,
+body.champ-fx-dj-sona .sp-prog-fill,
+body.champ-fx-dj-sona .val-rr-fill { background: linear-gradient(90deg, #00e5ff, #ff2a6d, #c084fc) !important; }
+body.champ-fx-dj-sona .alert-card {
+  position: relative;
+  animation: djSonaBeatCycle 2.8s ease-in-out infinite !important;
+}
+body.champ-fx-dj-sona .alert-card::before {
+  content: '🎧  ♫';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 13px;
+  color: #00e5ff;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.85);
+  pointer-events: none;
+}
+body.champ-fx-dj-sona .alert-card::after {
+  content: '♪  🎛️';
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 13px;
+  color: #ff2a6d;
+  text-shadow: 0 0 10px rgba(255, 42, 109, 0.85);
+  pointer-events: none;
+}
+body.champ-fx-dj-sona .gw-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(8, 12, 30, 0.96), rgba(14, 6, 28, 0.98)) !important;
+  border: 2px solid #00e5ff !important;
+  box-shadow: 0 0 22px rgba(0, 229, 255, 0.38), inset 0 0 14px rgba(192, 132, 252, 0.2) !important;
+}
+body.champ-fx-dj-sona .gw-slot::before {
+  content: '🎧';
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 12px;
+}
+body.champ-fx-dj-sona .gw-slot::after {
+  content: '♫';
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 13px;
+  color: #ff2a6d;
+}
+body.champ-fx-dj-sona .gw-slot.is-spinning {
+  animation: djSonaBeatCycle 0.6s linear infinite !important;
+}
+body.champ-fx-dj-sona .gw-slot.has-winner {
+  animation: tfCardFlipReveal 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  box-shadow: 0 0 32px rgba(0, 229, 255, 0.8), inset 0 0 18px rgba(255, 42, 109, 0.28) !important;
+}
+body.champ-fx-dj-sona .gw-winner {
+  color: #e0f2fe !important;
+  text-shadow: 0 0 18px rgba(0, 229, 255, 0.95), 0 0 10px rgba(255, 42, 109, 0.75) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -5614,7 +5810,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
