@@ -1834,6 +1834,8 @@ const OBS_GIVEAWAY_HTML = `<!DOCTYPE html>
     .gw-slot { margin-top: 12px; background: rgba(2, 6, 23, 0.78); border: 1px solid rgba(148,163,184,0.25); border-radius: 12px; padding: 14px; text-align: center; min-height: 62px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
     .gw-winner { font-size: 22px; font-weight: 900; color: #fde047; text-shadow: 0 0 18px rgba(250,204,21,0.45); }
     .gw-plat { font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .gw-deck { display: none; position: relative; width: 140px; height: 52px; margin-bottom: 8px; align-items: center; justify-content: center; }
+    .gw-mini-card { position: absolute; width: 32px; height: 46px; border-radius: 5px; background: linear-gradient(145deg, #12081c, #07040c); border: 1.8px solid #facc15; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; box-shadow: 0 4px 14px rgba(0,0,0,0.65); }
   </style>
 </head>
 <body>
@@ -1844,6 +1846,13 @@ const OBS_GIVEAWAY_HTML = `<!DOCTYPE html>
     </div>
     <div class="gw-sub" id="gwSub">Schreibe !join in den Chat</div>
     <div class="gw-slot">
+      <div class="gw-deck" aria-hidden="true">
+        <div class="gw-mini-card c1">♠</div>
+        <div class="gw-mini-card c2">♥</div>
+        <div class="gw-mini-card c3">♦</div>
+        <div class="gw-mini-card c4">♣</div>
+        <div class="gw-mini-card c5">🃏</div>
+      </div>
       <div class="gw-winner" id="gwWinner">—</div>
       <div class="gw-plat" id="gwPlat"></div>
     </div>
@@ -5855,6 +5864,28 @@ body.champ-fx-crime-city .gw-slot::after {
   color: #e11d48;
   text-shadow: 0 0 8px rgba(225, 29, 72, 0.7);
 }
+@keyframes tfDeckShuffleL {
+  0%, 100% { transform: translateX(0) rotate(0deg) scale(1); z-index: 2; }
+  25% { transform: translateX(-46px) translateY(-6px) rotate(-18deg) scale(1.06); z-index: 5; }
+  55% { transform: translateX(6px) translateY(2px) rotate(4deg) scale(0.96); z-index: 1; }
+  80% { transform: translateX(-28px) translateY(-3px) rotate(-10deg) scale(1.02); z-index: 4; }
+}
+@keyframes tfDeckShuffleR {
+  0%, 100% { transform: translateX(0) rotate(0deg) scale(1); z-index: 3; }
+  25% { transform: translateX(46px) translateY(-6px) rotate(18deg) scale(1.06); z-index: 4; }
+  55% { transform: translateX(-6px) translateY(2px) rotate(-4deg) scale(0.96); z-index: 5; }
+  80% { transform: translateX(28px) translateY(-3px) rotate(10deg) scale(1.02); z-index: 2; }
+}
+@keyframes tfDeckShuffleC {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+  50% { transform: translateY(-9px) scale(1.1) rotate(8deg); }
+}
+body.champ-fx-crime-city .gw-slot.is-spinning .gw-deck { display: flex !important; }
+body.champ-fx-crime-city .gw-slot.is-spinning .gw-mini-card.c1 { color: #facc15; border-color: #facc15; box-shadow: 0 0 14px rgba(250,204,21,0.75); animation: tfDeckShuffleL 0.48s cubic-bezier(0.45,0,0.55,1) infinite; }
+body.champ-fx-crime-city .gw-slot.is-spinning .gw-mini-card.c2 { color: #ef4444; border-color: #ef4444; box-shadow: 0 0 14px rgba(239,68,68,0.75); animation: tfDeckShuffleR 0.48s cubic-bezier(0.45,0,0.55,1) infinite 0.08s; }
+body.champ-fx-crime-city .gw-slot.is-spinning .gw-mini-card.c3 { color: #38bdf8; border-color: #38bdf8; box-shadow: 0 0 14px rgba(56,189,248,0.75); animation: tfDeckShuffleL 0.48s cubic-bezier(0.45,0,0.55,1) infinite 0.16s; }
+body.champ-fx-crime-city .gw-slot.is-spinning .gw-mini-card.c4 { color: #a855f7; border-color: #a855f7; box-shadow: 0 0 14px rgba(168,85,247,0.75); animation: tfDeckShuffleR 0.48s cubic-bezier(0.45,0,0.55,1) infinite 0.24s; }
+body.champ-fx-crime-city .gw-slot.is-spinning .gw-mini-card.c5 { color: #fde047; border-color: #e11d48; box-shadow: 0 0 16px rgba(225,29,72,0.8); animation: tfDeckShuffleC 0.36s ease-in-out infinite; z-index: 6; }
 body.champ-fx-crime-city .gw-slot.is-spinning {
   animation: tfCardShuffle 0.65s linear infinite !important;
 }
