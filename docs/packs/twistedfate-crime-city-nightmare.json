@@ -1,0 +1,25 @@
+{
+  "id": "twistedfate-crime-city-nightmare",
+  "name": "Twisted Fate — Crime City Nightmare",
+  "icon": "🃏",
+  "championMatch": ["twistedfate", "twisted fate", "tf"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "crime-city",
+  "description": "Noir Crime City crimson, eldritch nightmare violet & Pick-a-Card gold with animated Art-Deco frames across all OBS overlays.",
+  "colors": {
+    "primary": "#e11d48",
+    "secondary": "#a855f7",
+    "tertiary": "#facc15",
+    "bgStart": "rgba(11, 6, 14, 0.97)",
+    "bgEnd": "rgba(6, 5, 10, 0.98)",
+    "text": "#faf5ff",
+    "muted": "#fda4af"
+  },
+  "mapCoverBadge": "CRIME CITY // PICK A CARD 🃏",
+  "skinArt": {
+    "championId": "TwistedFate",
+    "skinQuery": "Crime City Nightmare",
+    "skinNum": 25
+  }
+}
