@@ -989,7 +989,8 @@
       "ov_trontalk": "💠 TRON Tech Talk & GameDev Lower Third",
       "ov_valbar": "🔫 Valorant Rank, RR & Match Bar",
       "ov_valmap": "🛡️ Valorant Radar Cover (Anti-Snipe top-left)",
-      "ov_sponsors": "🏷️ Sponsors / Partner Banner"
+      "ov_sponsors": "🏷️ Sponsors / Partner Banner",
+      "se_opacity_lbl": "💧 Opacity:"
     }
   },
   "titles": {
@@ -1137,7 +1138,12 @@
     "t_tp_folder": "Open local themes/ folder",
     "t_tr_toggle": "Show all scenes and configure animated transitions between scenes",
     "t_vod_setup": "Enables Twitch VOD Track 2 in OBS and automatically separates music sources from the VOD (DMCA protection)",
-    "t_vod_music": "Creates a dedicated audio source for Spotify/Apple Music (Track 1 Live ON, Track 2 VOD OFF)"
+    "t_vod_music": "Creates a dedicated audio source for Spotify/Apple Music (Track 1 Live ON, Track 2 VOD OFF)",
+    "t_se_opacity_rng": "100% = fully visible (opaque), 0% = completely transparent (invisible)",
+    "t_se_opacity_100": "100% visible (opaque)",
+    "t_se_opacity_75": "75% visible",
+    "t_se_opacity_50": "50% visible (semi-transparent)",
+    "t_se_opacity_25": "25% visible"
   },
   "placeholders": {
     "p_1": "e.g. YourName",
