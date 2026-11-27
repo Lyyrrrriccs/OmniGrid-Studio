@@ -5706,6 +5706,11 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
   }
 
+  function isHiddenTransitionItem(it) {
+    const n = String(it?.sourceName || '');
+    return n === 'OmniGrid Scene Transition' || n === 'OmniGrid Singed Transition';
+  }
+
   function isAudioOnlyItem(it) {
     if (!it) return false;
     const k = String(it.inputKind || '').toLowerCase();
@@ -5907,7 +5912,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     // Render bottom-to-top (reverse of top-to-bottom list) so top OBS layer sits on top
     const drawOrder = sceneItems.slice().reverse();
     drawOrder.forEach((it) => {
-      if (!it.sceneItemEnabled || isAudioOnlyItem(it)) return;
+      if (!it.sceneItemEnabled || isAudioOnlyItem(it) || isHiddenTransitionItem(it)) return;
       const { x, y, w, h } = getItemBoxPx(it);
       const isSel = selectedItem?.sceneItemId === it.sceneItemId;
 
@@ -6092,8 +6097,9 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   function renderSourcesList() {
     if (!sourcesList) return;
     sourcesList.innerHTML = '';
-    const total = sceneItems.length;
-    sceneItems.forEach((it, uiIdx) => {
+    const visibleItems = sceneItems.filter((it) => !isHiddenTransitionItem(it));
+    const total = visibleItems.length;
+    visibleItems.forEach((it, uiIdx) => {
       const row = document.createElement('div');
       row.draggable = total > 1;
       row.style.cssText = `display:flex; align-items:center; justify-content:space-between; gap:4px; padding:5px 8px; border-radius:7px; background:rgba(30,41,59,0.8); border:1px solid ${selectedItem?.sceneItemId === it.sceneItemId ? '#38bdf8' : 'rgba(148,163,184,0.18)'}; font-size:12px; cursor:pointer;`;
@@ -6189,8 +6195,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         const srcItem = sceneItems.find((x) => x.sceneItemId === draggedSourceItemId);
         draggedSourceItemId = null;
         if (!srcItem || srcItem.sceneItemId === it.sceneItemId) return;
-        // UI index 0 = top/foreground = OBS index (total - 1)
-        const targetObsIdx = Math.max(0, total - 1 - uiIdx);
+        const realIdx = sceneItems.indexOf(it);
+        const targetObsIdx = Math.max(0, sceneItems.length - 1 - (realIdx >= 0 ? realIdx : uiIdx));
         await moveItemLayer(srcItem, 'index', targetObsIdx);
       });
 
@@ -6468,6 +6474,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
     setStatus('');
     await Promise.all([loadSceneItems(currentSceneName), loadAudioInputs(), refreshPreview()]);
+    if (transitionsViewOpen) await loadTransitionsPanel();
   }
 
   async function startVirtualCamPreview() {
@@ -6748,50 +6755,172 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     if (prev && list.some((x) => x.id === prev)) selBuiltinOverlay.value = prev;
   }
 
-  function promptSceneTransitionPair(scenes, defaultFrom) {
-    return new Promise((resolve) => {
-      const overlay = document.createElement('div');
-      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(2,6,23,0.78);display:flex;align-items:center;justify-content:center;padding:16px;';
-      const list = Array.isArray(scenes) ? scenes : [];
-      const optsHtml = '<option value="__all__">🌐 Alle Szenen (bei jedem Wechsel)</option>'
-        + list.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-      const secondScene = list.find((s) => s !== defaultFrom) || '__all__';
-      overlay.innerHTML = `
-        <div style="width:460px;max-width:95vw;background:#0f172a;border:1.5px solid #38bdf8;border-radius:14px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,0.65);color:#f8fafc;">
-          <h3 style="margin:0 0 6px;font-size:15px;">✨ Scene Transition einrichten</h3>
-          <p style="margin:0 0 14px;font-size:12px;color:#94a3b8;">Wähle aus, zwischen welchen beiden OBS-Szenen die animierte Überblendung abgespielt werden soll (wird automatisch in beide Szenen eingefügt):</p>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <label style="font-size:11.5px;color:#cbd5e1;">Von Szene (Start):
-              <select id="trFromSel" style="width:100%;margin-top:4px;">${optsHtml}</select>
-            </label>
-            <label style="font-size:11.5px;color:#cbd5e1;">Nach Szene (Ziel):
-              <select id="trToSel" style="width:100%;margin-top:4px;">${optsHtml}</select>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e2e8f0;margin-top:2px;">
-              <input type="checkbox" id="trBidir" checked />
-              <span>🔄 In beide Richtungen abspielen (Szene A ↔ Szene B)</span>
-            </label>
-          </div>
-          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-            <button id="trCancel" class="btn-sm">Abbrechen</button>
-            <button id="trConfirm" class="btn-sm" style="background:#0284c7;color:#fff;font-weight:700;">✨ Überblendung einrichten</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-      const fromSel = overlay.querySelector('#trFromSel');
-      const toSel = overlay.querySelector('#trToSel');
-      const bidirChk = overlay.querySelector('#trBidir');
-      if (defaultFrom && list.includes(defaultFrom)) fromSel.value = defaultFrom;
-      toSel.value = secondScene;
-      const done = (val) => { overlay.remove(); resolve(val); };
-      overlay.querySelector('#trCancel').addEventListener('click', () => done(null));
-      overlay.querySelector('#trConfirm').addEventListener('click', () => done({
-        fromScene: fromSel.value,
-        toScene: toSel.value,
-        bidirectional: Boolean(bidirChk.checked)
-      }));
-    });
+  const btnToggleTransitions = document.getElementById('btnSeToggleTransitions');
+  const canvasWrapEl = document.getElementById('seCanvasWrap');
+  const transitionsPanel = document.getElementById('seTransitionsPanel');
+  const trScenesGrid = document.getElementById('seTransitionScenesGrid');
+  const trFromSel = document.getElementById('seTrFromScene');
+  const trToSel = document.getElementById('seTrToScene');
+  const trBidirChk = document.getElementById('seTrBidir');
+  const trDirIcon = document.getElementById('seTrDirIcon');
+  const btnAddTransition = document.getElementById('btnSeAddTransition');
+  const btnTestTransition = document.getElementById('btnSeTestTransition');
+  const trRulesList = document.getElementById('seTransitionRulesList');
+  let transitionsViewOpen = false;
+  let trPickNext = 'from';
+
+  function setTransitionsView(open) {
+    transitionsViewOpen = Boolean(open);
+    if (canvasWrapEl) canvasWrapEl.classList.toggle('hidden', transitionsViewOpen);
+    if (transitionsPanel) {
+      transitionsPanel.classList.toggle('hidden', !transitionsViewOpen);
+      transitionsPanel.style.display = transitionsViewOpen ? 'flex' : 'none';
+    }
+    if (btnToggleTransitions) {
+      btnToggleTransitions.style.background = transitionsViewOpen ? 'rgba(168,85,247,0.32)' : '';
+      btnToggleTransitions.style.borderColor = transitionsViewOpen ? '#a855f7' : '';
+      btnToggleTransitions.style.color = transitionsViewOpen ? '#f3e8ff' : '';
+      btnToggleTransitions.textContent = transitionsViewOpen ? '🖼️ OBS Vorschau' : '✨ Transitions';
+    }
+    if (transitionsViewOpen) {
+      loadTransitionsPanel();
+    } else {
+      refreshPreview();
+    }
   }
+
+  async function loadTransitionsPanel() {
+    const res = await window.omnichat.obsWsAction({ action: 'get-scene-transitions' });
+    const scenes = (Array.isArray(res?.scenes) && res.scenes.length)
+      ? res.scenes
+      : [...(selScene?.options || [])].map((o) => o.value).filter(Boolean);
+    const rules = Array.isArray(res?.rules) ? res.rules : [];
+
+    const prevFrom = trFromSel?.value || '';
+    const prevTo = trToSel?.value || '';
+    const optsHtml = '<option value="__all__">🌐 Alle Szenen</option>'
+      + scenes.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (trFromSel) {
+      trFromSel.innerHTML = optsHtml;
+      trFromSel.value = (prevFrom && (prevFrom === '__all__' || scenes.includes(prevFrom)))
+        ? prevFrom
+        : (currentSceneName && scenes.includes(currentSceneName) ? currentSceneName : '__all__');
+    }
+    if (trToSel) {
+      trToSel.innerHTML = optsHtml;
+      const fallbackTo = scenes.find((s) => s !== trFromSel?.value) || '__all__';
+      trToSel.value = (prevTo && (prevTo === '__all__' || scenes.includes(prevTo))) ? prevTo : fallbackTo;
+    }
+
+    if (trScenesGrid) {
+      trScenesGrid.innerHTML = '';
+      if (!scenes.length) {
+        trScenesGrid.innerHTML = '<span style="font-size:11.5px;color:#64748b;">Mit OBS verbinden, um alle Szenen anzuzeigen.</span>';
+      } else {
+        scenes.forEach((sc) => {
+          const hasRule = rules.some((r) =>
+            r.fromScene === '__all__' || r.toScene === '__all__' || r.fromScene === sc || r.toScene === sc
+          );
+          const isFrom = trFromSel?.value === sc;
+          const isTo = trToSel?.value === sc;
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'btn-sm';
+          chip.style.cssText = `padding:5px 10px;font-size:11.5px;border-radius:8px;display:inline-flex;align-items:center;gap:5px;${
+            isFrom ? 'border-color:#38bdf8;background:rgba(56,189,248,0.2);color:#e0f2fe;'
+              : isTo ? 'border-color:#a855f7;background:rgba(168,85,247,0.2);color:#f3e8ff;'
+                : hasRule ? 'border-color:rgba(74,222,128,0.45);background:rgba(34,197,94,0.12);color:#dcfce7;'
+                  : ''
+          }`;
+          chip.textContent = `${hasRule ? '✨ ' : '🎬 '}${sc}`;
+          chip.title = 'Klicken, um diese Szene als Start- oder Ziel-Szene auszuwählen';
+          chip.addEventListener('click', () => {
+            if (trPickNext === 'from' && trFromSel) {
+              trFromSel.value = sc;
+              trPickNext = 'to';
+            } else if (trToSel) {
+              trToSel.value = sc;
+              trPickNext = 'from';
+            }
+            loadTransitionsPanel();
+          });
+          trScenesGrid.appendChild(chip);
+        });
+      }
+    }
+
+    if (trRulesList) {
+      trRulesList.innerHTML = '';
+      if (!rules.length) {
+        trRulesList.innerHTML = '<div style="font-size:11.5px;color:#64748b;padding:8px;border:1px dashed rgba(148,163,184,0.2);border-radius:8px;">Noch keine Überblendung eingerichtet. Wähle oben Start- &amp; Ziel-Szene und klicke „➕ Überblendung setzen“.</div>';
+      } else {
+        rules.forEach((r) => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(30,41,59,0.85);border:1px solid rgba(168,85,247,0.35);font-size:12px;';
+          const lblFrom = r.fromScene === '__all__' ? '🌐 Alle Szenen' : r.fromScene;
+          const lblTo = r.toScene === '__all__' ? '🌐 Alle Szenen' : r.toScene;
+          const arrow = r.bidirectional !== false ? '↔' : '→';
+          const text = document.createElement('span');
+          text.style.cssText = 'color:#f8fafc;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+          text.textContent = `✨ ${lblFrom}  ${arrow}  ${lblTo}`;
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn-sm';
+          delBtn.style.cssText = 'padding:2px 7px;font-size:11px;color:#f87171;';
+          delBtn.textContent = '🗑️';
+          delBtn.title = 'Überblendung entfernen';
+          delBtn.addEventListener('click', async () => {
+            const delRes = await window.omnichat.obsWsAction({ action: 'remove-scene-transition', id: r.id });
+            if (delRes?.ok) {
+              setStatus('🗑️ Scene Transition Regel entfernt.', '#94a3b8');
+              loadTransitionsPanel();
+            }
+          });
+          row.append(text, delBtn);
+          trRulesList.appendChild(row);
+        });
+      }
+    }
+  }
+
+  btnToggleTransitions?.addEventListener('click', () => setTransitionsView(!transitionsViewOpen));
+  trBidirChk?.addEventListener('change', () => {
+    if (trDirIcon) trDirIcon.textContent = trBidirChk.checked ? '↔' : '→';
+  });
+  trFromSel?.addEventListener('change', loadTransitionsPanel);
+  trToSel?.addEventListener('change', loadTransitionsPanel);
+
+  btnAddTransition?.addEventListener('click', async () => {
+    const fromScene = trFromSel?.value || '__all__';
+    const toScene = trToSel?.value || '__all__';
+    const bidirectional = Boolean(trBidirChk?.checked);
+    if (fromScene !== '__all__' && fromScene === toScene) {
+      setStatus('⚠️ Bitte zwei unterschiedliche Szenen (oder „Alle Szenen“) wählen.', '#fbbf24');
+      return;
+    }
+    setStatus('⏳ Richte Scene Transition ein...', '#38bdf8');
+    const res = await window.omnichat.obsWsAction({
+      action: 'setup-scene-transition',
+      fromScene,
+      toScene,
+      bidirectional
+    });
+    if (res?.ok) {
+      const pairLabel = fromScene === '__all__' || toScene === '__all__'
+        ? 'alle Szenen'
+        : `„${fromScene}“ ${bidirectional ? '↔' : '→'} „${toScene}“`;
+      setStatus(`✨ Scene Transition aktiv für ${pairLabel} (${res.attached.length} Szene(n) eingerichtet)!`, '#4ade80');
+      await loadTransitionsPanel();
+      if (currentSceneName) await loadSceneItems(currentSceneName);
+    } else {
+      setStatus(`❌ ${res?.error || 'Scene Transition konnte nicht eingerichtet werden.'}`, '#f87171');
+    }
+  });
+
+  btnTestTransition?.addEventListener('click', async () => {
+    await window.omnichat.obsWsAction({ action: 'test-scene-transition' });
+    setStatus('✨ Transition-Animation ausgelöst! (In OBS sichtbar, sobald eingerichtet)', '#c084fc');
+  });
 
   btnAddBuiltinOverlay?.addEventListener('click', async () => {
     if (!currentSceneName) {
@@ -6799,29 +6928,6 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       return;
     }
     const overlayId = selBuiltinOverlay?.value || 'chat';
-    if (overlayId === 'scene-transition') {
-      const sceneNames = [...(selScene?.options || [])].map((o) => o.value).filter(Boolean);
-      const choice = await promptSceneTransitionPair(sceneNames, currentSceneName);
-      if (!choice) return;
-      setStatus('⏳ Richte animierte Scene Transition zwischen den gewählten Szenen ein...', '#38bdf8');
-      const res = await window.omnichat.obsWsAction({
-        action: 'setup-scene-transition',
-        fromScene: choice.fromScene,
-        toScene: choice.toScene,
-        bidirectional: choice.bidirectional
-      });
-      if (res?.ok) {
-        const pairLabel = choice.fromScene === '__all__' || choice.toScene === '__all__'
-          ? 'allen Szenen'
-          : `"${choice.fromScene}" ${choice.bidirectional ? '↔' : '→'} "${choice.toScene}"`;
-        setStatus(`✨ Scene Transition aktiv für ${pairLabel} (${res.attached.length} Szene(n) eingerichtet)!`, '#4ade80');
-        await loadSceneItems(currentSceneName);
-        setTimeout(refreshPreview, 450);
-      } else {
-        setStatus(`❌ ${res?.error || 'Scene Transition konnte nicht eingerichtet werden.'}`, '#f87171');
-      }
-      return;
-    }
     const res = await window.omnichat.obsWsAction({
       action: 'add-builtin-overlay',
       sceneName: currentSceneName,

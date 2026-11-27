@@ -469,7 +469,6 @@ function getBuiltinObsOverlays(port = 4588) {
     { id: 'spotify', label: '🎵 Musik / Now Playing (Spotify, Apple, Amazon)', inputName: 'OmniGrid Musik', url: `${base}/spotify`, width: 460, height: 140, posX: 24, posY: 24 },
     { id: 'game-stats', label: '🎮 Game-Stats / LoL Champion, Skin & Letzte 6 Games', inputName: 'OmniGrid Game-Stats', url: `${base}/game-stats`, width: 430, height: 370, posX: 1460, posY: 24 },
     { id: 'lol-bg', label: '🖼️ LoL-Client Frame & Animierter Hintergrund (1920×1080, Champion-Theme)', inputName: 'OmniGrid LoL-Client Frame', url: `${base}/lol-bg`, width: 1920, height: 1080, posX: 0, posY: 0 },
-    { id: 'scene-transition', label: '✨ Scene Transition — Animierte Überblendung (1920×1080)', inputName: 'OmniGrid Scene Transition', url: `${base}/scene-transition`, width: 1920, height: 1080, posX: 0, posY: 0 },
     { id: 'lol-build', label: '⚔️ LoL Live Item-Build & Elo-Bar', inputName: 'OmniGrid LoL-Build', url: `${base}/lol-build`, width: 550, height: 125, posX: 685, posY: 940 },
     { id: 'lol-map', label: '🛡️ LoL Minimap-Cover (Anti-Ghosting)', inputName: 'OmniGrid LoL-Minimap', url: `${base}/lol-map`, width: 280, height: 280, posX: 1640, posY: 800 },
     { id: 'jc-lowerthird', label: '🎙️ Just Chatting Bauchbinde (Thema & Ticker)', inputName: 'OmniGrid JC Bauchbinde', url: `${base}/jc-lowerthird`, width: 920, height: 145, posX: 500, posY: 910 },
@@ -2072,6 +2071,29 @@ function triggerAutoMusicVodProtection(force = false) {
   }
 }
 
+function normalizeObsTransitionRules(tr) {
+  if (!tr) return [];
+  if (Array.isArray(tr.rules)) {
+    return tr.rules
+      .filter((r) => r && (r.fromScene || r.toScene))
+      .map((r, i) => ({
+        id: String(r.id || `tr-${i}-${r.fromScene}-${r.toScene}`),
+        fromScene: String(r.fromScene || '__all__'),
+        toScene: String(r.toScene || '__all__'),
+        bidirectional: r.bidirectional !== false
+      }));
+  }
+  if (tr.enabled) {
+    return [{
+      id: `tr-legacy-${tr.fromScene || '__all__'}-${tr.toScene || '__all__'}`,
+      fromScene: String(tr.fromScene || '__all__'),
+      toScene: String(tr.toScene || '__all__'),
+      bidirectional: tr.bidirectional !== false
+    }];
+  }
+  return [];
+}
+
 let lastObsConnectedState = false;
 let lastObsProgramScene = '';
 obsWs.on('state', (st) => {
@@ -2079,18 +2101,16 @@ obsWs.on('state', (st) => {
   obsServer.broadcastObsWsState(st);
   const nextScene = String(st?.currentScene || '');
   if (st?.connected && nextScene && lastObsProgramScene && nextScene !== lastObsProgramScene) {
-    const cfg = loadConfig();
-    const tr = cfg.obsSceneTransition;
-    if (tr?.enabled) {
-      const matchDirect = (tr.fromScene === '__all__' || tr.fromScene === lastObsProgramScene)
-        && (tr.toScene === '__all__' || tr.toScene === nextScene);
-      const matchReverse = tr.bidirectional !== false
-        && (tr.fromScene === '__all__' || tr.fromScene === nextScene)
-        && (tr.toScene === '__all__' || tr.toScene === lastObsProgramScene);
-      if (matchDirect || matchReverse) {
-        obsServer.broadcastSceneTransition();
-      }
-    }
+    const rules = normalizeObsTransitionRules(loadConfig().obsSceneTransition);
+    const matched = rules.some((r) => {
+      const direct = (r.fromScene === '__all__' || r.fromScene === lastObsProgramScene)
+        && (r.toScene === '__all__' || r.toScene === nextScene);
+      const reverse = r.bidirectional !== false
+        && (r.fromScene === '__all__' || r.fromScene === nextScene)
+        && (r.toScene === '__all__' || r.toScene === lastObsProgramScene);
+      return direct || reverse;
+    });
+    if (matched) obsServer.broadcastSceneTransition();
   }
   if (nextScene) lastObsProgramScene = nextScene;
   if (st?.connected) {
@@ -3638,10 +3658,25 @@ app.whenReady().then(async () => {
       if (act === 'get-builtin-overlays') {
         return { ok: true, overlays: getBuiltinObsOverlays(obsServer.port || 4588) };
       }
+      if (act === 'get-scene-transitions') {
+        const rules = normalizeObsTransitionRules(loadConfig().obsSceneTransition);
+        const scenes = Array.isArray(obsWs.getState()?.scenes) ? obsWs.getState().scenes : [];
+        return { ok: true, rules, scenes };
+      }
+      if (act === 'test-scene-transition') {
+        obsServer.broadcastSceneTransition();
+        return { ok: true };
+      }
+      if (act === 'remove-scene-transition') {
+        const cfg = loadConfig();
+        const rules = normalizeObsTransitionRules(cfg.obsSceneTransition)
+          .filter((r) => r.id !== String(payload.id || ''));
+        cfg.obsSceneTransition = { enabled: rules.length > 0, rules };
+        saveConfig(cfg);
+        return { ok: true, rules };
+      }
       if (act === 'setup-scene-transition') {
-        const list = getBuiltinObsOverlays(obsServer.port || 4588);
-        const preset = list.find((o) => o.id === 'scene-transition');
-        if (!preset) return { ok: false, error: 'Scene Transition Preset nicht gefunden.' };
+        const transitionUrl = `http://127.0.0.1:${obsServer.port || 4588}/scene-transition`;
         const fromScene = String(payload.fromScene || '__all__');
         const toScene = String(payload.toScene || '__all__');
         const bidirectional = payload.bidirectional !== false;
@@ -3654,10 +3689,10 @@ app.whenReady().then(async () => {
         for (const sc of targets) {
           await obsWs.addOrAttachBrowserOverlay({
             sceneName: sc,
-            inputName: preset.inputName,
-            url: preset.url,
-            width: preset.width,
-            height: preset.height,
+            inputName: 'OmniGrid Scene Transition',
+            url: transitionUrl,
+            width: 1920,
+            height: 1080,
             posX: 0,
             posY: 0,
             rerouteAudio: false
@@ -3665,10 +3700,18 @@ app.whenReady().then(async () => {
           attached.push(sc);
         }
         const cfg = loadConfig();
-        cfg.obsSceneTransition = { enabled: true, fromScene, toScene, bidirectional };
+        const rules = normalizeObsTransitionRules(cfg.obsSceneTransition);
+        const exists = rules.some((r) =>
+          (r.fromScene === fromScene && r.toScene === toScene && r.bidirectional === bidirectional) ||
+          (bidirectional && r.bidirectional && r.fromScene === toScene && r.toScene === fromScene)
+        );
+        if (!exists) {
+          rules.push({ id: `tr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, fromScene, toScene, bidirectional });
+        }
+        cfg.obsSceneTransition = { enabled: rules.length > 0, rules };
         saveConfig(cfg);
         setTimeout(() => obsServer.broadcastSceneTransition(), 350);
-        return { ok: true, attached, fromScene, toScene, bidirectional };
+        return { ok: true, attached, rules, fromScene, toScene, bidirectional };
       }
       if (act === 'add-builtin-overlay') {
         const list = getBuiltinObsOverlays(obsServer.port || 4588);
