@@ -4,6 +4,8 @@
   let endTimer = null;
   let switchTimer = null;
   let activePack = null;
+  const akaliSkateImg = new Image();
+  akaliSkateImg.src = './assets/akali-ignition-art.png';
 
   function ensureModal() {
     if (modalEl) return modalEl;
@@ -211,6 +213,18 @@
         size: 16 + Math.random() * 30,
         col: cols[i % cols.length]
       }));
+    } else if (fx === 'kda-firestarter') {
+      const cols = ['#ff3b5c', '#ff7a00', '#00f5ff', '#fde047'];
+      items = Array.from({ length: 64 }, (_, i) => ({
+        x: -160,
+        y: H * 0.68,
+        vx: -(5 + Math.random() * 12),
+        vy: -(2 + Math.random() * 8),
+        r: 2 + Math.random() * 5,
+        col: cols[i % cols.length],
+        life: 0,
+        maxLife: 300 + Math.random() * 440
+      }));
     } else if (fx === 'eve-firestarter') {
       const cols = ['#ff1e6b', '#ff7a00', '#a855f7', '#fde047'];
       items = Array.from({ length: 58 }, (_, i) => ({
@@ -232,6 +246,8 @@
         alpha: 0.35 + Math.random() * 0.55
       }));
     }
+
+    const akaliTrail = [];
 
     function frame(now) {
       const elapsed = Math.max(0, now - start);
@@ -329,6 +345,60 @@
           ctx.fillStyle = 'rgba(14,6,26,0.88)'; ctx.strokeStyle = s.col; ctx.shadowColor = s.col; ctx.shadowBlur = 18; ctx.lineWidth = 2.2;
           const sz = s.size; ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(sz * 0.76, sz * 0.18); ctx.lineTo(-sz * 0.58, sz * 0.82); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
         }
+      } else if (fx === 'kda-firestarter') {
+        const prog = Math.min(1, elapsed / 1720);
+        const env = elapsed < 140 ? elapsed / 140 : elapsed > 1420 ? Math.max(0, 1 - (elapsed - 1420) / 400) : 1;
+        const easeX = prog < 0.5 ? 2 * prog * prog : 1 - Math.pow(-2 * prog + 2, 2) / 2;
+        const skateX = -180 + (W + 360) * easeX;
+        const danceBounce = Math.abs(Math.sin(elapsed * 0.016)) * 20;
+        const ollieEnv = (prog > 0.34 && prog < 0.66) ? Math.sin(((prog - 0.34) / 0.32) * Math.PI) : 0;
+        const skateY = H * 0.68 - danceBounce - ollieEnv * 105;
+        const danceTilt = Math.sin(elapsed * 0.014) * 0.14 + ollieEnv * -0.22;
+
+        akaliTrail.push({ x: skateX, y: skateY + 24 });
+        if (akaliTrail.length > 28) akaliTrail.shift();
+        for (let i = 1; i < akaliTrail.length; i++) {
+          const r = i / akaliTrail.length;
+          ctx.save(); ctx.globalAlpha = r * 0.85 * env;
+          ctx.strokeStyle = i % 2 === 0 ? '#ff3b5c' : '#00f5ff';
+          ctx.shadowColor = i % 2 === 0 ? '#ff7a00' : '#00f5ff'; ctx.shadowBlur = 18;
+          ctx.lineWidth = 4 + r * 12; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(akaliTrail[i - 1].x, akaliTrail[i - 1].y); ctx.lineTo(akaliTrail[i].x, akaliTrail[i].y); ctx.stroke(); ctx.restore();
+        }
+        for (const sp of items) {
+          if (sp.life <= 0 && Math.random() < 0.28) {
+            sp.x = skateX - 20 + (Math.random() - 0.5) * 65; sp.y = skateY + 26 + (Math.random() - 0.5) * 14;
+            sp.vx = -(5 + Math.random() * 12); sp.vy = -(2 + Math.random() * 8); sp.life = sp.maxLife;
+          }
+          if (sp.life > 0) {
+            sp.x += sp.vx; sp.y += sp.vy; sp.vy += 0.26; sp.life -= 16;
+            ctx.save(); ctx.globalAlpha = Math.max(0, sp.life / sp.maxLife) * env;
+            ctx.fillStyle = sp.col; ctx.shadowColor = sp.col; ctx.shadowBlur = 12;
+            ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+          }
+        }
+        ctx.save(); ctx.globalAlpha = env; ctx.translate(skateX, skateY); ctx.rotate(danceTilt);
+        const dW = 195;
+        const dG = ctx.createLinearGradient(-dW / 2, 0, dW / 2, 0);
+        dG.addColorStop(0, '#ff3b5c'); dG.addColorStop(0.5, '#ff7a00'); dG.addColorStop(1, '#00f5ff');
+        ctx.fillStyle = dG; ctx.shadowColor = '#ff3b5c'; ctx.shadowBlur = 22;
+        ctx.beginPath(); ctx.roundRect(-dW / 2, 10, dW, 18, 9); ctx.fill();
+        ctx.strokeStyle = '#fff5f7'; ctx.lineWidth = 2; ctx.stroke();
+        const wSpin = elapsed * 0.028;
+        for (const wx of [-58, 58]) {
+          ctx.save(); ctx.translate(wx, 36); ctx.rotate(wSpin);
+          ctx.fillStyle = '#090616'; ctx.strokeStyle = '#00f5ff'; ctx.shadowColor = '#00f5ff'; ctx.shadowBlur = 14; ctx.lineWidth = 3.5;
+          ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          ctx.strokeStyle = '#ff7a00'; ctx.lineWidth = 2.2;
+          ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(10, 0); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke(); ctx.restore();
+        }
+        ctx.save(); ctx.translate(Math.sin(elapsed * 0.022) * 10, 12); ctx.scale(1, 1 + Math.sin(elapsed * 0.032) * 0.05);
+        ctx.shadowColor = '#ff3b5c'; ctx.shadowBlur = 24;
+        if (akaliSkateImg.complete && akaliSkateImg.naturalWidth > 0) {
+          const drawH = 315; const drawW = drawH * (akaliSkateImg.naturalWidth / akaliSkateImg.naturalHeight);
+          ctx.drawImage(akaliSkateImg, -drawW / 2, -drawH + 14, drawW, drawH);
+        }
+        ctx.restore(); ctx.restore();
       } else if (fx === 'eve-firestarter') {
         const env = elapsed < 200 ? elapsed / 200 : elapsed > 1340 ? Math.max(0, 1 - (elapsed - 1340) / 480) : 1;
         const openP = Math.max(0, Math.min(1, (elapsed - 260) / 480));
