@@ -9037,14 +9037,17 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     }
     if (res?.ok) {
       const inc = res.summary?.included?.length ? ` (${res.summary.included.join(', ')})` : '';
-      setMsg(`✅ Komplett-Backup gespeichert${inc}!`, '#4ade80');
+      const aCnt = Number(res.summary?.assetsCount || 0);
+      const tCnt = Number(res.summary?.themePacksCount || 0);
+      const extra = (aCnt || tCnt) ? ` • ${aCnt} Assets & ${tCnt} Design-Packs eingebettet` : '';
+      setMsg(`✅ Komplett-Backup gespeichert${inc}${extra}!`, '#4ade80');
     } else {
       setMsg(`⚠️ Export fehlgeschlagen: ${res?.error || 'Unbekannter Fehler'}`, '#f87171');
     }
   };
 
   const runImport = async (opts = {}) => {
-    setMsg('⏳ Importiere Backup...', '#38bdf8');
+    setMsg('⏳ Importiere Backup & stelle Custom-Assets wieder her...', '#38bdf8');
     const res = await window.omnichat.importConfig(opts);
     if (res?.canceled) {
       setMsg('Import abgebrochen.');
@@ -9053,7 +9056,10 @@ window.omnichat.discordLiveGet?.().then((r) => renderDiscordLiveStatus(r?.state)
     if (res?.ok && res.config) {
       applyConfigToForm(res.config);
       const inc = res.summary?.included?.length ? ` (${res.summary.included.join(', ')})` : '';
-      setMsg(`✅ Backup importiert${inc} – Oberfläche wird neu geladen...`, '#4ade80');
+      const aCnt = Number(res.summary?.assetsCount || 0);
+      const tCnt = Number(res.summary?.themePacksCount || 0);
+      const extra = (aCnt || tCnt) ? ` • ${aCnt} Assets & ${tCnt} Design-Packs wiederhergestellt` : '';
+      setMsg(`✅ Backup importiert${inc}${extra} – Oberfläche wird neu geladen...`, '#4ade80');
     } else {
       setMsg(`⚠️ Import fehlgeschlagen: ${res?.error || 'Ungültige Datei'}`, '#f87171');
     }
