@@ -4122,6 +4122,25 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           spawnFracturedShatter();
           drawFracturedShatter();
         } else if (activeEffect === 'eve-firestarter') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/evelynn-firestarter-transition.mp4?t=' + Date.now();
+            customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnEveCoffin();
+              drawEveCoffin();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2350);
+            return;
+          }
           spawnEveCoffin();
           drawEveCoffin();
         } else if (activeEffect === 'unbound-thresh') {

@@ -161,6 +161,7 @@
     const videoClips = {
       'kda-firestarter': 'akali-firestarter-transition.mp4',
       'ahri-firestarter': 'ahri-firestarter-transition.mp4',
+      'eve-firestarter': 'evelynn-firestarter-transition.mp4',
       'unbound-thresh': 'thresh-unbound-transition.mp4'
     };
     if (videoClips[fx] && vid) {
