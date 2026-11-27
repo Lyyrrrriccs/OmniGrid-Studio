@@ -989,7 +989,8 @@
       "ov_trontalk": "💠 TRON Tech Talk & GameDev Bauchbinde",
       "ov_valbar": "🔫 Valorant Rank, RR & Match-Bar",
       "ov_valmap": "🛡️ Valorant Radar-Cover (Anti-Snipe oben links)",
-      "ov_sponsors": "🏷️ Werbepartner / Sponsoren-Banner"
+      "ov_sponsors": "🏷️ Werbepartner / Sponsoren-Banner",
+      "se_opacity_lbl": "💧 Sichtbarkeit:"
     }
   },
   "titles": {
@@ -1137,7 +1138,12 @@
     "t_tp_folder": "Lokalen themes/-Ordner öffnen",
     "t_tr_toggle": "Alle Szenen anzeigen und animierte Überblendungen zwischen Szenen einstellen",
     "t_vod_setup": "Aktiviert Twitch VOD-Spur 2 in OBS und trennt Musik-Quellen automatisch vom VOD (DMCA-Schutz)",
-    "t_vod_music": "Legt eine eigene Audio-Quelle für Spotify/Apple Music an (Spur 1 Live AN, Spur 2 VOD AUS)"
+    "t_vod_music": "Legt eine eigene Audio-Quelle für Spotify/Apple Music an (Spur 1 Live AN, Spur 2 VOD AUS)",
+    "t_se_opacity_rng": "100% = voll sichtbar (deckend), 0% = komplett transparent (unsichtbar)",
+    "t_se_opacity_100": "100% sichtbar (deckend)",
+    "t_se_opacity_75": "75% sichtbar",
+    "t_se_opacity_50": "50% sichtbar (halbtransparent)",
+    "t_se_opacity_25": "25% sichtbar"
   },
   "placeholders": {
     "p_1": "z.B. DeinName",

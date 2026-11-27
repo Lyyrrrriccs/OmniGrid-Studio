@@ -5773,14 +5773,16 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   function syncSelectedTransparencyUI(transPct) {
     const pct = Math.max(0, Math.min(100, Math.round(Number(transPct) || 0)));
-    if (rngTransparency) rngTransparency.value = String(pct);
-    if (inpTransparencyPct) inpTransparencyPct.value = String(pct);
+    const vis = 100 - pct;
+    if (rngTransparency) rngTransparency.value = String(vis);
+    if (inpTransparencyPct) inpTransparencyPct.value = String(vis);
     if (lblTransparencyReadout) lblTransparencyReadout.textContent = formatVisibleReadout(pct);
   }
 
   async function applyItemTransparency(item, rawPct, { commitPreview = false, skipListRebuild = false } = {}) {
     if (!item?.sourceName) return;
     const pct = Math.max(0, Math.min(100, Math.round(Number(rawPct) || 0)));
+    const vis = 100 - pct;
     sceneItems.forEach((x) => {
       if (x.sourceName === item.sourceName) x.transparencyPct = pct;
     });
@@ -5800,15 +5802,15 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (res?.ok) {
         if (commitPreview) {
           setStatus(
-            pct === 0
-              ? `✅ "${item.sourceName}": Transparenz auf 0% (100% sichtbar) gesetzt.`
-              : `✅ "${item.sourceName}": ${pct}% Transparenz (${100 - pct}% sichtbar) gesetzt.`,
+            window.__appLang === 'en'
+              ? `✅ "${item.sourceName}": Opacity set to ${vis}%.`
+              : `✅ „${item.sourceName}“: Sichtbarkeit auf ${vis}% gesetzt.`,
             '#4ade80'
           );
           setTimeout(refreshPreview, 120);
         }
       } else if (commitPreview) {
-        setStatus(`❌ ${res?.error || 'Transparenz konnte in OBS nicht gesetzt werden.'}`, '#f87171');
+        setStatus(`❌ ${res?.error || (window.__appLang === 'en' ? 'Could not set opacity in OBS.' : 'Sichtbarkeit konnte in OBS nicht gesetzt werden.')}`, '#f87171');
       }
     };
 
@@ -5932,7 +5934,7 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       const tag = document.createElement('div');
       tag.style.cssText = `position:absolute; top:2px; left:2px; font-size:10px; font-weight:700; padding:1px 5px; border-radius:4px; background:${isSel ? '#0284c7' : 'rgba(15,23,42,0.78)'}; color:#f8fafc; pointer-events:none; white-space:nowrap; max-width:95%; overflow:hidden; text-overflow:ellipsis;`;
       const trPct = Number(it.transparencyPct || 0);
-      tag.textContent = trPct > 0 ? `${it.sourceName} • 💧${trPct}%` : it.sourceName;
+      tag.textContent = trPct > 0 ? `${it.sourceName} • 💧${100 - trPct}%` : it.sourceName;
       box.appendChild(tag);
 
       box.addEventListener('mousedown', (e) => {
@@ -6262,20 +6264,23 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
       if (!isAudioOnlyItem(it)) {
         const transWrap = document.createElement('div');
         transWrap.style.cssText = 'display:flex; align-items:center; gap:3px; padding:0 3px;';
-        transWrap.title = 'Transparenz dieser Quelle (0% = voll sichtbar, 100% = unsichtbar)';
+        transWrap.title = window.__appLang === 'en'
+          ? 'Opacity of this source (100% = fully visible, 0% = invisible)'
+          : 'Sichtbarkeit dieser Quelle (100% = voll sichtbar, 0% = unsichtbar)';
 
+        const initTrans = Math.max(0, Math.min(100, Number(it.transparencyPct || 0)));
+        const initVis = 100 - initTrans;
         const miniSlider = document.createElement('input');
         miniSlider.type = 'range';
         miniSlider.min = '0';
         miniSlider.max = '100';
         miniSlider.step = '1';
-        miniSlider.value = String(Math.max(0, Math.min(100, Number(it.transparencyPct || 0))));
+        miniSlider.value = String(initVis);
         miniSlider.style.cssText = 'width:54px; cursor:pointer;';
 
         const miniBadge = document.createElement('span');
-        const initPct = Math.max(0, Math.min(100, Number(it.transparencyPct || 0)));
-        miniBadge.style.cssText = `font-size:10px; min-width:28px; text-align:right; font-variant-numeric:tabular-nums; color:${initPct > 0 ? '#38bdf8' : '#64748b'}; font-weight:${initPct > 0 ? '700' : '500'};`;
-        miniBadge.textContent = `${initPct}%`;
+        miniBadge.style.cssText = `font-size:10px; min-width:30px; text-align:right; font-variant-numeric:tabular-nums; color:${initVis < 100 ? '#38bdf8' : '#64748b'}; font-weight:${initVis < 100 ? '700' : '500'};`;
+        miniBadge.textContent = `${initVis}%`;
 
         miniSlider.addEventListener('mousedown', (e) => {
           e.stopPropagation();
@@ -6287,16 +6292,18 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
         miniSlider.addEventListener('click', (e) => e.stopPropagation());
         miniSlider.addEventListener('input', (e) => {
           e.stopPropagation();
-          const p = Math.max(0, Math.min(100, parseInt(miniSlider.value || '0', 10) || 0));
-          miniBadge.textContent = `${p}%`;
-          miniBadge.style.color = p > 0 ? '#38bdf8' : '#64748b';
-          miniBadge.style.fontWeight = p > 0 ? '700' : '500';
+          const vis = Math.max(0, Math.min(100, parseInt(miniSlider.value || '100', 10)));
+          const p = 100 - vis;
+          miniBadge.textContent = `${vis}%`;
+          miniBadge.style.color = vis < 100 ? '#38bdf8' : '#64748b';
+          miniBadge.style.fontWeight = vis < 100 ? '700' : '500';
           applyItemTransparency(it, p, { commitPreview: false, skipListRebuild: true });
         });
         miniSlider.addEventListener('change', (e) => {
           e.stopPropagation();
           row.draggable = total > 1;
-          const p = Math.max(0, Math.min(100, parseInt(miniSlider.value || '0', 10) || 0));
+          const vis = Math.max(0, Math.min(100, parseInt(miniSlider.value || '100', 10)));
+          const p = 100 - vis;
           applyItemTransparency(it, p, { commitPreview: true, skipListRebuild: false });
         });
 
@@ -6661,24 +6668,28 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
 
   rngTransparency?.addEventListener('input', () => {
     if (!selectedItem) return;
-    const pct = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '0', 10) || 0));
+    const vis = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '100', 10)));
+    const pct = 100 - vis;
     syncSelectedTransparencyUI(pct);
     applyItemTransparency(selectedItem, pct, { commitPreview: false, skipListRebuild: false });
   });
   rngTransparency?.addEventListener('change', () => {
     if (!selectedItem) return;
-    const pct = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '0', 10) || 0));
+    const vis = Math.max(0, Math.min(100, parseInt(rngTransparency.value || '100', 10)));
+    const pct = 100 - vis;
     applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
   });
   inpTransparencyPct?.addEventListener('change', () => {
     if (!selectedItem) return;
-    const pct = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '0', 10) || 0));
+    const vis = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '100', 10)));
+    const pct = 100 - vis;
     syncSelectedTransparencyUI(pct);
     applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
   });
   inpTransparencyPct?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && selectedItem) {
-      const pct = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '0', 10) || 0));
+      const vis = Math.max(0, Math.min(100, parseInt(inpTransparencyPct.value || '100', 10)));
+      const pct = 100 - vis;
       syncSelectedTransparencyUI(pct);
       applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
     }
@@ -6686,7 +6697,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
   transPresetBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       if (!selectedItem) return;
-      const pct = Math.max(0, Math.min(100, parseInt(btn.dataset.trans || '0', 10) || 0));
+      const vis = Math.max(0, Math.min(100, parseInt(btn.dataset.opacity || '100', 10)));
+      const pct = 100 - vis;
       syncSelectedTransparencyUI(pct);
       applyItemTransparency(selectedItem, pct, { commitPreview: true, skipListRebuild: false });
     });
