@@ -3098,7 +3098,6 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
     <div class="st-ring"></div>
     <div class="st-emblem">
       <div class="st-flask" id="stIcon">⚡</div>
-      <div class="st-title" id="stTitle">SCENE TRANSITION</div>
     </div>
   </div>
   <video id="stCustomVideo" playsinline style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:20;pointer-events:none;"></video>
@@ -3109,7 +3108,6 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       const root = document.documentElement;
       const stage = document.getElementById('stStage');
       const iconEl = document.getElementById('stIcon');
-      const titleEl = document.getElementById('stTitle');
       const customVideo = document.getElementById('stCustomVideo');
       const customImg = document.getElementById('stCustomImg');
       const customFrame = document.getElementById('stCustomFrame');
@@ -3140,7 +3138,6 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           root.style.setProperty('--tbg-b', '#020814');
           root.style.setProperty('--ttxt', '#f8fafc');
           iconEl.textContent = '⚡';
-          titleEl.textContent = 'SCENE TRANSITION';
           return;
         }
         const c = pack.colors || {};
@@ -3155,7 +3152,6 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         root.style.setProperty('--tbg-b', c.bgEnd || '#050b10');
         root.style.setProperty('--ttxt', c.text || '#f8fafc');
         iconEl.textContent = pack.icon || '⚡';
-        titleEl.textContent = String(pack.name || 'SCENE TRANSITION').toUpperCase();
       }
 
       function spawnBubbles() {
