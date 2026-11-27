@@ -1,0 +1,24 @@
+{
+  "id": "singed-laboratory",
+  "name": "Singed — Zaun Laboratory",
+  "icon": "🧪",
+  "championMatch": ["singed"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "zaun-lab",
+  "description": "Zaun Chemtech laboratory bio-green glow, gently animated containment frames & bubbling acid mist across all OBS overlays.",
+  "colors": {
+    "primary": "#39ff14",
+    "secondary": "#00e5a0",
+    "tertiary": "#a3e635",
+    "bgStart": "rgba(6, 18, 12, 0.96)",
+    "bgEnd": "rgba(4, 12, 14, 0.97)",
+    "text": "#ecfdf5",
+    "muted": "#86efac"
+  },
+  "mapCoverBadge": "ZAUN LAB // MIX, MIX, SWIRL 🧪",
+  "skinArt": {
+    "championId": "Singed",
+    "skinQuery": "default"
+  }
+}
