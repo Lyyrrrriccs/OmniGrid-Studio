@@ -68,6 +68,7 @@
           <div class="otp-curtain otp-right"></div>
           <div class="otp-ring"></div>
           <canvas class="otp-canvas" id="otpCanvas"></canvas>
+          <video id="otpVideo" muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:6;pointer-events:none;"></video>
           <div class="otp-emblem" id="otpEmblem">⚡</div>
         </div>
       </div>
@@ -92,6 +93,12 @@
     animId = 0;
     if (endTimer) clearTimeout(endTimer);
     if (switchTimer) clearTimeout(switchTimer);
+    const vid = modalEl?.querySelector('#otpVideo');
+    if (vid) {
+      vid.pause();
+      vid.removeAttribute('src');
+      vid.style.display = 'none';
+    }
   }
 
   function closeModal() {
@@ -149,6 +156,20 @@
     stage.classList.remove('playing');
     void stage.offsetWidth;
     stage.classList.add('playing');
+
+    const vid = m.querySelector('#otpVideo');
+    if (fx === 'kda-firestarter' && vid) {
+      vid.src = './assets/akali-firestarter-transition.mp4?t=' + Date.now();
+      vid.currentTime = 0;
+      vid.style.display = 'block';
+      vid.onended = () => { vid.style.display = 'none'; };
+      vid.play().catch(() => { vid.style.display = 'none'; });
+      endTimer = setTimeout(() => {
+        stage.classList.remove('playing');
+        stopAnim();
+      }, 2250);
+      return;
+    }
 
     let items = [];
     if (fx === 'crime-city') {

@@ -4121,6 +4121,24 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           spawnEveCoffin();
           drawEveCoffin();
         } else if (activeEffect === 'kda-firestarter') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/akali-firestarter-transition.mp4?t=' + Date.now();
+            customVideo.currentTime = 0;
+            customVideo.muted = true;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnAkaliSkate();
+              drawAkaliSkate();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2250);
+            return;
+          }
           spawnAkaliSkate();
           drawAkaliSkate();
         } else {
@@ -6754,7 +6772,7 @@ class ObsServer {
 
         if (urlPath.startsWith('/api/theme-asset/')) {
           const safeFile = decodeURIComponent(urlPath.replace('/api/theme-asset/', '')).trim();
-          if (!/^[a-z0-9_-]+\.(jpg|jpeg|png|webp)$/i.test(safeFile)) {
+          if (!/^[a-z0-9_-]+\.(jpg|jpeg|png|webp|mp4|webm)$/i.test(safeFile)) {
             res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
             res.end('Invalid theme asset');
             return;
@@ -6766,7 +6784,11 @@ class ObsServer {
             return;
           }
           const ext = path.extname(assetPath).toLowerCase();
-          const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          const mime = ext === '.png' ? 'image/png'
+            : ext === '.webp' ? 'image/webp'
+              : ext === '.mp4' ? 'video/mp4'
+                : ext === '.webm' ? 'video/webm'
+                  : 'image/jpeg';
           res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache', 'Access-Control-Allow-Origin': '*' });
           fs.createReadStream(assetPath).pipe(res);
           return;
