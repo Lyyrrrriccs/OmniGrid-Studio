@@ -50,6 +50,30 @@
       </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="glass rounded-xl p-6 flex flex-col justify-between" style="border-color: rgba(255,30,107,0.78); box-shadow: 0 0 28px rgba(168,85,247,0.24);">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">🖤</span>
+              <div class="flex gap-1.5"><span class="w-4 h-4 rounded-full" style="background:#ff1e6b;"></span><span class="w-4 h-4 rounded-full" style="background:#a855f7;"></span><span class="w-4 h-4 rounded-full" style="background:#ff7a00;"></span></div>
+            </div>
+            <h2 class="text-lg font-bold text-white">Evelynn — K/DA FIRESTARTER</h2>
+            <p class="text-sm text-slate-400 mt-2" data-en="K/DA FIRESTARTER Evelynn crimson-magenta, shadow-demon violet & molten flame amber with Coffin Awakening transition and animated diva frames across all OBS overlays." data-de="K/DA FIRESTARTER Evelynn Karmesin-Magenta, Schatten-Violett & Flammen-Amber mit Sarg-Erwachen-Transition und animierten Diva-Rahmen für alle OBS-Overlays.">K/DA FIRESTARTER Evelynn crimson-magenta, shadow-demon violet & molten flame amber with Coffin Awakening transition and animated diva frames across all OBS overlays.</p>
+          </div>
+          <a href="./packs/evelynn-kda-firestarter.json" download="evelynn-kda-firestarter.json" class="mt-5 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm text-white transition" style="background: linear-gradient(90deg, #ff1e6b, #a855f7, #ff7a00);">⬇️ <span data-en="Download Evelynn Pack (.json)" data-de="Evelynn-Pack laden (.json)">Download Evelynn Pack (.json)</span></a>
+        </div>
+
+        <div class="glass rounded-xl p-6 flex flex-col justify-between" style="border-color: rgba(255,46,151,0.78); box-shadow: 0 0 28px rgba(0,240,255,0.22);">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-2xl">💣</span>
+              <div class="flex gap-1.5"><span class="w-4 h-4 rounded-full" style="background:#ff2e97;"></span><span class="w-4 h-4 rounded-full" style="background:#00f0ff;"></span><span class="w-4 h-4 rounded-full" style="background:#ffe14d;"></span></div>
+            </div>
+            <h2 class="text-lg font-bold text-white">Jinx — Arcane Fractured</h2>
+            <p class="text-sm text-slate-400 mt-2" data-en="Exalted Arcane Fractured Jinx shimmer magenta, Hextech anomaly cyan & graffiti gold with shattered-glass frames, Fractured Shatter transition & shard Client-Frame." data-de="Exalted Arcane-Fractured-Jinx Shimmer-Magenta, Hextech-Anomalie-Cyan & Graffiti-Gold mit Glassplitter-Rahmen, Shatter-Transition & Scherben-Client-Frame.">Exalted Arcane Fractured Jinx shimmer magenta, Hextech anomaly cyan & graffiti gold with shattered-glass frames, Fractured Shatter transition & shard Client-Frame.</p>
+          </div>
+          <a href="./packs/jinx-arcane-fractured.json" download="jinx-arcane-fractured.json" class="mt-5 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm text-white transition" style="background: linear-gradient(90deg, #ff2e97, #00f0ff); color: #0b0614;">⬇️ <span data-en="Download Fractured Jinx Pack (.json)" data-de="Fractured-Jinx-Pack laden (.json)">Download Fractured Jinx Pack (.json)</span></a>
+        </div>
+
         <div class="glass rounded-xl p-6 flex flex-col justify-between" style="border-color: rgba(0,229,255,0.75); box-shadow: 0 0 28px rgba(255,42,109,0.22);">
           <div>
             <div class="flex items-center justify-between mb-3">
@@ -369,8 +393,10 @@
       'darius-divine-god-king': { championId: 'Darius', skinQuery: 'God-King' },
       'diana-prestige-dark-cosmic': { championId: 'Diana', skinQuery: 'Dark Cosmic' },
       'elise-black-rose': { championId: 'Elise', skinQuery: 'Black Rose' },
+      'evelynn-kda-firestarter': { championId: 'Evelynn', skinQuery: 'FIRESTARTER' },
       'jhin-dark-cosmic': { championId: 'Jhin', skinQuery: 'Dark Cosmic' },
       'jinx-arcane-zaun': { championId: 'Jinx', skinQuery: 'Arcane' },
+      'jinx-arcane-fractured': { championId: 'Jinx', skinQuery: 'Arcane Fractured' },
       'kaisa-risen-legend': { championId: 'Kaisa', skinQuery: 'Risen Legend' },
       'katarina-prestige-black-rose': { championId: 'Katarina', skinQuery: 'Prestige Masque of the Black Rose' },
       'leblanc-ravenborn': { championId: 'Leblanc', skinQuery: 'Ravenborn' },
@@ -448,9 +474,26 @@
       pv.setAttribute('data-en', '👁️ Preview');
       pv.setAttribute('data-de', '👁️ Vorschau');
       pv.textContent = '👁️ Preview';
+      const trBtn = document.createElement('button');
+      trBtn.type = 'button';
+      trBtn.className = 'inline-flex items-center justify-center gap-1 px-2.5 py-2.5 rounded-lg font-semibold text-xs text-purple-200 bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/40 transition';
+      trBtn.title = 'Preview Scene Transition';
+      trBtn.setAttribute('data-en', '✨ Transition');
+      trBtn.setAttribute('data-de', '✨ Übergang');
+      trBtn.textContent = '✨ Transition';
+      trBtn.addEventListener('click', async () => {
+        try {
+          const r = await fetch('./packs/' + id + '.json');
+          const pack = r.ok ? await r.json() : { id, name: id, icon: '✨', effect: 'none', colors: {} };
+          window.openOmniTransitionPreview?.(pack);
+        } catch (e) {
+          window.openOmniTransitionPreview?.({ id, name: id, icon: '✨', effect: 'none', colors: {} });
+        }
+      });
       dl.parentNode.insertBefore(row, dl);
       row.appendChild(dl);
       row.appendChild(pv);
+      row.appendChild(trBtn);
     });
 
     let currentLang = 'en';
@@ -462,5 +505,6 @@
       });
     });
   </script>
+  <script src="./assets/transition-preview.js"></script>
 </body>
 </html>
