@@ -1,0 +1,25 @@
+{
+  "id": "katarina-prestige-black-rose",
+  "name": "Katarina — Prestige Masque of the Black Rose",
+  "icon": "🗡️",
+  "championMatch": ["katarina", "kat"],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "prestige-rose",
+  "description": "Prestige champagne gold, Noxian velvet crimson & platinum daggers with Death Lotus blade-and-petal transition across all OBS overlays.",
+  "colors": {
+    "primary": "#f5d061",
+    "secondary": "#e11d48",
+    "tertiary": "#e2e8f0",
+    "bgStart": "rgba(16, 6, 12, 0.97)",
+    "bgEnd": "rgba(8, 5, 11, 0.98)",
+    "text": "#fff8eb",
+    "muted": "#fde68a"
+  },
+  "mapCoverBadge": "BLACK ROSE // DEATH LOTUS 🗡️",
+  "skinArt": {
+    "championId": "Katarina",
+    "skinQuery": "Prestige Masque of the Black Rose",
+    "skinNum": 60
+  }
+}
