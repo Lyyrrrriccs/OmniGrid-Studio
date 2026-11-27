@@ -3064,7 +3064,7 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
     <div class="st-ring"></div>
     <div class="st-emblem">
       <div class="st-flask">🧪</div>
-      <div class="st-title">ZAUN LABORATORY</div>
+      <div class="st-title">MAD SCIENTIST LAB</div>
     </div>
   </div>
   <script>
@@ -3090,7 +3090,7 @@ const OBS_SINGED_TRANSITION_HTML = `<!DOCTYPE html>
           r: 4 + Math.random() * 14,
           vy: 4 + Math.random() * 9,
           vx: (Math.random() - 0.5) * 2.2,
-          col: Math.random() > 0.45 ? '#39ff14' : '#00e5a0',
+          col: Math.random() > 0.45 ? '#76ff03' : '#00e5ff',
           alpha: 0.35 + Math.random() * 0.55
         }));
       }
@@ -4156,8 +4156,8 @@ const CHAMPION_THEME_INJECT_SNIPPET = `<style id="omniChampThemeStyle">
   50% { box-shadow: 0 0 30px rgba(251, 113, 133, 0.48), 0 0 18px rgba(253, 230, 138, 0.40), inset 0 0 22px rgba(94, 234, 212, 0.20); border-color: var(--ct-secondary, #fb7185); }
 }
 @keyframes zaunLabFramePulse {
-  0%, 100% { box-shadow: 0 0 24px rgba(57, 255, 20, 0.48), inset 0 0 18px rgba(0, 229, 160, 0.16); border-color: var(--ct-primary, #39ff14); }
-  50% { box-shadow: 0 0 34px rgba(0, 229, 160, 0.56), 0 0 18px rgba(163, 230, 53, 0.46), inset 0 0 22px rgba(57, 255, 20, 0.24); border-color: var(--ct-secondary, #00e5a0); }
+  0%, 100% { box-shadow: 0 0 24px rgba(118, 255, 3, 0.50), inset 0 0 18px rgba(0, 229, 255, 0.18); border-color: var(--ct-primary, #76ff03); }
+  50% { box-shadow: 0 0 34px rgba(0, 229, 255, 0.58), 0 0 18px rgba(250, 204, 21, 0.42), inset 0 0 22px rgba(118, 255, 3, 0.24); border-color: var(--ct-secondary, #00e5ff); }
 }
 body.champ-fx-jinx-glitch .msg-row {
   background:
@@ -4975,7 +4975,7 @@ body.champ-fx-zaun-lab .gs-lp-fill,
 body.champ-fx-zaun-lab .lb-lp-fill,
 body.champ-fx-zaun-lab .goal-fill,
 body.champ-fx-zaun-lab .sp-prog-fill,
-body.champ-fx-zaun-lab .val-rr-fill { background: linear-gradient(90deg, #16a34a, #39ff14, #00e5a0) !important; }
+body.champ-fx-zaun-lab .val-rr-fill { background: linear-gradient(90deg, #76ff03, #00e5ff, #facc15) !important; }
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }

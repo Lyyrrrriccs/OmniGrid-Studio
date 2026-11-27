@@ -1,24 +1,24 @@
 {
   "id": "singed-laboratory",
-  "name": "Singed — Zaun Laboratory",
+  "name": "Singed — Mad Scientist Laboratory",
   "icon": "🧪",
   "championMatch": ["singed"],
   "version": "1.0.0",
   "author": "OmniGrid Studio",
   "effect": "zaun-lab",
-  "description": "Zaun Chemtech laboratory bio-green glow, gently animated containment frames & bubbling acid mist across all OBS overlays.",
+  "description": "Mad Scientist Singed radioactive green, high-voltage Tesla cyan & hazard amber with gently animated lab frames and /singed-transition.",
   "colors": {
-    "primary": "#39ff14",
-    "secondary": "#00e5a0",
-    "tertiary": "#a3e635",
-    "bgStart": "rgba(6, 18, 12, 0.96)",
-    "bgEnd": "rgba(4, 12, 14, 0.97)",
-    "text": "#ecfdf5",
-    "muted": "#86efac"
+    "primary": "#76ff03",
+    "secondary": "#00e5ff",
+    "tertiary": "#facc15",
+    "bgStart": "rgba(7, 16, 18, 0.96)",
+    "bgEnd": "rgba(5, 11, 16, 0.97)",
+    "text": "#f0fdf4",
+    "muted": "#bef264"
   },
-  "mapCoverBadge": "ZAUN LAB // MIX, MIX, SWIRL 🧪",
+  "mapCoverBadge": "MAD SCIENTIST // LAB EXPERIMENT 🧪",
   "skinArt": {
     "championId": "Singed",
-    "skinQuery": "default"
+    "skinQuery": "Mad Scientist"
   }
 }
