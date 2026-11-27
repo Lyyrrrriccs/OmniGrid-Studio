@@ -5729,6 +5729,7 @@ body.champ-fx-crime-city .msg-row {
   animation: crimeCityCardPulse 6s ease-in-out infinite;
 }
 ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-crime-city ${s}`).join(',\n')} {
+  position: relative;
   background:
     radial-gradient(circle at 14% 16%, rgba(225, 29, 72, 0.24), transparent 46%),
     radial-gradient(circle at 86% 84%, rgba(168, 85, 247, 0.24), transparent 50%),
@@ -5737,6 +5738,30 @@ ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-crime-city ${s}`).join(',\n')}
   clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
   border-radius: 0 !important;
   animation: crimeCityCardPulse 5.4s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-crime-city ${s}::before`).join(',\n')} {
+  content: '♠';
+  position: absolute;
+  top: 4px;
+  left: 7px;
+  font-size: 12px;
+  line-height: 1;
+  color: #facc15;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.85);
+  pointer-events: none;
+  z-index: 6;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-crime-city ${s}::after`).join(',\n')} {
+  content: '♦';
+  position: absolute;
+  bottom: 4px;
+  right: 7px;
+  font-size: 12px;
+  line-height: 1;
+  color: #e11d48;
+  text-shadow: 0 0 10px rgba(225, 29, 72, 0.85);
+  pointer-events: none;
+  z-index: 6;
 }
 body.champ-fx-crime-city .gs-title,
 body.champ-fx-crime-city .gs-champ-name,
