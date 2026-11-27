@@ -4343,6 +4343,328 @@ const OBS_LOL_MAP_HTML = `<!DOCTYPE html>
 </body>
 </html>`;
 
+const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>OmniGrid Studio — LoL Ability-Bar Rahmen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    .ab-stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      --ab-p: var(--ct-primary, #c8aa6e);
+      --ab-s: var(--ct-secondary, #0ac8b9);
+      --ab-t: var(--ct-tertiary, #38bdf8);
+      --ab-bg: var(--ct-bg-start, rgba(9, 20, 40, 0.92));
+      --ab-txt: var(--ct-text, #f0e6d2);
+    }
+    .ab-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 0 10px color-mix(in srgb, var(--ab-p) 58%, transparent));
+    }
+    .ab-energy-dash {
+      stroke-dasharray: 28 240;
+      animation: abFlow 4.2s linear infinite;
+    }
+    .ab-ring-spin {
+      transform-origin: 84px 96px;
+      animation: abSpin 14s linear infinite;
+    }
+    .ab-crest-pill {
+      position: absolute;
+      left: 44.3%;
+      top: 1.5%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 14px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--ab-bg), rgba(2, 6, 20, 0.96));
+      border: 1.8px solid var(--ab-p);
+      box-shadow: 0 0 14px color-mix(in srgb, var(--ab-p) 65%, transparent), inset 0 0 8px color-mix(in srgb, var(--ab-s) 35%, transparent);
+      color: var(--ab-txt);
+      font-size: clamp(9px, 1.3vw, 12px);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      z-index: 5;
+    }
+    .ab-crest-icon { font-size: clamp(11px, 1.5vw, 14px); filter: drop-shadow(0 0 6px var(--ab-s)); }
+    .ab-fx-layer { display: none; pointer-events: none; }
+
+    /* Unbound Thresh: Chain rails + swaying Soul Lantern */
+    body.champ-fx-unbound-thresh .ab-fx-thresh { display: block; }
+    .ab-lantern-sway {
+      transform-origin: 36px 26px;
+      animation: abLanternSway 3.4s ease-in-out infinite;
+    }
+
+    /* Twisted Fate Crime City: Card suits + Pick-a-Card glow */
+    body.champ-fx-crime-city .ab-fx-tf { display: block; }
+    body.champ-fx-crime-city .ab-svg { animation: abTfGlow 3.6s ease-in-out infinite; }
+
+    /* DJ Sona: Live EQ bars along top rail */
+    body.champ-fx-dj-sona .ab-fx-sona { display: flex; }
+    .ab-eq-strip {
+      position: absolute;
+      left: 20%;
+      right: 30%;
+      top: 4%;
+      height: 14%;
+      display: none;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 3px;
+      pointer-events: none;
+      z-index: 4;
+    }
+    .ab-eq-bar {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      background: linear-gradient(180deg, var(--ab-s), var(--ab-p));
+      box-shadow: 0 0 8px var(--ab-p);
+      animation: abEqBounce 0.9s ease-in-out infinite alternate;
+    }
+
+    /* Ahri K/DA FIRESTARTER: Crystal Heart Crest */
+    body.champ-fx-ahri-firestarter .ab-fx-ahri { display: block; }
+
+    /* Evelynn K/DA FIRESTARTER: Shadow Lasher Wings */
+    body.champ-fx-eve-firestarter .ab-fx-eve { display: block; }
+
+    /* Akali K/DA Ignition: Kunai Wings */
+    body.champ-fx-kda-firestarter .ab-fx-akali { display: block; }
+
+    /* Katarina Prestige Black Rose / Elise Black Rose */
+    body.champ-fx-prestige-rose .ab-fx-rose,
+    body.champ-fx-black-rose .ab-fx-rose { display: block; }
+
+    /* Jinx Arcane Fractured / Zaun Glitch */
+    body.champ-fx-arcane-fractured .ab-fx-jinx,
+    body.champ-fx-jinx-glitch .ab-fx-jinx { display: block; }
+    body.champ-fx-jinx-glitch .ab-stage,
+    body.champ-fx-arcane-fractured .ab-stage { animation: abJinxJitter 4.2s infinite; }
+
+    /* Singed Mad Scientist Lab: Hazard stripes */
+    body.champ-fx-zaun-lab .ab-fx-lab { display: block; }
+
+    /* Lux Elementalist: Prismatic hue cycle */
+    body.champ-fx-elementalist .ab-svg { animation: abPrismCycle 6s linear infinite; }
+
+    /* Soul Fighter: Hard cel-shaded comic drop shadow */
+    body.champ-fx-soul-fighter .ab-svg { filter: drop-shadow(3px 3px 0 #05050a) drop-shadow(0 0 10px var(--ab-p)); }
+
+    @keyframes abFlow { to { stroke-dashoffset: -268; } }
+    @keyframes abSpin { to { transform: rotate(360deg); } }
+    @keyframes abLanternSway {
+      0%, 100% { transform: rotate(-7deg); }
+      50% { transform: rotate(7deg); }
+    }
+    @keyframes abTfGlow {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.85)); }
+      33% { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.85)); }
+      66% { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.85)); }
+    }
+    @keyframes abEqBounce {
+      0% { height: 22%; opacity: 0.72; }
+      100% { height: 100%; opacity: 1; }
+    }
+    @keyframes abJinxJitter {
+      0%, 93%, 100% { transform: translate(0, 0); }
+      95% { transform: translate(2px, -1px); }
+      97% { transform: translate(-2px, 1px); }
+    }
+    @keyframes abPrismCycle {
+      0% { filter: hue-rotate(0deg) drop-shadow(0 0 11px var(--ab-p)); }
+      100% { filter: hue-rotate(360deg) drop-shadow(0 0 11px var(--ab-p)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="ab-stage" id="abStage">
+    <div class="ab-crest-pill" id="abCrestPill">
+      <span class="ab-crest-icon" id="abCrestIcon">⚔️</span>
+      <span id="abCrestText">HEXTECH HUD</span>
+    </div>
+
+    <div class="ab-eq-strip ab-fx-sona" id="abEqStrip"></div>
+
+    <svg class="ab-svg" viewBox="0 0 920 175" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="abGradMain" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="var(--ct-primary, #c8aa6e)" />
+          <stop offset="50%" stop-color="var(--ct-secondary, #0ac8b9)" />
+          <stop offset="100%" stop-color="var(--ct-tertiary, #38bdf8)" />
+        </linearGradient>
+        <linearGradient id="abGradVertical" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="var(--ct-primary, #c8aa6e)" />
+          <stop offset="100%" stop-color="var(--ct-secondary, #0ac8b9)" />
+        </linearGradient>
+        <pattern id="abChainPat" width="22" height="10" patternUnits="userSpaceOnUse">
+          <rect x="1" y="2" width="12" height="6" rx="3" fill="none" stroke="#10b981" stroke-width="2.2" />
+          <rect x="9" y="3" width="12" height="4" rx="2" fill="none" stroke="#5eead4" stroke-width="1.6" />
+        </pattern>
+        <pattern id="abHazardPat" width="16" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+          <rect width="8" height="10" fill="#76ff03" />
+          <rect x="8" width="8" height="10" fill="#091216" />
+        </pattern>
+      </defs>
+
+      <!-- MAIN HOLLOW SILHOUETTE: Portrait Ring (Left) + Ability Deck (Center) + Item Wing (Right) -->
+      <path d="M 148 36 L 172 22 L 642 22 L 664 38 L 892 38 L 912 56 L 912 154 L 896 170 L 146 170"
+            fill="none" stroke="rgba(2, 6, 18, 0.88)" stroke-width="11" stroke-linejoin="round" />
+      <circle cx="84" cy="96" r="71" fill="none" stroke="rgba(2, 6, 18, 0.88)" stroke-width="12" />
+
+      <path d="M 148 36 L 172 22 L 642 22 L 664 38 L 892 38 L 912 56 L 912 154 L 896 170 L 146 170"
+            fill="none" stroke="url(#abGradMain)" stroke-width="4.5" stroke-linejoin="round" />
+      <path d="M 154 41 L 175 28 L 639 28 L 660 44 L 888 44 L 905 59 L 905 150 L 892 164 L 152 164"
+            fill="none" stroke="var(--ct-secondary, #0ac8b9)" stroke-opacity="0.58" stroke-width="1.5" stroke-linejoin="round" />
+
+      <path class="ab-energy-dash"
+            d="M 148 36 L 172 22 L 642 22 L 664 38 L 892 38 L 912 56 L 912 154 L 896 170 L 146 170"
+            fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="2.4" stroke-linecap="round" />
+
+      <path d="M 664 38 L 664 166" fill="none" stroke="rgba(2,6,18,0.85)" stroke-width="7" />
+      <path d="M 664 38 L 664 166" fill="none" stroke="url(#abGradVertical)" stroke-width="2.6" />
+      <polygon points="664,31 671,39 664,47 657,39" fill="var(--ct-secondary, #0ac8b9)" stroke="rgba(2,6,18,0.9)" stroke-width="1.2" />
+
+      <circle cx="84" cy="96" r="71" fill="none" stroke="url(#abGradMain)" stroke-width="5" />
+      <circle cx="84" cy="96" r="64" fill="none" stroke="var(--ct-secondary, #0ac8b9)" stroke-opacity="0.6" stroke-width="1.5" />
+      <circle class="ab-ring-spin" cx="84" cy="96" r="71" fill="none" stroke="#ffffff" stroke-opacity="0.72" stroke-width="2" stroke-dasharray="22 126" stroke-linecap="round" />
+
+      <polygon points="172,15 186,22 172,29 158,22" fill="var(--ct-primary, #c8aa6e)" stroke="#020612" stroke-width="1.5" />
+      <polygon points="642,15 656,22 642,29 628,22" fill="var(--ct-primary, #c8aa6e)" stroke="#020612" stroke-width="1.5" />
+      <path d="M 884 38 L 916 38 L 916 70" fill="none" stroke="var(--ct-secondary, #0ac8b9)" stroke-width="3" />
+      <path d="M 884 170 L 916 170 L 916 138" fill="none" stroke="var(--ct-primary, #c8aa6e)" stroke-width="3" />
+      <polygon points="84,19 92,27 84,35 76,27" fill="var(--ct-secondary, #0ac8b9)" stroke="#020612" stroke-width="1.5" />
+
+      <!-- UNBOUND THRESH: Chain rails + swaying Soul Lantern -->
+      <g class="ab-fx-layer ab-fx-thresh">
+        <rect x="174" y="17" width="466" height="10" fill="url(#abChainPat)" />
+        <rect x="156" y="165" width="738" height="10" fill="url(#abChainPat)" />
+        <rect x="668" y="33" width="222" height="10" fill="url(#abChainPat)" />
+        <g class="ab-lantern-sway">
+          <line x1="36" y1="8" x2="36" y2="26" stroke="#5eead4" stroke-width="2.2" />
+          <polygon points="24,26 48,26 44,54 28,54" fill="#041816" stroke="#10b981" stroke-width="2.4" />
+          <ellipse cx="36" cy="40" rx="6" ry="9" fill="#5eead4" opacity="0.92" />
+          <polygon points="28,54 44,54 36,63" fill="#10b981" />
+        </g>
+      </g>
+
+      <!-- TWISTED FATE CRIME CITY: Card Suits -->
+      <g class="ab-fx-layer ab-fx-tf" font-size="16" font-weight="900" text-anchor="middle">
+        <text x="172" y="27" fill="#facc15">♠</text>
+        <text x="642" y="27" fill="#e11d48">♥</text>
+        <text x="898" y="55" fill="#facc15">♦</text>
+        <text x="898" y="164" fill="#a855f7">♣</text>
+      </g>
+
+      <!-- AHRI K/DA FIRESTARTER: Crystal Heart Crest -->
+      <g class="ab-fx-layer ab-fx-ahri">
+        <path d="M 84 18 C 84 10, 72 8, 72 17 C 72 24, 84 31, 84 34 C 84 31, 96 24, 96 17 C 96 8, 84 10, 84 18 Z"
+              fill="#ff2e97" stroke="#fda4af" stroke-width="1.8" />
+        <polygon points="902,42 918,52 908,66 894,54" fill="#ff1e56" stroke="#fda4af" stroke-width="1.5" />
+      </g>
+
+      <!-- EVELYNN K/DA FIRESTARTER: Shadow Lasher Wings -->
+      <g class="ab-fx-layer ab-fx-eve">
+        <path d="M 8 88 Q 22 44 48 26 Q 30 60 22 92 Z" fill="#ff1e6b" stroke="#a855f7" stroke-width="1.6" />
+        <path d="M 918 68 Q 904 42 878 28 Q 896 54 904 82 Z" fill="#a855f7" stroke="#ff7a00" stroke-width="1.6" />
+      </g>
+
+      <!-- AKALI K/DA IGNITION: Kunai Blades -->
+      <g class="ab-fx-layer ab-fx-akali">
+        <polygon points="10,72 34,54 24,78 16,80" fill="#ff3b5c" stroke="#00f5ff" stroke-width="1.6" />
+        <polygon points="918,46 890,34 904,58 914,58" fill="#ff7a00" stroke="#00f5ff" stroke-width="1.6" />
+      </g>
+
+      <!-- KATARINA / ELISE BLACK ROSE: Gold Filigree & Daggers -->
+      <g class="ab-fx-layer ab-fx-rose">
+        <path d="M 152 24 L 194 14 L 180 28 Z" fill="#f5d061" stroke="#e11d48" stroke-width="1.4" />
+        <path d="M 662 24 L 620 14 L 634 28 Z" fill="#f5d061" stroke="#e11d48" stroke-width="1.4" />
+        <circle cx="84" cy="25" r="7" fill="#e11d48" stroke="#f5d061" stroke-width="2" />
+      </g>
+
+      <!-- JINX ARCANE FRACTURED / ZAUN: Shattered Shards -->
+      <g class="ab-fx-layer ab-fx-jinx">
+        <polygon points="156,28 176,10 190,26" fill="#ff2e97" opacity="0.9" />
+        <polygon points="628,24 648,10 662,30" fill="#00f0ff" opacity="0.9" />
+        <polygon points="894,32 918,44 900,60" fill="#ffe14d" opacity="0.9" />
+      </g>
+
+      <!-- SINGED MAD SCIENTIST LAB: Hazard Trim -->
+      <g class="ab-fx-layer ab-fx-lab">
+        <rect x="174" y="18" width="110" height="8" rx="2" fill="url(#abHazardPat)" stroke="#091216" stroke-width="1" />
+        <rect x="530" y="18" width="110" height="8" rx="2" fill="url(#abHazardPat)" stroke="#091216" stroke-width="1" />
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    (function initAbilityBarFrame() {
+      const iconEl = document.getElementById('abCrestIcon');
+      const textEl = document.getElementById('abCrestText');
+      const eqEl = document.getElementById('abEqStrip');
+
+      if (eqEl) {
+        for (let i = 0; i < 18; i++) {
+          const b = document.createElement('div');
+          b.className = 'ab-eq-bar';
+          b.style.animationDuration = (0.45 + ((i * 19) % 7) * 0.11).toFixed(2) + 's';
+          b.style.animationDelay = ((i % 5) * 0.08).toFixed(2) + 's';
+          eqEl.appendChild(b);
+        }
+      }
+
+      function applyThemeBadge(t) {
+        if (!t || !t.id || t.id === 'none') {
+          if (iconEl) iconEl.textContent = '⚔️';
+          if (textEl) textEl.textContent = 'HEXTECH HUD';
+          return;
+        }
+        if (iconEl) iconEl.textContent = t.icon || '⚔️';
+        const shortName = String(t.name || 'CHAMPION HUD').split('—')[0].trim().toUpperCase();
+        if (textEl) textEl.textContent = shortName;
+      }
+
+      function loadTheme() {
+        fetch('/api/champion-theme')
+          .then((r) => (r.ok ? r.json() : null))
+          .then((t) => { if (t) applyThemeBadge(t); })
+          .catch(() => {});
+      }
+
+      loadTheme();
+      try {
+        const ws = new WebSocket('ws://' + location.host);
+        ws.onmessage = (ev) => {
+          try {
+            const p = JSON.parse(ev.data);
+            if (p.type === 'champion-theme') applyThemeBadge(p.data);
+          } catch (e) {}
+        };
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>`;
+
 const OBS_LOL_BUILD_HTML = `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -7344,6 +7666,8 @@ class ObsServer {
           res.end(withChampionTheme(OBS_GAME_STATS_HTML));
         } else if (urlPath === '/lol-map') {
           res.end(withChampionTheme(OBS_LOL_MAP_HTML));
+        } else if (urlPath === '/lol-ability-bar') {
+          res.end(withChampionTheme(OBS_LOL_ABILITY_BAR_HTML));
         } else if (urlPath === '/lol-bg') {
           res.end(OBS_LOL_BG_HTML);
         } else if (urlPath === '/scene-transition' || urlPath === '/singed-transition') {

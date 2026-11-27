@@ -514,6 +514,168 @@
       font-weight: 700;
       color: rgba(226, 232, 240, 0.65);
     }
+
+    /* Live League Ability Bar Frame Preview (/lol-ability-bar) */
+    .pv-ab-section {
+      margin-top: 14px;
+      position: relative;
+      z-index: 4;
+    }
+    .pv-ab-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(226, 232, 240, 0.72);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pv-ab-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 920 / 175;
+      --ab-p: var(--ct-primary, #c8aa6e);
+      --ab-s: var(--ct-secondary, #0ac8b9);
+      --ab-t: var(--ct-tertiary, #38bdf8);
+      --ab-bg: var(--ct-bg-start, rgba(9, 20, 40, 0.92));
+      --ab-txt: var(--ct-text, #f0e6d2);
+    }
+    .pv-ab-mock {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .pv-ab-mock-portrait {
+      position: absolute;
+      left: 1.8%;
+      top: 15.5%;
+      width: 14.7%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, rgba(30, 41, 59, 0.9), rgba(2, 6, 23, 0.96));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(18px, 3vw, 28px);
+      opacity: 0.85;
+    }
+    .pv-ab-mock-abilities {
+      position: absolute;
+      left: 18%;
+      top: 22%;
+      width: 52%;
+      height: 68%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 10px;
+    }
+    .pv-ab-keys {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+    .pv-ab-key {
+      width: 13%;
+      aspect-ratio: 1 / 1;
+      border-radius: 5px;
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(9px, 1.2vw, 12px);
+      font-weight: 900;
+      color: rgba(248, 250, 252, 0.72);
+    }
+    .pv-ab-bars { display: flex; flex-direction: column; gap: 3px; }
+    .pv-ab-hp { height: 8px; border-radius: 3px; background: linear-gradient(90deg, #16a34a, #22c55e); opacity: 0.78; }
+    .pv-ab-mp { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #2563eb, #38bdf8); opacity: 0.75; }
+    .pv-ab-mock-items {
+      position: absolute;
+      left: 73.5%;
+      top: 29%;
+      width: 24%;
+      height: 60%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+    .pv-ab-item {
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+    }
+    .pv-ab-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter: drop-shadow(0 0 9px color-mix(in srgb, var(--ab-p) 58%, transparent));
+    }
+    .pv-ab-crest {
+      position: absolute;
+      left: 44.3%;
+      top: 0%;
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 1px 11px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--ab-bg), rgba(2, 6, 20, 0.96));
+      border: 1.5px solid var(--ab-p);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--ab-p) 62%, transparent);
+      color: var(--ab-txt);
+      font-size: clamp(8px, 1.1vw, 10.5px);
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      z-index: 6;
+    }
+    .pv-ab-fx { display: none; pointer-events: none; }
+    #stage.champ-fx-unbound-thresh .pv-ab-fx-thresh { display: block; }
+    #stage.champ-fx-crime-city .pv-ab-fx-tf { display: block; }
+    #stage.champ-fx-ahri-firestarter .pv-ab-fx-ahri { display: block; }
+    #stage.champ-fx-eve-firestarter .pv-ab-fx-eve { display: block; }
+    #stage.champ-fx-kda-firestarter .pv-ab-fx-akali { display: block; }
+    #stage.champ-fx-prestige-rose .pv-ab-fx-rose,
+    #stage.champ-fx-black-rose .pv-ab-fx-rose { display: block; }
+    #stage.champ-fx-arcane-fractured .pv-ab-fx-jinx,
+    #stage.champ-fx-jinx-glitch .pv-ab-fx-jinx { display: block; }
+    #stage.champ-fx-zaun-lab .pv-ab-fx-lab { display: block; }
+    #stage.champ-fx-dj-sona .pv-ab-fx-sona { display: flex; }
+    #stage.champ-fx-elementalist .pv-ab-svg { animation: pvAbPrism 6s linear infinite; }
+    #stage.champ-fx-soul-fighter .pv-ab-svg { filter: drop-shadow(3px 3px 0 #05050a) drop-shadow(0 0 9px var(--ab-p)); }
+    .pv-ab-eq {
+      position: absolute;
+      left: 20%;
+      right: 30%;
+      top: 4%;
+      height: 14%;
+      display: none;
+      align-items: flex-end;
+      gap: 3px;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .pv-ab-eq span {
+      flex: 1;
+      border-radius: 2px 2px 0 0;
+      background: linear-gradient(180deg, var(--ab-s), var(--ab-p));
+      animation: pvAbEq 0.8s ease-in-out infinite alternate;
+    }
+    .pv-ab-energy { stroke-dasharray: 28 240; animation: pvAbFlow 4.2s linear infinite; }
+    .pv-ab-lantern { transform-origin: 36px 26px; animation: pvAbLantern 3.4s ease-in-out infinite; }
+    @keyframes pvAbFlow { to { stroke-dashoffset: -268; } }
+    @keyframes pvAbLantern { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+    @keyframes pvAbEq { 0% { height: 22%; } 100% { height: 100%; } }
+    @keyframes pvAbPrism { 0% { filter: hue-rotate(0deg) drop-shadow(0 0 9px var(--ab-p)); } 100% { filter: hue-rotate(360deg) drop-shadow(0 0 9px var(--ab-p)); } }
   </style>
 </head>
 <body class="antialiased selection:bg-indigo-500 selection:text-white">
@@ -707,6 +869,112 @@
                 </div>
                 <div class="goal-track"><div class="goal-fill"></div></div>
               </div>
+            </div>
+          </div>
+
+          <div class="pv-ab-section">
+            <div class="pv-ab-label">
+              <span data-en="⚔️ League Ability Bar Frame (/lol-ability-bar — Transparent HUD Cutout)" data-de="⚔️ League Ability-Bar Rahmen (/lol-ability-bar — Transparenter HUD-Rahmen)">⚔️ League Ability Bar Frame (/lol-ability-bar — Transparent HUD Cutout)</span>
+              <span>920×175 OBS Browser Source</span>
+            </div>
+            <div class="pv-ab-wrap">
+              <div class="pv-ab-mock">
+                <div class="pv-ab-mock-portrait" id="pvAbPortrait">⚔️</div>
+                <div class="pv-ab-mock-abilities">
+                  <div class="pv-ab-keys">
+                    <div class="pv-ab-key">P</div>
+                    <div class="pv-ab-key">Q</div>
+                    <div class="pv-ab-key">W</div>
+                    <div class="pv-ab-key">E</div>
+                    <div class="pv-ab-key">R</div>
+                    <div class="pv-ab-key">D</div>
+                    <div class="pv-ab-key">F</div>
+                  </div>
+                  <div class="pv-ab-bars">
+                    <div class="pv-ab-hp"></div>
+                    <div class="pv-ab-mp"></div>
+                  </div>
+                </div>
+                <div class="pv-ab-mock-items">
+                  <div class="pv-ab-item"></div><div class="pv-ab-item"></div><div class="pv-ab-item"></div>
+                  <div class="pv-ab-item"></div><div class="pv-ab-item"></div><div class="pv-ab-item"></div>
+                </div>
+              </div>
+              <div class="pv-ab-crest">
+                <span id="pvAbIcon">⚔️</span>
+                <span id="pvAbText">HEXTECH HUD</span>
+              </div>
+              <div class="pv-ab-eq pv-ab-fx-sona" id="pvAbEq"></div>
+              <svg class="pv-ab-svg" viewBox="0 0 920 175" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="pvAbGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="var(--ct-primary, #c8aa6e)" />
+                    <stop offset="50%" stop-color="var(--ct-secondary, #0ac8b9)" />
+                    <stop offset="100%" stop-color="var(--ct-tertiary, #38bdf8)" />
+                  </linearGradient>
+                  <pattern id="pvAbChain" width="22" height="10" patternUnits="userSpaceOnUse">
+                    <rect x="1" y="2" width="12" height="6" rx="3" fill="none" stroke="#10b981" stroke-width="2.2" />
+                    <rect x="9" y="3" width="12" height="4" rx="2" fill="none" stroke="#5eead4" stroke-width="1.6" />
+                  </pattern>
+                  <pattern id="pvAbHazard" width="16" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+                    <rect width="8" height="10" fill="#76ff03" />
+                    <rect x="8" width="8" height="10" fill="#091216" />
+                  </pattern>
+                </defs>
+                <path d="M 148 36 L 172 22 L 642 22 L 664 38 L 892 38 L 912 56 L 912 154 L 896 170 L 146 170" fill="none" stroke="rgba(2,6,18,0.88)" stroke-width="11" stroke-linejoin="round" />
+                <circle cx="84" cy="96" r="71" fill="none" stroke="rgba(2,6,18,0.88)" stroke-width="12" />
+                <path d="M 148 36 L 172 22 L 642 22 L 664 38 L 892 38 L 912 56 L 912 154 L 896 170 L 146 170" fill="none" stroke="url(#pvAbGrad)" stroke-width="4.5" stroke-linejoin="round" />
+                <path d="M 154 41 L 175 28 L 639 28 L 660 44 L 888 44 L 905 59 L 905 150 L 892 164 L 152 164" fill="none" stroke="var(--ct-secondary, #0ac8b9)" stroke-opacity="0.58" stroke-width="1.5" stroke-linejoin="round" />
+                <path class="pv-ab-energy" d="M 148 36 L 172 22 L 642 22 L 664 38 L 892 38 L 912 56 L 912 154 L 896 170 L 146 170" fill="none" stroke="#ffffff" stroke-opacity="0.9" stroke-width="2.4" stroke-linecap="round" />
+                <path d="M 664 38 L 664 166" fill="none" stroke="rgba(2,6,18,0.85)" stroke-width="7" />
+                <path d="M 664 38 L 664 166" fill="none" stroke="url(#pvAbGrad)" stroke-width="2.6" />
+                <circle cx="84" cy="96" r="71" fill="none" stroke="url(#pvAbGrad)" stroke-width="5" />
+                <circle cx="84" cy="96" r="64" fill="none" stroke="var(--ct-secondary, #0ac8b9)" stroke-opacity="0.6" stroke-width="1.5" />
+                <polygon points="172,15 186,22 172,29 158,22" fill="var(--ct-primary, #c8aa6e)" stroke="#020612" stroke-width="1.5" />
+                <polygon points="642,15 656,22 642,29 628,22" fill="var(--ct-primary, #c8aa6e)" stroke="#020612" stroke-width="1.5" />
+                <g class="pv-ab-fx pv-ab-fx-thresh">
+                  <rect x="174" y="17" width="466" height="10" fill="url(#pvAbChain)" />
+                  <rect x="156" y="165" width="738" height="10" fill="url(#pvAbChain)" />
+                  <rect x="668" y="33" width="222" height="10" fill="url(#pvAbChain)" />
+                  <g class="pv-ab-lantern">
+                    <line x1="36" y1="8" x2="36" y2="26" stroke="#5eead4" stroke-width="2.2" />
+                    <polygon points="24,26 48,26 44,54 28,54" fill="#041816" stroke="#10b981" stroke-width="2.4" />
+                    <ellipse cx="36" cy="40" rx="6" ry="9" fill="#5eead4" opacity="0.92" />
+                    <polygon points="28,54 44,54 36,63" fill="#10b981" />
+                  </g>
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-tf" font-size="16" font-weight="900" text-anchor="middle">
+                  <text x="172" y="27" fill="#facc15">♠</text>
+                  <text x="642" y="27" fill="#e11d48">♥</text>
+                  <text x="898" y="55" fill="#facc15">♦</text>
+                  <text x="898" y="164" fill="#a855f7">♣</text>
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-ahri">
+                  <path d="M 84 18 C 84 10, 72 8, 72 17 C 72 24, 84 31, 84 34 C 84 31, 96 24, 96 17 C 96 8, 84 10, 84 18 Z" fill="#ff2e97" stroke="#fda4af" stroke-width="1.8" />
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-eve">
+                  <path d="M 8 88 Q 22 44 48 26 Q 30 60 22 92 Z" fill="#ff1e6b" stroke="#a855f7" stroke-width="1.6" />
+                  <path d="M 918 68 Q 904 42 878 28 Q 896 54 904 82 Z" fill="#a855f7" stroke="#ff7a00" stroke-width="1.6" />
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-akali">
+                  <polygon points="10,72 34,54 24,78 16,80" fill="#ff3b5c" stroke="#00f5ff" stroke-width="1.6" />
+                  <polygon points="918,46 890,34 904,58 914,58" fill="#ff7a00" stroke="#00f5ff" stroke-width="1.6" />
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-rose">
+                  <path d="M 152 24 L 194 14 L 180 28 Z" fill="#f5d061" stroke="#e11d48" stroke-width="1.4" />
+                  <path d="M 662 24 L 620 14 L 634 28 Z" fill="#f5d061" stroke="#e11d48" stroke-width="1.4" />
+                  <circle cx="84" cy="25" r="7" fill="#e11d48" stroke="#f5d061" stroke-width="2" />
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-jinx">
+                  <polygon points="156,28 176,10 190,26" fill="#ff2e97" opacity="0.9" />
+                  <polygon points="628,24 648,10 662,30" fill="#00f0ff" opacity="0.9" />
+                  <polygon points="894,32 918,44 900,60" fill="#ffe14d" opacity="0.9" />
+                </g>
+                <g class="pv-ab-fx pv-ab-fx-lab">
+                  <rect x="174" y="18" width="110" height="8" rx="2" fill="url(#pvAbHazard)" stroke="#091216" stroke-width="1" />
+                  <rect x="530" y="18" width="110" height="8" rx="2" fill="url(#pvAbHazard)" stroke="#091216" stroke-width="1" />
+                </g>
+              </svg>
             </div>
           </div>
         </div>
@@ -970,6 +1238,21 @@
       pvSkinName.textContent = isDefault ? '✨ Classic Hextech' : ('✨ ' + (parts[1] || pack.name));
       pvMapBadge.textContent = pack.mapCoverBadge || '🛡️ Streamer-Modus';
       pvMapTitle.textContent = isDefault ? 'MINIMAP VERDECKT' : (parts[0].toUpperCase() + ' // PROTECTED');
+      const pvAbIcon = document.getElementById('pvAbIcon');
+      const pvAbText = document.getElementById('pvAbText');
+      const pvAbPortrait = document.getElementById('pvAbPortrait');
+      if (pvAbIcon) pvAbIcon.textContent = pack.icon || '⚔️';
+      if (pvAbPortrait) pvAbPortrait.textContent = pack.icon || '⚔️';
+      if (pvAbText) pvAbText.textContent = isDefault ? 'HEXTECH HUD' : parts[0].toUpperCase();
+      const pvAbEq = document.getElementById('pvAbEq');
+      if (pvAbEq && !pvAbEq.children.length) {
+        for (let i = 0; i < 16; i++) {
+          const sp = document.createElement('span');
+          sp.style.animationDuration = (0.45 + ((i * 19) % 7) * 0.1).toFixed(2) + 's';
+          sp.style.animationDelay = ((i % 5) * 0.08).toFixed(2) + 's';
+          pvAbEq.appendChild(sp);
+        }
+      }
 
       if (!isDefault) {
         stage.classList.add('champ-pack-active');

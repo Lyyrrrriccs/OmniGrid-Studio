@@ -5488,6 +5488,10 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-build');
     if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🔗 http://127.0.0.1:4588/lol-build kopiert! (Live Item-Build & Elo-Bar, 550×125)'; }
   });
+  document.getElementById('btnGaCopyAbilityBarUrl')?.addEventListener('click', async () => {
+    await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-ability-bar');
+    if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '⚔️ http://127.0.0.1:4588/lol-ability-bar kopiert! (LoL Ability-Bar Rahmen, 920×175 — passt sich an jedes Pack an)'; }
+  });
   document.getElementById('btnGaCopyBgUrl')?.addEventListener('click', async () => {
     await navigator.clipboard.writeText('http://127.0.0.1:4588/lol-bg');
     if (statusEl) { statusEl.style.color = '#4ade80'; statusEl.textContent = '🖼️ http://127.0.0.1:4588/lol-bg kopiert! (Animierter LoL-Client-Hintergrund, 1920×1080)'; }
