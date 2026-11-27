@@ -2426,6 +2426,14 @@
                     <select id="seTrToScene" style="width: 100%;"></select>
                   </label>
                 </div>
+                <label style="font-size: 11px; color: #cbd5e1; display: flex; flex-direction: column; gap: 3px;">
+                  <span>Transition / Effekt (OmniGrid Theme, eigener OBS-Übergang oder eigene Datei):</span>
+                  <select id="seTrEffectSelect" style="width: 100%;"></select>
+                </label>
+                <div id="seTrCustomFileRow" class="hidden" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 8px; border-radius: 6px; background: rgba(2,6,23,0.65); border: 1px dashed rgba(56,189,248,0.4);">
+                  <button type="button" class="btn-sm" id="btnSePickTransitionFile">📂 Eigene Datei wählen (.webm / .mp4 / .mov / .gif / .html)</button>
+                  <span id="seTrCustomFileName" style="font-size: 11px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Keine Datei gewählt</span>
+                </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                   <label style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #e2e8f0; cursor: pointer;">
                     <input type="checkbox" id="seTrBidir" checked />

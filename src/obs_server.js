@@ -3068,12 +3068,18 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
       <div class="st-title" id="stTitle">SCENE TRANSITION</div>
     </div>
   </div>
+  <video id="stCustomVideo" playsinline style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:20;pointer-events:none;"></video>
+  <img id="stCustomImg" alt="" style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:20;pointer-events:none;" />
+  <iframe id="stCustomFrame" style="position:fixed;inset:0;width:100%;height:100%;border:0;display:none;z-index:20;pointer-events:none;background:transparent;"></iframe>
   <script>
     (function initSceneTransition() {
       const root = document.documentElement;
       const stage = document.getElementById('stStage');
       const iconEl = document.getElementById('stIcon');
       const titleEl = document.getElementById('stTitle');
+      const customVideo = document.getElementById('stCustomVideo');
+      const customImg = document.getElementById('stCustomImg');
+      const customFrame = document.getElementById('stCustomFrame');
       const canvas = document.getElementById('stBubbles');
       const ctx = canvas.getContext('2d');
       let palette = ['#c8aa6e', '#0ac8b9'];
@@ -3149,10 +3155,61 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
         animId = requestAnimationFrame(drawBubbles);
       }
 
-      function playTransition() {
+      function resetCustomMedia() {
+        if (customVideo) {
+          customVideo.pause();
+          customVideo.removeAttribute('src');
+          customVideo.load();
+          customVideo.style.display = 'none';
+        }
+        if (customImg) {
+          customImg.removeAttribute('src');
+          customImg.style.display = 'none';
+        }
+        if (customFrame) {
+          customFrame.src = 'about:blank';
+          customFrame.style.display = 'none';
+        }
+      }
+
+      function playTransition(opts) {
         if (timer) clearTimeout(timer);
         if (animId) cancelAnimationFrame(animId);
         stage.classList.remove('playing');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        resetCustomMedia();
+
+        if (opts && opts.mode === 'custom-file' && opts.mediaUrl) {
+          const url = opts.mediaUrl + (opts.mediaUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+          const kind = opts.fileKind || 'video';
+          const fallbackMs = Math.max(800, Number(opts.durationMs) || 3500);
+          if (kind === 'video' && customVideo) {
+            customVideo.src = url;
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => resetCustomMedia();
+            customVideo.play().catch(() => {
+              customVideo.muted = true;
+              customVideo.play().catch(() => {});
+            });
+            timer = setTimeout(resetCustomMedia, Math.max(fallbackMs, 12000));
+            return;
+          }
+          if (kind === 'image' && customImg) {
+            customImg.src = url;
+            customImg.style.display = 'block';
+            timer = setTimeout(resetCustomMedia, fallbackMs);
+            return;
+          }
+          if (kind === 'html' && customFrame) {
+            customFrame.src = url;
+            customFrame.style.display = 'block';
+            timer = setTimeout(resetCustomMedia, fallbackMs);
+            return;
+          }
+        }
+
         void stage.offsetWidth;
         spawnBubbles();
         stage.classList.add('playing');
@@ -3176,7 +3233,7 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
             try {
               const p = JSON.parse(ev.data);
               if (p.type === 'champion-theme') applyTheme(p.data);
-              if (p.type === 'scene-transition' || p.type === 'singed-transition') playTransition();
+              if (p.type === 'scene-transition' || p.type === 'singed-transition') playTransition(p.data || null);
             } catch (e) {}
           };
           ws.onclose = () => setTimeout(connectWs, 2500);
@@ -5231,6 +5288,34 @@ class ObsServer {
           return;
         }
 
+        if (urlPath.startsWith('/api/custom-transition/')) {
+          const safeId = decodeURIComponent(urlPath.replace('/api/custom-transition/', '')).replace(/[^a-zA-Z0-9_-]/g, '');
+          const filePath = safeId && this.customTransitionResolver ? this.customTransitionResolver(safeId) : null;
+          if (!filePath || !fs.existsSync(filePath)) {
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
+            res.end('Custom transition file not found');
+            return;
+          }
+          const ext = path.extname(filePath).toLowerCase();
+          const mimeMap = {
+            '.webm': 'video/webm',
+            '.mp4': 'video/mp4',
+            '.mov': 'video/quicktime',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+            '.png': 'image/png',
+            '.html': 'text/html; charset=utf-8',
+            '.htm': 'text/html; charset=utf-8'
+          };
+          res.writeHead(200, {
+            'Content-Type': mimeMap[ext] || 'application/octet-stream',
+            'Cache-Control': 'no-cache',
+            'X-Content-Type-Options': 'nosniff'
+          });
+          fs.createReadStream(filePath).pipe(res);
+          return;
+        }
+
         if (urlPath.startsWith('/api/sponsor-media/')) {
           const safeId = decodeURIComponent(urlPath.replace('/api/sponsor-media/', '')).replace(/[^a-zA-Z0-9_-]/g, '');
           const filePath = safeId && this.sponsorMediaResolver ? this.sponsorMediaResolver(safeId) : null;
@@ -5667,8 +5752,12 @@ class ObsServer {
     this._broadcast({ type: 'champion-theme', data: this.currentChampionTheme });
   }
 
-  broadcastSceneTransition() {
-    this._broadcast({ type: 'scene-transition', data: { at: Date.now() } });
+  setCustomTransitionResolver(fn) {
+    this.customTransitionResolver = typeof fn === 'function' ? fn : null;
+  }
+
+  broadcastSceneTransition(payload = {}) {
+    this._broadcast({ type: 'scene-transition', data: { at: Date.now(), ...(payload || {}) } });
   }
 
   broadcastSingedTransition() {

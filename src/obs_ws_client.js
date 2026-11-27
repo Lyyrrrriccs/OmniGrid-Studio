@@ -1080,6 +1080,37 @@ class ObsWsClient extends EventEmitter {
     }
   }
 
+  async getSceneTransitions() {
+    try {
+      const res = await this.call('GetSceneTransitionList');
+      const transitions = (res.transitions || []).map((t) => ({
+        name: String(t.transitionName || ''),
+        kind: String(t.transitionKind || '')
+      })).filter((t) => t.name);
+      return {
+        ok: true,
+        current: String(res.currentSceneTransitionName || ''),
+        transitions
+      };
+    } catch (err) {
+      return { ok: false, error: err.message, transitions: [] };
+    }
+  }
+
+  async setSceneTransition(transitionName, durationMs = 0) {
+    try {
+      const name = String(transitionName || '').trim();
+      if (!name) return { ok: false, error: 'Kein Übergangsname angegeben.' };
+      await this.call('SetCurrentSceneTransition', { transitionName: name });
+      if (Number(durationMs) > 0) {
+        await this.call('SetCurrentSceneTransitionDuration', { transitionDuration: Number(durationMs) }).catch(() => {});
+      }
+      return { ok: true, transitionName: name };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  }
+
   disconnect(emitUpdate = true) {
     for (const entry of this.pending.values()) {
       clearTimeout(entry.timer);
