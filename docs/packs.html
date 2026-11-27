@@ -478,18 +478,24 @@
         loadCardSkinSplash(id, img);
       }
       const row = document.createElement('div');
-      row.className = 'mt-5 flex gap-2';
-      dl.classList.remove('mt-5');
-      dl.classList.add('flex-1');
+      row.className = 'mt-4 grid grid-cols-3 gap-1.5';
+      dl.classList.remove('mt-5', 'px-4', 'py-2.5', 'text-sm', 'gap-2');
+      dl.classList.add('px-2', 'py-1.5', 'text-xs', 'gap-1', 'whitespace-nowrap', 'truncate');
+      const dlSpan = dl.querySelector('span');
+      if (dlSpan) {
+        dlSpan.setAttribute('data-en', 'Download');
+        dlSpan.setAttribute('data-de', 'Laden');
+        dlSpan.textContent = 'Download';
+      }
       const pv = document.createElement('a');
       pv.href = './packs-preview.html?pack=' + encodeURIComponent(id);
-      pv.className = 'inline-flex items-center justify-center gap-1 px-3 py-2.5 rounded-lg font-semibold text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition';
+      pv.className = 'inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg font-semibold text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition whitespace-nowrap';
       pv.setAttribute('data-en', '👁️ Preview');
       pv.setAttribute('data-de', '👁️ Vorschau');
       pv.textContent = '👁️ Preview';
       const trBtn = document.createElement('button');
       trBtn.type = 'button';
-      trBtn.className = 'inline-flex items-center justify-center gap-1 px-2.5 py-2.5 rounded-lg font-semibold text-xs text-purple-200 bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/40 transition';
+      trBtn.className = 'inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg font-semibold text-xs text-purple-200 bg-purple-950/70 hover:bg-purple-900/80 border border-purple-500/40 transition whitespace-nowrap';
       trBtn.title = 'Preview Scene Transition';
       trBtn.setAttribute('data-en', '✨ Transition');
       trBtn.setAttribute('data-de', '✨ Übergang');
