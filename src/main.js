@@ -4518,6 +4518,153 @@ app.whenReady().then(async () => {
     return { sectionCount: Object.keys(cfg).length, included: keys };
   };
 
+  const MAX_BACKUP_ASSET_BYTES = 45 * 1024 * 1024;
+
+  const collectBackupAssets = (cfg) => {
+    const files = {};
+    const pathToKey = new Map();
+    const skipped = [];
+    let seq = 1;
+
+    const packFile = (filePath) => {
+      const p = String(filePath || '').trim();
+      if (!p || !fs.existsSync(p)) return '';
+      if (pathToKey.has(p)) return pathToKey.get(p);
+      try {
+        const st = fs.statSync(p);
+        if (!st.isFile() || st.size <= 0) return '';
+        if (st.size > MAX_BACKUP_ASSET_BYTES) {
+          skipped.push(path.basename(p));
+          return '';
+        }
+        const key = `asset_${seq++}`;
+        files[key] = {
+          fileName: path.basename(p),
+          originalPath: p,
+          size: st.size,
+          base64: fs.readFileSync(p).toString('base64')
+        };
+        pathToKey.set(p, key);
+        return key;
+      } catch (e) {
+        return '';
+      }
+    };
+
+    const refs = {
+      soundboard: {},
+      alertMedia: {},
+      sponsors: {},
+      transitions: {}
+    };
+
+    for (const item of (cfg?.soundboard?.items || [])) {
+      if (item?.id && item.filePath) {
+        const k = packFile(item.filePath);
+        if (k) refs.soundboard[item.id] = k;
+      }
+    }
+    for (const [evKey, entry] of Object.entries(cfg?.obsAlerts?.customMedia || {})) {
+      if (!entry || typeof entry !== 'object') continue;
+      const imgKey = entry.imagePath ? packFile(entry.imagePath) : '';
+      const audKey = entry.audioPath ? packFile(entry.audioPath) : '';
+      if (imgKey || audKey) refs.alertMedia[evKey] = { ...(imgKey ? { image: imgKey } : {}), ...(audKey ? { audio: audKey } : {}) };
+    }
+    for (const sp of (cfg?.sponsors?.items || [])) {
+      if (sp?.id && sp.imagePath) {
+        const k = packFile(sp.imagePath);
+        if (k) refs.sponsors[sp.id] = k;
+      }
+    }
+    for (const r of normalizeObsTransitionRules(cfg?.obsSceneTransition)) {
+      if (r.mode === 'custom-file' && r.filePath) {
+        const k = packFile(r.filePath);
+        if (k) refs.transitions[r.id] = k;
+      }
+    }
+
+    const themePackFiles = [];
+    try {
+      const themesDir = themePacks.getThemesDir(app.getPath('userData'));
+      for (const f of fs.readdirSync(themesDir)) {
+        if (!f.endsWith('.json')) continue;
+        try {
+          themePackFiles.push({
+            fileName: f,
+            content: fs.readFileSync(path.join(themesDir, f), 'utf8')
+          });
+        } catch (e) {}
+      }
+    } catch (e) {}
+
+    return { files, refs, themePacks: themePackFiles, skipped };
+  };
+
+  const restoreBackupAssets = (backupAssets, merged) => {
+    if (!backupAssets || typeof backupAssets !== 'object') return { restoredFiles: 0, restoredThemePacks: 0 };
+    const restoreDir = path.join(app.getPath('userData'), 'restored-assets');
+    try { fs.mkdirSync(restoreDir, { recursive: true }); } catch (e) {}
+
+    const keyToPath = new Map();
+    const filesObj = backupAssets.files && typeof backupAssets.files === 'object' ? backupAssets.files : {};
+    for (const [key, meta] of Object.entries(filesObj)) {
+      if (!meta?.base64) continue;
+      const safeKey = String(key).replace(/[^a-zA-Z0-9_-]/g, '');
+      const safeName = path.basename(String(meta.fileName || 'asset.bin')).replace(/[^a-zA-Z0-9._-]/g, '_');
+      const dest = path.join(restoreDir, `${safeKey}_${safeName}`);
+      try {
+        fs.writeFileSync(dest, Buffer.from(meta.base64, 'base64'));
+        keyToPath.set(key, dest);
+      } catch (e) {}
+    }
+
+    const refs = backupAssets.refs && typeof backupAssets.refs === 'object' ? backupAssets.refs : {};
+    if (Array.isArray(merged?.soundboard?.items) && refs.soundboard) {
+      merged.soundboard.items.forEach((item) => {
+        const k = refs.soundboard[item?.id];
+        if (k && keyToPath.has(k)) item.filePath = keyToPath.get(k);
+      });
+    }
+    if (merged?.obsAlerts?.customMedia && refs.alertMedia) {
+      for (const [evKey, m] of Object.entries(refs.alertMedia)) {
+        if (!merged.obsAlerts.customMedia[evKey]) merged.obsAlerts.customMedia[evKey] = {};
+        if (m?.image && keyToPath.has(m.image)) merged.obsAlerts.customMedia[evKey].imagePath = keyToPath.get(m.image);
+        if (m?.audio && keyToPath.has(m.audio)) merged.obsAlerts.customMedia[evKey].audioPath = keyToPath.get(m.audio);
+      }
+    }
+    if (Array.isArray(merged?.sponsors?.items) && refs.sponsors) {
+      merged.sponsors.items.forEach((sp) => {
+        const k = refs.sponsors[sp?.id];
+        if (k && keyToPath.has(k)) sp.imagePath = keyToPath.get(k);
+      });
+    }
+    if (merged?.obsSceneTransition && refs.transitions) {
+      const rules = normalizeObsTransitionRules(merged.obsSceneTransition);
+      rules.forEach((r) => {
+        const k = refs.transitions[r.id];
+        if (k && keyToPath.has(k)) r.filePath = keyToPath.get(k);
+      });
+      merged.obsSceneTransition = { enabled: rules.length > 0, rules };
+    }
+
+    let restoredThemePacks = 0;
+    if (Array.isArray(backupAssets.themePacks)) {
+      const themesDir = themePacks.getThemesDir(app.getPath('userData'));
+      for (const tp of backupAssets.themePacks) {
+        if (!tp?.fileName || typeof tp.content !== 'string') continue;
+        const safeFile = path.basename(String(tp.fileName)).replace(/[^a-zA-Z0-9._-]/g, '_');
+        if (!safeFile.endsWith('.json')) continue;
+        try {
+          JSON.parse(tp.content);
+          fs.writeFileSync(path.join(themesDir, safeFile), tp.content, 'utf8');
+          restoredThemePacks++;
+        } catch (e) {}
+      }
+    }
+
+    return { restoredFiles: keyToPath.size, restoredThemePacks };
+  };
+
   ipcMain.handle('export-config', async (_ev) => {
     const { dialog } = require('electron');
     const win = BrowserWindow.fromWebContents(_ev.sender) || mainWindow;
@@ -4529,15 +4676,22 @@ app.whenReady().then(async () => {
     });
     if (res.canceled || !res.filePath) return { ok: false, canceled: true };
     const cfg = loadConfig(true);
+    const assets = collectBackupAssets(cfg);
     const payload = {
       format: 'omnigrid-studio-backup',
-      version: 1,
+      version: 2,
       appVersion: app.getVersion(),
       exportedAt: new Date().toISOString(),
-      config: cfg
+      config: cfg,
+      assets
     };
     fs.writeFileSync(res.filePath, JSON.stringify(payload, null, 2), 'utf8');
-    return { ok: true, filePath: res.filePath, summary: summarizeBackupConfig(cfg) };
+    const summary = {
+      ...summarizeBackupConfig(cfg),
+      assetsCount: Object.keys(assets.files).length,
+      themePacksCount: assets.themePacks.length
+    };
+    return { ok: true, filePath: res.filePath, summary };
   });
 
   ipcMain.handle('import-config', async (_ev, opts = {}) => {
@@ -4568,22 +4722,32 @@ app.whenReady().then(async () => {
         }
       } catch (e) {}
       const merged = deepMergeConfig(getDefaultConfig(), importedCfg);
+      const restored = restoreBackupAssets(parsed?.assets, merged);
       saveConfig(merged);
       emoteManager.updateSettings(merged.emoteSettings);
       obsServer.broadcastAppearance({
         ...merged.appearance,
         platformIndicatorStyle: merged.platformIndicatorStyle
       });
+      obsServer.broadcastAlertConfig(resolveObsAlertConfigForBroadcast(merged.obsAlerts || getDefaultConfig().obsAlerts, obsServer.port || 4588));
+      broadcastChampionThemeToObs(merged);
+      broadcastSponsorsToObs(merged).catch(() => {});
       syncChatTimer(merged);
       broadcastScheduleToObs(merged);
       broadcastGameAddonsState(merged);
       voiceBridge.stop();
+      if (obsWs.connected) obsWs.refreshOmniGridOverlays().catch(() => {});
       if (opts?.reloadWindow !== false && mainWindow && !mainWindow.isDestroyed()) {
         setTimeout(() => {
           if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
         }, 550);
       }
-      return { ok: true, config: merged, fileName: sourceName, summary: summarizeBackupConfig(merged) };
+      const summary = {
+        ...summarizeBackupConfig(merged),
+        assetsCount: restored.restoredFiles,
+        themePacksCount: restored.restoredThemePacks
+      };
+      return { ok: true, config: merged, fileName: sourceName, summary };
     } catch (err) {
       return { ok: false, error: err.message };
     }
