@@ -4507,24 +4507,36 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
     /* Singed Mad Scientist Lab: Hazard stripes */
     body.champ-fx-zaun-lab .ab-fx-lab { display: block; }
 
-    /* Revenant Reign Viego: Morphing Greatsword (Form & Color Cycle) + Purple/Blue Soul River Arms */
+    /* Revenant Reign Viego: Morphing Greatsword (Form & Color Cycle) + Noble True-Alpha Painted Soul River & Spectral Hands */
     body.champ-fx-revenant-reign .ab-fx-revenant { display: block; }
-    .ab-revenant-sword {
-      transform-origin: 540px 22px;
-      animation: abRevenantSwordShift 7.2s ease-in-out infinite;
+    .ab-revenant-river-img {
+      display: none;
+      position: absolute;
+      left: 11%;
+      right: -1%;
+      bottom: -8%;
+      width: 90%;
+      height: 82%;
+      object-fit: fill;
+      pointer-events: none;
+      z-index: 4;
+      filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.72)) drop-shadow(0 0 16px rgba(56, 189, 248, 0.45));
+      animation: abRevenantMistWave 4.6s ease-in-out infinite;
     }
-    .ab-revenant-arms {
-      animation: abRevenantMistWave 4.2s ease-in-out infinite;
+    body.champ-fx-revenant-reign .ab-revenant-river-img { display: block; }
+    .ab-revenant-sword {
+      transform-origin: 410px 22px;
+      animation: abRevenantSwordShift 7.2s ease-in-out infinite;
     }
     @keyframes abRevenantSwordShift {
       0%, 100% { filter: hue-rotate(0deg) drop-shadow(0 0 10px #e11d48); transform: scaleX(1) scaleY(1); }
-      25% { filter: hue-rotate(275deg) drop-shadow(0 0 10px #a855f7); transform: scaleX(1.06) scaleY(0.92); }
-      50% { filter: hue-rotate(195deg) drop-shadow(0 0 10px #38bdf8); transform: scaleX(0.96) scaleY(1.12); }
-      75% { filter: hue-rotate(48deg) drop-shadow(0 0 10px #facc15); transform: scaleX(1.05) scaleY(1.04); }
+      25% { filter: hue-rotate(275deg) drop-shadow(0 0 10px #a855f7); transform: scaleX(1.05) scaleY(0.94); }
+      50% { filter: hue-rotate(195deg) drop-shadow(0 0 10px #38bdf8); transform: scaleX(0.97) scaleY(1.08); }
+      75% { filter: hue-rotate(48deg) drop-shadow(0 0 10px #facc15); transform: scaleX(1.04) scaleY(1.02); }
     }
     @keyframes abRevenantMistWave {
-      0%, 100% { transform: translateY(0px); opacity: 0.88; }
-      50% { transform: translateY(-4px); opacity: 1; }
+      0%, 100% { transform: translateY(0px) scaleY(1); opacity: 0.92; }
+      50% { transform: translateY(-3px) scaleY(1.04); opacity: 1; }
     }
 
     /* Lux Elementalist: Prismatic hue cycle */
@@ -4567,6 +4579,7 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
     </div>
 
     <div class="ab-eq-strip ab-fx-sona" id="abEqStrip"></div>
+    <img class="ab-revenant-river-img" src="/api/theme-asset/viego-ability-soul-arms.png" alt="" />
 
     <svg class="ab-svg" viewBox="0 0 920 175" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -4677,47 +4690,18 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
         <rect x="530" y="18" width="110" height="8" rx="2" fill="url(#abHazardPat)" stroke="#091216" stroke-width="1" />
       </g>
 
-      <!-- REVENANT REIGN VIEGO: Morphing Greatsword Crest + High-Detail Purple/Blue Soul River & Sculpted Phantom Arms -->
+      <!-- REVENANT REIGN VIEGO: Ornate Morphing Greatsword Crest (Form & Color Cycle) -->
       <g class="ab-fx-layer ab-fx-revenant">
-        <defs>
-          <linearGradient id="abSoulRiverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#7e22ce" stop-opacity="0.78" />
-            <stop offset="35%" stop-color="#38bdf8" stop-opacity="0.82" />
-            <stop offset="70%" stop-color="#a855f7" stop-opacity="0.85" />
-            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.78" />
-          </linearGradient>
-          <linearGradient id="abSoulArmGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stop-color="#6b21a8" stop-opacity="0.25" />
-            <stop offset="55%" stop-color="#a855f7" stop-opacity="0.88" />
-            <stop offset="100%" stop-color="#bae6fd" stop-opacity="0.98" />
-          </linearGradient>
-        </defs>
         <g class="ab-revenant-sword">
-          <path d="M 164 22 L 210 13 L 224 22 L 210 31 Z M 220 22 L 332 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
-          <path d="M 650 22 L 604 13 L 590 22 L 604 31 Z M 594 22 L 492 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
-          <polygon points="84,12 94,25 84,34 74,25" fill="#e11d48" stroke="#f5f3ff" stroke-width="1.6" />
-        </g>
-        <g class="ab-revenant-arms">
-          <!-- Layered Volumetric Soul River Base -->
-          <path d="M 148 174 Q 205 152 265 163 T 390 158 T 520 163 T 660 157 T 795 163 T 904 166 L 904 175 L 148 175 Z"
-                fill="url(#abSoulRiverGrad)" opacity="0.65" />
-          <path d="M 156 174 Q 230 158 310 167 T 465 161 T 625 167 T 780 160 T 900 169"
-                fill="none" stroke="#e0f2fe" stroke-width="2" stroke-opacity="0.78" />
-          <!-- Sculpted Reaching Phantom Hands emerging from the Soul River -->
-          <path d="M 212 174 C 209 162, 208 156, 203 148 L 207 154 L 211 141 L 214 153 L 220 142 L 221 155 L 228 147 L 224 162 L 222 174 Z"
-                fill="url(#abSoulArmGrad)" stroke="#e0f2fe" stroke-width="1.2" />
-          <path d="M 410 174 C 412 161, 412 154, 405 146 L 411 153 L 416 139 L 419 152 L 426 141 L 425 154 L 432 148 L 426 162 L 423 174 Z"
-                fill="url(#abSoulArmGrad)" stroke="#d8b4fe" stroke-width="1.2" />
-          <path d="M 596 174 C 594 163, 593 156, 588 149 L 593 155 L 597 142 L 600 154 L 606 144 L 606 156 L 613 150 L 608 163 L 606 174 Z"
-                fill="url(#abSoulArmGrad)" stroke="#bae6fd" stroke-width="1.2" />
-          <path d="M 744 174 C 742 162, 740 155, 735 147 L 740 154 L 745 140 L 748 153 L 755 142 L 754 155 L 761 149 L 755 163 L 753 174 Z"
-                fill="url(#abSoulArmGrad)" stroke="#e0f2fe" stroke-width="1.2" />
-          <!-- Drifting Luminous Soul Wisps -->
-          <circle cx="268" cy="158" r="3" fill="#bae6fd" opacity="0.9" />
-          <circle cx="354" cy="162" r="2.4" fill="#d8b4fe" opacity="0.88" />
-          <circle cx="510" cy="157" r="3.2" fill="#38bdf8" opacity="0.9" />
-          <circle cx="688" cy="160" r="2.6" fill="#c084fc" opacity="0.88" />
-          <circle cx="826" cy="158" r="3" fill="#bae6fd" opacity="0.9" />
+          <!-- Left Wing Blade -->
+          <path d="M 156 22 L 198 11 L 214 18 L 328 19 L 340 22 L 328 25 L 214 26 L 198 33 Z" fill="#e11d48" stroke="#fda4af" stroke-width="1.6" />
+          <line x1="176" y1="22" x2="328" y2="22" stroke="#ffffff" stroke-width="2" stroke-opacity="0.88" />
+          <!-- Right Wing Blade -->
+          <path d="M 658 22 L 616 11 L 600 18 L 486 19 L 474 22 L 486 25 L 600 26 L 616 33 Z" fill="#e11d48" stroke="#fda4af" stroke-width="1.6" />
+          <line x1="638" y1="22" x2="486" y2="22" stroke="#ffffff" stroke-width="2" stroke-opacity="0.88" />
+          <!-- Spiked Crown Gem on Portrait Ring -->
+          <polygon points="84,8 91,20 100,14 95,28 84,35 73,28 68,14 77,20" fill="#1e1b4b" stroke="#e11d48" stroke-width="1.8" />
+          <polygon points="84,15 89,23 84,30 79,23" fill="#fda4af" />
         </g>
       </g>
     </svg>
