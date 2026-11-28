@@ -7995,7 +7995,9 @@ class ObsServer {
             res.end('Invalid theme asset');
             return;
           }
-          const assetPath = path.join(__dirname, 'assets', 'themes', safeFile);
+          const primaryAsset = path.join(__dirname, 'assets', 'themes', safeFile);
+          const fallbackAsset = path.join(__dirname, '..', 'docs', 'assets', safeFile);
+          const assetPath = fs.existsSync(primaryAsset) ? primaryAsset : fallbackAsset;
           if (!fs.existsSync(assetPath)) {
             res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
             res.end('Theme asset not found');
