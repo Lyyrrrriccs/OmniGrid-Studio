@@ -7896,67 +7896,112 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     viktorRaf = requestAnimationFrame(tick);
   }
 
-  // 60fps Akali K/DA Firestarter Edge Engine (#1 Ignition Flame-Trail + Sparks + #3 Kunai Corner Starbursts)
+  // 60fps Akali K/DA Firestarter AAA Edge Engine (#1 Volumetric Ignition Flame-Ribbon + Streak Embers + #3 Kunai Crescent Slash & Anime Lens-Flare Starbursts)
   let akaliRaf = 0;
   let akaliCanvas = null;
   function drawAkaliStarburst(ctx, x, y, r, rot, col, alpha) {
     if (alpha < 0.03) return;
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(rot);
     ctx.globalAlpha = alpha;
+    // Expanding shockwave ring
     ctx.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const a = (i * Math.PI) / 4;
-      const rad = i % 2 === 0 ? r : r * 0.28;
-      if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
-      else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
-    }
-    ctx.closePath();
-    ctx.fillStyle = col;
+    ctx.arc(0, 0, r * 1.15, 0, Math.PI * 2);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2.0 * alpha;
     ctx.shadowColor = col;
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.4;
+    ctx.shadowBlur = 14;
     ctx.stroke();
+    // Long razor-sharp anime 4-point cross flare + 45deg secondary spikes
+    for (let tier = 0; tier < 2; tier++) {
+      ctx.save();
+      ctx.rotate(rot + (tier === 1 ? Math.PI / 4 : 0));
+      const len = tier === 0 ? r * 1.65 : r * 0.92;
+      const wid = tier === 0 ? r * 0.22 : r * 0.16;
+      ctx.beginPath();
+      for (let i = 0; i < 4; i++) {
+        const a = (i * Math.PI) / 2;
+        const aMid = a + Math.PI / 4;
+        if (i === 0) ctx.moveTo(Math.cos(a) * len, Math.sin(a) * len);
+        else ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+        ctx.lineTo(Math.cos(aMid) * wid, Math.sin(aMid) * wid);
+      }
+      ctx.closePath();
+      ctx.fillStyle = tier === 0 ? '#ffffff' : col;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 16;
+      ctx.fill();
+      ctx.restore();
+    }
     ctx.restore();
   }
-  function drawAkaliTrail(ctx, poly, uHead, uLen, col1, col2, width, sparksArr) {
-    const steps = 16;
+  function drawAkaliTrail(ctx, poly, uHead, uLen, col1, col2, width, sparksArr, now, isFlame) {
+    const steps = 22;
+    const pts = [];
+    for (let s = 0; s <= steps; s++) {
+      const f = s / steps;
+      pts.push(samplePoly(poly, uHead - uLen * (1 - f)));
+    }
+    // Pass 1: Wide molten heat / plasma bloom
     for (let s = 0; s < steps; s++) {
-      const f0 = s / steps;
-      const f1 = (s + 1) / steps;
-      const p0 = samplePoly(poly, uHead - uLen * (1 - f0));
-      const p1 = samplePoly(poly, uHead - uLen * (1 - f1));
+      const f = (s + 1) / steps;
+      const p0 = pts[s], p1 = pts[s + 1];
       ctx.beginPath();
       ctx.moveTo(p0[0], p0[1]);
       ctx.lineTo(p1[0], p1[1]);
       ctx.lineCap = 'round';
-      ctx.strokeStyle = f1 > 0.72 ? col2 : col1;
+      ctx.strokeStyle = col1;
       ctx.shadowColor = col1;
-      ctx.shadowBlur = 14 * f1;
-      ctx.globalAlpha = Math.pow(f1, 1.5) * 0.95;
-      ctx.lineWidth = Math.max(1.2, width * f1);
+      ctx.shadowBlur = 18 * f;
+      ctx.globalAlpha = Math.pow(f, 1.7) * 0.55;
+      ctx.lineWidth = Math.max(1.5, width * 2.5 * f);
       ctx.stroke();
+      // Pass 2: Crisp glowing inner ribbon + flickering flame licks
+      ctx.strokeStyle = f > 0.65 ? col2 : col1;
+      ctx.shadowBlur = 10 * f;
+      ctx.globalAlpha = Math.pow(f, 1.35) * 0.96;
+      ctx.lineWidth = Math.max(1.0, width * f);
+      ctx.stroke();
+      // Pass 3: White-hot spear core near leading edge
+      if (f > 0.55) {
+        ctx.strokeStyle = '#fffbeb';
+        ctx.globalAlpha = (f - 0.55) * 2.1;
+        ctx.lineWidth = Math.max(0.8, width * 0.42 * f);
+        ctx.stroke();
+      }
+      // Organic flickering flame tongues licking outward from flame ribbon
+      if (isFlame && s > 6 && s % 3 === 0) {
+        const dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+        const l = Math.hypot(dx, dy) || 1;
+        const nx = -dy / l, ny = dx / l;
+        const flick = Math.sin(now * 0.025 + s * 1.9) * 0.5 + 0.5;
+        const tongue = (4 + flick * 9) * f;
+        ctx.beginPath();
+        ctx.moveTo(p0[0], p0[1]);
+        ctx.quadraticCurveTo(p1[0] + nx * tongue, p1[1] + ny * tongue, p1[0] - dx * 0.4, p1[1] - dy * 0.4);
+        ctx.strokeStyle = '#ff7a00';
+        ctx.globalAlpha = f * 0.72;
+        ctx.lineWidth = 2.0 * f;
+        ctx.stroke();
+      }
     }
-    const head = samplePoly(poly, uHead);
+    const head = pts[steps];
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#fffbeb';
+    ctx.fillStyle = '#ffffff';
     ctx.shadowColor = col2;
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 16;
     ctx.beginPath();
-    ctx.arc(head[0], head[1], width * 0.62, 0, Math.PI * 2);
+    ctx.arc(head[0], head[1], width * 0.68, 0, Math.PI * 2);
     ctx.fill();
-    if (sparksArr && sparksArr.length < 70 && Math.random() < 0.55) {
+    if (sparksArr && sparksArr.length < 95 && Math.random() < 0.68) {
       sparksArr.push({
-        x: head[0] + (Math.random() - 0.5) * 6,
-        y: head[1] + (Math.random() - 0.5) * 6,
-        vx: (Math.random() - 0.5) * 1.4,
-        vy: -0.7 - Math.random() * 1.8,
+        x: head[0] + (Math.random() - 0.5) * 5,
+        y: head[1] + (Math.random() - 0.5) * 5,
+        vx: (Math.random() - 0.5) * 2.2,
+        vy: -1.0 - Math.random() * 2.4,
         life: 1,
-        col: Math.random() < 0.28 ? '#00f5ff' : (Math.random() < 0.5 ? '#ff7a00' : '#ff3b5c'),
-        r: 1.5 + Math.random() * 2.2
+        col: Math.random() < 0.28 ? '#00f5ff' : (Math.random() < 0.55 ? '#ff7a00' : '#ff3b5c'),
+        w: 1.4 + Math.random() * 1.8
       });
     }
   }
@@ -8010,31 +8055,36 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       for (let i = 0; i < polys.length; i++) {
         const poly = polys[i];
         const ph = t + i * 0.31;
-        // #1 Ignition Flame-Trail (Orange -> Crimson)
-        drawAkaliTrail(ctx, poly, ph, 0.22, '#ff3b5c', '#ff7a00', 4.6, sparks);
-        // #3 Kunai Energy-Slash (Hyper-Cyan counter-chase)
-        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.16, '#00f5ff', '#ffffff', 3.4, null);
-        // #3 Corner Cel-Shaded Starburst Impact when slash nears a corner
+        drawAkaliTrail(ctx, poly, ph, 0.24, '#ff3b5c', '#ff7a00', 4.8, sparks, now, true);
+        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.17, '#00f5ff', '#ffffff', 3.4, null, now, false);
         if (poly.length === 5) {
           for (let c = 0; c < 4; c++) {
             const dist = Math.abs((((ph % 1) + 1) % 1) - c * 0.25);
-            const burst = Math.max(0, 1 - dist * 16);
+            const burst = Math.max(0, 1 - dist * 14);
             if (burst > 0.05) {
-              drawAkaliStarburst(ctx, poly[c][0], poly[c][1], 14 * burst + 4, now * 0.004 + c, c % 2 === 0 ? '#00f5ff' : '#ff7a00', burst);
+              drawAkaliStarburst(ctx, poly[c][0], poly[c][1], 14 * burst + 5, now * 0.005 + c, c % 2 === 0 ? '#00f5ff' : '#ff7a00', burst);
             }
           }
         }
       }
 
+      // Velocity-stretched glowing ember streaks with turbulence
       for (let i = sparks.length - 1; i >= 0; i--) {
         const sp = sparks[i];
-        sp.x += sp.vx; sp.y += sp.vy; sp.life -= 0.028;
+        const px = sp.x, py = sp.y;
+        sp.vx += Math.sin(now * 0.015 + i) * 0.06;
+        sp.x += sp.vx; sp.y += sp.vy; sp.vy *= 0.985; sp.life -= 0.026;
         if (sp.life <= 0) { sparks.splice(i, 1); continue; }
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(sp.x + sp.vx * 2.2, sp.y + sp.vy * 2.2);
+        ctx.lineCap = 'round';
         ctx.globalAlpha = sp.life;
-        ctx.fillStyle = sp.col;
+        ctx.strokeStyle = sp.col;
         ctx.shadowColor = sp.col;
-        ctx.shadowBlur = 8;
-        ctx.fillRect(sp.x, sp.y, sp.r, sp.r);
+        ctx.shadowBlur = 10;
+        ctx.lineWidth = sp.w * sp.life;
+        ctx.stroke();
       }
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
