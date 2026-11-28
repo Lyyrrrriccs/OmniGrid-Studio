@@ -5206,6 +5206,8 @@ document.getElementById('btnSaveStreamInfo')?.addEventListener('click', async ()
     }
     const lolMatchBox = document.getElementById('gaLolMatchControls');
     if (lolMatchBox) lolMatchBox.classList.toggle('hidden', addon.id !== 'lol');
+    const champThemeBox = document.getElementById('gaChampThemeBox');
+    if (champThemeBox) champThemeBox.classList.toggle('hidden', addon.id !== 'lol');
     const jcBox = document.getElementById('gaJcControls');
     if (jcBox) jcBox.classList.toggle('hidden', addon.id !== 'justchatting');
     const tronBox = document.getElementById('gaTronControls');

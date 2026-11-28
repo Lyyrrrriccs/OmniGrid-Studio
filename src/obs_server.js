@@ -7984,7 +7984,7 @@ class ObsServer {
             'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'no-cache'
           });
-          res.end(JSON.stringify({ pack: this.currentChampionTheme || null }));
+          res.end(JSON.stringify({ pack: this.getEffectiveChampionTheme() }));
           return;
         }
 
@@ -8318,15 +8318,15 @@ class ObsServer {
         } else if (urlPath === '/lol-build') {
           res.end(withChampionTheme(OBS_LOL_BUILD_HTML));
         } else if (urlPath === '/jc-lowerthird') {
-          res.end(withChampionTheme(OBS_JC_LOWERTHIRD_HTML));
+          res.end(OBS_JC_LOWERTHIRD_HTML);
         } else if (urlPath === '/jc-qna') {
-          res.end(withChampionTheme(OBS_JC_QNA_HTML));
+          res.end(OBS_JC_QNA_HTML);
         } else if (urlPath === '/tron-talk') {
-          res.end(withChampionTheme(OBS_TRON_TALK_HTML));
+          res.end(OBS_TRON_TALK_HTML);
         } else if (urlPath === '/val-bar') {
-          res.end(withChampionTheme(OBS_VAL_BAR_HTML));
+          res.end(OBS_VAL_BAR_HTML);
         } else if (urlPath === '/val-map') {
-          res.end(withChampionTheme(OBS_VAL_MAP_HTML));
+          res.end(OBS_VAL_MAP_HTML);
         } else if (urlPath === '/sponsors') {
           res.end(withChampionTheme(OBS_SPONSORS_HTML));
         } else {
@@ -8368,7 +8368,7 @@ class ObsServer {
           ws.send(JSON.stringify({ type: 'sponsors', data: this.currentSponsors }));
         }
         if (this.currentChampionTheme !== undefined) {
-          ws.send(JSON.stringify({ type: 'champion-theme', data: this.currentChampionTheme }));
+          ws.send(JSON.stringify({ type: 'champion-theme', data: this.getEffectiveChampionTheme() }));
         }
         for (const msg of this.recentMessages.slice(-40)) {
           ws.send(JSON.stringify({ type: 'chat', data: msg }));
@@ -8520,9 +8520,15 @@ class ObsServer {
     this._broadcast({ type: 'sponsors', data: payload });
   }
 
+  getEffectiveChampionTheme() {
+    const activeAddon = this.currentGameStats && this.currentGameStats.addonId;
+    if (activeAddon && activeAddon !== 'lol') return null;
+    return this.currentChampionTheme || null;
+  }
+
   broadcastChampionTheme(pack) {
     this.currentChampionTheme = pack || null;
-    this._broadcast({ type: 'champion-theme', data: this.currentChampionTheme });
+    this._broadcast({ type: 'champion-theme', data: this.getEffectiveChampionTheme() });
   }
 
   setCustomTransitionResolver(fn) {
@@ -8542,8 +8548,13 @@ class ObsServer {
   }
 
   broadcastGameStats(statsPayload) {
+    const prevAddon = this.currentGameStats && this.currentGameStats.addonId;
     this.currentGameStats = statsPayload;
     this._broadcast({ type: 'game-stats', data: statsPayload });
+    const nextAddon = statsPayload && statsPayload.addonId;
+    if (prevAddon !== nextAddon) {
+      this._broadcast({ type: 'champion-theme', data: this.getEffectiveChampionTheme() });
+    }
   }
 
   stop() {
