@@ -650,6 +650,41 @@
     #stage.champ-fx-jinx-glitch .pv-ab-fx-jinx { display: block; }
     #stage.champ-fx-zaun-lab .pv-ab-fx-lab { display: block; }
     #stage.champ-fx-final-boss .pv-ab-fx-finalboss { display: block; }
+    #stage.champ-fx-creator-viktor .pv-ab-fx-viktor { display: block; }
+    #stage.champ-fx-creator-viktor :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
+      position: relative;
+      border: 2.5px solid #ff1e2d !important;
+      border-radius: 0 !important;
+      box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.35), 0 0 22px rgba(255, 30, 45, 0.5) !important;
+    }
+    #stage.champ-fx-creator-viktor :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card)::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 20px;
+      background-repeat: repeat-x;
+      background-size: 180px 20px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 22'%3E%3Cpolyline points='0,14 22,6 38,17 62,4 82,16 108,5 128,17 154,6 180,14' fill='none' stroke='%23ff1e2d' stroke-width='4.8' stroke-linejoin='miter'/%3E%3Cpolyline points='0,14 22,6 38,17 62,4 82,16 108,5 128,17 154,6 180,14' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linejoin='miter'/%3E%3C/svg%3E");
+      filter: drop-shadow(0 0 7px rgba(255, 30, 45, 0.95));
+      pointer-events: none;
+      z-index: 6;
+    }
+    #stage.champ-fx-creator-viktor :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card)::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      right: 7px;
+      width: 22px;
+      height: 26px;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 32'%3E%3Cpolygon points='4,3 24,3 22,22 14,29 6,22' fill='%231e293b' stroke='%23cbd5e1' stroke-width='2'/%3E%3Cline x1='8' y1='12' x2='12.5' y2='14' stroke='%23ff1e2d' stroke-width='2.6' stroke-linecap='round'/%3E%3Cline x1='20' y1='12' x2='15.5' y2='14' stroke='%23ff1e2d' stroke-width='2.6' stroke-linecap='round'/%3E%3Cline x1='9' y1='20' x2='19' y2='20' stroke='%2394a3b8' stroke-width='1.6'/%3E%3C/svg%3E");
+      filter: drop-shadow(0 0 7px rgba(255, 30, 45, 0.85));
+      pointer-events: none;
+      z-index: 8;
+    }
     #stage.champ-fx-final-boss :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
       position: relative;
       border: 3px solid #22ff66 !important;
@@ -1105,6 +1140,17 @@
                   <rect x="520" y="164" width="10" height="8" fill="#00f0ff" stroke="#080614" stroke-width="1.5" />
                   <rect x="750" y="164" width="10" height="8" fill="#ffe14d" stroke="#080614" stroke-width="1.5" />
                 </g>
+                <g class="pv-ab-fx pv-ab-fx-viktor">
+                  <polygon points="154,32 174,16 218,16 206,28 166,28" fill="#1e293b" stroke="#94a3b8" stroke-width="1.8" />
+                  <polygon points="656,32 636,16 592,16 604,28 644,28" fill="#1e293b" stroke="#94a3b8" stroke-width="1.8" />
+                  <polygon points="71,12 97,12 94,31 84,37 74,31" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.8" />
+                  <line x1="76" y1="21" x2="82" y2="23" stroke="#ff1e2d" stroke-width="2.6" stroke-linecap="round" />
+                  <line x1="92" y1="21" x2="86" y2="23" stroke="#ff1e2d" stroke-width="2.6" stroke-linecap="round" />
+                  <polyline points="212,22 252,14 282,27 328,13 372,26 420,14 468,26 520,13 564,25 604,20" fill="none" stroke="#ff1e2d" stroke-width="5" />
+                  <polyline points="212,22 252,14 282,27 328,13 372,26 420,14 468,26 520,13 564,25 604,20" fill="none" stroke="#ffffff" stroke-width="2" />
+                  <polyline points="164,169 224,160 270,173 342,161 402,172 478,159 544,173 622,160 698,172 778,160 842,172 894,166" fill="none" stroke="#ff1e2d" stroke-width="5" />
+                  <polyline points="164,169 224,160 270,173 342,161 402,172 478,159 544,173 622,160 698,172 778,160 842,172 894,166" fill="none" stroke="#ffffff" stroke-width="2" />
+                </g>
               </svg>
             </div>
           </div>
@@ -1116,6 +1162,7 @@
   <script>
     const PACK_CATALOG = [
       { id: 'none', name: 'Standard (LoL Hextech)', icon: '⚔️', effect: 'none', description: 'Default OmniGrid Studio Hextech design across all OBS overlays.', colors: { primary: '#c8aa6e', secondary: '#0ac8b9', tertiary: '#38bdf8', bgStart: 'rgba(9, 20, 40, 0.96)', bgEnd: 'rgba(1, 10, 19, 0.97)', text: '#f0e6d2' }, mapCoverBadge: '🛡️ Streamer-Modus' },
+      { id: 'viktor-creator', name: 'Viktor — Creator', icon: '🦾', effect: 'creator-viktor', description: 'Armored Battlecast tech & Dr. Doom iron-overlord HUD with brushed gunmetal plates, animated red-white high-voltage lightning arcs & 60fps Chaos Storm transition.', colors: { primary: '#ff1e2d', secondary: '#f8fafc', tertiary: '#64748b', bgStart: 'rgba(11, 12, 16, 0.98)', bgEnd: 'rgba(22, 8, 12, 0.98)', text: '#f8fafc' }, mapCoverBadge: 'CREATOR // GLORIOUS EVOLUTION 🦾' },
       { id: 'veigar-final-boss', name: 'Veigar — Final Boss', icon: '👾', effect: 'final-boss', description: '8-bit retro arcade boss HUD with neon-green pixel borders, CRT scanlines, glitch voxels, Arcade Ability-Bar & 60fps Primordial Burst (R) Ultimate transition.', colors: { primary: '#22ff66', secondary: '#a855f7', tertiary: '#00f0ff', bgStart: 'rgba(8, 6, 20, 0.97)', bgEnd: 'rgba(16, 6, 28, 0.98)', text: '#ecfdf5' }, mapCoverBadge: 'FINAL BOSS // GAME OVER 👾' },
       { id: 'thresh-unbound', name: 'Thresh — Unbound', icon: '⛓️', effect: 'unbound-thresh', description: 'Unbound Thresh Shadow Isles emerald, spectral cyan & obsidian iron with chain-link overlay frames, swaying soul lantern emblem & 2.5D cel-shaded Soul-Capture transition.', colors: { primary: '#10b981', secondary: '#5eead4', tertiary: '#34d399', bgStart: 'rgba(4, 16, 14, 0.97)', bgEnd: 'rgba(2, 9, 10, 0.98)', text: '#ecfdf5' }, mapCoverBadge: 'UNBOUND // COLLECT SOULS ⛓️' },
       { id: 'ahri-kda-firestarter', name: 'Ahri — K/DA FIRESTARTER', icon: '🦊', effect: 'ahri-firestarter', description: 'K/DA FIRESTARTER Ahri hot-pink neon charm, crimson flame & crystal heart shards with 2.5D cel-shaded Heart-Shatter transition across all OBS overlays.', colors: { primary: '#ff2e97', secondary: '#ff1e56', tertiary: '#fda4af', bgStart: 'rgba(18, 4, 14, 0.97)', bgEnd: 'rgba(9, 3, 12, 0.98)', text: '#fff0f7' }, mapCoverBadge: 'FIRESTARTER // HEART CHARM 🦊' },
@@ -1163,7 +1210,7 @@
       'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose',
       'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige',
       'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter',
-      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-final-boss', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
+      'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-final-boss', 'champ-fx-creator-viktor', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist'
     ];
 
     const SKIN_ART_MAP = {
@@ -1190,6 +1237,7 @@
       'thresh-unbound': { championId: 'Thresh', skinQuery: 'Unbound' },
       'twistedfate-crime-city-nightmare': { championId: 'TwistedFate', skinQuery: 'Crime City Nightmare' },
       'veigar-final-boss': { championId: 'Veigar', skinQuery: 'Final Boss' },
+      'viktor-creator': { championId: 'Viktor', skinQuery: 'Creator' },
       'viego-ruined': { championId: 'Viego', skinQuery: 'Revenant Reign', directUrl: './assets/viego-revenant-reign.jpg' },
       'wukong-radiant': { championId: 'MonkeyKing', skinQuery: 'Radiant' },
       'yasuo-nightbringer': { championId: 'Yasuo', skinQuery: 'Nightbringer' },
@@ -1214,7 +1262,7 @@
       'nightbringer': 'embers', 'god-king': 'embers', 'risen-legend': 'streaks', 'kda-all-out': 'stars',
       'dark-cosmic': 'orbit', 'prestige-cosmic': 'orbit', 'black-rose': 'petals', 'spirit-blossom': 'petals',
       'blossom-springs': 'bubbles', 'ravenborn': 'feathers', 'inkshadow': 'ink', 'elementalist': 'orbs',
-      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'revenant-reign': 'mist', 'final-boss': 'cyber', 'zaun-lab': 'bubbles', 'crime-city': 'cards', 'prestige-rose': 'petals', 'dj-sona': 'eq', 'arcane-fractured': 'shards', 'eve-firestarter': 'embers', 'ahri-firestarter': 'shards', 'unbound-thresh': 'mist'
+      'radiant-cloud': 'orbs', 'arcane-prestige': 'diamonds', 'project-cyber': 'cyber', 'ruined-mist': 'mist', 'revenant-reign': 'mist', 'final-boss': 'cyber', 'creator-viktor': 'sparks', 'zaun-lab': 'bubbles', 'crime-city': 'cards', 'prestige-rose': 'petals', 'dj-sona': 'eq', 'arcane-fractured': 'shards', 'eve-firestarter': 'embers', 'ahri-firestarter': 'shards', 'unbound-thresh': 'mist'
     };
     const csParticles = Array.from({ length: 44 }, () => ({
       x: Math.random() * 960, y: Math.random() * 540, r: 1.4 + Math.random() * 2.8,
