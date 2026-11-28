@@ -7853,7 +7853,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       if (viktorCanvas.width !== w || viktorCanvas.height !== h) { viktorCanvas.width = w; viktorCanvas.height = h; }
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = 'lighter';
-      const t = now * 0.00028;
+      const t = now * 0.00015;
 
       const abStage = document.getElementById('abStage');
       if (abStage) {
@@ -8042,7 +8042,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       }
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = 'lighter';
-      const t = now * 0.00032;
+      const t = now * 0.00016;
 
       for (let i = 0; i < cachedPolys.length; i++) {
         const poly = cachedPolys[i];

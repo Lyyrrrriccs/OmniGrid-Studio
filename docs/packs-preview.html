@@ -1565,7 +1565,7 @@
         }
         ctx.clearRect(0, 0, pvAkaliCanvas.width, pvAkaliCanvas.height);
         ctx.globalCompositeOperation = 'lighter';
-        const t = now * 0.00032;
+        const t = now * 0.00016;
         for (let i = 0; i < cachedPolys.length; i++) {
           const poly = cachedPolys[i], ph = t + i * 0.31;
           pvAkaliTrail(ctx, poly, ph, 0.24, '#ff3b5c', '#ff7a00', 4.2, sparks, now, true);
@@ -1662,7 +1662,7 @@
         if (pvViktorCanvas.width !== w || pvViktorCanvas.height !== h) { pvViktorCanvas.width = w; pvViktorCanvas.height = h; }
         ctx.clearRect(0, 0, w, h);
         ctx.globalCompositeOperation = 'lighter';
-        const t = now * 0.00028;
+        const t = now * 0.00015;
         const cards = stage.querySelectorAll('.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card');
         cards.forEach((el, idx) => {
           const r = el.getBoundingClientRect();
