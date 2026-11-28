@@ -1,0 +1,27 @@
+{
+  "id": "viktor-creator",
+  "name": "Viktor — Creator",
+  "icon": "🦾",
+  "championMatch": [
+    "viktor"
+  ],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "creator-viktor",
+  "description": "Creator Viktor armored Battlecast tech & Dr. Doom iron-overlord HUD — brushed gunmetal steel plates, animated red-and-white high-voltage lightning arcs, crimson Death Ray Ability-Bar & 60fps Chaos Storm lightning transition.",
+  "colors": {
+    "primary": "#ff1e2d",
+    "secondary": "#f8fafc",
+    "tertiary": "#64748b",
+    "bgStart": "rgba(11, 12, 16, 0.98)",
+    "bgEnd": "rgba(22, 8, 12, 0.98)",
+    "text": "#f8fafc",
+    "muted": "#94a3b8"
+  },
+  "mapCoverBadge": "CREATOR // GLORIOUS EVOLUTION 🦾",
+  "skinArt": {
+    "championId": "Viktor",
+    "skinQuery": "Creator",
+    "skinNum": 3
+  }
+}

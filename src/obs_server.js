@@ -2471,6 +2471,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-ruined-mist .bg-splash,
     body.fx-revenant-reign .bg-splash,
     body.fx-final-boss .bg-splash,
+    body.fx-creator-viktor .bg-splash,
     body.fx-zaun-lab .bg-splash,
     body.fx-crime-city .bg-splash,
     body.fx-prestige-rose .bg-splash,
@@ -2749,6 +2750,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'ruined-mist': 'mist',
         'revenant-reign': 'mist',
         'final-boss': 'cyber',
+        'creator-viktor': 'sparks',
         'zaun-lab': 'bubbles',
         'crime-city': 'cards',
         'prestige-rose': 'petals',
@@ -4166,6 +4168,28 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           }
           spawnEveCoffin();
           drawEveCoffin();
+        } else if (activeEffect === 'creator-viktor') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/viktor-creator-transition.mp4?t=' + Date.now();
+            customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnBubbles();
+              drawBubbles();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2250);
+            return;
+          }
+          spawnBubbles();
+          drawBubbles();
         } else if (activeEffect === 'final-boss') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/veigar-final-boss-transition.mp4?t=' + Date.now();
@@ -4578,6 +4602,22 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
       50% { transform: translateY(-4px); }
     }
 
+    /* Creator Viktor: Dr. Doom Armored Iron Tech + Red-White High-Voltage Lightning Arcs */
+    body.champ-fx-creator-viktor .ab-fx-viktor { display: block; }
+    body.champ-fx-creator-viktor .ab-svg { filter: drop-shadow(0 0 12px rgba(255, 30, 45, 0.78)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.65)); }
+    .ab-viktor-arc-a { animation: abViktorArcA 1.15s steps(3, end) infinite; }
+    .ab-viktor-arc-b { animation: abViktorArcB 1.45s steps(3, end) infinite; }
+    @keyframes abViktorArcA {
+      0%, 100% { opacity: 1; transform: translateY(0px); }
+      33% { opacity: 0.35; transform: translateY(-1.5px); }
+      66% { opacity: 0.95; transform: translateY(1.5px); }
+    }
+    @keyframes abViktorArcB {
+      0%, 100% { opacity: 0.3; transform: translateY(1px); }
+      45% { opacity: 1; transform: translateY(-1px); }
+      80% { opacity: 0.6; transform: translateY(0px); }
+    }
+
     @keyframes abFlow { to { stroke-dashoffset: -268; } }
     @keyframes abSpin { to { transform: rotate(360deg); } }
     @keyframes abLanternSway {
@@ -4757,6 +4797,32 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
           <rect x="440" y="164" width="10" height="8" fill="#a855f7" stroke="#080614" stroke-width="1.5" />
           <rect x="520" y="164" width="10" height="8" fill="#00f0ff" stroke="#080614" stroke-width="1.5" />
           <rect x="750" y="164" width="10" height="8" fill="#ffe14d" stroke="#080614" stroke-width="1.5" />
+        </g>
+      </g>
+
+      <!-- CREATOR VIKTOR: Armored Iron Plates, Dr. Doom Tech Mask Crest & Animated Red-White Lightning Arcs -->
+      <g class="ab-fx-layer ab-fx-viktor">
+        <!-- Heavy Gunmetal Armor Corner Rivet Plates -->
+        <polygon points="154,32 174,16 218,16 206,28 166,28" fill="#1e293b" stroke="#94a3b8" stroke-width="1.8" />
+        <polygon points="656,32 636,16 592,16 604,28 644,28" fill="#1e293b" stroke="#94a3b8" stroke-width="1.8" />
+        <polygon points="878,34 916,34 916,74 904,64 904,46 888,46" fill="#1e293b" stroke="#ff1e2d" stroke-width="1.8" />
+        <!-- Dr. Doom / Creator Iron Mask Crest over Portrait Ring -->
+        <polygon points="71,12 97,12 94,31 84,37 74,31" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.8" />
+        <line x1="76" y1="21" x2="82" y2="23" stroke="#ff1e2d" stroke-width="2.6" stroke-linecap="round" />
+        <line x1="92" y1="21" x2="86" y2="23" stroke="#ff1e2d" stroke-width="2.6" stroke-linecap="round" />
+        <line x1="78" y1="29" x2="90" y2="29" stroke="#94a3b8" stroke-width="1.5" />
+        <!-- Animated Red-White High-Voltage Lightning Arcs along Top & Bottom Rails -->
+        <g class="ab-viktor-arc-a">
+          <polyline points="212,22 252,14 282,27 328,13 372,26 420,14 468,26 520,13 564,25 604,20"
+                    fill="none" stroke="#ff1e2d" stroke-width="5.5" stroke-linejoin="miter" stroke-opacity="0.88" />
+          <polyline points="212,22 252,14 282,27 328,13 372,26 420,14 468,26 520,13 564,25 604,20"
+                    fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linejoin="miter" />
+        </g>
+        <g class="ab-viktor-arc-b">
+          <polyline points="164,169 224,160 270,173 342,161 402,172 478,159 544,173 622,160 698,172 778,160 842,172 894,166"
+                    fill="none" stroke="#ff1e2d" stroke-width="5.2" stroke-linejoin="miter" stroke-opacity="0.85" />
+          <polyline points="164,169 224,160 270,173 342,161 402,172 478,159 544,173 622,160 698,172 778,160 842,172 894,166"
+                    fill="none" stroke="#ffffff" stroke-width="2.0" stroke-linejoin="miter" />
         </g>
       </g>
     </svg>
@@ -7522,6 +7588,89 @@ body.champ-fx-final-boss .sp-prog-fill,
 body.champ-fx-final-boss .val-rr-fill {
   background: repeating-linear-gradient(90deg, #22ff66 0 10px, #16a34a 10px 12px, #a855f7 12px 22px, #00f0ff 22px 24px) !important;
 }
+
+/* CREATOR VIKTOR: Heavy Armored Battlecast Tech + Dr. Doom Iron Sovereign + Animated Red-White Lightning */
+@keyframes viktorVoltagePulse {
+  0%, 86%, 100% { border-color: #ff1e2d; box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.35), 0 0 22px rgba(255, 30, 45, 0.48); }
+  90% { border-color: #ffffff; box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.35), 0 0 32px rgba(255, 30, 45, 0.88), 0 0 14px rgba(255, 255, 255, 0.8); }
+  94% { border-color: #ff1e2d; box-shadow: 0 0 28px rgba(255, 30, 45, 0.72), 0 0 10px rgba(255, 255, 255, 0.65); }
+}
+@keyframes viktorArcCrack {
+  0% { background-position: 0% 100%; opacity: 0.95; }
+  25% { background-position: 45% 100%; opacity: 0.42; }
+  50% { background-position: 110% 100%; opacity: 1; }
+  75% { background-position: 165% 100%; opacity: 0.52; }
+  100% { background-position: 220% 100%; opacity: 0.95; }
+}
+body.champ-fx-creator-viktor .msg-row {
+  background:
+    repeating-linear-gradient(-45deg, rgba(148, 163, 184, 0.06) 0 4px, transparent 4px 12px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(11, 12, 16, 0.98)), var(--ct-bg-end, rgba(22, 8, 12, 0.98))) !important;
+  border: 1.5px solid #64748b !important;
+  border-left: 4px solid #ff1e2d !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 30, 45, 0.25), 0 0 14px rgba(255, 30, 45, 0.28) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-creator-viktor ${s}`).join(',\n')} {
+  position: relative;
+  background:
+    repeating-linear-gradient(135deg, rgba(148, 163, 184, 0.05) 0 3px, transparent 3px 14px),
+    radial-gradient(circle at 86% 14%, rgba(255, 30, 45, 0.24), transparent 44%),
+    radial-gradient(circle at 14% 88%, rgba(248, 250, 252, 0.12), transparent 46%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(11, 12, 16, 0.98)), var(--ct-bg-end, rgba(22, 8, 12, 0.98))) !important;
+  border: 2.5px solid #ff1e2d !important;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  border-radius: 0 !important;
+  animation: viktorVoltagePulse 3.2s linear infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-creator-viktor ${s}::before`).join(',\n')} {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  background-repeat: repeat-x;
+  background-size: 180px 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 22'%3E%3Cpolyline points='0,14 22,6 38,17 62,4 82,16 108,5 128,17 154,6 180,14' fill='none' stroke='%23ff1e2d' stroke-width='4.8' stroke-linejoin='miter'/%3E%3Cpolyline points='0,14 22,6 38,17 62,4 82,16 108,5 128,17 154,6 180,14' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linejoin='miter'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 8px rgba(255, 30, 45, 0.95)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
+  animation: viktorArcCrack 1.35s steps(4, end) infinite;
+  pointer-events: none;
+  z-index: 6;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-creator-viktor ${s}::after`).join(',\n')} {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 24px;
+  height: 28px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 32'%3E%3Cpolygon points='4,3 24,3 22,22 14,29 6,22' fill='%231e293b' stroke='%23cbd5e1' stroke-width='2'/%3E%3Cline x1='8' y1='12' x2='12.5' y2='14' stroke='%23ff1e2d' stroke-width='2.6' stroke-linecap='round'/%3E%3Cline x1='20' y1='12' x2='15.5' y2='14' stroke='%23ff1e2d' stroke-width='2.6' stroke-linecap='round'/%3E%3Cline x1='9' y1='20' x2='19' y2='20' stroke='%2394a3b8' stroke-width='1.6'/%3E%3Cline x1='11' y1='23' x2='17' y2='23' stroke='%23ff1e2d' stroke-width='1.4'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 0 8px rgba(255, 30, 45, 0.85));
+  pointer-events: none;
+  z-index: 8;
+}
+body.champ-fx-creator-viktor .gs-title,
+body.champ-fx-creator-viktor .gs-champ-name,
+body.champ-fx-creator-viktor .lb-rank,
+body.champ-fx-creator-viktor .sp-title,
+body.champ-fx-creator-viktor .goal-title,
+body.champ-fx-creator-viktor .poll-q,
+body.champ-fx-creator-viktor .gw-title,
+body.champ-fx-creator-viktor .sched-title,
+body.champ-fx-creator-viktor .al-author,
+body.champ-fx-creator-viktor .lt-topic,
+body.champ-fx-creator-viktor .qna-author,
+body.champ-fx-creator-viktor .tron-topic,
+body.champ-fx-creator-viktor .val-rank-name { color: #f8fafc !important; text-shadow: 0 0 10px rgba(255, 30, 45, 0.92), 0 0 4px rgba(255, 255, 255, 0.65) !important; letter-spacing: 0.05em; }
+body.champ-fx-creator-viktor .gs-lp-fill,
+body.champ-fx-creator-viktor .lb-lp-fill,
+body.champ-fx-creator-viktor .goal-fill,
+body.champ-fx-creator-viktor .sp-prog-fill,
+body.champ-fx-creator-viktor .val-rr-fill { background: linear-gradient(90deg, #991b1b, #ff1e2d, #ffffff) !important; }
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -7591,7 +7740,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-final-boss', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-final-boss', 'champ-fx-creator-viktor', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');

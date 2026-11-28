@@ -165,7 +165,8 @@
       'unbound-thresh': 'thresh-unbound-transition.mp4',
       'revenant-reign': 'viego-revenant-reign-transition.mp4',
       'dj-sona': 'dj-sona-transition.mp4',
-      'final-boss': 'veigar-final-boss-transition.mp4'
+      'final-boss': 'veigar-final-boss-transition.mp4',
+      'creator-viktor': 'viktor-creator-transition.mp4'
     };
     if (videoClips[fx] && vid) {
       vid.src = './assets/' + videoClips[fx] + '?t=' + Date.now();
