@@ -4658,21 +4658,47 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
         <rect x="530" y="18" width="110" height="8" rx="2" fill="url(#abHazardPat)" stroke="#091216" stroke-width="1" />
       </g>
 
-      <!-- REVENANT REIGN VIEGO: Morphing Greatsword Crest + Purple/Blue Soul River Arms -->
+      <!-- REVENANT REIGN VIEGO: Morphing Greatsword Crest + High-Detail Purple/Blue Soul River & Sculpted Phantom Arms -->
       <g class="ab-fx-layer ab-fx-revenant">
+        <defs>
+          <linearGradient id="abSoulRiverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#7e22ce" stop-opacity="0.78" />
+            <stop offset="35%" stop-color="#38bdf8" stop-opacity="0.82" />
+            <stop offset="70%" stop-color="#a855f7" stop-opacity="0.85" />
+            <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.78" />
+          </linearGradient>
+          <linearGradient id="abSoulArmGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" stop-color="#6b21a8" stop-opacity="0.25" />
+            <stop offset="55%" stop-color="#a855f7" stop-opacity="0.88" />
+            <stop offset="100%" stop-color="#bae6fd" stop-opacity="0.98" />
+          </linearGradient>
+        </defs>
         <g class="ab-revenant-sword">
-          <path d="M 164 22 L 210 14 L 222 22 L 210 30 Z M 220 22 L 328 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
-          <path d="M 650 22 L 604 14 L 592 22 L 604 30 Z M 594 22 L 496 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
+          <path d="M 164 22 L 210 13 L 224 22 L 210 31 Z M 220 22 L 332 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
+          <path d="M 650 22 L 604 13 L 590 22 L 604 31 Z M 594 22 L 492 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
           <polygon points="84,12 94,25 84,34 74,25" fill="#e11d48" stroke="#f5f3ff" stroke-width="1.6" />
         </g>
         <g class="ab-revenant-arms">
-          <path d="M 160 171 Q 190 156 225 166 T 295 164 T 370 167 T 450 163 T 535 167 T 620 164 T 710 167 T 800 164 T 892 170"
-                fill="none" stroke="#a855f7" stroke-width="5" stroke-opacity="0.72" />
-          <path d="M 172 173 Q 210 160 250 169 T 340 165 T 430 169 T 520 165 T 625 169 T 730 165 T 886 171"
-                fill="none" stroke="#38bdf8" stroke-width="3" stroke-opacity="0.78" />
-          <path d="M 218 170 L 214 152 L 208 145 M 214 152 L 218 143 M 214 152 L 224 147" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
-          <path d="M 412 170 L 415 151 L 408 144 M 415 151 L 419 142 M 415 151 L 425 147" fill="none" stroke="#a855f7" stroke-width="2.2" stroke-linecap="round" />
-          <path d="M 742 170 L 739 152 L 733 145 M 739 152 L 744 143 M 739 152 L 750 147" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
+          <!-- Layered Volumetric Soul River Base -->
+          <path d="M 148 174 Q 205 152 265 163 T 390 158 T 520 163 T 660 157 T 795 163 T 904 166 L 904 175 L 148 175 Z"
+                fill="url(#abSoulRiverGrad)" opacity="0.65" />
+          <path d="M 156 174 Q 230 158 310 167 T 465 161 T 625 167 T 780 160 T 900 169"
+                fill="none" stroke="#e0f2fe" stroke-width="2" stroke-opacity="0.78" />
+          <!-- Sculpted Reaching Phantom Hands emerging from the Soul River -->
+          <path d="M 212 174 C 209 162, 208 156, 203 148 L 207 154 L 211 141 L 214 153 L 220 142 L 221 155 L 228 147 L 224 162 L 222 174 Z"
+                fill="url(#abSoulArmGrad)" stroke="#e0f2fe" stroke-width="1.2" />
+          <path d="M 410 174 C 412 161, 412 154, 405 146 L 411 153 L 416 139 L 419 152 L 426 141 L 425 154 L 432 148 L 426 162 L 423 174 Z"
+                fill="url(#abSoulArmGrad)" stroke="#d8b4fe" stroke-width="1.2" />
+          <path d="M 596 174 C 594 163, 593 156, 588 149 L 593 155 L 597 142 L 600 154 L 606 144 L 606 156 L 613 150 L 608 163 L 606 174 Z"
+                fill="url(#abSoulArmGrad)" stroke="#bae6fd" stroke-width="1.2" />
+          <path d="M 744 174 C 742 162, 740 155, 735 147 L 740 154 L 745 140 L 748 153 L 755 142 L 754 155 L 761 149 L 755 163 L 753 174 Z"
+                fill="url(#abSoulArmGrad)" stroke="#e0f2fe" stroke-width="1.2" />
+          <!-- Drifting Luminous Soul Wisps -->
+          <circle cx="268" cy="158" r="3" fill="#bae6fd" opacity="0.9" />
+          <circle cx="354" cy="162" r="2.4" fill="#d8b4fe" opacity="0.88" />
+          <circle cx="510" cy="157" r="3.2" fill="#38bdf8" opacity="0.9" />
+          <circle cx="688" cy="160" r="2.6" fill="#c084fc" opacity="0.88" />
+          <circle cx="826" cy="158" r="3" fill="#bae6fd" opacity="0.9" />
         </g>
       </g>
     </svg>
@@ -7269,11 +7295,15 @@ ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-revenant-reign ${s}::before`).
   left: 0;
   right: 0;
   bottom: 0;
-  height: 22px;
-  background-repeat: repeat-x;
-  background-size: 160px 22px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 22'%3E%3Cpath d='M0 22 Q24 9 48 16 T96 14 T144 17 L160 22 Z' fill='%239333ea' fill-opacity='0.48'/%3E%3Cpath d='M0 22 Q32 13 64 18 T128 15 L160 22 Z' fill='%2338bdf8' fill-opacity='0.42'/%3E%3Cpath d='M28 22 L25 9 L20 4 M25 9 L27 2 M25 9 L32 6 M84 22 L87 8 L81 3 M87 8 L90 2 M87 8 L94 6 M134 22 L131 10 L126 5 M131 10 L134 3 M131 10 L138 7' fill='none' stroke='%23c4b5fd' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
-  animation: revenantRiverFlow 5.5s linear infinite;
+  height: 38px;
+  background-repeat: repeat-x, repeat-x;
+  background-size: 260px 38px, 190px 32px;
+  background-position: 0% 100%, 40% 100%;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 38'%3E%3Cdefs%3E%3ClinearGradient id='r1' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%237e22ce' stop-opacity='0.65'/%3E%3Cstop offset='50%25' stop-color='%2338bdf8' stop-opacity='0.68'/%3E%3Cstop offset='100%25' stop-color='%23a855f7' stop-opacity='0.65'/%3E%3C/linearGradient%3E%3ClinearGradient id='a1' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0%25' stop-color='%236b21a8' stop-opacity='0.2'/%3E%3Cstop offset='55%25' stop-color='%23a855f7' stop-opacity='0.9'/%3E%3Cstop offset='100%25' stop-color='%23e0f2fe' stop-opacity='0.98'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 38 Q35 16 70 25 T140 21 T210 26 T260 22 L260 38 Z' fill='url(%23r1)'/%3E%3Cpath d='M0 38 Q42 23 84 29 T168 25 T260 28' fill='none' stroke='%23bae6fd' stroke-width='1.5' stroke-opacity='0.72'/%3E%3Cpath d='M42 38 C39 27 38 20 33 12 L38 18 L42 6 L45 17 L51 8 L51 20 L57 14 L52 27 L50 38 Z' fill='url(%23a1)' stroke='%23e0f2fe' stroke-width='0.9'/%3E%3Cpath d='M138 38 C140 26 140 19 134 11 L140 17 L144 5 L147 16 L153 7 L153 19 L159 13 L154 27 L151 38 Z' fill='url(%23a1)' stroke='%23d8b4fe' stroke-width='0.9'/%3E%3Cpath d='M218 38 C215 28 214 21 209 14 L214 19 L218 9 L221 19 L227 11 L226 22 L232 16 L227 28 L225 38 Z' fill='url(%23a1)' stroke='%23bae6fd' stroke-width='0.9'/%3E%3Ccircle cx='92' cy='21' r='2.2' fill='%23e0f2fe' opacity='0.88'/%3E%3Ccircle cx='184' cy='18' r='1.8' fill='%23d8b4fe' opacity='0.85'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 190 32'%3E%3Cpath d='M0 32 Q48 12 95 22 T190 18 L190 32 Z' fill='%2338bdf8' fill-opacity='0.26'/%3E%3Cpath d='M0 32 Q38 18 76 24 T152 20 T190 24' fill='none' stroke='%23c084fc' stroke-width='1.4' stroke-opacity='0.68'/%3E%3C/svg%3E");
+  filter: drop-shadow(0 -2px 8px rgba(168, 85, 247, 0.55));
+  animation: revenantRiverFlow 7.5s linear infinite;
   pointer-events: none;
   z-index: 6;
 }
