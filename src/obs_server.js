@@ -7896,27 +7896,24 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     viktorRaf = requestAnimationFrame(tick);
   }
 
-  // 60fps Akali K/DA Firestarter AAA Edge Engine (#1 Volumetric Ignition Flame-Ribbon + Streak Embers + #3 Kunai Crescent Slash & Anime Lens-Flare Starbursts)
+  // 60fps Akali K/DA Firestarter Edge Engine (#1 Ignition Flame-Ribbon + Streak Embers + #3 Kunai Slash & Starbursts — zero-shadowBlur batched for locked 60fps)
   let akaliRaf = 0;
   let akaliCanvas = null;
   function drawAkaliStarburst(ctx, x, y, r, rot, col, alpha) {
-    if (alpha < 0.03) return;
+    if (alpha < 0.04) return;
     ctx.save();
     ctx.translate(x, y);
-    ctx.globalAlpha = alpha;
-    // Expanding shockwave ring
+    ctx.globalAlpha = alpha * 0.55;
     ctx.beginPath();
     ctx.arc(0, 0, r * 1.15, 0, Math.PI * 2);
     ctx.strokeStyle = col;
     ctx.lineWidth = 2.0 * alpha;
-    ctx.shadowColor = col;
-    ctx.shadowBlur = 14;
     ctx.stroke();
-    // Long razor-sharp anime 4-point cross flare + 45deg secondary spikes
+    ctx.globalAlpha = alpha;
     for (let tier = 0; tier < 2; tier++) {
       ctx.save();
       ctx.rotate(rot + (tier === 1 ? Math.PI / 4 : 0));
-      const len = tier === 0 ? r * 1.65 : r * 0.92;
+      const len = tier === 0 ? r * 1.6 : r * 0.9;
       const wid = tier === 0 ? r * 0.22 : r * 0.16;
       ctx.beginPath();
       for (let i = 0; i < 4; i++) {
@@ -7928,80 +7925,74 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       }
       ctx.closePath();
       ctx.fillStyle = tier === 0 ? '#ffffff' : col;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 16;
       ctx.fill();
       ctx.restore();
     }
     ctx.restore();
   }
   function drawAkaliTrail(ctx, poly, uHead, uLen, col1, col2, width, sparksArr, now, isFlame) {
-    const steps = 22;
+    const steps = 14;
     const pts = [];
-    for (let s = 0; s <= steps; s++) {
-      const f = s / steps;
-      pts.push(samplePoly(poly, uHead - uLen * (1 - f)));
-    }
-    // Pass 1: Wide molten heat / plasma bloom
-    for (let s = 0; s < steps; s++) {
-      const f = (s + 1) / steps;
-      const p0 = pts[s], p1 = pts[s + 1];
+    for (let s = 0; s <= steps; s++) pts.push(samplePoly(poly, uHead - uLen * (1 - s / steps)));
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Batched Pass 1: Wide outer bloom (1 stroke!)
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let s = 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = col1;
+    ctx.lineWidth = width * 3.0;
+    ctx.stroke();
+    // Batched Pass 2: Bright mid plasma ribbon (front 75%)
+    const mid0 = Math.floor(steps * 0.25);
+    ctx.beginPath();
+    ctx.moveTo(pts[mid0][0], pts[mid0][1]);
+    for (let s = mid0 + 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = col2;
+    ctx.lineWidth = width * 1.15;
+    ctx.stroke();
+    // Batched Pass 3: White-hot spear tip (front 40%)
+    const tip0 = Math.floor(steps * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(pts[tip0][0], pts[tip0][1]);
+    for (let s = tip0 + 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+    ctx.globalAlpha = 0.96;
+    ctx.strokeStyle = '#fffbeb';
+    ctx.lineWidth = Math.max(1.2, width * 0.45);
+    ctx.stroke();
+    // Subtle flickering flame licks (batched into 1 path!)
+    if (isFlame) {
       ctx.beginPath();
-      ctx.moveTo(p0[0], p0[1]);
-      ctx.lineTo(p1[0], p1[1]);
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = col1;
-      ctx.shadowColor = col1;
-      ctx.shadowBlur = 18 * f;
-      ctx.globalAlpha = Math.pow(f, 1.7) * 0.55;
-      ctx.lineWidth = Math.max(1.5, width * 2.5 * f);
-      ctx.stroke();
-      // Pass 2: Crisp glowing inner ribbon + flickering flame licks
-      ctx.strokeStyle = f > 0.65 ? col2 : col1;
-      ctx.shadowBlur = 10 * f;
-      ctx.globalAlpha = Math.pow(f, 1.35) * 0.96;
-      ctx.lineWidth = Math.max(1.0, width * f);
-      ctx.stroke();
-      // Pass 3: White-hot spear core near leading edge
-      if (f > 0.55) {
-        ctx.strokeStyle = '#fffbeb';
-        ctx.globalAlpha = (f - 0.55) * 2.1;
-        ctx.lineWidth = Math.max(0.8, width * 0.42 * f);
-        ctx.stroke();
-      }
-      // Organic flickering flame tongues licking outward from flame ribbon
-      if (isFlame && s > 6 && s % 3 === 0) {
-        const dx = p1[0] - p0[0], dy = p1[1] - p0[1];
-        const l = Math.hypot(dx, dy) || 1;
-        const nx = -dy / l, ny = dx / l;
+      for (let s = 5; s < steps; s += 3) {
+        const p0 = pts[s], p1 = pts[s + 1];
+        const dx = p1[0] - p0[0], dy = p1[1] - p0[1], l = Math.hypot(dx, dy) || 1;
         const flick = Math.sin(now * 0.025 + s * 1.9) * 0.5 + 0.5;
-        const tongue = (4 + flick * 9) * f;
-        ctx.beginPath();
+        const tg = 4 + flick * 8;
         ctx.moveTo(p0[0], p0[1]);
-        ctx.quadraticCurveTo(p1[0] + nx * tongue, p1[1] + ny * tongue, p1[0] - dx * 0.4, p1[1] - dy * 0.4);
-        ctx.strokeStyle = '#ff7a00';
-        ctx.globalAlpha = f * 0.72;
-        ctx.lineWidth = 2.0 * f;
-        ctx.stroke();
+        ctx.quadraticCurveTo(p1[0] + (-dy / l) * tg, p1[1] + (dx / l) * tg, p1[0], p1[1]);
       }
+      ctx.globalAlpha = 0.65;
+      ctx.strokeStyle = '#ff7a00';
+      ctx.lineWidth = 2.0;
+      ctx.stroke();
     }
     const head = pts[steps];
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 0.95;
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = col2;
-    ctx.shadowBlur = 16;
     ctx.beginPath();
-    ctx.arc(head[0], head[1], width * 0.68, 0, Math.PI * 2);
+    ctx.arc(head[0], head[1], width * 0.65, 0, Math.PI * 2);
     ctx.fill();
-    if (sparksArr && sparksArr.length < 95 && Math.random() < 0.68) {
+    if (sparksArr && sparksArr.length < 70 && Math.random() < 0.5) {
       sparksArr.push({
-        x: head[0] + (Math.random() - 0.5) * 5,
-        y: head[1] + (Math.random() - 0.5) * 5,
-        vx: (Math.random() - 0.5) * 2.2,
-        vy: -1.0 - Math.random() * 2.4,
+        x: head[0] + (Math.random() - 0.5) * 4,
+        y: head[1] + (Math.random() - 0.5) * 4,
+        vx: (Math.random() - 0.5) * 2.0,
+        vy: -1.0 - Math.random() * 2.2,
         life: 1,
         col: Math.random() < 0.28 ? '#00f5ff' : (Math.random() < 0.55 ? '#ff7a00' : '#ff3b5c'),
-        w: 1.4 + Math.random() * 1.8
+        w: 1.5 + Math.random() * 1.4
       });
     }
   }
@@ -8019,75 +8010,68 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     const ctx = akaliCanvas.getContext('2d');
     const cardSels = ${JSON.stringify(ALL_OVERLAY_CARDS_SEL.join(','))};
     const sparks = [];
+    let cachedPolys = [];
+    let lastLayoutMs = 0;
     function tick(now) {
       akaliRaf = requestAnimationFrame(tick);
       const w = window.innerWidth;
       const h = window.innerHeight;
-      if (akaliCanvas.width !== w || akaliCanvas.height !== h) { akaliCanvas.width = w; akaliCanvas.height = h; }
+      if (akaliCanvas.width !== w || akaliCanvas.height !== h) { akaliCanvas.width = w; akaliCanvas.height = h; lastLayoutMs = 0; }
+      if (now - lastLayoutMs > 400) {
+        lastLayoutMs = now;
+        cachedPolys = [];
+        const abStage = document.getElementById('abStage');
+        if (abStage) {
+          const sx = w / 920, sy = h / 175;
+          cachedPolys.push([
+            [148*sx,36*sy],[172*sx,22*sy],[642*sx,22*sy],[664*sx,38*sy],
+            [892*sx,38*sy],[912*sx,56*sy],[912*sx,154*sy],[896*sx,170*sy],[146*sx,170*sy],[148*sx,36*sy]
+          ]);
+          const ring = [];
+          for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI * 2; ring.push([(84 + Math.cos(a) * 71) * sx, (96 + Math.sin(a) * 71) * sy]); }
+          cachedPolys.push(ring);
+        } else {
+          const nodes = document.querySelectorAll(cardSels);
+          for (let i = 0; i < nodes.length; i++) {
+            const el = nodes[i];
+            const r = el.getBoundingClientRect();
+            if (r.width < 20 || r.height < 20 || el.classList.contains('hidden')) continue;
+            cachedPolys.push([[r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom], [r.left, r.top]]);
+          }
+        }
+      }
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = 'lighter';
       const t = now * 0.00032;
 
-      const polys = [];
-      const abStage = document.getElementById('abStage');
-      if (abStage) {
-        const sx = w / 920;
-        const sy = h / 175;
-        polys.push([
-          [148*sx,36*sy],[172*sx,22*sy],[642*sx,22*sy],[664*sx,38*sy],
-          [892*sx,38*sy],[912*sx,56*sy],[912*sx,154*sy],[896*sx,170*sy],[146*sx,170*sy],[148*sx,36*sy]
-        ]);
-        const ring = [];
-        for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI * 2; ring.push([(84 + Math.cos(a) * 71) * sx, (96 + Math.sin(a) * 71) * sy]); }
-        polys.push(ring);
-      } else {
-        const nodes = document.querySelectorAll(cardSels);
-        for (let i = 0; i < nodes.length; i++) {
-          const el = nodes[i];
-          const r = el.getBoundingClientRect();
-          if (r.width < 20 || r.height < 20 || el.classList.contains('hidden')) continue;
-          polys.push([
-            [r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom], [r.left, r.top]
-          ]);
-        }
-      }
-
-      for (let i = 0; i < polys.length; i++) {
-        const poly = polys[i];
+      for (let i = 0; i < cachedPolys.length; i++) {
+        const poly = cachedPolys[i];
         const ph = t + i * 0.31;
-        drawAkaliTrail(ctx, poly, ph, 0.24, '#ff3b5c', '#ff7a00', 4.8, sparks, now, true);
-        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.17, '#00f5ff', '#ffffff', 3.4, null, now, false);
+        drawAkaliTrail(ctx, poly, ph, 0.24, '#ff3b5c', '#ff7a00', 4.4, sparks, now, true);
+        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.17, '#00f5ff', '#ffffff', 3.2, null, now, false);
         if (poly.length === 5) {
           for (let c = 0; c < 4; c++) {
             const dist = Math.abs((((ph % 1) + 1) % 1) - c * 0.25);
             const burst = Math.max(0, 1 - dist * 14);
-            if (burst > 0.05) {
-              drawAkaliStarburst(ctx, poly[c][0], poly[c][1], 14 * burst + 5, now * 0.005 + c, c % 2 === 0 ? '#00f5ff' : '#ff7a00', burst);
-            }
+            if (burst > 0.05) drawAkaliStarburst(ctx, poly[c][0], poly[c][1], 14 * burst + 5, now * 0.005 + c, c % 2 === 0 ? '#00f5ff' : '#ff7a00', burst);
           }
         }
       }
 
-      // Velocity-stretched glowing ember streaks with turbulence
       for (let i = sparks.length - 1; i >= 0; i--) {
-        const sp = sparks[i];
-        const px = sp.x, py = sp.y;
+        const sp = sparks[i], px = sp.x, py = sp.y;
         sp.vx += Math.sin(now * 0.015 + i) * 0.06;
-        sp.x += sp.vx; sp.y += sp.vy; sp.vy *= 0.985; sp.life -= 0.026;
+        sp.x += sp.vx; sp.y += sp.vy; sp.vy *= 0.985; sp.life -= 0.028;
         if (sp.life <= 0) { sparks.splice(i, 1); continue; }
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(sp.x + sp.vx * 2.2, sp.y + sp.vy * 2.2);
-        ctx.lineCap = 'round';
         ctx.globalAlpha = sp.life;
         ctx.strokeStyle = sp.col;
-        ctx.shadowColor = sp.col;
-        ctx.shadowBlur = 10;
         ctx.lineWidth = sp.w * sp.life;
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
     }
     akaliRaf = requestAnimationFrame(tick);
   }
