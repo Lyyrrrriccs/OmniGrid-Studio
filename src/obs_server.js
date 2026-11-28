@@ -2470,6 +2470,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-radiant-cloud .bg-splash,
     body.fx-ruined-mist .bg-splash,
     body.fx-revenant-reign .bg-splash,
+    body.fx-final-boss .bg-splash,
     body.fx-zaun-lab .bg-splash,
     body.fx-crime-city .bg-splash,
     body.fx-prestige-rose .bg-splash,
@@ -2747,6 +2748,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'project-cyber': 'cyber',
         'ruined-mist': 'mist',
         'revenant-reign': 'mist',
+        'final-boss': 'cyber',
         'zaun-lab': 'bubbles',
         'crime-city': 'cards',
         'prestige-rose': 'petals',
@@ -4164,6 +4166,28 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           }
           spawnEveCoffin();
           drawEveCoffin();
+        } else if (activeEffect === 'final-boss') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/veigar-final-boss-transition.mp4?t=' + Date.now();
+            customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnBubbles();
+              drawBubbles();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2250);
+            return;
+          }
+          spawnBubbles();
+          drawBubbles();
         } else if (activeEffect === 'revenant-reign') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/viego-revenant-reign-transition.mp4?t=' + Date.now();
@@ -4545,6 +4569,15 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
     /* Soul Fighter: Hard cel-shaded comic drop shadow */
     body.champ-fx-soul-fighter .ab-svg { filter: drop-shadow(3px 3px 0 #05050a) drop-shadow(0 0 10px var(--ab-p)); }
 
+    /* Final Boss Veigar: 8-bit Retro Arcade Pixel Blocks & Glitch Pulse */
+    body.champ-fx-final-boss .ab-fx-finalboss { display: block; }
+    body.champ-fx-final-boss .ab-svg { filter: drop-shadow(3px 3px 0 #050212) drop-shadow(0 0 12px rgba(34, 255, 102, 0.72)); }
+    .ab-fb-voxels { animation: abFbVoxelFloat 2.4s steps(4, end) infinite; }
+    @keyframes abFbVoxelFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-4px); }
+    }
+
     @keyframes abFlow { to { stroke-dashoffset: -268; } }
     @keyframes abSpin { to { transform: rotate(360deg); } }
     @keyframes abLanternSway {
@@ -4697,6 +4730,33 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
           <!-- Spiked Crown Gem on Portrait Ring -->
           <polygon points="84,8 91,20 100,14 95,28 84,35 73,28 68,14 77,20" fill="#1e1b4b" stroke="#e11d48" stroke-width="1.8" />
           <polygon points="84,15 89,23 84,30 79,23" fill="#fda4af" />
+        </g>
+      </g>
+
+      <!-- FINAL BOSS VEIGAR: 8-Bit Arcade Pixel Voxels, Retro Hearts & Stepped Pixel Brackets -->
+      <g class="ab-fx-layer ab-fx-finalboss">
+        <!-- Chunky 8-bit Pixel-Stepped Corner Blocks -->
+        <rect x="166" y="14" width="12" height="12" fill="#22ff66" stroke="#080614" stroke-width="2" />
+        <rect x="178" y="18" width="8" height="8" fill="#a855f7" stroke="#080614" stroke-width="1.5" />
+        <rect x="634" y="14" width="12" height="12" fill="#22ff66" stroke="#080614" stroke-width="2" />
+        <rect x="626" y="18" width="8" height="8" fill="#00f0ff" stroke="#080614" stroke-width="1.5" />
+        <rect x="898" y="34" width="14" height="14" fill="#a855f7" stroke="#22ff66" stroke-width="2" />
+        <rect x="898" y="158" width="14" height="14" fill="#22ff66" stroke="#080614" stroke-width="2" />
+        <!-- 8-Bit Retro Pixel Boss Emblem & Floating Voxels -->
+        <g class="ab-fb-voxels">
+          <!-- Left Portrait 8-Bit Boss Crown / Pixel Invader Crest -->
+          <rect x="74" y="12" width="20" height="12" fill="#a855f7" stroke="#22ff66" stroke-width="2" />
+          <rect x="78" y="16" width="4" height="4" fill="#22ff66" />
+          <rect x="86" y="16" width="4" height="4" fill="#22ff66" />
+          <!-- Floating Glitch Cubes along Top & Bottom -->
+          <rect x="242" y="12" width="8" height="8" fill="#00f0ff" />
+          <rect x="254" y="16" width="6" height="6" fill="#22ff66" />
+          <rect x="556" y="12" width="8" height="8" fill="#ff2a85" />
+          <rect x="568" y="16" width="6" height="6" fill="#22ff66" />
+          <rect x="360" y="164" width="10" height="8" fill="#22ff66" stroke="#080614" stroke-width="1.5" />
+          <rect x="440" y="164" width="10" height="8" fill="#a855f7" stroke="#080614" stroke-width="1.5" />
+          <rect x="520" y="164" width="10" height="8" fill="#00f0ff" stroke="#080614" stroke-width="1.5" />
+          <rect x="750" y="164" width="10" height="8" fill="#ffe14d" stroke="#080614" stroke-width="1.5" />
         </g>
       </g>
     </svg>
@@ -7378,6 +7438,90 @@ body.champ-fx-revenant-reign .lb-lp-fill,
 body.champ-fx-revenant-reign .goal-fill,
 body.champ-fx-revenant-reign .sp-prog-fill,
 body.champ-fx-revenant-reign .val-rr-fill { background: linear-gradient(90deg, #e11d48, #a855f7, #38bdf8) !important; }
+
+/* FINAL BOSS VEIGAR: 8-Bit Retro Arcade Pixel HUD, CRT Scanlines, Glitch Voxels & Pixel Hearts */
+@keyframes finalBossGlitch {
+  0%, 90%, 100% { box-shadow: 4px 4px 0 #050212, 0 0 22px rgba(34, 255, 102, 0.45), inset 0 0 14px rgba(168, 85, 247, 0.22); border-color: #22ff66; }
+  93% { box-shadow: -3px 3px 0 #ff2a85, 3px -2px 0 #00f0ff, 0 0 26px rgba(168, 85, 247, 0.65); border-color: #a855f7; }
+  96% { box-shadow: 3px 4px 0 #22ff66, -2px 0 0 #ffe14d, 0 0 24px rgba(0, 240, 255, 0.6); border-color: #00f0ff; }
+}
+@keyframes finalBossPixelFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+body.champ-fx-final-boss .msg-row {
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.24) 0 2px, transparent 2px 4px),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(8, 6, 20, 0.97)), var(--ct-bg-end, rgba(16, 6, 28, 0.98))) !important;
+  border: 2px solid #22ff66 !important;
+  border-left: 5px solid #a855f7 !important;
+  border-radius: 0 !important;
+  box-shadow: 3px 3px 0 #050212, 0 0 14px rgba(34, 255, 102, 0.28) !important;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-final-boss ${s}`).join(',\n')} {
+  position: relative;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 4px),
+    radial-gradient(circle at 12% 14%, rgba(34, 255, 102, 0.20), transparent 45%),
+    radial-gradient(circle at 88% 86%, rgba(168, 85, 247, 0.26), transparent 48%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(8, 6, 20, 0.97)), var(--ct-bg-end, rgba(16, 6, 28, 0.98))) !important;
+  border: 3px solid #22ff66 !important;
+  border-radius: 0 !important;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px), 0 6px, 6px 6px);
+  animation: finalBossGlitch 4.4s steps(2, end) infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-final-boss ${s}::before`).join(',\n')} {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 2px;
+  height: 12px;
+  background-repeat: repeat-x;
+  background-size: 64px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 12'%3E%3Crect x='2' y='6' width='6' height='6' fill='%2322ff66' opacity='0.85'/%3E%3Crect x='10' y='3' width='6' height='6' fill='%23a855f7' opacity='0.8'/%3E%3Crect x='22' y='6' width='6' height='6' fill='%2300f0ff' opacity='0.78'/%3E%3Crect x='34' y='4' width='6' height='6' fill='%2322ff66' opacity='0.72'/%3E%3Crect x='46' y='6' width='6' height='6' fill='%23ff2a85' opacity='0.78'/%3E%3Crect x='54' y='2' width='6' height='6' fill='%23ffe14d' opacity='0.75'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 6;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-final-boss ${s}::after`).join(',\n')} {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 28px;
+  height: 22px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 22'%3E%3Crect x='4' y='2' width='4' height='4' fill='%2322ff66'/%3E%3Crect x='20' y='2' width='4' height='4' fill='%2322ff66'/%3E%3Crect x='8' y='6' width='12' height='4' fill='%23a855f7'/%3E%3Crect x='4' y='10' width='20' height='6' fill='%23a855f7'/%3E%3Crect x='8' y='10' width='4' height='4' fill='%2322ff66'/%3E%3Crect x='16' y='10' width='4' height='4' fill='%2322ff66'/%3E%3Crect x='2' y='16' width='4' height='4' fill='%2300f0ff'/%3E%3Crect x='22' y='16' width='4' height='4' fill='%2300f0ff'/%3E%3C/svg%3E");
+  animation: finalBossPixelFloat 1.8s steps(3, end) infinite;
+  pointer-events: none;
+  z-index: 8;
+}
+body.champ-fx-final-boss .gs-title,
+body.champ-fx-final-boss .gs-champ-name,
+body.champ-fx-final-boss .lb-rank,
+body.champ-fx-final-boss .sp-title,
+body.champ-fx-final-boss .goal-title,
+body.champ-fx-final-boss .poll-q,
+body.champ-fx-final-boss .gw-title,
+body.champ-fx-final-boss .sched-title,
+body.champ-fx-final-boss .al-author,
+body.champ-fx-final-boss .lt-topic,
+body.champ-fx-final-boss .qna-author,
+body.champ-fx-final-boss .tron-topic,
+body.champ-fx-final-boss .val-rank-name {
+  color: #ecfdf5 !important;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace !important;
+  text-shadow: 2px 2px 0 #050212, 0 0 10px rgba(34, 255, 102, 0.85), 0 0 8px rgba(168, 85, 247, 0.72) !important;
+}
+body.champ-fx-final-boss .gs-lp-fill,
+body.champ-fx-final-boss .lb-lp-fill,
+body.champ-fx-final-boss .goal-fill,
+body.champ-fx-final-boss .sp-prog-fill,
+body.champ-fx-final-boss .val-rr-fill {
+  background: repeating-linear-gradient(90deg, #22ff66 0 10px, #16a34a 10px 12px, #a855f7 12px 22px, #00f0ff 22px 24px) !important;
+}
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -7447,7 +7591,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-final-boss', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
