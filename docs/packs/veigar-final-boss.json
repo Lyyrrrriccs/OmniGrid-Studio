@@ -1,0 +1,27 @@
+{
+  "id": "veigar-final-boss",
+  "name": "Veigar — Final Boss",
+  "icon": "👾",
+  "championMatch": [
+    "veigar"
+  ],
+  "version": "1.0.0",
+  "author": "OmniGrid Studio",
+  "effect": "final-boss",
+  "description": "Final Boss Veigar 8-bit retro arcade boss HUD — neon-green pixel-stepped frames, CRT scanlines, glitching voxel blocks, arcade pixel-heart accents, Arcade Ability-Bar & 60fps Primordial Burst (R) Ultimate transition.",
+  "colors": {
+    "primary": "#22ff66",
+    "secondary": "#a855f7",
+    "tertiary": "#00f0ff",
+    "bgStart": "rgba(8, 6, 20, 0.97)",
+    "bgEnd": "rgba(16, 6, 28, 0.98)",
+    "text": "#ecfdf5",
+    "muted": "#86efac"
+  },
+  "mapCoverBadge": "FINAL BOSS // GAME OVER 👾",
+  "skinArt": {
+    "championId": "Veigar",
+    "skinQuery": "Final Boss",
+    "skinNum": 8
+  }
+}
