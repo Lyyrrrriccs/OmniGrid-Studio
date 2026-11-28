@@ -4573,11 +4573,6 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <div class="ab-stage" id="abStage">
-    <div class="ab-crest-pill" id="abCrestPill">
-      <span class="ab-crest-icon" id="abCrestIcon">⚔️</span>
-      <span id="abCrestText">HEXTECH HUD</span>
-    </div>
-
     <div class="ab-eq-strip ab-fx-sona" id="abEqStrip"></div>
     <img class="ab-revenant-river-img" src="/api/theme-asset/viego-ability-soul-arms.png" alt="" />
 
