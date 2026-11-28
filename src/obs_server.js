@@ -4118,6 +4118,25 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           spawnDeathLotus();
           drawDeathLotus();
         } else if (activeEffect === 'dj-sona') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/dj-sona-transition.mp4?t=' + Date.now();
+            customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnDjCrescendo();
+              drawDjCrescendo();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2250);
+            return;
+          }
           spawnDjCrescendo();
           drawDjCrescendo();
         } else if (activeEffect === 'arcane-fractured') {
@@ -6771,6 +6790,7 @@ body.champ-fx-dj-sona .msg-row {
   animation: djSonaBeatCycle 4.5s ease-in-out infinite;
 }
 ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-dj-sona ${s}`).join(',\n')} {
+  position: relative;
   background:
     radial-gradient(circle at 14% 16%, rgba(0, 229, 255, 0.22), transparent 46%),
     radial-gradient(circle at 86% 84%, rgba(255, 42, 109, 0.22), transparent 50%),
@@ -6778,6 +6798,44 @@ ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-dj-sona ${s}`).join(',\n')} {
   border: 2px solid var(--ct-primary, #00e5ff) !important;
   border-radius: 14px !important;
   animation: djSonaBeatCycle 4.2s ease-in-out infinite;
+}
+@keyframes djSonaEqScroll {
+  0% { background-position: 0% 100%; filter: hue-rotate(0deg); }
+  50% { background-position: 100% 100%; filter: hue-rotate(155deg); }
+  100% { background-position: 200% 100%; filter: hue-rotate(360deg); }
+}
+@keyframes djSonaVisorPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px #00e5ff); }
+  33% { transform: scale(1.08); filter: hue-rotate(150deg) drop-shadow(0 0 10px #ff2a6d); }
+  66% { transform: scale(1.04); filter: hue-rotate(260deg) drop-shadow(0 0 10px #c084fc); }
+}
+${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.alert-card').map((s) => `body.champ-fx-dj-sona ${s}::before`).join(',\n')} {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 2px;
+  height: 18px;
+  background-repeat: repeat-x;
+  background-size: 96px 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 18'%3E%3Cg fill='%2300e5ff' opacity='0.78'%3E%3Ccircle cx='6' cy='14' r='2.3'/%3E%3Ccircle cx='6' cy='9' r='2.3'/%3E%3Ccircle cx='18' cy='14' r='2.3'/%3E%3Ccircle cx='18' cy='9' r='2.3'/%3E%3Ccircle cx='18' cy='4' r='2.3'/%3E%3Ccircle cx='30' cy='14' r='2.3'/%3E%3Ccircle cx='42' cy='14' r='2.3'/%3E%3Ccircle cx='42' cy='9' r='2.3'/%3E%3Ccircle cx='42' cy='4' r='2.3'/%3E%3Ccircle cx='54' cy='14' r='2.3'/%3E%3Ccircle cx='54' cy='9' r='2.3'/%3E%3Ccircle cx='66' cy='14' r='2.3'/%3E%3Ccircle cx='66' cy='9' r='2.3'/%3E%3Ccircle cx='66' cy='4' r='2.3'/%3E%3Ccircle cx='78' cy='14' r='2.3'/%3E%3Ccircle cx='78' cy='9' r='2.3'/%3E%3Ccircle cx='90' cy='14' r='2.3'/%3E%3C/g%3E%3C/svg%3E");
+  animation: djSonaEqScroll 5.2s linear infinite;
+  pointer-events: none;
+  z-index: 6;
+}
+${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.alert-card').map((s) => `body.champ-fx-dj-sona ${s}::after`).join(',\n')} {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 26px;
+  height: 22px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 30'%3E%3Cpolygon points='18,2 32,9 32,21 18,28 4,21 4,9' fill='%23060a18' stroke='%2300e5ff' stroke-width='2.2'/%3E%3Cpath d='M7 15 L12 15 L15 8 L18 22 L21 11 L24 15 L29 15' fill='none' stroke='%23ff2a6d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  animation: djSonaVisorPulse 3.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 8;
 }
 body.champ-fx-dj-sona .gs-title,
 body.champ-fx-dj-sona .gs-champ-name,

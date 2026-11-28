@@ -163,7 +163,8 @@
       'ahri-firestarter': 'ahri-firestarter-transition.mp4',
       'eve-firestarter': 'evelynn-firestarter-transition.mp4',
       'unbound-thresh': 'thresh-unbound-transition.mp4',
-      'revenant-reign': 'viego-revenant-reign-transition.mp4'
+      'revenant-reign': 'viego-revenant-reign-transition.mp4',
+      'dj-sona': 'dj-sona-transition.mp4'
     };
     if (videoClips[fx] && vid) {
       vid.src = './assets/' + videoClips[fx] + '?t=' + Date.now();

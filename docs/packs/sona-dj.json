@@ -1,12 +1,12 @@
 {
   "id": "sona-dj",
-  "name": "Sona — DJ Sona",
+  "name": "Sona — DJ Sona (Ultimate Concert)",
   "icon": "🎧",
   "championMatch": ["sona"],
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": "OmniGrid Studio",
   "effect": "dj-sona",
-  "description": "DJ Sona Kinetic cyan, Concussive bass crimson & Ethereal synth violet with animated audio-equalizer frames, Crescendo Bass-Drop transition & live EQ Client-Frame.",
+  "description": "DJ Sona Ultimate Concert — Kinetic cyan LED dot-matrix equalizer bars, Concussive bass crimson hexagonal speaker pulse, Ethereal synth violet & 60fps Ultimate Concert Visor Bass-Drop transition.",
   "colors": {
     "primary": "#00e5ff",
     "secondary": "#ff2a6d",
@@ -16,7 +16,7 @@
     "text": "#f0f9ff",
     "muted": "#67e8f9"
   },
-  "mapCoverBadge": "DJ SONA // DROP THE BEAT 🎧",
+  "mapCoverBadge": "DJ SONA // ULTIMATE CONCERT 🎧",
   "skinArt": {
     "championId": "Sona",
     "skinQuery": "DJ Sona",
