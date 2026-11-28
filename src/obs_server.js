@@ -2469,6 +2469,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
     body.fx-blossom-springs .bg-splash,
     body.fx-radiant-cloud .bg-splash,
     body.fx-ruined-mist .bg-splash,
+    body.fx-revenant-reign .bg-splash,
     body.fx-zaun-lab .bg-splash,
     body.fx-crime-city .bg-splash,
     body.fx-prestige-rose .bg-splash,
@@ -2745,6 +2746,7 @@ const OBS_LOL_BG_HTML = `<!DOCTYPE html>
         'arcane-prestige': 'diamonds',
         'project-cyber': 'cyber',
         'ruined-mist': 'mist',
+        'revenant-reign': 'mist',
         'zaun-lab': 'bubbles',
         'crime-city': 'cards',
         'prestige-rose': 'petals',
@@ -4143,6 +4145,28 @@ const OBS_SCENE_TRANSITION_HTML = `<!DOCTYPE html>
           }
           spawnEveCoffin();
           drawEveCoffin();
+        } else if (activeEffect === 'revenant-reign') {
+          if (customVideo) {
+            customVideo.src = '/api/theme-asset/viego-revenant-reign-transition.mp4?t=' + Date.now();
+            customVideo.muted = true;
+            customVideo.load();
+            customVideo.currentTime = 0;
+            customVideo.style.display = 'block';
+            customVideo.onended = () => resetCustomMedia();
+            customVideo.onerror = () => {
+              resetCustomMedia();
+              spawnBubbles();
+              drawBubbles();
+            };
+            customVideo.play().catch(() => {});
+            timer = setTimeout(() => {
+              stage.classList.remove('playing');
+              resetCustomMedia();
+            }, 2200);
+            return;
+          }
+          spawnBubbles();
+          drawBubbles();
         } else if (activeEffect === 'unbound-thresh') {
           if (customVideo) {
             customVideo.src = '/api/theme-asset/thresh-unbound-transition.mp4?t=' + Date.now();
@@ -4464,6 +4488,26 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
     /* Singed Mad Scientist Lab: Hazard stripes */
     body.champ-fx-zaun-lab .ab-fx-lab { display: block; }
 
+    /* Revenant Reign Viego: Morphing Greatsword (Form & Color Cycle) + Purple/Blue Soul River Arms */
+    body.champ-fx-revenant-reign .ab-fx-revenant { display: block; }
+    .ab-revenant-sword {
+      transform-origin: 540px 22px;
+      animation: abRevenantSwordShift 7.2s ease-in-out infinite;
+    }
+    .ab-revenant-arms {
+      animation: abRevenantMistWave 4.2s ease-in-out infinite;
+    }
+    @keyframes abRevenantSwordShift {
+      0%, 100% { filter: hue-rotate(0deg) drop-shadow(0 0 10px #e11d48); transform: scaleX(1) scaleY(1); }
+      25% { filter: hue-rotate(275deg) drop-shadow(0 0 10px #a855f7); transform: scaleX(1.06) scaleY(0.92); }
+      50% { filter: hue-rotate(195deg) drop-shadow(0 0 10px #38bdf8); transform: scaleX(0.96) scaleY(1.12); }
+      75% { filter: hue-rotate(48deg) drop-shadow(0 0 10px #facc15); transform: scaleX(1.05) scaleY(1.04); }
+    }
+    @keyframes abRevenantMistWave {
+      0%, 100% { transform: translateY(0px); opacity: 0.88; }
+      50% { transform: translateY(-4px); opacity: 1; }
+    }
+
     /* Lux Elementalist: Prismatic hue cycle */
     body.champ-fx-elementalist .ab-svg { animation: abPrismCycle 6s linear infinite; }
 
@@ -4612,6 +4656,24 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
       <g class="ab-fx-layer ab-fx-lab">
         <rect x="174" y="18" width="110" height="8" rx="2" fill="url(#abHazardPat)" stroke="#091216" stroke-width="1" />
         <rect x="530" y="18" width="110" height="8" rx="2" fill="url(#abHazardPat)" stroke="#091216" stroke-width="1" />
+      </g>
+
+      <!-- REVENANT REIGN VIEGO: Morphing Greatsword Crest + Purple/Blue Soul River Arms -->
+      <g class="ab-fx-layer ab-fx-revenant">
+        <g class="ab-revenant-sword">
+          <path d="M 164 22 L 210 14 L 222 22 L 210 30 Z M 220 22 L 328 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
+          <path d="M 650 22 L 604 14 L 592 22 L 604 30 Z M 594 22 L 496 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
+          <polygon points="84,12 94,25 84,34 74,25" fill="#e11d48" stroke="#f5f3ff" stroke-width="1.6" />
+        </g>
+        <g class="ab-revenant-arms">
+          <path d="M 160 171 Q 190 156 225 166 T 295 164 T 370 167 T 450 163 T 535 167 T 620 164 T 710 167 T 800 164 T 892 170"
+                fill="none" stroke="#a855f7" stroke-width="5" stroke-opacity="0.72" />
+          <path d="M 172 173 Q 210 160 250 169 T 340 165 T 430 169 T 520 165 T 625 169 T 730 165 T 886 171"
+                fill="none" stroke="#38bdf8" stroke-width="3" stroke-opacity="0.78" />
+          <path d="M 218 170 L 214 152 L 208 145 M 214 152 L 218 143 M 214 152 L 224 147" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
+          <path d="M 412 170 L 415 151 L 408 144 M 415 151 L 419 142 M 415 151 L 425 147" fill="none" stroke="#a855f7" stroke-width="2.2" stroke-linecap="round" />
+          <path d="M 742 170 L 739 152 L 733 145 M 739 152 L 744 143 M 739 152 L 750 147" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
+        </g>
       </g>
     </svg>
   </div>
@@ -7150,6 +7212,104 @@ body.champ-fx-unbound-thresh .gw-winner {
   color: #a7f3d0 !important;
   text-shadow: 0 0 18px rgba(94, 234, 212, 0.95), 0 0 10px rgba(16, 185, 129, 0.85) !important;
 }
+
+/* REVENANT REIGN VIEGO: Purple & Spectral-Blue Soul River Mist (E) with Reaching Arms + Morphing Greatsword */
+@keyframes revenantSwordCycle {
+  0%, 100% {
+    filter: hue-rotate(0deg) drop-shadow(0 0 10px rgba(225, 29, 72, 0.9));
+    transform: rotate(-16deg) scale(1, 1);
+  }
+  25% {
+    filter: hue-rotate(270deg) drop-shadow(0 0 11px rgba(168, 85, 247, 0.92));
+    transform: rotate(-12deg) scale(1.12, 0.94);
+  }
+  50% {
+    filter: hue-rotate(195deg) drop-shadow(0 0 11px rgba(56, 189, 248, 0.92));
+    transform: rotate(-20deg) scale(0.95, 1.12);
+  }
+  75% {
+    filter: hue-rotate(48deg) drop-shadow(0 0 11px rgba(250, 204, 21, 0.92));
+    transform: rotate(-14deg) scale(1.08, 1.04);
+  }
+}
+@keyframes revenantRiverFlow {
+  0% { background-position: 0% 100%, 0% 0%; }
+  50% { background-position: 100% 100%, 50% 0%; }
+  100% { background-position: 0% 100%, 100% 0%; }
+}
+@keyframes revenantBorderShift {
+  0%, 100% { border-color: #e11d48; box-shadow: 0 0 24px rgba(225, 29, 72, 0.44), inset 0 -18px 28px rgba(168, 85, 247, 0.28); }
+  33% { border-color: #a855f7; box-shadow: 0 0 26px rgba(168, 85, 247, 0.52), inset 0 -18px 28px rgba(56, 189, 248, 0.30); }
+  66% { border-color: #38bdf8; box-shadow: 0 0 26px rgba(56, 189, 248, 0.48), inset 0 -18px 28px rgba(168, 85, 247, 0.32); }
+}
+body.champ-fx-revenant-reign .msg-row {
+  background:
+    linear-gradient(90deg, rgba(168, 85, 247, 0.22), rgba(56, 189, 248, 0.14) 55%, rgba(225, 29, 72, 0.16)),
+    linear-gradient(135deg, var(--ct-bg-start, rgba(12, 6, 22, 0.97)), var(--ct-bg-end, rgba(6, 10, 24, 0.98))) !important;
+  border: 1.5px solid #a855f7 !important;
+  border-left: 4px solid #e11d48 !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  border-radius: 0 !important;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.32), -2px 0 10px rgba(225, 29, 72, 0.48) !important;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-revenant-reign ${s}`).join(',\n')} {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 20% 100%, rgba(168, 85, 247, 0.36), transparent 56%),
+    radial-gradient(ellipse at 80% 100%, rgba(56, 189, 248, 0.32), transparent 56%),
+    linear-gradient(145deg, var(--ct-bg-start, rgba(12, 6, 22, 0.97)), var(--ct-bg-end, rgba(6, 10, 24, 0.98))) !important;
+  border: 2px solid #e11d48 !important;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  border-radius: 0 !important;
+  animation: revenantBorderShift 6.4s ease-in-out infinite;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-revenant-reign ${s}::before`).join(',\n')} {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  background-repeat: repeat-x;
+  background-size: 160px 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 22'%3E%3Cpath d='M0 22 Q24 9 48 16 T96 14 T144 17 L160 22 Z' fill='%239333ea' fill-opacity='0.48'/%3E%3Cpath d='M0 22 Q32 13 64 18 T128 15 L160 22 Z' fill='%2338bdf8' fill-opacity='0.42'/%3E%3Cpath d='M28 22 L25 9 L20 4 M25 9 L27 2 M25 9 L32 6 M84 22 L87 8 L81 3 M87 8 L90 2 M87 8 L94 6 M134 22 L131 10 L126 5 M131 10 L134 3 M131 10 L138 7' fill='none' stroke='%23c4b5fd' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  animation: revenantRiverFlow 5.5s linear infinite;
+  pointer-events: none;
+  z-index: 6;
+}
+${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-revenant-reign ${s}::after`).join(',\n')} {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 26px;
+  height: 34px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 46'%3E%3Cpath d='M16 1 L21 10 L19 16 L22 22 L18 28 L16 30 L14 28 L10 22 L13 16 L11 10 Z' fill='%23e11d48' stroke='%23fda4af' stroke-width='1.5'/%3E%3Cpath d='M16 4 L16 28' stroke='%23ffffff' stroke-width='1.6'/%3E%3Cpath d='M5 30 Q16 24 27 30 Q16 33 5 30 Z' fill='%231e1b4b' stroke='%23e11d48' stroke-width='1.8'/%3E%3Crect x='14.5' y='31' width='3' height='9' fill='%230f172a' stroke='%23a855f7' stroke-width='1'/%3E%3Cpolygon points='16,40 19,43 16,46 13,43' fill='%2338bdf8'/%3E%3C/svg%3E");
+  transform-origin: center center;
+  animation: revenantSwordCycle 7.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 8;
+}
+body.champ-fx-revenant-reign .gs-title,
+body.champ-fx-revenant-reign .gs-champ-name,
+body.champ-fx-revenant-reign .lb-rank,
+body.champ-fx-revenant-reign .sp-title,
+body.champ-fx-revenant-reign .goal-title,
+body.champ-fx-revenant-reign .poll-q,
+body.champ-fx-revenant-reign .gw-title,
+body.champ-fx-revenant-reign .sched-title,
+body.champ-fx-revenant-reign .al-author,
+body.champ-fx-revenant-reign .lt-topic,
+body.champ-fx-revenant-reign .qna-author,
+body.champ-fx-revenant-reign .tron-topic,
+body.champ-fx-revenant-reign .val-rank-name { color: #f5f3ff !important; text-shadow: 0 0 12px rgba(225, 29, 72, 0.88), 0 0 8px rgba(168, 85, 247, 0.78) !important; }
+body.champ-fx-revenant-reign .gs-lp-fill,
+body.champ-fx-revenant-reign .lb-lp-fill,
+body.champ-fx-revenant-reign .goal-fill,
+body.champ-fx-revenant-reign .sp-prog-fill,
+body.champ-fx-revenant-reign .val-rr-fill { background: linear-gradient(90deg, #e11d48, #a855f7, #38bdf8) !important; }
 body.champ-has-skin-art .gs-splash,
 body.champ-has-skin-art .map-splash { background-image: var(--ct-skin-splash) !important; opacity: 0.42 !important; }
 @keyframes omniCharFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
@@ -7219,7 +7379,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
   }
   function applyChampPack(pack){
     const r = document.documentElement;
-    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
+    document.body.classList.remove('champ-pack-active', 'champ-has-skin-art', 'champ-fx-jinx-glitch', 'champ-fx-kda-firestarter', 'champ-fx-kda-all-out', 'champ-fx-risen-legend', 'champ-fx-inkshadow', 'champ-fx-dark-cosmic', 'champ-fx-black-rose', 'champ-fx-ravenborn', 'champ-fx-elementalist', 'champ-fx-high-noon', 'champ-fx-arcane-prestige', 'champ-fx-prestige-cosmic', 'champ-fx-god-king', 'champ-fx-radiant-cloud', 'champ-fx-soul-fighter', 'champ-fx-blossom-springs', 'champ-fx-zaun-lab', 'champ-fx-crime-city', 'champ-fx-prestige-rose', 'champ-fx-dj-sona', 'champ-fx-arcane-fractured', 'champ-fx-eve-firestarter', 'champ-fx-ahri-firestarter', 'champ-fx-unbound-thresh', 'champ-fx-revenant-reign', 'champ-fx-spirit-blossom', 'champ-fx-nightbringer', 'champ-fx-project-cyber', 'champ-fx-ruined-mist', 'champ-fx-neon-pulse', 'champ-fx-hextech');
     r.style.removeProperty('--ct-skin-splash');
     if (!pack || !pack.id) return;
     document.body.classList.add('champ-pack-active');
