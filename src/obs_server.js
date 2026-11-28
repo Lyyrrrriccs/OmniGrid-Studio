@@ -4800,7 +4800,7 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
         </g>
       </g>
 
-      <!-- CREATOR VIKTOR: Armored Iron Plates, Dr. Doom Tech Mask Crest & Animated Red-White Lightning Arcs -->
+      <!-- CREATOR VIKTOR: Armored Iron Plates & Dr. Doom Tech Mask Crest (60fps Fractal Lightning drawn by Canvas Perimeter Engine) -->
       <g class="ab-fx-layer ab-fx-viktor">
         <!-- Heavy Gunmetal Armor Corner Rivet Plates -->
         <polygon points="154,32 174,16 218,16 206,28 166,28" fill="#1e293b" stroke="#94a3b8" stroke-width="1.8" />
@@ -4811,19 +4811,6 @@ const OBS_LOL_ABILITY_BAR_HTML = `<!DOCTYPE html>
         <line x1="76" y1="21" x2="82" y2="23" stroke="#ff1e2d" stroke-width="2.6" stroke-linecap="round" />
         <line x1="92" y1="21" x2="86" y2="23" stroke="#ff1e2d" stroke-width="2.6" stroke-linecap="round" />
         <line x1="78" y1="29" x2="90" y2="29" stroke="#94a3b8" stroke-width="1.5" />
-        <!-- Animated Red-White High-Voltage Lightning Arcs along Top & Bottom Rails -->
-        <g class="ab-viktor-arc-a">
-          <polyline points="212,22 252,14 282,27 328,13 372,26 420,14 468,26 520,13 564,25 604,20"
-                    fill="none" stroke="#ff1e2d" stroke-width="5.5" stroke-linejoin="miter" stroke-opacity="0.88" />
-          <polyline points="212,22 252,14 282,27 328,13 372,26 420,14 468,26 520,13 564,25 604,20"
-                    fill="none" stroke="#ffffff" stroke-width="2.1" stroke-linejoin="miter" />
-        </g>
-        <g class="ab-viktor-arc-b">
-          <polyline points="164,169 224,160 270,173 342,161 402,172 478,159 544,173 622,160 698,172 778,160 842,172 894,166"
-                    fill="none" stroke="#ff1e2d" stroke-width="5.2" stroke-linejoin="miter" stroke-opacity="0.85" />
-          <polyline points="164,169 224,160 270,173 342,161 402,172 478,159 544,173 622,160 698,172 778,160 842,172 894,166"
-                    fill="none" stroke="#ffffff" stroke-width="2.0" stroke-linejoin="miter" />
-        </g>
       </g>
     </svg>
   </div>
@@ -7624,21 +7611,6 @@ ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-creator-viktor ${s}`).join(',\
   border-radius: 0 !important;
   animation: viktorVoltagePulse 3.2s linear infinite;
 }
-${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-creator-viktor ${s}::before`).join(',\n')} {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 22px;
-  background-repeat: repeat-x;
-  background-size: 180px 22px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 22'%3E%3Cpolyline points='0,14 22,6 38,17 62,4 82,16 108,5 128,17 154,6 180,14' fill='none' stroke='%23ff1e2d' stroke-width='4.8' stroke-linejoin='miter'/%3E%3Cpolyline points='0,14 22,6 38,17 62,4 82,16 108,5 128,17 154,6 180,14' fill='none' stroke='%23ffffff' stroke-width='1.8' stroke-linejoin='miter'/%3E%3C/svg%3E");
-  filter: drop-shadow(0 0 8px rgba(255, 30, 45, 0.95)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
-  animation: viktorArcCrack 1.35s steps(4, end) infinite;
-  pointer-events: none;
-  z-index: 6;
-}
 ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-creator-viktor ${s}::after`).join(',\n')} {
   content: "";
   position: absolute;
@@ -7773,6 +7745,154 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     } else if (charEl) {
       charEl.classList.remove('visible');
     }
+    syncViktorLightning(Boolean(pack && pack.effect === 'creator-viktor'));
+  }
+
+  // 60fps Fractal Red-and-White Perimeter Lightning Engine for Creator Viktor
+  let viktorRaf = 0;
+  let viktorCanvas = null;
+  function buildFractalBolt(x0, y0, x1, y1, disp, depth, out) {
+    if (depth <= 0) { out.push([x1, y1]); return; }
+    const mx = (x0 + x1) * 0.5;
+    const my = (y0 + y1) * 0.5;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const off = (Math.random() - 0.5) * disp;
+    const px = mx + nx * off;
+    const py = my + ny * off;
+    buildFractalBolt(x0, y0, px, py, disp * 0.56, depth - 1, out);
+    buildFractalBolt(px, py, x1, y1, disp * 0.56, depth - 1, out);
+  }
+  function strokeBolt(ctx, pts, mainW, alpha) {
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = '#ff1e2d';
+    ctx.shadowBlur = 16;
+    ctx.strokeStyle = 'rgba(255, 24, 42, ' + (0.45 * alpha).toFixed(2) + ')';
+    ctx.lineWidth = mainW * 4.2;
+    ctx.stroke();
+    ctx.shadowBlur = 8;
+    ctx.strokeStyle = 'rgba(255, 58, 74, ' + (0.92 * alpha).toFixed(2) + ')';
+    ctx.lineWidth = mainW * 1.9;
+    ctx.stroke();
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = '#ffffff';
+    ctx.strokeStyle = 'rgba(255, 255, 255, ' + alpha.toFixed(2) + ')';
+    ctx.lineWidth = mainW * 0.85;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  function samplePoly(poly, u) {
+    let total = 0;
+    const lens = [];
+    for (let i = 0; i < poly.length - 1; i++) {
+      const l = Math.hypot(poly[i + 1][0] - poly[i][0], poly[i + 1][1] - poly[i][1]);
+      lens.push(l);
+      total += l;
+    }
+    let target = (((u % 1) + 1) % 1) * total;
+    for (let i = 0; i < lens.length; i++) {
+      if (target <= lens[i] || i === lens.length - 1) {
+        const f = lens[i] > 0 ? target / lens[i] : 0;
+        return [poly[i][0] + (poly[i + 1][0] - poly[i][0]) * f, poly[i][1] + (poly[i + 1][1] - poly[i][1]) * f];
+      }
+      target -= lens[i];
+    }
+    return poly[0];
+  }
+  function drawArcAlongPoly(ctx, poly, uStart, uSpan, disp, mainW, alpha) {
+    const steps = 4;
+    const pts = [];
+    let prev = samplePoly(poly, uStart);
+    pts.push(prev);
+    for (let s = 1; s <= steps; s++) {
+      const cur = samplePoly(poly, uStart + (uSpan * s) / steps);
+      buildFractalBolt(prev[0], prev[1], cur[0], cur[1], disp, 3, pts);
+      prev = cur;
+    }
+    strokeBolt(ctx, pts, mainW, alpha);
+    // Occasional forked micro-branch snapping off the frame
+    if (pts.length > 6 && Math.random() < 0.65) {
+      const bi = 2 + Math.floor(Math.random() * (pts.length - 4));
+      const p0 = pts[bi];
+      const ang = Math.random() * Math.PI * 2;
+      const blen = 10 + Math.random() * 18;
+      const bpts = [p0];
+      buildFractalBolt(p0[0], p0[1], p0[0] + Math.cos(ang) * blen, p0[1] + Math.sin(ang) * blen, 7, 2, bpts);
+      strokeBolt(ctx, bpts, mainW * 0.62, alpha * 0.85);
+    }
+  }
+  function syncViktorLightning(active) {
+    if (!active) {
+      if (viktorRaf) { cancelAnimationFrame(viktorRaf); viktorRaf = 0; }
+      if (viktorCanvas) { viktorCanvas.remove(); viktorCanvas = null; }
+      return;
+    }
+    if (viktorRaf) return;
+    viktorCanvas = document.createElement('canvas');
+    viktorCanvas.id = 'omniViktorLightningCanvas';
+    viktorCanvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9999;';
+    document.body.appendChild(viktorCanvas);
+    const ctx = viktorCanvas.getContext('2d');
+    const cardSels = ${JSON.stringify(ALL_OVERLAY_CARDS_SEL.join(','))};
+    let lastTick = 0;
+    function tick(now) {
+      viktorRaf = requestAnimationFrame(tick);
+      if (now - lastTick < 34) return; // crisp ~30Hz electrical crackle with smooth gliding
+      lastTick = now;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (viktorCanvas.width !== w || viktorCanvas.height !== h) { viktorCanvas.width = w; viktorCanvas.height = h; }
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'lighter';
+      const t = now * 0.00028;
+
+      const abStage = document.getElementById('abStage');
+      if (abStage) {
+        const sx = w / 920;
+        const sy = h / 175;
+        const abPoly = [
+          [148*sx,36*sy],[172*sx,22*sy],[642*sx,22*sy],[664*sx,38*sy],
+          [892*sx,38*sy],[912*sx,56*sy],[912*sx,154*sy],[896*sx,170*sy],[146*sx,170*sy],[148*sx,36*sy]
+        ];
+        drawArcAlongPoly(ctx, abPoly, t * 1.15, 0.14, 14, 1.8, 0.96);
+        drawArcAlongPoly(ctx, abPoly, t * 1.15 + 0.48, 0.13, 13, 1.6, 0.92);
+        drawArcAlongPoly(ctx, abPoly, -t * 0.85 + 0.22, 0.11, 12, 1.4, 0.85);
+        // Portrait Ring circular perimeter lightning
+        const ringPoly = [];
+        for (let i = 0; i <= 24; i++) {
+          const a = (i / 24) * Math.PI * 2;
+          ringPoly.push([(84 + Math.cos(a) * 71) * sx, (96 + Math.sin(a) * 71) * sy]);
+        }
+        drawArcAlongPoly(ctx, ringPoly, t * 1.6, 0.24, 11, 1.6, 0.95);
+        drawArcAlongPoly(ctx, ringPoly, -t * 1.2 + 0.5, 0.20, 10, 1.4, 0.88);
+        return;
+      }
+
+      const nodes = document.querySelectorAll(cardSels);
+      for (let i = 0; i < nodes.length; i++) {
+        const el = nodes[i];
+        const r = el.getBoundingClientRect();
+        if (r.width < 20 || r.height < 20 || el.classList.contains('hidden')) continue;
+        const poly = [
+          [r.left + 10, r.top], [r.right - 10, r.top], [r.right, r.top + 10],
+          [r.right, r.bottom - 10], [r.right - 10, r.bottom], [r.left + 10, r.bottom],
+          [r.left, r.bottom - 10], [r.left, r.top + 10], [r.left + 10, r.top]
+        ];
+        const phase = t + i * 0.27;
+        drawArcAlongPoly(ctx, poly, phase, 0.18, 12, 1.6, 0.95);
+        drawArcAlongPoly(ctx, poly, phase + 0.5, 0.16, 11, 1.45, 0.90);
+        drawArcAlongPoly(ctx, poly, -phase * 0.8 + 0.25, 0.12, 10, 1.25, 0.82);
+      }
+    }
+    viktorRaf = requestAnimationFrame(tick);
   }
   function fetchTheme(){
     fetch('/api/champion-theme', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});
