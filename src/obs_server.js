@@ -7746,6 +7746,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       charEl.classList.remove('visible');
     }
     syncViktorLightning(Boolean(pack && pack.effect === 'creator-viktor'));
+    syncAkaliEdgeFx(Boolean(pack && pack.effect === 'kda-firestarter'));
   }
 
   // 60fps Fractal Red-and-White Perimeter Lightning Engine for Creator Viktor
@@ -7893,6 +7894,152 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       }
     }
     viktorRaf = requestAnimationFrame(tick);
+  }
+
+  // 60fps Akali K/DA Firestarter Edge Engine (#1 Ignition Flame-Trail + Sparks + #3 Kunai Corner Starbursts)
+  let akaliRaf = 0;
+  let akaliCanvas = null;
+  function drawAkaliStarburst(ctx, x, y, r, rot, col, alpha) {
+    if (alpha < 0.03) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      const rad = i % 2 === 0 ? r : r * 0.28;
+      if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+      else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+    }
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawAkaliTrail(ctx, poly, uHead, uLen, col1, col2, width, sparksArr) {
+    const steps = 16;
+    for (let s = 0; s < steps; s++) {
+      const f0 = s / steps;
+      const f1 = (s + 1) / steps;
+      const p0 = samplePoly(poly, uHead - uLen * (1 - f0));
+      const p1 = samplePoly(poly, uHead - uLen * (1 - f1));
+      ctx.beginPath();
+      ctx.moveTo(p0[0], p0[1]);
+      ctx.lineTo(p1[0], p1[1]);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = f1 > 0.72 ? col2 : col1;
+      ctx.shadowColor = col1;
+      ctx.shadowBlur = 14 * f1;
+      ctx.globalAlpha = Math.pow(f1, 1.5) * 0.95;
+      ctx.lineWidth = Math.max(1.2, width * f1);
+      ctx.stroke();
+    }
+    const head = samplePoly(poly, uHead);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fffbeb';
+    ctx.shadowColor = col2;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(head[0], head[1], width * 0.62, 0, Math.PI * 2);
+    ctx.fill();
+    if (sparksArr && sparksArr.length < 70 && Math.random() < 0.55) {
+      sparksArr.push({
+        x: head[0] + (Math.random() - 0.5) * 6,
+        y: head[1] + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: -0.7 - Math.random() * 1.8,
+        life: 1,
+        col: Math.random() < 0.28 ? '#00f5ff' : (Math.random() < 0.5 ? '#ff7a00' : '#ff3b5c'),
+        r: 1.5 + Math.random() * 2.2
+      });
+    }
+  }
+  function syncAkaliEdgeFx(active) {
+    if (!active) {
+      if (akaliRaf) { cancelAnimationFrame(akaliRaf); akaliRaf = 0; }
+      if (akaliCanvas) { akaliCanvas.remove(); akaliCanvas = null; }
+      return;
+    }
+    if (akaliRaf) return;
+    akaliCanvas = document.createElement('canvas');
+    akaliCanvas.id = 'omniAkaliEdgeCanvas';
+    akaliCanvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9998;';
+    document.body.appendChild(akaliCanvas);
+    const ctx = akaliCanvas.getContext('2d');
+    const cardSels = ${JSON.stringify(ALL_OVERLAY_CARDS_SEL.join(','))};
+    const sparks = [];
+    function tick(now) {
+      akaliRaf = requestAnimationFrame(tick);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (akaliCanvas.width !== w || akaliCanvas.height !== h) { akaliCanvas.width = w; akaliCanvas.height = h; }
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'lighter';
+      const t = now * 0.00032;
+
+      const polys = [];
+      const abStage = document.getElementById('abStage');
+      if (abStage) {
+        const sx = w / 920;
+        const sy = h / 175;
+        polys.push([
+          [148*sx,36*sy],[172*sx,22*sy],[642*sx,22*sy],[664*sx,38*sy],
+          [892*sx,38*sy],[912*sx,56*sy],[912*sx,154*sy],[896*sx,170*sy],[146*sx,170*sy],[148*sx,36*sy]
+        ]);
+        const ring = [];
+        for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI * 2; ring.push([(84 + Math.cos(a) * 71) * sx, (96 + Math.sin(a) * 71) * sy]); }
+        polys.push(ring);
+      } else {
+        const nodes = document.querySelectorAll(cardSels);
+        for (let i = 0; i < nodes.length; i++) {
+          const el = nodes[i];
+          const r = el.getBoundingClientRect();
+          if (r.width < 20 || r.height < 20 || el.classList.contains('hidden')) continue;
+          polys.push([
+            [r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom], [r.left, r.top]
+          ]);
+        }
+      }
+
+      for (let i = 0; i < polys.length; i++) {
+        const poly = polys[i];
+        const ph = t + i * 0.31;
+        // #1 Ignition Flame-Trail (Orange -> Crimson)
+        drawAkaliTrail(ctx, poly, ph, 0.22, '#ff3b5c', '#ff7a00', 4.6, sparks);
+        // #3 Kunai Energy-Slash (Hyper-Cyan counter-chase)
+        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.16, '#00f5ff', '#ffffff', 3.4, null);
+        // #3 Corner Cel-Shaded Starburst Impact when slash nears a corner
+        if (poly.length === 5) {
+          for (let c = 0; c < 4; c++) {
+            const dist = Math.abs((((ph % 1) + 1) % 1) - c * 0.25);
+            const burst = Math.max(0, 1 - dist * 16);
+            if (burst > 0.05) {
+              drawAkaliStarburst(ctx, poly[c][0], poly[c][1], 14 * burst + 4, now * 0.004 + c, c % 2 === 0 ? '#00f5ff' : '#ff7a00', burst);
+            }
+          }
+        }
+      }
+
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const sp = sparks[i];
+        sp.x += sp.vx; sp.y += sp.vy; sp.life -= 0.028;
+        if (sp.life <= 0) { sparks.splice(i, 1); continue; }
+        ctx.globalAlpha = sp.life;
+        ctx.fillStyle = sp.col;
+        ctx.shadowColor = sp.col;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(sp.x, sp.y, sp.r, sp.r);
+      }
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+    }
+    akaliRaf = requestAnimationFrame(tick);
   }
   function fetchTheme(){
     fetch('/api/champion-theme', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});

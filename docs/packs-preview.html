@@ -852,6 +852,11 @@
               <button class="view-btn px-2 py-1 bg-slate-800 text-slate-300 whitespace-nowrap" data-view="client" data-en="🖼️ Client" data-de="🖼️ Client">🖼️ Client</button>
             </div>
             <button type="button" id="btnPreviewTransition" class="px-2.5 py-1 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-[11px] font-semibold border border-purple-400/50 transition whitespace-nowrap" data-en="✨ Transition" data-de="✨ Übergang">✨ Transition</button>
+            <div id="akaliFxSwitcher" class="hidden flex rounded-lg overflow-hidden border border-orange-500/60 text-[11px]">
+              <button type="button" class="akali-fx-btn px-2 py-1 bg-orange-600 text-white font-bold whitespace-nowrap" data-akali-mode="13">🔥 #1+#3 Flame+Kunai</button>
+              <button type="button" class="akali-fx-btn px-2 py-1 bg-slate-800 text-slate-300 font-semibold whitespace-nowrap" data-akali-mode="5">🎨 #5 Cel-Spray</button>
+              <button type="button" class="akali-fx-btn px-2 py-1 bg-slate-800 text-slate-300 font-semibold whitespace-nowrap" data-akali-mode="all">⚡ Alle 3</button>
+            </div>
             <div class="flex rounded-lg overflow-hidden border border-slate-700 text-[11px]">
               <button class="bg-btn px-2 py-1 bg-indigo-600 text-white font-semibold" data-bg="gameplay">🎮 Stream</button>
               <button class="bg-btn px-2 py-1 bg-slate-800 text-slate-300" data-bg="midnight">🌌 Dark</button>
@@ -1469,6 +1474,166 @@
         el.classList.toggle('active', el.dataset.id === pack.id);
       });
       syncPvViktorLightning(pack.effect === 'creator-viktor');
+      const akSw = document.getElementById('akaliFxSwitcher');
+      if (akSw) akSw.classList.toggle('hidden', pack.effect !== 'kda-firestarter');
+      syncPvAkaliEdgeFx(pack.effect === 'kda-firestarter');
+    }
+
+    // Live 60fps Akali Edge FX Preview (#1+#3 Ignition Flame + Kunai Slash, AND #5 Cel-Shaded Spraypaint-Glitch + Speedlines)
+    let pvAkaliMode = '13';
+    let pvAkaliRaf = 0;
+    let pvAkaliCanvas = null;
+    document.querySelectorAll('.akali-fx-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        pvAkaliMode = btn.dataset.akaliMode || '13';
+        document.querySelectorAll('.akali-fx-btn').forEach((b) => {
+          const on = b === btn;
+          b.className = 'akali-fx-btn px-2 py-1 whitespace-nowrap ' + (on ? 'bg-orange-600 text-white font-bold' : 'bg-slate-800 text-slate-300 font-semibold');
+        });
+      });
+    });
+    function pvAkaliStar(ctx, x, y, r, rot, col, alpha) {
+      if (alpha < 0.04) return;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const a = (i * Math.PI) / 4, rad = i % 2 === 0 ? r : r * 0.28;
+        if (i === 0) ctx.moveTo(Math.cos(a)*rad, Math.sin(a)*rad); else ctx.lineTo(Math.cos(a)*rad, Math.sin(a)*rad);
+      }
+      ctx.closePath(); ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.fill();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.4; ctx.stroke(); ctx.restore();
+    }
+    function pvAkaliTrail(ctx, poly, uHead, uLen, col1, col2, width, sparksArr) {
+      const steps = 14;
+      for (let s = 0; s < steps; s++) {
+        const f0 = s / steps, f1 = (s + 1) / steps;
+        const p0 = pvSamplePoly(poly, uHead - uLen * (1 - f0));
+        const p1 = pvSamplePoly(poly, uHead - uLen * (1 - f1));
+        ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]);
+        ctx.lineCap = 'round'; ctx.strokeStyle = f1 > 0.72 ? col2 : col1;
+        ctx.shadowColor = col1; ctx.shadowBlur = 12 * f1;
+        ctx.globalAlpha = Math.pow(f1, 1.5) * 0.95; ctx.lineWidth = Math.max(1.2, width * f1); ctx.stroke();
+      }
+      const hd = pvSamplePoly(poly, uHead);
+      ctx.globalAlpha = 1; ctx.fillStyle = '#fffbeb'; ctx.beginPath(); ctx.arc(hd[0], hd[1], width * 0.6, 0, Math.PI * 2); ctx.fill();
+      if (sparksArr && sparksArr.length < 65 && Math.random() < 0.5) {
+        sparksArr.push({ x: hd[0]+(Math.random()-0.5)*5, y: hd[1]+(Math.random()-0.5)*5, vx: (Math.random()-0.5)*1.4, vy: -0.7-Math.random()*1.6, life: 1, col: Math.random()<0.28?'#00f5ff':(Math.random()<0.5?'#ff7a00':'#ff3b5c'), r: 1.5+Math.random()*2 });
+      }
+    }
+    function pvAkaliCelSpray(ctx, rect, now, idx) {
+      const l = rect.l, tp = rect.t, rt = rect.r, bt = rect.b;
+      const beat = Math.floor(now / 140 + idx * 3);
+      const corners = [[l, tp, -1, -1], [rt, tp, 1, -1], [rt, bt, 1, 1], [l, bt, -1, 1]];
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      // Cel-Shaded Black-Outlined Anime Speedlines bursting off edges
+      for (let k = 0; k < 10; k++) {
+        const seed = (beat * 17 + k * 31 + idx * 13) % 100;
+        const onTop = k % 2 === 0;
+        const sx = onTop ? l + (rt - l) * (seed / 100) : (k % 4 === 1 ? rt : l);
+        const sy = onTop ? (k % 4 === 0 ? tp : bt) : tp + (bt - tp) * (seed / 100);
+        const len = 14 + (seed % 18);
+        const ang = -0.45 + (k % 3) * 0.14;
+        const col = k % 3 === 0 ? '#00f5ff' : (k % 3 === 1 ? '#ff3b5c' : '#ff7a00');
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + Math.cos(ang) * len, sy + Math.sin(ang) * len);
+        ctx.strokeStyle = '#05020c'; ctx.lineWidth = 4.5; ctx.stroke();
+        ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.stroke();
+      }
+      // Cel-Shaded Neon Spraypaint Splatters popping at corners
+      corners.forEach(([cx, cy, dx, dy], ci) => {
+        const pulse = ((now * 0.004 + ci * 0.65 + idx * 0.3) % 2.4);
+        if (pulse > 1.0) return;
+        const sc = Math.sin(pulse * Math.PI);
+        const col = ci % 3 === 0 ? '#ff3b5c' : (ci % 3 === 1 ? '#00f5ff' : '#ff7a00');
+        for (let d = 0; d < 4; d++) {
+          const ox = dx * (4 + d * 5) * sc + Math.sin(d * 3 + ci) * 4;
+          const oy = dy * (3 + d * 4) * sc + Math.cos(d * 2 + ci) * 4;
+          const rad = (5.5 - d * 1.1) * sc;
+          if (rad < 1) continue;
+          ctx.beginPath(); ctx.arc(cx + ox, cy + oy, rad, 0, Math.PI * 2);
+          ctx.fillStyle = col; ctx.fill();
+          ctx.strokeStyle = '#05020c'; ctx.lineWidth = 1.8; ctx.stroke();
+        }
+      });
+      // Chromatic Cyan/Crimson Glitch Edge Slice on Beat
+      if (beat % 5 === 0) {
+        const gy = tp + ((beat * 29) % Math.max(10, Math.round(bt - tp - 10)));
+        ctx.fillStyle = 'rgba(0, 245, 255, 0.85)'; ctx.fillRect(l - 4, gy, 18, 3);
+        ctx.fillStyle = 'rgba(255, 59, 92, 0.9)'; ctx.fillRect(rt - 14, gy + 3, 18, 3);
+      }
+      ctx.restore();
+    }
+    function syncPvAkaliEdgeFx(active) {
+      if (!active) {
+        if (pvAkaliRaf) { cancelAnimationFrame(pvAkaliRaf); pvAkaliRaf = 0; }
+        if (pvAkaliCanvas) { pvAkaliCanvas.remove(); pvAkaliCanvas = null; }
+        return;
+      }
+      if (pvAkaliRaf) return;
+      pvAkaliCanvas = document.createElement('canvas');
+      pvAkaliCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:21;';
+      stage.appendChild(pvAkaliCanvas);
+      const ctx = pvAkaliCanvas.getContext('2d');
+      const sparks = [];
+      function tick(now) {
+        pvAkaliRaf = requestAnimationFrame(tick);
+        const sr = stage.getBoundingClientRect();
+        const w = Math.max(100, Math.round(sr.width)), h = Math.max(100, Math.round(sr.height));
+        if (pvAkaliCanvas.width !== w || pvAkaliCanvas.height !== h) { pvAkaliCanvas.width = w; pvAkaliCanvas.height = h; }
+        ctx.clearRect(0, 0, w, h);
+        const t = now * 0.00032;
+        const do13 = pvAkaliMode === '13' || pvAkaliMode === 'all';
+        const do5 = pvAkaliMode === '5' || pvAkaliMode === 'all';
+
+        const cards = stage.querySelectorAll('.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card');
+        cards.forEach((el, idx) => {
+          const r = el.getBoundingClientRect();
+          const l = r.left - sr.left, tp = r.top - sr.top, rt = l + r.width, bt = tp + r.height;
+          if (r.width < 20 || r.height < 20) return;
+          const poly = [[l,tp],[rt,tp],[rt,bt],[l,bt],[l,tp]];
+          const ph = t + idx * 0.31;
+          if (do13) {
+            ctx.globalCompositeOperation = 'lighter';
+            pvAkaliTrail(ctx, poly, ph, 0.22, '#ff3b5c', '#ff7a00', 4.2, sparks);
+            pvAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.16, '#00f5ff', '#ffffff', 3.0, null);
+            for (let c = 0; c < 4; c++) {
+              const dist = Math.abs((((ph % 1) + 1) % 1) - c * 0.25);
+              const burst = Math.max(0, 1 - dist * 16);
+              if (burst > 0.05) pvAkaliStar(ctx, poly[c][0], poly[c][1], 13 * burst + 4, now * 0.004 + c, c % 2 === 0 ? '#00f5ff' : '#ff7a00', burst);
+            }
+          }
+          if (do5) pvAkaliCelSpray(ctx, { l, t: tp, r: rt, b: bt }, now, idx);
+        });
+
+        const abWrap = stage.querySelector('.pv-ab-wrap');
+        if (abWrap) {
+          const ar = abWrap.getBoundingClientRect();
+          const ox = ar.left - sr.left, oy = ar.top - sr.top, sx = ar.width / 920, sy = ar.height / 175;
+          if (do13) {
+            ctx.globalCompositeOperation = 'lighter';
+            const abPoly = [[148,36],[172,22],[642,22],[664,38],[892,38],[912,56],[912,154],[896,170],[146,170],[148,36]].map(([x,y]) => [ox+x*sx, oy+y*sy]);
+            pvAkaliTrail(ctx, abPoly, t * 1.1, 0.20, '#ff3b5c', '#ff7a00', 4.0, sparks);
+            pvAkaliTrail(ctx, abPoly, -t * 1.3 + 0.5, 0.15, '#00f5ff', '#ffffff', 3.0, null);
+            const ring = [];
+            for (let i = 0; i <= 20; i++) { const a = (i/20)*Math.PI*2; ring.push([ox+(84+Math.cos(a)*71)*sx, oy+(96+Math.sin(a)*71)*sy]); }
+            pvAkaliTrail(ctx, ring, t * 1.5, 0.28, '#ff7a00', '#00f5ff', 3.4, null);
+          }
+          if (do5) pvAkaliCelSpray(ctx, { l: ox + 146*sx, t: oy + 22*sy, r: ox + 912*sx, b: oy + 170*sy }, now, 9);
+        }
+
+        if (do13) {
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = sparks.length - 1; i >= 0; i--) {
+            const sp = sparks[i]; sp.x += sp.vx; sp.y += sp.vy; sp.life -= 0.03;
+            if (sp.life <= 0) { sparks.splice(i, 1); continue; }
+            ctx.globalAlpha = sp.life; ctx.fillStyle = sp.col; ctx.fillRect(sp.x, sp.y, sp.r, sp.r);
+          }
+        }
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      }
+      pvAkaliRaf = requestAnimationFrame(tick);
     }
 
     // Live 60fps Fractal Red-White Perimeter Lightning for Creator Viktor Preview
