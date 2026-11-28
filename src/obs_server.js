@@ -7747,6 +7747,8 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     }
     syncViktorLightning(Boolean(pack && pack.effect === 'creator-viktor'));
     syncAkaliEdgeFx(Boolean(pack && pack.effect === 'kda-firestarter'));
+    const sigFx = ['revenant-reign', 'dj-sona', 'eve-firestarter', 'risen-legend', 'ahri-firestarter', 'elementalist', 'arcane-fractured'];
+    syncSignatureEdgeFx(pack && sigFx.indexOf(pack.effect) >= 0 ? pack.effect : '');
   }
 
   // 60fps Fractal Red-and-White Perimeter Lightning Engine for Creator Viktor
@@ -8074,6 +8076,216 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       ctx.globalAlpha = 1;
     }
     akaliRaf = requestAnimationFrame(tick);
+  }
+
+  // Unified Locked-60fps Signature Edge Engine (Viego, DJ Sona, Evelynn, Kai'Sa, Ahri, Lux, Arcane Fractured Jinx)
+  let sigEdgeRaf = 0;
+  let sigEdgeCanvas = null;
+  let sigEdgeMode = '';
+  function drawBatchedRibbon(ctx, poly, uHead, uLen, col1, col2, width, waveAmp, waveFreq, now) {
+    const steps = 16;
+    const pts = [];
+    for (let s = 0; s <= steps; s++) {
+      const f = s / steps;
+      const p = samplePoly(poly, uHead - uLen * (1 - f));
+      if (waveAmp > 0) {
+        const pNext = samplePoly(poly, uHead - uLen * (1 - f) + 0.004);
+        const dx = pNext[0] - p[0], dy = pNext[1] - p[1], l = Math.hypot(dx, dy) || 1;
+        const w = Math.sin(f * waveFreq + now * 0.016) * waveAmp * Math.sin(f * Math.PI);
+        pts.push([p[0] + (-dy / l) * w, p[1] + (dx / l) * w]);
+      } else {
+        pts.push(p);
+      }
+    }
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let s = 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+    ctx.globalAlpha = 0.24;
+    ctx.strokeStyle = col1;
+    ctx.lineWidth = width * 2.2;
+    ctx.stroke();
+
+    const mid0 = 4;
+    ctx.beginPath();
+    ctx.moveTo(pts[mid0][0], pts[mid0][1]);
+    for (let s = mid0 + 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+    ctx.globalAlpha = 0.86;
+    ctx.strokeStyle = col2;
+    ctx.lineWidth = width * 0.88;
+    ctx.stroke();
+
+    const tip0 = 10;
+    ctx.beginPath();
+    ctx.moveTo(pts[tip0][0], pts[tip0][1]);
+    for (let s = tip0 + 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+    ctx.globalAlpha = 0.96;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = Math.max(0.9, width * 0.36);
+    ctx.stroke();
+    return pts[steps];
+  }
+  function drawDiamondGlint(ctx, x, y, r, col, alpha) {
+    if (alpha < 0.05) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.45); ctx.lineTo(r * 0.32, -r * 0.32);
+    ctx.lineTo(r * 1.45, 0); ctx.lineTo(r * 0.32, r * 0.32);
+    ctx.lineTo(0, r * 1.45); ctx.lineTo(-r * 0.32, r * 0.32);
+    ctx.lineTo(-r * 1.45, 0); ctx.lineTo(-r * 0.32, -r * 0.32);
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.restore();
+  }
+  function syncSignatureEdgeFx(mode) {
+    sigEdgeMode = mode || '';
+    if (!sigEdgeMode) {
+      if (sigEdgeRaf) { cancelAnimationFrame(sigEdgeRaf); sigEdgeRaf = 0; }
+      if (sigEdgeCanvas) { sigEdgeCanvas.remove(); sigEdgeCanvas = null; }
+      return;
+    }
+    if (sigEdgeRaf) return;
+    sigEdgeCanvas = document.createElement('canvas');
+    sigEdgeCanvas.id = 'omniSigEdgeCanvas';
+    sigEdgeCanvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9997;';
+    document.body.appendChild(sigEdgeCanvas);
+    const ctx = sigEdgeCanvas.getContext('2d');
+    const cardSels = ${JSON.stringify(ALL_OVERLAY_CARDS_SEL.join(','))};
+    const motes = [];
+    let cachedPolys = [];
+    let lastLayout = 0;
+    const viegoCols = ['#e11d48', '#a855f7', '#38bdf8', '#facc15'];
+    const sonaCols = ['#00e5ff', '#ff2a6d', '#c084fc'];
+    const luxCols = ['#fde047', '#38bdf8', '#e879f9', '#34d399'];
+
+    function tick(now) {
+      sigEdgeRaf = requestAnimationFrame(tick);
+      const w = window.innerWidth, h = window.innerHeight;
+      if (sigEdgeCanvas.width !== w || sigEdgeCanvas.height !== h) { sigEdgeCanvas.width = w; sigEdgeCanvas.height = h; lastLayout = 0; }
+      if (now - lastLayout > 450) {
+        lastLayout = now;
+        cachedPolys = [];
+        const abStage = document.getElementById('abStage');
+        if (abStage) {
+          const sx = w / 920, sy = h / 175;
+          cachedPolys.push([[148*sx,36*sy],[172*sx,22*sy],[642*sx,22*sy],[664*sx,38*sy],[892*sx,38*sy],[912*sx,56*sy],[912*sx,154*sy],[896*sx,170*sy],[146*sx,170*sy],[148*sx,36*sy]]);
+          const ring = [];
+          for (let i = 0; i <= 24; i++) { const a = (i / 24) * Math.PI * 2; ring.push([(84 + Math.cos(a) * 71) * sx, (96 + Math.sin(a) * 71) * sy]); }
+          cachedPolys.push(ring);
+        } else {
+          const nodes = document.querySelectorAll(cardSels);
+          for (let i = 0; i < nodes.length; i++) {
+            const el = nodes[i], r = el.getBoundingClientRect();
+            if (r.width < 20 || r.height < 20 || el.classList.contains('hidden')) continue;
+            cachedPolys.push([[r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom], [r.left, r.top]]);
+          }
+        }
+      }
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'lighter';
+      const m = sigEdgeMode;
+      const t = now * 0.00024;
+
+      for (let i = 0; i < cachedPolys.length; i++) {
+        const poly = cachedPolys[i];
+        const ph = t + i * 0.29;
+        let head = null;
+        let moteCol = '#ffffff';
+
+        if (m === 'revenant-reign') {
+          const ci = Math.floor(now / 1800) % 4;
+          const colA = viegoCols[ci], colB = viegoCols[(ci + 1) % 4];
+          head = drawBatchedRibbon(ctx, poly, ph, 0.24, colA, colB, 2.7, 3.2, 10, now);
+          drawBatchedRibbon(ctx, poly, -ph * 0.85 + 0.5, 0.18, '#a855f7', '#38bdf8', 2.2, 4.0, 12, now);
+          moteCol = Math.random() < 0.5 ? '#a855f7' : '#38bdf8';
+        } else if (m === 'dj-sona') {
+          const si = Math.floor(now / 2200) % 3;
+          const colA = sonaCols[si], colB = sonaCols[(si + 1) % 3];
+          const beatAmp = 2.5 + Math.pow(Math.max(0, Math.sin(now * 0.013)), 3) * 6.5;
+          head = drawBatchedRibbon(ctx, poly, ph * 1.15, 0.30, colA, colB, 2.6, beatAmp, 24, now);
+          drawBatchedRibbon(ctx, poly, ph * 1.15 + 0.5, 0.28, colB, colA, 2.2, beatAmp * 0.85, 22, now);
+          moteCol = colA;
+        } else if (m === 'eve-firestarter') {
+          head = drawBatchedRibbon(ctx, poly, ph * 1.05, 0.26, '#ff1e6b', '#a855f7', 2.8, 5.2, 14, now);
+          drawBatchedRibbon(ctx, poly, -ph * 1.1 + 0.5, 0.22, '#a855f7', '#ff7a00', 2.3, 4.6, 13, now);
+          moteCol = Math.random() < 0.35 ? '#ff7a00' : '#ff1e6b';
+        } else if (m === 'risen-legend') {
+          head = drawBatchedRibbon(ctx, poly, ph * 0.95, 0.25, '#f5c542', '#fff3b0', 2.9, 0, 0, now);
+          drawBatchedRibbon(ctx, poly, ph * 0.95 + 0.5, 0.20, '#ff2e55', '#f5c542', 2.2, 0, 0, now);
+          if (poly.length === 5) {
+            for (let c = 0; c < 4; c++) {
+              const b = Math.max(0, 1 - Math.abs((((ph * 0.95) % 1) + 1) % 1 - c * 0.25) * 14);
+              if (b > 0.08) drawDiamondGlint(ctx, poly[c][0], poly[c][1], 9 * b + 3, '#f5c542', b);
+            }
+          }
+          moteCol = '#f5c542';
+        } else if (m === 'ahri-firestarter') {
+          head = drawBatchedRibbon(ctx, poly, ph * 1.08, 0.26, '#ff2e97', '#fda4af', 2.7, 3.8, 11, now);
+          drawBatchedRibbon(ctx, poly, -ph * 0.95 + 0.5, 0.20, '#ff1e56', '#ff2e97', 2.2, 3.2, 10, now);
+          moteCol = Math.random() < 0.45 ? '#fda4af' : '#ff2e97';
+        } else if (m === 'elementalist') {
+          const li = Math.floor(now / 1500) % 4;
+          const colA = luxCols[li], colB = luxCols[(li + 1) % 4];
+          head = drawBatchedRibbon(ctx, poly, ph * 0.9, 0.28, colA, colB, 2.7, 2.2, 9, now);
+          drawBatchedRibbon(ctx, poly, ph * 0.9 + 0.5, 0.24, luxCols[(li + 2) % 4], colA, 2.2, 2.0, 8, now);
+          if (poly.length === 5) {
+            const cIdx = Math.floor(now / 550 + i) % 4;
+            const pulse = Math.sin(((now % 550) / 550) * Math.PI);
+            drawDiamondGlint(ctx, poly[cIdx][0], poly[cIdx][1], 8 * pulse + 2, colA, pulse * 0.9);
+          }
+          moteCol = colB;
+        } else if (m === 'arcane-fractured') {
+          const jitter = ((Math.floor(now / 70) + i) % 2 === 0) ? 5.5 : 2.8;
+          head = drawBatchedRibbon(ctx, poly, ph * 1.3, 0.20, '#ff2e97', '#00f0ff', 2.6, jitter, 28, now);
+          drawBatchedRibbon(ctx, poly, -ph * 1.2 + 0.45, 0.16, '#00f0ff', '#ffe14d', 2.1, jitter * 0.9, 24, now);
+          moteCol = Math.random() < 0.4 ? '#00f0ff' : (Math.random() < 0.5 ? '#ff2e97' : '#ffe14d');
+        }
+
+        if (head && motes.length < 55 && Math.random() < 0.34) {
+          motes.push({
+            x: head[0] + (Math.random() - 0.5) * 4,
+            y: head[1] + (Math.random() - 0.5) * 4,
+            vx: (Math.random() - 0.5) * 1.3,
+            vy: -0.6 - Math.random() * 1.4,
+            life: 1,
+            col: moteCol,
+            r: 1.5 + Math.random() * 1.8,
+            shard: m === 'ahri-firestarter' || m === 'arcane-fractured' || m === 'risen-legend'
+          });
+        }
+      }
+
+      for (let i = motes.length - 1; i >= 0; i--) {
+        const sp = motes[i];
+        sp.x += sp.vx; sp.y += sp.vy; sp.life -= 0.026;
+        if (sp.life <= 0) { motes.splice(i, 1); continue; }
+        ctx.globalAlpha = sp.life * 0.9;
+        ctx.fillStyle = sp.col;
+        if (sp.shard) {
+          ctx.beginPath();
+          ctx.moveTo(sp.x, sp.y - sp.r * 1.5);
+          ctx.lineTo(sp.x + sp.r, sp.y);
+          ctx.lineTo(sp.x, sp.y + sp.r * 1.5);
+          ctx.lineTo(sp.x - sp.r, sp.y);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, sp.r * sp.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    sigEdgeRaf = requestAnimationFrame(tick);
   }
   function fetchTheme(){
     fetch('/api/champion-theme', { cache: 'no-store' }).then((res) => (res.ok ? res.json() : null)).then((d) => applyChampPack(d && d.pack ? d.pack : null)).catch(() => {});

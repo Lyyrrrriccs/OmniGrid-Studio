@@ -1470,6 +1470,151 @@
       });
       syncPvViktorLightning(pack.effect === 'creator-viktor');
       syncPvAkaliEdgeFx(pack.effect === 'kda-firestarter');
+      const sigFx = ['revenant-reign', 'dj-sona', 'eve-firestarter', 'risen-legend', 'ahri-firestarter', 'elementalist', 'arcane-fractured'];
+      syncPvSigEdgeFx(sigFx.includes(pack.effect) ? pack.effect : '');
+    }
+
+    // Unified Locked-60fps Signature Edge Preview (Viego, DJ Sona, Evelynn, Kai'Sa, Ahri, Lux, Arcane Fractured Jinx)
+    let pvSigRaf = 0;
+    let pvSigCanvas = null;
+    let pvSigMode = '';
+    function pvSigRibbon(ctx, poly, uHead, uLen, col1, col2, width, waveAmp, waveFreq, now) {
+      const steps = 16, pts = [];
+      for (let s = 0; s <= steps; s++) {
+        const f = s / steps, p = pvSamplePoly(poly, uHead - uLen * (1 - f));
+        if (waveAmp > 0) {
+          const pN = pvSamplePoly(poly, uHead - uLen * (1 - f) + 0.004);
+          const dx = pN[0] - p[0], dy = pN[1] - p[1], l = Math.hypot(dx, dy) || 1;
+          const wv = Math.sin(f * waveFreq + now * 0.016) * waveAmp * Math.sin(f * Math.PI);
+          pts.push([p[0] + (-dy / l) * wv, p[1] + (dx / l) * wv]);
+        } else pts.push(p);
+      }
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let s = 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+      ctx.globalAlpha = 0.24; ctx.strokeStyle = col1; ctx.lineWidth = width * 2.2; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pts[4][0], pts[4][1]);
+      for (let s = 5; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+      ctx.globalAlpha = 0.86; ctx.strokeStyle = col2; ctx.lineWidth = width * 0.88; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pts[10][0], pts[10][1]);
+      for (let s = 11; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
+      ctx.globalAlpha = 0.96; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(0.9, width * 0.36); ctx.stroke();
+      return pts[steps];
+    }
+    function pvSigGlint(ctx, x, y, r, col, alpha) {
+      if (alpha < 0.05) return;
+      ctx.save(); ctx.translate(x, y); ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(0, -r*1.45); ctx.lineTo(r*0.32, -r*0.32); ctx.lineTo(r*1.45, 0); ctx.lineTo(r*0.32, r*0.32);
+      ctx.lineTo(0, r*1.45); ctx.lineTo(-r*0.32, r*0.32); ctx.lineTo(-r*1.45, 0); ctx.lineTo(-r*0.32, -r*0.32);
+      ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, r*0.25, 0, Math.PI*2); ctx.fillStyle = '#ffffff'; ctx.fill();
+      ctx.restore();
+    }
+    function syncPvSigEdgeFx(mode) {
+      pvSigMode = mode || '';
+      if (!pvSigMode) {
+        if (pvSigRaf) { cancelAnimationFrame(pvSigRaf); pvSigRaf = 0; }
+        if (pvSigCanvas) { pvSigCanvas.remove(); pvSigCanvas = null; }
+        return;
+      }
+      if (pvSigRaf) return;
+      pvSigCanvas = document.createElement('canvas');
+      pvSigCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:21;';
+      stage.appendChild(pvSigCanvas);
+      const ctx = pvSigCanvas.getContext('2d');
+      const motes = [];
+      let cachedPolys = [], lastLayout = 0;
+      const viegoCols = ['#e11d48', '#a855f7', '#38bdf8', '#facc15'];
+      const sonaCols = ['#00e5ff', '#ff2a6d', '#c084fc'];
+      const luxCols = ['#fde047', '#38bdf8', '#e879f9', '#34d399'];
+      function tick(now) {
+        pvSigRaf = requestAnimationFrame(tick);
+        if (now - lastLayout > 450) {
+          lastLayout = now;
+          const sr = stage.getBoundingClientRect();
+          const w = Math.max(100, Math.round(sr.width)), h = Math.max(100, Math.round(sr.height));
+          if (pvSigCanvas.width !== w || pvSigCanvas.height !== h) { pvSigCanvas.width = w; pvSigCanvas.height = h; }
+          cachedPolys = [];
+          stage.querySelectorAll('.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card').forEach((el) => {
+            const r = el.getBoundingClientRect();
+            const l = r.left - sr.left, tp = r.top - sr.top, rt = l + r.width, bt = tp + r.height;
+            if (r.width >= 20 && r.height >= 20) cachedPolys.push([[l,tp],[rt,tp],[rt,bt],[l,bt],[l,tp]]);
+          });
+          const abWrap = stage.querySelector('.pv-ab-wrap');
+          if (abWrap) {
+            const ar = abWrap.getBoundingClientRect();
+            const ox = ar.left - sr.left, oy = ar.top - sr.top, sx = ar.width / 920, sy = ar.height / 175;
+            cachedPolys.push([[148,36],[172,22],[642,22],[664,38],[892,38],[912,56],[912,154],[896,170],[146,170],[148,36]].map(([x,y]) => [ox+x*sx, oy+y*sy]));
+            const ring = [];
+            for (let i = 0; i <= 20; i++) { const a = (i/20)*Math.PI*2; ring.push([ox+(84+Math.cos(a)*71)*sx, oy+(96+Math.sin(a)*71)*sy]); }
+            cachedPolys.push(ring);
+          }
+        }
+        ctx.clearRect(0, 0, pvSigCanvas.width, pvSigCanvas.height);
+        ctx.globalCompositeOperation = 'lighter';
+        const m = pvSigMode, t = now * 0.00024;
+        for (let i = 0; i < cachedPolys.length; i++) {
+          const poly = cachedPolys[i], ph = t + i * 0.29;
+          let head = null, moteCol = '#ffffff';
+          if (m === 'revenant-reign') {
+            const ci = Math.floor(now / 1800) % 4;
+            head = pvSigRibbon(ctx, poly, ph, 0.24, viegoCols[ci], viegoCols[(ci+1)%4], 2.6, 3.0, 10, now);
+            pvSigRibbon(ctx, poly, -ph*0.85+0.5, 0.18, '#a855f7', '#38bdf8', 2.1, 3.8, 12, now);
+            moteCol = Math.random() < 0.5 ? '#a855f7' : '#38bdf8';
+          } else if (m === 'dj-sona') {
+            const si = Math.floor(now / 2200) % 3, colA = sonaCols[si], colB = sonaCols[(si+1)%3];
+            const bAmp = 2.4 + Math.pow(Math.max(0, Math.sin(now * 0.013)), 3) * 6.0;
+            head = pvSigRibbon(ctx, poly, ph*1.15, 0.30, colA, colB, 2.5, bAmp, 24, now);
+            pvSigRibbon(ctx, poly, ph*1.15+0.5, 0.28, colB, colA, 2.1, bAmp*0.85, 22, now);
+            moteCol = colA;
+          } else if (m === 'eve-firestarter') {
+            head = pvSigRibbon(ctx, poly, ph*1.05, 0.26, '#ff1e6b', '#a855f7', 2.7, 5.0, 14, now);
+            pvSigRibbon(ctx, poly, -ph*1.1+0.5, 0.22, '#a855f7', '#ff7a00', 2.2, 4.4, 13, now);
+            moteCol = Math.random() < 0.35 ? '#ff7a00' : '#ff1e6b';
+          } else if (m === 'risen-legend') {
+            head = pvSigRibbon(ctx, poly, ph*0.95, 0.25, '#f5c542', '#fff3b0', 2.8, 0, 0, now);
+            pvSigRibbon(ctx, poly, ph*0.95+0.5, 0.20, '#ff2e55', '#f5c542', 2.1, 0, 0, now);
+            if (poly.length === 5) {
+              for (let c = 0; c < 4; c++) {
+                const b = Math.max(0, 1 - Math.abs((((ph*0.95)%1)+1)%1 - c*0.25) * 14);
+                if (b > 0.08) pvSigGlint(ctx, poly[c][0], poly[c][1], 9*b+3, '#f5c542', b);
+              }
+            }
+            moteCol = '#f5c542';
+          } else if (m === 'ahri-firestarter') {
+            head = pvSigRibbon(ctx, poly, ph*1.08, 0.26, '#ff2e97', '#fda4af', 2.6, 3.6, 11, now);
+            pvSigRibbon(ctx, poly, -ph*0.95+0.5, 0.20, '#ff1e56', '#ff2e97', 2.1, 3.0, 10, now);
+            moteCol = Math.random() < 0.45 ? '#fda4af' : '#ff2e97';
+          } else if (m === 'elementalist') {
+            const li = Math.floor(now / 1500) % 4, colA = luxCols[li], colB = luxCols[(li+1)%4];
+            head = pvSigRibbon(ctx, poly, ph*0.9, 0.28, colA, colB, 2.6, 2.0, 9, now);
+            pvSigRibbon(ctx, poly, ph*0.9+0.5, 0.24, luxCols[(li+2)%4], colA, 2.1, 1.8, 8, now);
+            if (poly.length === 5) {
+              const cIdx = Math.floor(now / 550 + i) % 4, pulse = Math.sin(((now % 550)/550)*Math.PI);
+              pvSigGlint(ctx, poly[cIdx][0], poly[cIdx][1], 8*pulse+2, colA, pulse*0.9);
+            }
+            moteCol = colB;
+          } else if (m === 'arcane-fractured') {
+            const jit = ((Math.floor(now / 70) + i) % 2 === 0) ? 5.2 : 2.6;
+            head = pvSigRibbon(ctx, poly, ph*1.3, 0.20, '#ff2e97', '#00f0ff', 2.5, jit, 28, now);
+            pvSigRibbon(ctx, poly, -ph*1.2+0.45, 0.16, '#00f0ff', '#ffe14d', 2.0, jit*0.9, 24, now);
+            moteCol = Math.random() < 0.4 ? '#00f0ff' : (Math.random() < 0.5 ? '#ff2e97' : '#ffe14d');
+          }
+          if (head && motes.length < 55 && Math.random() < 0.34) {
+            motes.push({ x: head[0]+(Math.random()-0.5)*4, y: head[1]+(Math.random()-0.5)*4, vx: (Math.random()-0.5)*1.3, vy: -0.6-Math.random()*1.4, life: 1, col: moteCol, r: 1.5+Math.random()*1.7, shard: m==='ahri-firestarter'||m==='arcane-fractured'||m==='risen-legend' });
+          }
+        }
+        for (let i = motes.length - 1; i >= 0; i--) {
+          const sp = motes[i]; sp.x += sp.vx; sp.y += sp.vy; sp.life -= 0.026;
+          if (sp.life <= 0) { motes.splice(i, 1); continue; }
+          ctx.globalAlpha = sp.life * 0.9; ctx.fillStyle = sp.col;
+          if (sp.shard) { ctx.beginPath(); ctx.moveTo(sp.x, sp.y-sp.r*1.5); ctx.lineTo(sp.x+sp.r, sp.y); ctx.lineTo(sp.x, sp.y+sp.r*1.5); ctx.lineTo(sp.x-sp.r, sp.y); ctx.closePath(); ctx.fill(); }
+          else { ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r*sp.life, 0, Math.PI*2); ctx.fill(); }
+        }
+        ctx.globalAlpha = 1;
+      }
+      pvSigRaf = requestAnimationFrame(tick);
     }
 
     // Locked 60fps Akali Edge FX Preview (#1+#3 Ignition Flame-Ribbon + Streak Embers + Kunai Starbursts — zero shadowBlur, cached layout)
