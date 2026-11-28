@@ -7936,22 +7936,22 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     for (let s = 0; s <= steps; s++) pts.push(samplePoly(poly, uHead - uLen * (1 - s / steps)));
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Batched Pass 1: Wide outer bloom (1 stroke!)
+    // Batched Pass 1: Sleek outer bloom (1 stroke!)
     ctx.beginPath();
     ctx.moveTo(pts[0][0], pts[0][1]);
     for (let s = 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
-    ctx.globalAlpha = 0.28;
+    ctx.globalAlpha = 0.24;
     ctx.strokeStyle = col1;
-    ctx.lineWidth = width * 3.0;
+    ctx.lineWidth = width * 2.0;
     ctx.stroke();
-    // Batched Pass 2: Bright mid plasma ribbon (front 75%)
+    // Batched Pass 2: Crisp mid plasma ribbon (front 75%)
     const mid0 = Math.floor(steps * 0.25);
     ctx.beginPath();
     ctx.moveTo(pts[mid0][0], pts[mid0][1]);
     for (let s = mid0 + 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
     ctx.globalAlpha = 0.85;
     ctx.strokeStyle = col2;
-    ctx.lineWidth = width * 1.15;
+    ctx.lineWidth = width * 0.82;
     ctx.stroke();
     // Batched Pass 3: White-hot spear tip (front 40%)
     const tip0 = Math.floor(steps * 0.6);
@@ -7960,7 +7960,7 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
     for (let s = tip0 + 1; s <= steps; s++) ctx.lineTo(pts[s][0], pts[s][1]);
     ctx.globalAlpha = 0.96;
     ctx.strokeStyle = '#fffbeb';
-    ctx.lineWidth = Math.max(1.2, width * 0.45);
+    ctx.lineWidth = Math.max(0.9, width * 0.35);
     ctx.stroke();
     // Subtle flickering flame licks (batched into 1 path!)
     if (isFlame) {
@@ -7969,20 +7969,20 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
         const p0 = pts[s], p1 = pts[s + 1];
         const dx = p1[0] - p0[0], dy = p1[1] - p0[1], l = Math.hypot(dx, dy) || 1;
         const flick = Math.sin(now * 0.025 + s * 1.9) * 0.5 + 0.5;
-        const tg = 4 + flick * 8;
+        const tg = 3 + flick * 5.5;
         ctx.moveTo(p0[0], p0[1]);
         ctx.quadraticCurveTo(p1[0] + (-dy / l) * tg, p1[1] + (dx / l) * tg, p1[0], p1[1]);
       }
-      ctx.globalAlpha = 0.65;
+      ctx.globalAlpha = 0.6;
       ctx.strokeStyle = '#ff7a00';
-      ctx.lineWidth = 2.0;
+      ctx.lineWidth = 1.3;
       ctx.stroke();
     }
     const head = pts[steps];
     ctx.globalAlpha = 0.95;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(head[0], head[1], width * 0.65, 0, Math.PI * 2);
+    ctx.arc(head[0], head[1], width * 0.48, 0, Math.PI * 2);
     ctx.fill();
     if (sparksArr && sparksArr.length < 70 && Math.random() < 0.5) {
       sparksArr.push({
@@ -8047,8 +8047,8 @@ ${ALL_OVERLAY_CARDS_SEL.filter((s) => s !== '.gs-card' && s !== '.map-cover').ma
       for (let i = 0; i < cachedPolys.length; i++) {
         const poly = cachedPolys[i];
         const ph = t + i * 0.31;
-        drawAkaliTrail(ctx, poly, ph, 0.24, '#ff3b5c', '#ff7a00', 4.4, sparks, now, true);
-        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.17, '#00f5ff', '#ffffff', 3.2, null, now, false);
+        drawAkaliTrail(ctx, poly, ph, 0.24, '#ff3b5c', '#ff7a00', 2.8, sparks, now, true);
+        drawAkaliTrail(ctx, poly, -ph * 1.25 + 0.5, 0.17, '#00f5ff', '#ffffff', 2.1, null, now, false);
         if (poly.length === 5) {
           for (let c = 0; c < 4; c++) {
             const dist = Math.abs((((ph % 1) + 1) % 1) - c * 0.25);
