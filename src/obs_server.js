@@ -7295,15 +7295,16 @@ ${ALL_OVERLAY_CARDS_SEL.map((s) => `body.champ-fx-revenant-reign ${s}::before`).
   left: 0;
   right: 0;
   bottom: 0;
-  height: 38px;
-  background-repeat: repeat-x, repeat-x;
-  background-size: 260px 38px, 190px 32px;
-  background-position: 0% 100%, 40% 100%;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 38'%3E%3Cdefs%3E%3ClinearGradient id='r1' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%237e22ce' stop-opacity='0.65'/%3E%3Cstop offset='50%25' stop-color='%2338bdf8' stop-opacity='0.68'/%3E%3Cstop offset='100%25' stop-color='%23a855f7' stop-opacity='0.65'/%3E%3C/linearGradient%3E%3ClinearGradient id='a1' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0%25' stop-color='%236b21a8' stop-opacity='0.2'/%3E%3Cstop offset='55%25' stop-color='%23a855f7' stop-opacity='0.9'/%3E%3Cstop offset='100%25' stop-color='%23e0f2fe' stop-opacity='0.98'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 38 Q35 16 70 25 T140 21 T210 26 T260 22 L260 38 Z' fill='url(%23r1)'/%3E%3Cpath d='M0 38 Q42 23 84 29 T168 25 T260 28' fill='none' stroke='%23bae6fd' stroke-width='1.5' stroke-opacity='0.72'/%3E%3Cpath d='M42 38 C39 27 38 20 33 12 L38 18 L42 6 L45 17 L51 8 L51 20 L57 14 L52 27 L50 38 Z' fill='url(%23a1)' stroke='%23e0f2fe' stroke-width='0.9'/%3E%3Cpath d='M138 38 C140 26 140 19 134 11 L140 17 L144 5 L147 16 L153 7 L153 19 L159 13 L154 27 L151 38 Z' fill='url(%23a1)' stroke='%23d8b4fe' stroke-width='0.9'/%3E%3Cpath d='M218 38 C215 28 214 21 209 14 L214 19 L218 9 L221 19 L227 11 L226 22 L232 16 L227 28 L225 38 Z' fill='url(%23a1)' stroke='%23bae6fd' stroke-width='0.9'/%3E%3Ccircle cx='92' cy='21' r='2.2' fill='%23e0f2fe' opacity='0.88'/%3E%3Ccircle cx='184' cy='18' r='1.8' fill='%23d8b4fe' opacity='0.85'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 190 32'%3E%3Cpath d='M0 32 Q48 12 95 22 T190 18 L190 32 Z' fill='%2338bdf8' fill-opacity='0.26'/%3E%3Cpath d='M0 32 Q38 18 76 24 T152 20 T190 24' fill='none' stroke='%23c084fc' stroke-width='1.4' stroke-opacity='0.68'/%3E%3C/svg%3E");
-  filter: drop-shadow(0 -2px 8px rgba(168, 85, 247, 0.55));
-  animation: revenantRiverFlow 7.5s linear infinite;
+  height: 54px;
+  background-image: url('/api/theme-asset/viego-soul-river.jpg');
+  background-size: 220% auto;
+  background-position: 0% 82%;
+  mix-blend-mode: screen;
+  opacity: 0.68;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.82) 48%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.82) 48%, rgba(0,0,0,0) 100%);
+  filter: saturate(1.35) contrast(1.15) drop-shadow(0 -2px 10px rgba(168, 85, 247, 0.55));
+  animation: revenantRiverFlow 11s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 6;
 }
