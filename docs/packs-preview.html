@@ -653,7 +653,25 @@
     #stage.champ-fx-revenant-reign :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
       position: relative;
       border-color: #e11d48 !important;
-      box-shadow: 0 0 22px rgba(168, 85, 247, 0.42), inset 0 -18px 26px rgba(56, 189, 248, 0.28) !important;
+      box-shadow: 0 0 22px rgba(168, 85, 247, 0.42), inset 0 -22px 30px rgba(56, 189, 248, 0.30) !important;
+    }
+    #stage.champ-fx-revenant-reign :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card)::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 52px;
+      background-image: url('./assets/viego-soul-river.jpg');
+      background-size: 210% auto;
+      background-position: 0% 82%;
+      mix-blend-mode: screen;
+      opacity: 0.68;
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.82) 48%, rgba(0,0,0,0) 100%);
+      mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.82) 48%, rgba(0,0,0,0) 100%);
+      filter: saturate(1.35) contrast(1.15) drop-shadow(0 -2px 10px rgba(168, 85, 247, 0.55));
+      pointer-events: none;
+      z-index: 6;
     }
     #stage.champ-fx-revenant-reign :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card)::after {
       content: "";
@@ -676,6 +694,37 @@
       75% { filter: hue-rotate(48deg) drop-shadow(0 0 9px #facc15); transform: rotate(-14deg) scale(1.06, 1.04); }
     }
     #stage.champ-fx-dj-sona .pv-ab-fx-sona { display: flex; }
+    #stage.champ-fx-dj-sona :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap, .alert-card) {
+      position: relative;
+      border-color: #00e5ff !important;
+      box-shadow: 0 0 22px rgba(0, 229, 255, 0.45), inset 0 -16px 24px rgba(255, 42, 109, 0.22) !important;
+    }
+    #stage.champ-fx-dj-sona :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap)::before {
+      content: "";
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: 2px;
+      height: 16px;
+      background-repeat: repeat-x;
+      background-size: 92px 16px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 18'%3E%3Cg fill='%2300e5ff' opacity='0.78'%3E%3Ccircle cx='6' cy='14' r='2.3'/%3E%3Ccircle cx='6' cy='9' r='2.3'/%3E%3Ccircle cx='18' cy='14' r='2.3'/%3E%3Ccircle cx='18' cy='9' r='2.3'/%3E%3Ccircle cx='18' cy='4' r='2.3'/%3E%3Ccircle cx='30' cy='14' r='2.3'/%3E%3Ccircle cx='42' cy='14' r='2.3'/%3E%3Ccircle cx='42' cy='9' r='2.3'/%3E%3Ccircle cx='42' cy='4' r='2.3'/%3E%3Ccircle cx='54' cy='14' r='2.3'/%3E%3Ccircle cx='54' cy='9' r='2.3'/%3E%3Ccircle cx='66' cy='14' r='2.3'/%3E%3Ccircle cx='66' cy='9' r='2.3'/%3E%3Ccircle cx='66' cy='4' r='2.3'/%3E%3Ccircle cx='78' cy='14' r='2.3'/%3E%3Ccircle cx='78' cy='9' r='2.3'/%3E%3Ccircle cx='90' cy='14' r='2.3'/%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 6;
+    }
+    #stage.champ-fx-dj-sona :is(.gs-card, .lb-bar, .map-cover, .sp-card, .goal-wrap)::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      right: 7px;
+      width: 24px;
+      height: 20px;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 30'%3E%3Cpolygon points='18,2 32,9 32,21 18,28 4,21 4,9' fill='%23060a18' stroke='%2300e5ff' stroke-width='2.2'/%3E%3Cpath d='M7 15 L12 15 L15 8 L18 22 L21 11 L24 15 L29 15' fill='none' stroke='%23ff2a6d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 8;
+    }
     #stage.champ-fx-elementalist .pv-ab-svg { animation: pvAbPrism 6s linear infinite; }
     #stage.champ-fx-soul-fighter .pv-ab-svg { filter: drop-shadow(3px 3px 0 #05050a) drop-shadow(0 0 9px var(--ab-p)); }
     .pv-ab-eq {
@@ -1001,13 +1050,17 @@
                   <rect x="530" y="18" width="110" height="8" rx="2" fill="url(#pvAbHazard)" stroke="#091216" stroke-width="1" />
                 </g>
                 <g class="pv-ab-fx pv-ab-fx-revenant">
-                  <path d="M 164 22 L 210 14 L 222 22 L 210 30 Z M 220 22 L 328 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
-                  <path d="M 650 22 L 604 14 L 592 22 L 604 30 Z M 594 22 L 496 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
-                  <path d="M 160 171 Q 190 156 225 166 T 295 164 T 370 167 T 450 163 T 535 167 T 620 164 T 710 167 T 800 164 T 892 170" fill="none" stroke="#a855f7" stroke-width="5" stroke-opacity="0.72" />
-                  <path d="M 172 173 Q 210 160 250 169 T 340 165 T 430 169 T 520 165 T 625 169 T 730 165 T 886 171" fill="none" stroke="#38bdf8" stroke-width="3" stroke-opacity="0.78" />
-                  <path d="M 218 170 L 214 152 L 208 145 M 214 152 L 218 143 M 214 152 L 224 147" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
-                  <path d="M 412 170 L 415 151 L 408 144 M 415 151 L 419 142 M 415 151 L 425 147" fill="none" stroke="#a855f7" stroke-width="2.2" stroke-linecap="round" />
-                  <path d="M 742 170 L 739 152 L 733 145 M 739 152 L 744 143 M 739 152 L 750 147" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" />
+                  <path d="M 164 22 L 210 13 L 224 22 L 210 31 Z M 220 22 L 332 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
+                  <path d="M 650 22 L 604 13 L 590 22 L 604 31 Z M 594 22 L 492 22" fill="#e11d48" stroke="#fda4af" stroke-width="2" />
+                  <path d="M 148 174 Q 205 152 265 163 T 390 158 T 520 163 T 660 157 T 795 163 T 904 166 L 904 175 L 148 175 Z" fill="#9333ea" fill-opacity="0.58" />
+                  <path d="M 156 174 Q 230 158 310 167 T 465 161 T 625 167 T 780 160 T 900 169" fill="none" stroke="#bae6fd" stroke-width="2" stroke-opacity="0.82" />
+                  <path d="M 212 174 C 209 162, 208 156, 203 148 L 207 154 L 211 141 L 214 153 L 220 142 L 221 155 L 228 147 L 224 162 L 222 174 Z" fill="#a855f7" stroke="#e0f2fe" stroke-width="1.2" />
+                  <path d="M 410 174 C 412 161, 412 154, 405 146 L 411 153 L 416 139 L 419 152 L 426 141 L 425 154 L 432 148 L 426 162 L 423 174 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="1.2" />
+                  <path d="M 596 174 C 594 163, 593 156, 588 149 L 593 155 L 597 142 L 600 154 L 606 144 L 606 156 L 613 150 L 608 163 L 606 174 Z" fill="#a855f7" stroke="#bae6fd" stroke-width="1.2" />
+                  <path d="M 744 174 C 742 162, 740 155, 735 147 L 740 154 L 745 140 L 748 153 L 755 142 L 754 155 L 761 149 L 755 163 L 753 174 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="1.2" />
+                  <circle cx="268" cy="158" r="3" fill="#bae6fd" opacity="0.9" />
+                  <circle cx="510" cy="157" r="3.2" fill="#38bdf8" opacity="0.9" />
+                  <circle cx="826" cy="158" r="3" fill="#d8b4fe" opacity="0.9" />
                 </g>
               </svg>
             </div>
@@ -1029,7 +1082,6 @@
       { id: 'twistedfate-crime-city-nightmare', name: 'Twisted Fate — Crime City Nightmare', icon: '🃏', effect: 'crime-city', description: 'Noir Crime City crimson, eldritch nightmare violet & Pick-a-Card gold with animated Art-Deco frames across all OBS overlays.', colors: { primary: '#e11d48', secondary: '#a855f7', tertiary: '#facc15', bgStart: 'rgba(11, 6, 14, 0.97)', bgEnd: 'rgba(6, 5, 10, 0.98)', text: '#faf5ff' }, mapCoverBadge: 'CRIME CITY // PICK A CARD 🃏' },
       { id: 'singed-laboratory', name: 'Singed — Mad Scientist Laboratory', icon: '🧪', effect: 'zaun-lab', description: 'Mad Scientist Singed radioactive green, high-voltage Tesla cyan & hazard amber with gently animated lab frames and /singed-transition.', colors: { primary: '#76ff03', secondary: '#00e5ff', tertiary: '#facc15', bgStart: 'rgba(7, 16, 18, 0.96)', bgEnd: 'rgba(5, 11, 16, 0.97)', text: '#f0fdf4' }, mapCoverBadge: 'MAD SCIENTIST // LAB EXPERIMENT 🧪' },
       { id: 'yunara-spirit-blossom-springs', name: 'Yunara — Spirit Blossom Springs', icon: '♨️', effect: 'blossom-springs', description: 'Serene onsen hot-spring aqua, warm sakura-peach petals & golden lantern mist.', colors: { primary: '#5eead4', secondary: '#fb7185', tertiary: '#fde68a', bgStart: 'rgba(10, 18, 28, 0.94)', bgEnd: 'rgba(22, 12, 26, 0.95)', text: '#fff1f2' }, mapCoverBadge: 'SPIRIT BLOSSOM SPRINGS // ONSEN ♨️' },
-      { id: 'viego-soul-fighter', name: 'Viego — Soul Fighter', icon: '⚔️', effect: 'soul-fighter', description: 'Anime fighting-game cel-shaded comic shadows, electric soul-cyan & hot magenta.', colors: { primary: '#22d3ee', secondary: '#ff1f71', tertiary: '#facc15', bgStart: 'rgba(11, 8, 22, 0.97)', bgEnd: 'rgba(20, 6, 22, 0.98)', text: '#f8fafc' }, mapCoverBadge: 'SOUL FIGHTER // TOURNAMENT ⚔️' },
       { id: 'wukong-radiant', name: 'Wukong — Radiant', icon: '☁️', effect: 'radiant-cloud', description: 'Imperial golden cloud, lunar jade emerald & vermilion dragon accents.', colors: { primary: '#fbbf24', secondary: '#34d399', tertiary: '#f43f5e', bgStart: 'rgba(8, 18, 16, 0.96)', bgEnd: 'rgba(20, 13, 8, 0.97)', text: '#fefce8' }, mapCoverBadge: 'RADIANT // MONKEY KING ☁️' },
       { id: 'darius-divine-god-king', name: 'Darius — Divine God-King', icon: '🐺', effect: 'god-king', description: 'Sacred crimson wolf fury, sovereign divine gold & heavy obsidian warplate.', colors: { primary: '#ef4444', secondary: '#fbbf24', tertiary: '#fef3c7', bgStart: 'rgba(18, 6, 8, 0.97)', bgEnd: 'rgba(12, 8, 12, 0.98)', text: '#fef2f2' }, mapCoverBadge: 'GOD-KING // SOVEREIGN WOLF 🐺' },
       { id: 'diana-prestige-dark-cosmic', name: 'Diana — Prestige Dark Cosmic', icon: '🌙', effect: 'prestige-cosmic', description: 'Celestial eclipse gold, astral amethyst & starlight platinum.', colors: { primary: '#facc15', secondary: '#c084fc', tertiary: '#e0e7ff', bgStart: 'rgba(10, 7, 24, 0.97)', bgEnd: 'rgba(16, 10, 32, 0.98)', text: '#faf5ff' }, mapCoverBadge: 'PRESTIGE // DARK COSMIC 🌙' },
@@ -1094,7 +1146,6 @@
       'thresh-unbound': { championId: 'Thresh', skinQuery: 'Unbound' },
       'twistedfate-crime-city-nightmare': { championId: 'TwistedFate', skinQuery: 'Crime City Nightmare' },
       'viego-ruined': { championId: 'Viego', skinQuery: 'Revenant Reign', directUrl: './assets/viego-revenant-reign.jpg' },
-      'viego-soul-fighter': { championId: 'Viego', skinQuery: 'Soul Fighter' },
       'wukong-radiant': { championId: 'MonkeyKing', skinQuery: 'Radiant' },
       'yasuo-nightbringer': { championId: 'Yasuo', skinQuery: 'Nightbringer' },
       'yunara-spirit-blossom-springs': { championId: 'Yunara', skinQuery: 'Springs' },
